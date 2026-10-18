@@ -15,6 +15,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Local Claude Code state, including agent worktrees (full repo copies).
     ".claude/**",
+    // Separate packages with their own toolchain (Cloudflare Worker).
+    "deploy/**",
   ]),
 ]);
 
