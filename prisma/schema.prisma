@@ -1,0 +1,1323 @@
+// Space Works Workspace data model.
+//
+// This schema covers every product area (foundation, work, chat, knowledge,
+// community, operations and the assistant). `Workspace` is the tenant
+// boundary: every tenant row carries `workspaceId` (directly or through its
+// parent) and every query must filter by it after a membership check.
+//
+// Full-text search: `Task`, `Message` and `Doc` have a generated `tsvector`
+// column (`searchVector`) with a GIN index, created in SQL by the initial
+// migration. Prisma treats the column as `Unsupported`, so it is read only
+// through `$queryRaw` (`searchVector @@ websearch_to_tsquery('simple', $1)`).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  // Runtime queries use DATABASE_URL (may be a transaction pooler with
+  // ?pgbouncer=true). Migrations use DIRECT_URL; scripts/prisma.mjs defaults
+  // it to DATABASE_URL when there is no separate direct connection.
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ───────────────────────────── Enums ─────────────────────────────
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
+  GUEST
+}
+
+enum MembershipStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum OutboxStatus {
+  PENDING
+  PROCESSING
+  SENT
+  FAILED
+}
+
+enum ProjectStatus {
+  ACTIVE
+  PAUSED
+  DONE
+  ARCHIVED
+}
+
+enum ColumnCategory {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum TaskPriority {
+  NONE
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+/// Matches the brand status-pill tones (components/ui/display.tsx `ChipTone`).
+enum LabelTone {
+  NEUTRAL
+  SUCCESS
+  WARNING
+  INFO
+  DANGER
+  ACCENT
+  HIGHLIGHT
+}
+
+enum ChannelKind {
+  PUBLIC
+  PRIVATE
+  DIRECT
+}
+
+enum NotifyLevel {
+  ALL
+  MENTIONS
+  NONE
+}
+
+enum MessageAuthorKind {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum DocVisibility {
+  WORKSPACE
+  ADMINS
+}
+
+enum CommunityEventKind {
+  BUILD_NIGHT
+  MEETUP
+  WORKSHOP
+  OTHER
+}
+
+enum AttendanceStatus {
+  GOING
+  MAYBE
+  NOT_GOING
+}
+
+enum LedgerKind {
+  INCOME
+  EXPENSE
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  VOID
+}
+
+enum BlogPostStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum AssistantRole {
+  USER
+  ASSISTANT
+  TOOL
+}
+
+enum IntegrationProvider {
+  GOOGLE
+  GITHUB
+  TELEGRAM
+}
+
+enum IntegrationStatus {
+  ACTIVE
+  ERROR
+  REVOKED
+}
+
+enum BoardroomStatus {
+  DRAFT
+  RUNNING
+  DONE
+  FAILED
+}
+
+enum BoardroomTurnRole {
+  SEAT
+  MODERATOR
+}
+
+// ──────────────────────── Auth and instance ────────────────────────
+
+model User {
+  id                 String    @id @default(cuid())
+  name               String?
+  email              String    @unique
+  emailVerified      DateTime?
+  /// Bcrypt hash for email + password sign-in. Null for Google-only users.
+  passwordHash       String?
+  image              String?
+  bio                String?
+  pronouns           String?
+  skills             String[]  @default([])
+  timezone           String?
+  /// AES-GCM encrypted TOTP seed (lib/mfa.ts). Never expose or log it.
+  mfaSecretEncrypted String?
+  mfaEnabledAt       DateTime?
+  /// Incremented to invalidate every issued JWT session (password reset, sign out everywhere).
+  sessionVersion     Int       @default(0)
+  lastSeenAt         DateTime?
+  /// Set by a super-admin; disabled users cannot sign in.
+  disabledAt         DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  accounts                Account[]
+  sessions                Session[]
+  mfaRecoveryCodes        MfaRecoveryCode[]
+  passwordResetTokens     PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+  memberships             Membership[]
+  invitationsSent         Invitation[]             @relation("InvitationInvitedBy")
+  invitationsAccepted     Invitation[]             @relation("InvitationAcceptedBy")
+  apiTokensCreated        ApiToken[]               @relation("ApiTokenCreatedBy")
+  auditEvents             AuditEvent[]             @relation("AuditActor")
+  notifications           Notification[]
+  instanceSettingsUpdated InstanceSetting[]
+
+  projectsOwned         Project[]               @relation("ProjectOwner")
+  tasksCreated          Task[]                  @relation("TaskCreator")
+  taskAssignments       TaskAssignee[]
+  taskComments          TaskComment[]
+  taskActivities        TaskActivity[]
+  channelsCreated       Channel[]               @relation("ChannelCreatedBy")
+  channelMemberships    ChannelMember[]
+  messages              Message[]               @relation("MessageAuthor")
+  messagesPinned        Message[]               @relation("MessagePinnedBy")
+  messageReactions      MessageReaction[]
+  docsCreated           Doc[]                   @relation("DocCreatedBy")
+  docsUpdated           Doc[]                   @relation("DocUpdatedBy")
+  docRevisions          DocRevision[]
+  filesUploaded         FileObject[]
+  announcements         Announcement[]
+  communityEvents       CommunityEvent[]
+  eventAttendance       EventAttendee[]
+  shoutoutsGiven        Shoutout[]              @relation("ShoutoutFrom")
+  shoutoutsReceived     Shoutout[]              @relation("ShoutoutTo")
+  ledgerEntries         LedgerEntry[]
+  invoices              Invoice[]
+  blogPosts             BlogPost[]
+  assistantChats        AssistantConversation[]
+  assistantMemories     AssistantMemory[]
+  assistantSkills       AssistantSkill[]
+  scheduledJobs         ScheduledJob[]
+  integrationsConnected IntegrationConnection[]
+  oauthStates           OAuthState[]
+  telegramLinks         TelegramLink[]
+  seoAudits             SeoAudit[]
+  boardroomSessions     BoardroomSession[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// Auth.js adapter table. Also stores TOTP replay claims (identifier "mfa-replay").
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+/// One row per recovery code; only an HMAC of the code is stored.
+model MfaRecoveryCode {
+  id        String    @id @default(cuid())
+  userId    String
+  codeHash  String
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, codeHash])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+/// Instance-wide key/value settings managed by the super-admin. Secret values
+/// are AES-GCM encrypted (`encrypted = true`) and are write-only in the UI.
+model InstanceSetting {
+  key         String   @id
+  value       String
+  encrypted   Boolean  @default(false)
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+
+  updatedBy User? @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+}
+
+model OutboxMessage {
+  id          String       @id @default(cuid())
+  kind        String
+  payload     Json
+  status      OutboxStatus @default(PENDING)
+  attempts    Int          @default(0)
+  availableAt DateTime     @default(now())
+  lockedAt    DateTime?
+  sentAt      DateTime?
+  lastError   String?
+  createdAt   DateTime     @default(now())
+
+  @@index([status, availableAt])
+  @@index([createdAt])
+}
+
+/// One-row operational state for scheduled work (outbox worker, job runner).
+model OperationalHeartbeat {
+  key             String    @id
+  lastStartedAt   DateTime?
+  lastSucceededAt DateTime?
+  lastSent        Int       @default(0)
+  lastFailed      Int       @default(0)
+  lastError       String?
+  updatedAt       DateTime  @updatedAt
+}
+
+/// Append-only audit trail. Metadata must never carry secrets, tokens or message bodies.
+model AuditEvent {
+  id              String   @id @default(cuid())
+  workspaceId     String?
+  actorId         String?
+  actorApiTokenId String?
+  action          String
+  targetType      String?
+  targetId        String?
+  metadata        Json?
+  ip              String?
+  createdAt       DateTime @default(now())
+
+  workspace     Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  actor         User?      @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  actorApiToken ApiToken?  @relation(fields: [actorApiTokenId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+}
+
+model Notification {
+  id          String    @id @default(cuid())
+  userId      String
+  workspaceId String?
+  kind        String
+  title       String
+  body        String?
+  url         String?
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+  @@index([workspaceId, createdAt])
+}
+
+// ──────────────────────────── Tenancy ────────────────────────────
+
+model Workspace {
+  id                      String    @id @default(cuid())
+  slug                    String    @unique
+  name                    String
+  tagline                 String?
+  description             String?
+  timezone                String    @default("Asia/Kolkata")
+  currency                String    @default("INR")
+  financeVisibleToMembers Boolean   @default(false)
+  blogEnabled             Boolean   @default(false)
+  /// Google Calendar mirrored into the community calendar (Integrations).
+  googleCalendarId        String?
+  /// Channel (id) that receives assistant digests by default.
+  digestChannelId         String?
+  archivedAt              DateTime?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  memberships       Membership[]
+  invitations       Invitation[]
+  apiTokens         ApiToken[]
+  counters          WorkspaceCounter[]
+  auditEvents       AuditEvent[]
+  notifications     Notification[]
+  projects          Project[]
+  tasks             Task[]
+  labels            Label[]
+  channels          Channel[]
+  messages          Message[]
+  docs              Doc[]
+  files             FileObject[]
+  announcements     Announcement[]
+  communityEvents   CommunityEvent[]
+  shoutouts         Shoutout[]
+  financeCategories FinanceCategory[]
+  ledgerEntries     LedgerEntry[]
+  invoices          Invoice[]
+  blogPosts         BlogPost[]
+  assistantChats    AssistantConversation[]
+  assistantMemories AssistantMemory[]
+  assistantSkills   AssistantSkill[]
+  scheduledJobs     ScheduledJob[]
+  integrations      IntegrationConnection[]
+  oauthStates       OAuthState[]
+  githubRepos       GithubRepo[]
+  githubEvents      GithubEvent[]
+  telegramLinks     TelegramLink[]
+  seoSites          SeoSite[]
+  boardroomSessions BoardroomSession[]
+}
+
+model Membership {
+  id          String           @id @default(cuid())
+  userId      String
+  workspaceId String
+  role        WorkspaceRole    @default(MEMBER)
+  /// Free-text community title, e.g. "Hardware lead".
+  title       String?
+  status      MembershipStatus @default(ACTIVE)
+  joinedAt    DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@index([workspaceId, role])
+}
+
+model Invitation {
+  id           String        @id @default(cuid())
+  workspaceId  String
+  email        String
+  role         WorkspaceRole @default(MEMBER)
+  /// SHA-256 of the bearer token; the raw token only ever lives in the email.
+  tokenHash    String        @unique
+  expiresAt    DateTime
+  invitedById  String?
+  acceptedAt   DateTime?
+  acceptedById String?
+  revokedAt    DateTime?
+  lastSentAt   DateTime      @default(now())
+  createdAt    DateTime      @default(now())
+
+  workspace  Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  invitedBy  User?     @relation("InvitationInvitedBy", fields: [invitedById], references: [id], onDelete: SetNull)
+  acceptedBy User?     @relation("InvitationAcceptedBy", fields: [acceptedById], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([email])
+}
+
+/// Tenant-bound machine credential for /api/v1 and /api/mcp. Only a hash of
+/// the secret is stored; `prefix` identifies the token in lists and lookups.
+model ApiToken {
+  id          String    @id @default(cuid())
+  workspaceId String
+  name        String
+  prefix      String    @unique
+  secretHash  String
+  scopes      String[]  @default([])
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  createdById String?
+  createdAt   DateTime  @default(now())
+
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy   User?        @relation("ApiTokenCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  auditEvents AuditEvent[]
+
+  @@index([workspaceId, createdAt])
+}
+
+/// Per-workspace monotonic sequences (task numbers, invoice numbers). Use
+/// lib/counters.ts `nextWorkspaceSequence` inside the creating transaction.
+model WorkspaceCounter {
+  workspaceId String
+  name        String
+  value       Int    @default(0)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@id([workspaceId, name])
+}
+
+// ───────────────────────────── Work ─────────────────────────────
+
+model Project {
+  id          String        @id @default(cuid())
+  workspaceId String
+  /// Short uppercase key shown in task references, e.g. "BOT".
+  key         String
+  name        String
+  description String?
+  status      ProjectStatus @default(ACTIVE)
+  ownerId     String?
+  startsOn    DateTime?     @db.Date
+  dueOn       DateTime?     @db.Date
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  owner       User?         @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  columns     BoardColumn[]
+  tasks       Task[]
+  githubRepos GithubRepo[]
+
+  @@unique([workspaceId, key])
+  @@index([workspaceId, status])
+}
+
+model BoardColumn {
+  id        String         @id @default(cuid())
+  projectId String
+  name      String
+  position  Int
+  category  ColumnCategory @default(TODO)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks   Task[]
+
+  @@index([projectId, position])
+}
+
+model Task {
+  id           String                   @id @default(cuid())
+  workspaceId  String
+  projectId    String?
+  columnId     String?
+  /// Per-workspace sequence (WorkspaceCounter "task").
+  number       Int
+  title        String
+  /// Sanitised HTML.
+  description  String?
+  priority     TaskPriority             @default(NONE)
+  dueAt        DateTime?
+  position     Float                    @default(0)
+  creatorId    String?
+  parentId     String?
+  completedAt  DateTime?
+  archivedAt   DateTime?
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
+  /// Generated column (see migration); query with $queryRaw only.
+  searchVector Unsupported("tsvector")? @default(dbgenerated())
+
+  workspace  Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project    Project?       @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  column     BoardColumn?   @relation(fields: [columnId], references: [id], onDelete: SetNull)
+  creator    User?          @relation("TaskCreator", fields: [creatorId], references: [id], onDelete: SetNull)
+  parent     Task?          @relation("TaskSubtasks", fields: [parentId], references: [id], onDelete: Cascade)
+  subtasks   Task[]         @relation("TaskSubtasks")
+  assignees  TaskAssignee[]
+  labels     TaskLabel[]
+  comments   TaskComment[]
+  activities TaskActivity[]
+  files      FileObject[]
+
+  @@unique([workspaceId, number])
+  @@index([projectId, columnId, position])
+  @@index([workspaceId, completedAt])
+  @@index([workspaceId, dueAt])
+  @@index([parentId])
+  @@index([searchVector], type: Gin)
+}
+
+model TaskAssignee {
+  taskId     String
+  userId     String
+  assignedAt DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, userId])
+  @@index([userId])
+}
+
+model Label {
+  id          String    @id @default(cuid())
+  workspaceId String
+  name        String
+  tone        LabelTone @default(NEUTRAL)
+  createdAt   DateTime  @default(now())
+
+  workspace Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  tasks     TaskLabel[]
+
+  @@unique([workspaceId, name])
+}
+
+model TaskLabel {
+  taskId  String
+  labelId String
+
+  task  Task  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  label Label @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, labelId])
+  @@index([labelId])
+}
+
+model TaskComment {
+  id        String    @id @default(cuid())
+  taskId    String
+  authorId  String?
+  body      String
+  editedAt  DateTime?
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  task   Task  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author User? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([taskId, createdAt])
+}
+
+model TaskActivity {
+  id        String   @id @default(cuid())
+  taskId    String
+  actorId   String?
+  kind      String
+  data      Json?
+  createdAt DateTime @default(now())
+
+  task  Task  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([taskId, createdAt])
+}
+
+// ───────────────────────────── Chat ─────────────────────────────
+
+model Channel {
+  id            String      @id @default(cuid())
+  workspaceId   String
+  name          String
+  slug          String
+  topic         String?
+  kind          ChannelKind @default(PUBLIC)
+  /// Default channels are joined automatically by new members.
+  isDefault     Boolean     @default(false)
+  archivedAt    DateTime?
+  createdById   String?
+  /// For DIRECT channels: "<workspaceId>:<sorted user ids joined by ':'>".
+  dmKey         String?     @unique
+  lastMessageAt DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  workspace Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User?           @relation("ChannelCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  members   ChannelMember[]
+  messages  Message[]
+  jobs      ScheduledJob[]
+
+  @@unique([workspaceId, slug])
+  @@index([workspaceId, kind])
+}
+
+model ChannelMember {
+  channelId  String
+  userId     String
+  lastReadAt DateTime?
+  notify     NotifyLevel @default(ALL)
+  joinedAt   DateTime    @default(now())
+
+  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([channelId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id           String                   @id @default(cuid())
+  workspaceId  String
+  channelId    String
+  authorId     String?
+  authorKind   MessageAuthorKind        @default(USER)
+  body         String
+  /// Thread root; replies point at it.
+  parentId     String?
+  replyCount   Int                      @default(0)
+  lastReplyAt  DateTime?
+  editedAt     DateTime?
+  deletedAt    DateTime?
+  pinnedAt     DateTime?
+  pinnedById   String?
+  createdAt    DateTime                 @default(now())
+  /// Generated column (see migration); query with $queryRaw only.
+  searchVector Unsupported("tsvector")? @default(dbgenerated())
+
+  workspace   Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  channel     Channel             @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  author      User?               @relation("MessageAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  pinnedBy    User?               @relation("MessagePinnedBy", fields: [pinnedById], references: [id], onDelete: SetNull)
+  parent      Message?            @relation("MessageThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies     Message[]           @relation("MessageThread")
+  reactions   MessageReaction[]
+  attachments MessageAttachment[]
+
+  @@index([channelId, createdAt])
+  @@index([parentId, createdAt])
+  @@index([workspaceId, createdAt])
+  @@index([searchVector], type: Gin)
+}
+
+model MessageReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+}
+
+model MessageAttachment {
+  messageId String
+  fileId    String
+
+  message Message    @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  file    FileObject @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@id([messageId, fileId])
+  @@index([fileId])
+}
+
+// ─────────────────────────── Knowledge ───────────────────────────
+
+model Doc {
+  id           String                   @id @default(cuid())
+  workspaceId  String
+  parentId     String?
+  title        String
+  /// Editor JSON (TipTap). `contentHtml` is the sanitised render, `contentText` the plain text.
+  content      Json?
+  contentHtml  String                   @default("")
+  contentText  String                   @default("")
+  position     Float                    @default(0)
+  createdById  String?
+  updatedById  String?
+  archivedAt   DateTime?
+  visibility   DocVisibility            @default(WORKSPACE)
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
+  /// Generated column (see migration); query with $queryRaw only.
+  searchVector Unsupported("tsvector")? @default(dbgenerated())
+
+  workspace Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parent    Doc?          @relation("DocTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Doc[]         @relation("DocTree")
+  createdBy User?         @relation("DocCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User?         @relation("DocUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  revisions DocRevision[]
+  files     FileObject[]
+
+  @@index([workspaceId, parentId, position])
+  @@index([searchVector], type: Gin)
+}
+
+model DocRevision {
+  id          String   @id @default(cuid())
+  docId       String
+  title       String
+  contentHtml String
+  authorId    String?
+  createdAt   DateTime @default(now())
+
+  doc    Doc   @relation(fields: [docId], references: [id], onDelete: Cascade)
+  author User? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([docId, createdAt])
+}
+
+/// A private object in S3-compatible storage (lib/storage). Always served
+/// through /api/files/[id] after a membership check.
+model FileObject {
+  id           String    @id @default(cuid())
+  workspaceId  String
+  storageKey   String    @unique
+  filename     String
+  contentType  String
+  size         Int
+  checksum     String?
+  uploadedById String?
+  folder       String    @default("/")
+  docId        String?
+  taskId       String?
+  deletedAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  workspace          Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  uploadedBy         User?               @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  doc                Doc?                @relation(fields: [docId], references: [id], onDelete: SetNull)
+  task               Task?               @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  messageAttachments MessageAttachment[]
+  ledgerReceipts     LedgerEntry[]
+  blogCovers         BlogPost[]
+
+  @@index([workspaceId, folder])
+  @@index([docId])
+  @@index([taskId])
+}
+
+// ─────────────────────────── Community ───────────────────────────
+
+model Announcement {
+  id          String    @id @default(cuid())
+  workspaceId String
+  title       String
+  body        String
+  authorId    String?
+  pinned      Boolean   @default(false)
+  /// Null while a draft.
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  author    User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, publishedAt])
+}
+
+model CommunityEvent {
+  id          String             @id @default(cuid())
+  workspaceId String
+  title       String
+  description String?
+  location    String?
+  startsAt    DateTime
+  endsAt      DateTime?
+  kind        CommunityEventKind @default(OTHER)
+  createdById String?
+  cancelledAt DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  workspace Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User?           @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  attendees EventAttendee[]
+
+  @@index([workspaceId, startsAt])
+}
+
+model EventAttendee {
+  eventId     String
+  userId      String
+  status      AttendanceStatus @default(GOING)
+  respondedAt DateTime         @default(now())
+
+  event CommunityEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, userId])
+  @@index([userId])
+}
+
+model Shoutout {
+  id          String   @id @default(cuid())
+  workspaceId String
+  fromId      String
+  toId        String
+  message     String
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  from      User      @relation("ShoutoutFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to        User      @relation("ShoutoutTo", fields: [toId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+  @@index([toId])
+}
+
+// ────────────────────────── Operations ──────────────────────────
+
+model FinanceCategory {
+  id          String     @id @default(cuid())
+  workspaceId String
+  name        String
+  kind        LedgerKind
+  archivedAt  DateTime?
+  createdAt   DateTime   @default(now())
+
+  workspace Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  entries   LedgerEntry[]
+
+  @@unique([workspaceId, kind, name])
+}
+
+/// Money is stored in minor units (paise for INR) as integers.
+model LedgerEntry {
+  id            String     @id @default(cuid())
+  workspaceId   String
+  kind          LedgerKind
+  amountMinor   Int
+  currency      String
+  categoryId    String?
+  description   String
+  counterparty  String?
+  occurredOn    DateTime   @db.Date
+  receiptFileId String?
+  createdById   String?
+  voidedAt      DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  category    FinanceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  receiptFile FileObject?      @relation(fields: [receiptFileId], references: [id], onDelete: SetNull)
+  createdBy   User?            @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, occurredOn])
+  @@index([categoryId])
+}
+
+model Invoice {
+  id          String        @id @default(cuid())
+  workspaceId String
+  /// Display number, unique per workspace (WorkspaceCounter "invoice").
+  number      String
+  clientName  String
+  clientEmail String?
+  status      InvoiceStatus @default(DRAFT)
+  issuedOn    DateTime      @db.Date
+  dueOn       DateTime?     @db.Date
+  currency    String
+  /// [{ description, quantity, unitMinor }]
+  items       Json
+  totalMinor  Int
+  notes       String?
+  paidAt      DateTime?
+  createdById String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@unique([workspaceId, number])
+  @@index([workspaceId, status])
+}
+
+model BlogPost {
+  id             String         @id @default(cuid())
+  workspaceId    String
+  slug           String
+  title          String
+  excerpt        String?
+  /// Sanitised HTML.
+  contentHtml    String         @default("")
+  status         BlogPostStatus @default(DRAFT)
+  publishedAt    DateTime?
+  authorId       String?
+  seoTitle       String?
+  seoDescription String?
+  coverFileId    String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  workspace Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  author    User?       @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  coverFile FileObject? @relation(fields: [coverFileId], references: [id], onDelete: SetNull)
+
+  @@unique([workspaceId, slug])
+  @@index([workspaceId, status, publishedAt])
+}
+
+// ─────────────────────────── Assistant ───────────────────────────
+
+model AssistantConversation {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  title       String   @default("New conversation")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  AssistantMessage[]
+
+  @@index([workspaceId, userId, updatedAt])
+}
+
+model AssistantMessage {
+  id             String        @id @default(cuid())
+  conversationId String
+  role           AssistantRole
+  /// Anthropic content blocks (text, tool_use, tool_result).
+  content        Json
+  tokensIn       Int?
+  tokensOut      Int?
+  createdAt      DateTime      @default(now())
+
+  conversation AssistantConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}
+
+model AssistantMemory {
+  id          String   @id @default(cuid())
+  workspaceId String
+  content     String
+  tags        String[] @default([])
+  createdById String?
+  /// "manual", "assistant" or "job".
+  source      String   @default("manual")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+}
+
+model AssistantSkill {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  description String
+  body        String
+  enabled     Boolean  @default(true)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@unique([workspaceId, name])
+}
+
+model ScheduledJob {
+  id          String    @id @default(cuid())
+  workspaceId String
+  name        String
+  /// Five-field cron expression evaluated in `timezone`.
+  cron        String
+  timezone    String    @default("Asia/Kolkata")
+  prompt      String
+  /// Channel to post the result into; null keeps it in the assistant log.
+  channelId   String?
+  enabled     Boolean   @default(true)
+  lastRunAt   DateTime?
+  nextRunAt   DateTime?
+  lastStatus  String?
+  createdById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  channel   Channel?  @relation(fields: [channelId], references: [id], onDelete: SetNull)
+  createdBy User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([enabled, nextRunAt])
+  @@index([workspaceId])
+}
+
+// ────────────────────────── Integrations ──────────────────────────
+
+/// A workspace-level connection to Google, a GitHub App installation or the
+/// Telegram bot. OAuth tokens are AES-GCM encrypted with
+/// INTEGRATION_ENCRYPTION_KEY (lib/integrationSecrets.ts) and never leave the server.
+model IntegrationConnection {
+  id              String              @id @default(cuid())
+  workspaceId     String
+  provider        IntegrationProvider
+  accountLabel    String
+  /// Provider-side id: Google account sub, GitHub installation id, Telegram bot id.
+  externalId      String
+  scopes          String[]            @default([])
+  accessTokenEnc  String?
+  refreshTokenEnc String?
+  expiresAt       DateTime?
+  metadata        Json?
+  connectedById   String?
+  status          IntegrationStatus   @default(ACTIVE)
+  lastSyncedAt    DateTime?
+  lastError       String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  connectedBy User?        @relation(fields: [connectedById], references: [id], onDelete: SetNull)
+  githubRepos GithubRepo[]
+  seoSites    SeoSite[]
+
+  @@unique([workspaceId, provider, externalId])
+  @@index([workspaceId, provider])
+}
+
+/// Single-use OAuth CSRF state. Only a SHA-256 of the state value is stored.
+model OAuthState {
+  id           String              @id @default(cuid())
+  stateHash    String              @unique
+  workspaceId  String
+  userId       String
+  provider     IntegrationProvider
+  redirectPath String              @default("/")
+  expiresAt    DateTime
+  createdAt    DateTime            @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+}
+
+model GithubRepo {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  connectionId    String
+  /// "owner/name".
+  fullName        String
+  installationId  String
+  defaultBranch   String   @default("main")
+  private         Boolean  @default(false)
+  linkedProjectId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  workspace     Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  connection    IntegrationConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  linkedProject Project?              @relation(fields: [linkedProjectId], references: [id], onDelete: SetNull)
+  events        GithubEvent[]
+
+  @@unique([workspaceId, fullName])
+  @@index([connectionId])
+  @@index([linkedProjectId])
+}
+
+/// Webhook activity feed. `deliveryId` (X-GitHub-Delivery) makes redelivery idempotent.
+model GithubEvent {
+  id          String   @id @default(cuid())
+  workspaceId String
+  repoId      String?
+  deliveryId  String   @unique
+  kind        String
+  action      String?
+  title       String
+  url         String?
+  actorLogin  String?
+  payload     Json?
+  receivedAt  DateTime @default(now())
+
+  workspace Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  repo      GithubRepo? @relation(fields: [repoId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, receivedAt])
+  @@index([repoId, receivedAt])
+}
+
+/// Links a member to their Telegram account. A pending link carries a hashed
+/// one-time code the member sends to the bot.
+model TelegramLink {
+  id                String    @id @default(cuid())
+  userId            String
+  workspaceId       String
+  telegramUserId    String?
+  username          String?
+  linkedAt          DateTime?
+  linkCodeHash      String?   @unique
+  linkCodeExpiresAt DateTime?
+  createdAt         DateTime  @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@unique([workspaceId, telegramUserId])
+}
+
+// ───────────────────────────── SEO ─────────────────────────────
+
+model SeoSite {
+  id           String    @id @default(cuid())
+  workspaceId  String
+  /// Search Console property, e.g. "sc-domain:example.org" or "https://example.org/".
+  siteUrl      String
+  connectionId String?
+  verified     Boolean   @default(false)
+  lastSyncedAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  workspace  Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  connection IntegrationConnection? @relation(fields: [connectionId], references: [id], onDelete: SetNull)
+  metrics    SeoMetricDaily[]
+  audits     SeoAudit[]
+
+  @@unique([workspaceId, siteUrl])
+}
+
+/// Daily Search Console rows. `query`/`page` are empty strings for site totals.
+model SeoMetricDaily {
+  id          String   @id @default(cuid())
+  siteId      String
+  date        DateTime @db.Date
+  query       String   @default("")
+  page        String   @default("")
+  clicks      Int      @default(0)
+  impressions Int      @default(0)
+  ctr         Float    @default(0)
+  position    Float    @default(0)
+
+  site SeoSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([siteId, date, query, page])
+  @@index([siteId, date])
+}
+
+model SeoAudit {
+  id          String   @id @default(cuid())
+  siteId      String
+  url         String
+  /// "queued", "running", "done" or "failed".
+  status      String   @default("queued")
+  findings    Json?
+  score       Int?
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  site      SeoSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  createdBy User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([siteId, createdAt])
+}
+
+// ─────────────────────────── Boardroom ───────────────────────────
+
+model BoardroomSession {
+  id          String          @id @default(cuid())
+  workspaceId String
+  title       String
+  question    String
+  status      BoardroomStatus @default(DRAFT)
+  rounds      Int             @default(2)
+  createdById String?
+  summary     String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  workspace Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User?           @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  seats     BoardroomSeat[]
+  turns     BoardroomTurn[]
+
+  @@index([workspaceId, createdAt])
+}
+
+model BoardroomSeat {
+  id        String   @id @default(cuid())
+  sessionId String
+  name      String
+  persona   String
+  model     String?
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  session BoardroomSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  turns   BoardroomTurn[]
+
+  @@index([sessionId, position])
+}
+
+model BoardroomTurn {
+  id        String            @id @default(cuid())
+  sessionId String
+  seatId    String?
+  round     Int
+  role      BoardroomTurnRole @default(SEAT)
+  content   String
+  createdAt DateTime          @default(now())
+
+  session BoardroomSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  seat    BoardroomSeat?   @relation(fields: [seatId], references: [id], onDelete: SetNull)
+
+  @@index([sessionId, round, createdAt])
+}
