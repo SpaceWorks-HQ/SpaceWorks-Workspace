@@ -1,0 +1,36 @@
+# Keep secrets, generated output and developer-only files out of the Docker
+# build context. Runtime secrets come from the deployment platform.
+.env
+.env.*
+!.env.example
+.git
+.github
+.next
+node_modules
+backups/
+coverage
+playwright-report
+test-results
+screenshots
+tests
+playwright.config.ts
+*.log
+*.tsbuildinfo
+.DS_Store
+.data
+# Local agent and editor state (agent worktrees are full repository copies).
+.claude
+.cursor
+.impeccable
+.idea
+.vscode
+# Deployment tooling that is never part of the application image.
+deploy/
+charts/
+.do/
+render.yaml
+compose.*.yml
+docker-compose.yml
+install.sh
+local.sh
+.wrangler
