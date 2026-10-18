@@ -2716,7 +2716,7 @@ CREATE UNIQUE INDEX "ExternalIdentityLink_userId_connectionId_key" ON "ExternalI
 CREATE UNIQUE INDEX "LinkCode_codeHash_key" ON "LinkCode"("codeHash");
 
 -- CreateIndex
-CREATE INDEX "LinkCode_userId_expiresAt_idx" ON "LinkCode"("userId", "expiresAt");
+CREATE INDEX "LinkCode_workspaceId_userId_expiresAt_idx" ON "LinkCode"("workspaceId", "userId", "expiresAt");
 
 -- CreateIndex
 CREATE INDEX "LinkCode_expiresAt_idx" ON "LinkCode"("expiresAt");
