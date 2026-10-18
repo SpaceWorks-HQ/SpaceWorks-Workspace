@@ -31,7 +31,7 @@ export function MfaCard({ enabled, remainingCodes }: { enabled: boolean; remaini
     return (
       <div className="flex flex-col gap-4">
         <Callout tone="success" title="Two-step verification is on">Save these recovery codes somewhere safe. Each works once if you lose your phone. They won&apos;t be shown again.</Callout>
-        <ul className="grid grid-cols-2 gap-2 rounded-lg border border-line bg-surface p-4 text-body-ui tabular-nums text-ink sm:grid-cols-5">
+        <ul className="grid grid-cols-1 gap-2 whitespace-nowrap rounded-lg border border-line bg-surface p-4 text-body-ui tabular-nums text-ink min-[400px]:grid-cols-2">
           {step.codes.map((value) => <li key={value}>{value}</li>)}
         </ul>
         <Button variant="primary" className="self-start" onClick={() => { reset(); router.refresh(); }}>I&apos;ve saved them</Button>

@@ -10,7 +10,7 @@ import { cn } from "@/lib/cn";
 import type { ShellData } from "@/lib/appShell";
 import { activeNavKey } from "@/lib/nav";
 import { LAST_WORKSPACE_COOKIE } from "@/lib/workspaceCookie";
-import { SpaceWorksWorkspaceLogo } from "@/components/brand/SpaceWorksLogo";
+import { SpaceWorksLogo } from "@/components/brand/SpaceWorksLogo";
 import { useAppColorMode } from "@/components/providers";
 import { useRealtime } from "@/components/realtime/useRealtime";
 import { Avatar } from "@/components/ui/display";
@@ -125,16 +125,16 @@ function NotificationsLink({ data, onNavigate }: { data: ShellData; onNavigate?:
   );
 }
 
-function SidebarContents({ data, onNavigate }: { data: ShellData; onNavigate?: () => void }) {
+function SidebarContents({ data, onNavigate, headerAction }: { data: ShellData; onNavigate?: () => void; headerAction?: ReactNode }) {
   const pathname = usePathname() ?? "";
   const active = activeNavKey(data.nav, pathname);
   return (
     <div className="flex h-full flex-col gap-4 px-3 py-3.5">
       <div className="flex items-center justify-between gap-2 pl-2 pt-1">
-        <Link href={`/w/${data.workspace.slug}`} onClick={onNavigate} aria-label="Workspace home" className="inline-flex rounded-md">
-          <SpaceWorksWorkspaceLogo height={28} label={null} />
+        <Link href={`/w/${data.workspace.slug}`} onClick={onNavigate} aria-label="Space Works Workspace home" className="inline-flex rounded-md">
+          <SpaceWorksLogo variant="lockup-horizontal" height={29} label={null} />
         </Link>
-        <NotificationsLink data={data} onNavigate={onNavigate} />
+        {headerAction ?? <NotificationsLink data={data} onNavigate={onNavigate} />}
       </div>
       <WorkspaceSwitcher data={data} onNavigate={onNavigate} />
       <nav aria-label="Workspace" className="flex flex-col gap-3">
@@ -183,7 +183,7 @@ export function AppShell({ data, children }: { data: ShellData; children: ReactN
 
       <div className="sticky top-0 z-40 flex h-14 items-center justify-between gap-2 border-b border-line bg-canvas px-4 md:hidden">
         <Link href={`/w/${data.workspace.slug}`} aria-label="Workspace home" className="inline-flex shrink-0 items-center rounded-md">
-          <SpaceWorksWorkspaceLogo height={26} label={null} />
+          <SpaceWorksLogo variant="lockup-horizontal" height={29} label={null} />
         </Link>
         <div className="flex items-center gap-1">
           <NotificationsLink data={data} />
@@ -198,12 +198,17 @@ export function AppShell({ data, children }: { data: ShellData; children: ReactN
               <DialogPrimitive.Content className="fixed inset-y-0 left-0 z-50 w-[min(288px,86vw)] overflow-y-auto border-r border-line bg-sidebar shadow-float focus:outline-none">
                 <DialogPrimitive.Title className="sr-only">Navigation</DialogPrimitive.Title>
                 <DialogPrimitive.Description className="sr-only">Workspace navigation</DialogPrimitive.Description>
-                <DialogPrimitive.Close asChild>
-                  <IconButton label="Close navigation menu" size="sm" className="absolute right-3 top-16 z-10">
-                    <X />
-                  </IconButton>
-                </DialogPrimitive.Close>
-                <SidebarContents data={data} onNavigate={() => setMenuOpen(false)} />
+                <SidebarContents
+                  data={data}
+                  onNavigate={() => setMenuOpen(false)}
+                  headerAction={
+                    <DialogPrimitive.Close asChild>
+                      <IconButton label="Close navigation menu" variant="quiet">
+                        <X />
+                      </IconButton>
+                    </DialogPrimitive.Close>
+                  }
+                />
               </DialogPrimitive.Content>
             </DialogPrimitive.Portal>
           </DialogPrimitive.Root>

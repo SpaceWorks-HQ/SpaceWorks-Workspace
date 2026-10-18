@@ -40,7 +40,7 @@ export default async function WorkspaceHome({ params }: PageProps<"/w/[workspace
         )}
       </section>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader title="My tasks" action={<Link href={`${base}/my-tasks`} className="text-sm font-semibold text-ink underline-offset-4 hover:underline">See all</Link>} />
           {data.myTasks.length === 0 ? (
