@@ -16,6 +16,7 @@ import "server-only";
  */
 export { dispatch, sendTest, NOTIFY_DELIVER_KIND } from "@/lib/notify/dispatch";
 export { processNotifyDelivery } from "@/lib/notify/deliver";
+export { getScopedDestinationIds, listPickableDestinations, setScopedDestinations } from "@/lib/notify/scopedRules";
 export { EVENT_CATALOG, EVENT_TYPES, NOTIFY_CATEGORIES, eventSpec, eventTypesByCategory, isEventType } from "@/lib/notify/events";
 export type { EventPayloads, EventSpec, EventType, NotifyCategory, Severity } from "@/lib/notify/events";
 export type { AnyNotificationEvent, DispatchOptions, DispatchResult, NotificationEvent, NotifyScope, RenderedMessage } from "@/lib/notify/types";
