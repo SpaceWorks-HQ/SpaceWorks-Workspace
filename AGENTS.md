@@ -46,7 +46,9 @@ Tenancy is strict: `Workspace` is the tenant boundary.
 | `components/<area>/` | Feature components (settings, account, admin, auth, workspace) |
 | `lib/` | Business rules and services (see "Shared services") |
 | `prisma/` | `schema.prisma` (complete for every phase) and migrations |
-| `scripts/` | Prisma wrapper, seed, storage init, backups, production preflight |
+| `scripts/` | Prisma wrapper, seed, storage init, backups, production preflight, scheduler, VPS install/update/backup/restore |
+| `Dockerfile`, `compose.production.yml`, `docker/vps/`, `install.sh` | Container image and the single-VPS stack (see `docs/DEPLOYMENT_VPS.md`) |
+| `charts/`, `render.yaml`, `.do/`, `deploy/cloudflare-cron/` | Kubernetes, Render, DigitalOcean and the cron Worker (`docs/DEPLOYMENT_*.md`) |
 | `tests/unit`, `tests/integration`, `tests/e2e` | Vitest unit, PostgreSQL integration (`*.db.test.ts`), Playwright |
 | `docs/` | `DESIGN.md` (brand and UI), `ARCHITECTURE.md` (services and flows) |
 
