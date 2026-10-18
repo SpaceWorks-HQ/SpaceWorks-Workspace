@@ -1,0 +1,50 @@
+import { describe, expect, it } from "vitest";
+import { activeNavKey, NAV_GROUPS, navForMember } from "@/lib/nav";
+
+const keys = (groups: ReturnType<typeof navForMember>) => groups.flatMap((group) => group.items.map((item) => item.key));
+const workspace = { financeVisibleToMembers: false, blogEnabled: true };
+
+describe("navigation by role", () => {
+  it("shows every area to owners", () => {
+    const all = NAV_GROUPS.flatMap((group) => group.items.map((item) => item.key));
+    expect(keys(navForMember("kochi", { role: "OWNER", workspace }))).toEqual(all);
+  });
+
+  it("hides settings and operations management from members", () => {
+    const visible = keys(navForMember("kochi", { role: "MEMBER", workspace }));
+    expect(visible).toContain("projects");
+    expect(visible).toContain("assistant");
+    expect(visible).not.toContain("settings");
+    expect(visible).not.toContain("integrations");
+    expect(visible).not.toContain("blog");
+    expect(visible).not.toContain("finance");
+  });
+
+  it("shows finance to members only when the workspace allows it", () => {
+    expect(keys(navForMember("kochi", { role: "MEMBER", workspace: { ...workspace, financeVisibleToMembers: true } }))).toContain("finance");
+    expect(keys(navForMember("kochi", { role: "GUEST", workspace: { ...workspace, financeVisibleToMembers: true } }))).not.toContain("finance");
+  });
+
+  it("gives guests read areas only", () => {
+    const visible = keys(navForMember("kochi", { role: "GUEST", workspace }));
+    expect(visible).toEqual(expect.arrayContaining(["home", "announcements", "projects", "docs", "channels"]));
+    expect(visible).not.toContain("my-tasks");
+    expect(visible).not.toContain("dms");
+    expect(visible).not.toContain("assistant");
+  });
+
+  it("drops empty groups and builds hrefs under /w/<slug>", () => {
+    const groups = navForMember("tinker space", { role: "GUEST", workspace });
+    expect(groups.find((group) => group.key === "settings")).toBeUndefined();
+    expect(groups[0]!.items[0]!.href).toBe("/w/tinker%20space");
+  });
+
+  it("marks the most specific item active", () => {
+    const groups = navForMember("kochi", { role: "OWNER", workspace });
+    expect(activeNavKey(groups, "/w/kochi")).toBe("home");
+    expect(activeNavKey(groups, "/w/kochi/projects/BOT")).toBe("projects");
+    expect(activeNavKey(groups, "/w/kochi/settings/integrations")).toBe("integrations");
+    expect(activeNavKey(groups, "/w/kochi/settings/members")).toBe("settings");
+    expect(activeNavKey(groups, "/w/kochi/dm/abc")).toBe("dms");
+  });
+});

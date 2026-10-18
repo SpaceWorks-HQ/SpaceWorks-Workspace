@@ -1,0 +1,55 @@
+# Local development services for Space Works Workspace.
+#
+#   docker compose up -d
+#
+# PostgreSQL 16, Redis 7, Silo (S3-compatible private storage) and Mailpit
+# (catches outgoing email at http://127.0.0.1:8025). Ports match .env.example.
+# Then: `npm run storage:init`, `npm run db:migrate`, `npm run dev`.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: sww
+      POSTGRES_PASSWORD: sww_dev_password
+      POSTGRES_DB: sww_dev
+    ports:
+      - "127.0.0.1:5440:5432"
+    volumes:
+      - sww_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sww -d sww_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:6395:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  silo:
+    image: pgsty/silo:RELEASE.2026-09-16T00-00-00Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: swwdev
+      MINIO_ROOT_PASSWORD: sww_dev_storage_pw
+    ports:
+      - "127.0.0.1:9010:9000"
+      - "127.0.0.1:9011:9001"
+    volumes:
+      - sww_silodata:/data
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+
+volumes:
+  sww_pgdata:
+  sww_silodata:

@@ -1,0 +1,57 @@
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { pageSecurity } from "@/lib/pageSecurity";
+import { checkRateLimit } from "@/lib/rateLimit";
+
+function tooMany(apiV1 = false) {
+  return NextResponse.json(
+    apiV1 ? { error: { code: "RATE_LIMITED", message: "Too many requests. Try again later." } } : { error: "Too many requests. Try again later." },
+    { status: 429, headers: { "Retry-After": "60", "Cache-Control": "no-store" } },
+  );
+}
+
+/**
+ * Request gate: distributed rate limits for Server Actions, API routes and
+ * Auth.js mutations, plus CSP nonce and security headers on pages.
+ * Authentication itself happens in pages/layouts/route handlers, never here.
+ */
+export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Server Actions post to page URLs. One ceiling before the per-action limits.
+  if (request.method === "POST" && request.headers.has("next-action")) {
+    if (!(await checkRateLimit(request, "action"))) return tooMany();
+  }
+
+  // Liveness must not depend on Redis; everything else under /api is limited.
+  // The SSE stream has its own per-user limit inside the route.
+  if (pathname.startsWith("/api") && pathname !== "/api/health" && !pathname.startsWith("/api/realtime/")) {
+    if (!(await checkRateLimit(request, "global"))) return tooMany(pathname.startsWith("/api/v1"));
+  }
+
+  // Auth.js polls session/CSRF with GETs; only mutating auth requests use the strict bucket.
+  if (pathname.startsWith("/api/auth") && request.method !== "GET") {
+    if (!(await checkRateLimit(request, "auth"))) return tooMany();
+  }
+
+  if (pathname.startsWith("/api")) {
+    const response = NextResponse.next({ request: { headers: new Headers(request.headers) } });
+    response.headers.set("X-Frame-Options", "DENY");
+    return response;
+  }
+
+  return pageSecurity(request);
+}
+
+export const config = {
+  matcher: [
+    "/api/:path*",
+    {
+      source: "/((?!api|_next/static|_next/image|favicon.ico|brand/).*)",
+      missing: [
+        { type: "header", key: "next-router-prefetch" },
+        { type: "header", key: "purpose", value: "prefetch" },
+      ],
+    },
+  ],
+};
