@@ -24,7 +24,10 @@
     "db:backup": "node --env-file-if-exists=.env scripts/db-backup.mjs",
     "db:restore": "node --env-file-if-exists=.env scripts/db-restore.mjs",
     "storage:init": "node --env-file-if-exists=.env scripts/storage-init.mjs",
-    "production:check": "node scripts/check-production-env.mjs"
+    "production:check": "node scripts/check-production-env.mjs",
+    "docker:dev": "docker compose up -d --wait",
+    "docker:down": "docker compose stop",
+    "docker:build": "docker build --tag spaceworks-workspace:local ."
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",
