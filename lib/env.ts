@@ -45,6 +45,7 @@ export const envSchema = z.object({
   NEXT_SERVER_ACTIONS_ENCRYPTION_KEY: optionalString(serverActionsKey),
   MFA_ENCRYPTION_KEY: optionalString(aes256Key),
   INTEGRATION_ENCRYPTION_KEY: optionalString(aes256Key),
+  VAULT_MASTER_KEY: optionalString(aes256Key),
   S3_BUCKET: optionalString(z.string().min(1)),
   S3_REGION: optionalString(z.string().min(1)),
   S3_ENDPOINT: optionalString(z.string().url()),
@@ -70,6 +71,12 @@ export const envSchema = z.object({
   TRUSTED_PROXY_HOPS: optionalString(z.string().regex(/^[1-9]\d?$/, "must be a positive whole number")),
   SUPER_ADMIN_EMAIL: optionalString(z.string().email()),
   OUTBOX_RETENTION_DAYS: optionalString(z.coerce.number().int().positive().max(365)),
+  // Messaging, notification routing and the Services monitor.
+  ALLOW_PRIVATE_WEBHOOK_TARGETS: optionalString(z.enum(["true", "false"])),
+  NOTIFY_WORKER_CONCURRENCY: optionalString(z.coerce.number().int().min(1).max(100)),
+  MONITOR_WORKER_INPROCESS: optionalString(z.enum(["true", "false"])),
+  MONITOR_ALLOW_PRIVATE_TARGETS: optionalString(z.enum(["true", "false"])),
+  MONITOR_MAX_PER_WORKSPACE: optionalString(z.coerce.number().int().min(1).max(10_000)),
 });
 
 export type AppEnv = z.infer<typeof envSchema>;

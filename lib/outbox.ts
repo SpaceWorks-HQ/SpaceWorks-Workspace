@@ -21,6 +21,9 @@ import {
  *   `enqueueEmail` without touching this file. Never put bearer links in it.
  * - "workspace-invite", "password-reset", "email-verification": carry a
  *   bearer URL, so the row is deleted after delivery or terminal failure.
+ * - "notify.deliver": one notification delivery ({ deliveryId }) queued by
+ *   `dispatch()` (lib/notify); the adapter sends it and the delivery row
+ *   tracks attempts, so this row only mirrors the outcome.
  */
 
 type EmailPayload = { to: string; subject: string; html: string; text: string };
@@ -118,6 +121,21 @@ function retryDelayMs(kind: string, attempts: number) {
 
 const MAX_ATTEMPTS = 8;
 
+/** Must equal NOTIFY_DELIVER_KIND in lib/notify/dispatch.ts (kept literal to avoid an import cycle). */
+const NOTIFY_JOB_KIND = "notify.deliver";
+
+/** Run one notification delivery; never throws (a crash becomes a retry). */
+async function runNotifyJob(payload: Prisma.JsonValue): Promise<{ status: "done" } | { status: "retry"; delayMs: number; error: string } | { status: "failed"; error: string }> {
+  const deliveryId = record(payload)?.deliveryId;
+  if (typeof deliveryId !== "string" || deliveryId.length > 64) return { status: "failed", error: "Malformed notification job." };
+  try {
+    const { processNotifyDelivery } = await import("@/lib/notify/deliver");
+    return await processNotifyDelivery(deliveryId);
+  } catch (error) {
+    return { status: "retry", delayMs: 60_000, error: describeOperationalError(error) };
+  }
+}
+
 /** Deliver a small batch. Safe to run concurrently: each row is claimed with a conditional update. */
 export async function deliverOutboxBatch(limit = 20) {
   // Return stale claims (worker died mid-send) to the queue first.
@@ -143,6 +161,24 @@ export async function deliverOutboxBatch(limit = 20) {
     if (claim.count !== 1) continue;
     const mine = { id: message.id, status: OutboxStatus.PROCESSING, lockedAt: claimTime };
     const isCapability = CAPABILITY_KINDS.has(message.kind);
+
+    if (message.kind === NOTIFY_JOB_KIND) {
+      const outcome = await runNotifyJob(message.payload);
+      if (outcome.status === "done") {
+        await prisma.outboxMessage.updateMany({ where: mine, data: { status: OutboxStatus.SENT, sentAt: new Date(), lockedAt: null, lastError: null } });
+        sent += 1;
+      } else {
+        await prisma.outboxMessage.updateMany({
+          where: mine,
+          data:
+            outcome.status === "retry"
+              ? { status: OutboxStatus.PENDING, availableAt: new Date(Date.now() + outcome.delayMs), lockedAt: null, lastError: outcome.error }
+              : { status: OutboxStatus.FAILED, lockedAt: null, lastError: outcome.error },
+        });
+        failed += 1;
+      }
+      continue;
+    }
 
     try {
       const rendered = renderOutboxMessage(message.kind, message.payload);

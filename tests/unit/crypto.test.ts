@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decodeAes256Key, decryptSecret, encryptSecret, randomToken, safeEqual, sha256Hex } from "@/lib/crypto";
+import { decodeAes256Key, decryptSecret, encryptSecret, openEnvelope, randomToken, safeEqual, sealEnvelope, sha256Hex, vaultMasterKey } from "@/lib/crypto";
 import { decryptMfaSecret, encryptMfaSecret, generateRecoveryCodes, hashRecoveryCode } from "@/lib/mfa";
 
 describe("configuration secret encryption", () => {
@@ -58,5 +58,39 @@ describe("token helpers", () => {
     const [code] = generateRecoveryCodes(1);
     expect(code).toMatch(/^[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}$/);
     expect(hashRecoveryCode(code!)).toBe(hashRecoveryCode(code!.replace(/-/g, "").toLowerCase()));
+  });
+});
+
+describe("platform extension secret purposes", () => {
+  it("keeps every new purpose apart from the others", () => {
+    const purposes = ["messaging-credentials", "notification-secrets", "cloud-credentials", "monitor-secrets", "member-emergency", "sso-secrets"] as const;
+    for (const purpose of purposes) {
+      const sealed = encryptSecret(purpose, `secret-for-${purpose}`);
+      expect(decryptSecret(purpose, sealed)).toBe(`secret-for-${purpose}`);
+      for (const other of purposes) if (other !== purpose) expect(() => decryptSecret(other, sealed)).toThrow();
+    }
+  });
+});
+
+describe("vault envelope encryption", () => {
+  const masterKey = Buffer.alloc(32, 7);
+
+  it("round-trips with a fresh data key per item", () => {
+    const a = sealEnvelope(masterKey, '{"password":"hunter2"}');
+    const b = sealEnvelope(masterKey, '{"password":"hunter2"}');
+    expect(a.dataKeyEnc).not.toEqual(b.dataKeyEnc);
+    expect(a.secretEnc).not.toContain("hunter2");
+    expect(openEnvelope(masterKey, a)).toBe('{"password":"hunter2"}');
+  });
+
+  it("cannot be opened with another master key", () => {
+    const sealed = sealEnvelope(masterKey, "wifi-password");
+    expect(() => openEnvelope(Buffer.alloc(32, 8), sealed)).toThrow();
+  });
+
+  it("requires a valid VAULT_MASTER_KEY", () => {
+    expect(() => vaultMasterKey("")).toThrow(/VAULT_MASTER_KEY/);
+    expect(() => vaultMasterKey("too-short")).toThrow(/VAULT_MASTER_KEY/);
+    expect(vaultMasterKey(Buffer.alloc(32, 9).toString("base64")).length).toBe(32);
   });
 });
