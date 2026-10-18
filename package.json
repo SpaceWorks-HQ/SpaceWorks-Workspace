@@ -18,7 +18,7 @@
     "db:migrate": "node --env-file-if-exists=.env scripts/prisma.mjs migrate dev",
     "db:deploy": "node --env-file-if-exists=.env scripts/prisma.mjs migrate deploy",
     "db:status": "node --env-file-if-exists=.env scripts/prisma.mjs migrate status",
-    "db:reset:test": "node scripts/reset-test-db.mjs",
+    "db:test:prepare": "node --env-file-if-exists=.env scripts/prepare-test-db.mjs",
     "db:studio": "node --env-file-if-exists=.env scripts/prisma.mjs studio",
     "db:seed:demo": "node --env-file-if-exists=.env scripts/seed-demo.mjs",
     "db:backup": "node --env-file-if-exists=.env scripts/db-backup.mjs",
