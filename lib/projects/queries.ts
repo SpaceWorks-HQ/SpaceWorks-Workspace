@@ -2,6 +2,7 @@ import "server-only";
 
 import type { ProjectStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { hiddenTeamIds } from "@/lib/teamAccess";
 import { visibleProjectWhere, type TaskActor } from "@/lib/tasks/access";
 import { activityText, HIDDEN_ACTIVITY_KINDS } from "@/lib/tasks/activityText";
 import { localDayNumber, localToInstant } from "@/lib/tasks/localDate";
@@ -116,4 +117,14 @@ export async function getProjectOverview(actor: TaskActor, project: { id: string
       createdAt: row.createdAt.toISOString(),
     })),
   };
+}
+
+/** Teams the actor may file a project under (not archived, not someone else's private team). */
+export async function listVisibleTeams(actor: TaskActor) {
+  const hidden = await hiddenTeamIds(actor.workspace.id, { userId: actor.user.id, role: actor.membership.role });
+  return prisma.team.findMany({
+    where: { workspaceId: actor.workspace.id, archivedAt: null, ...(hidden.length ? { id: { notIn: hidden } } : {}) },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true },
+  });
 }

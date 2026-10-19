@@ -619,7 +619,7 @@ export async function addDependency(actor: TaskActor, input: unknown): Promise<A
     return "ok" as const;
   });
   if (result === "exists") return actionError("Those tasks are already linked.");
-  if (result === "cycle") return actionError("That would create a loop: the other task already waits on this one.");
+  if (result === "cycle") return actionError("That would make the tasks wait on each other in a circle: the other task already waits on this one.");
   await publishTaskChange({ workspaceId: actor.workspace.id, project: task.project, taskIds: [task.id, other.id], type: "task.changed", actorId: actor.user.id });
   if (other.projectId && other.projectId !== task.projectId) await publishTaskChange({ workspaceId: actor.workspace.id, project: other.project, taskIds: [], type: "task.changed", actorId: actor.user.id });
   return { ok: true };

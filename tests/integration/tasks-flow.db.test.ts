@@ -175,8 +175,8 @@ describe.sequential("tasks: projects, board and task flow", () => {
     const z = ok(await createTask(member, { projectId, title: "Test drive", assigneeIds: [member2.user.id] }));
     ok(await addDependency(member, { taskId: y.id, reference: x.reference, direction: "blockedBy" })); // x blocks y
     ok(await addDependency(member, { taskId: y.id, reference: z.reference, direction: "blocks" })); // y blocks z
-    const loop = await addDependency(member, { taskId: x.id, reference: z.reference, direction: "blockedBy" }); // z blocks x → loop
-    expect(loop.ok).toBe(false);
+    const circular = await addDependency(member, { taskId: x.id, reference: z.reference, direction: "blockedBy" }); // z blocks x → circular
+    expect(circular.ok).toBe(false);
     expect((await addDependency(member, { taskId: x.id, reference: x.reference, direction: "blocks" })).ok).toBe(false);
     expect((await addDependency(member, { taskId: y.id, reference: x.reference, direction: "blockedBy" })).ok).toBe(false);
     expect((await getBoardData(member, "BOT"))!.tasks.find((t) => t.id === y.id)!.blocked).toBe(true);

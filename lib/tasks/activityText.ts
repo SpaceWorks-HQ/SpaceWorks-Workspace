@@ -9,6 +9,8 @@ import { PRIORITY_LABELS } from "@/lib/tasks/filters";
 type Data = Record<string, unknown> | null | undefined;
 
 const str = (value: unknown) => (typeof value === "string" ? value : "");
+/** "Every week on Mon" → "every week on Mon" (only the first letter). */
+const lowerFirst = (value: string) => value.charAt(0).toLowerCase() + value.slice(1);
 const list = (value: unknown) => (Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : []);
 
 function joinNames(names: string[]) {
@@ -25,7 +27,7 @@ export function activityText(kind: string, data: Data, context: { nameOf: (userI
     case "created":
       return "created this task";
     case "created_recurring":
-      return `was created by the repeat schedule${str(d.text) ? ` (${str(d.text).toLowerCase()})` : ""}`;
+      return `was created by the repeat schedule${str(d.text) ? ` (${lowerFirst(str(d.text))})` : ""}`;
     case "title":
       return `renamed this from “${str(d.from)}”`;
     case "description":
@@ -71,7 +73,7 @@ export function activityText(kind: string, data: Data, context: { nameOf: (userI
     case "attachment_removed":
       return `removed the attachment ${str(d.filename)}`;
     case "recurrence_set":
-      return `set this to repeat: ${str(d.text).toLowerCase()}`;
+      return `set this to repeat: ${lowerFirst(str(d.text))}`;
     case "recurrence_stopped":
       return "stopped repeating this task";
     case "recurrence_skipped":
