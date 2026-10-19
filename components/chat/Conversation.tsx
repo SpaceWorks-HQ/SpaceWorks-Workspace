@@ -200,14 +200,14 @@ export function Conversation({ info, initial, initialThreadId, highlightId }: { 
     const result = await loadMessagesAction(slug, { channelId: info.id });
     if (!result.ok) return;
     const latest = result.data!.messages;
-    setMessages((current) => {
-      const overlaps = latest.length === 0 || current.length === 0 || latest.some((m) => current.some((c) => c.id === m.id)) || !result.data!.hasOlder;
-      if (!overlaps) {
-        setHasOlder(true);
-        return latest;
-      }
-      return mergeMessages(current, latest);
-    });
+    // More than a page arrived while away: start again from the latest page.
+    const gap = latest.length > 0 && loadedIds.current.size > 0 && result.data!.hasOlder && !latest.some((m) => loadedIds.current.has(m.id));
+    if (gap) {
+      setHasOlder(true);
+      setMessages(latest);
+    } else {
+      setMessages((current) => mergeMessages(current, latest));
+    }
     scheduleRead();
   }, [slug, info.id, scheduleRead]);
 
