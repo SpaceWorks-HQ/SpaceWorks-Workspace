@@ -1,13 +1,48 @@
 import "server-only";
+import type { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/db";
+import { dispatch } from "@/lib/notify/dispatch";
+import type { AnyNotificationEvent } from "@/lib/notify/types";
+import { eventAlreadySent, memberIdsAtLeast, tryTransactionLock } from "@/lib/approvals/context";
 
-/**
- * Periodic work for the ops-money build: renewal.due, asset reminders, vault.rotation_due, approval reminders, catalogue.gap, budget thresholds.
- *
- * Called about once a minute by every app replica (outbox worker tick and
- * POST /api/internal/outbox), so it must be idempotent: claim rows with a
- * conditional update or rely on unique keys, and keep each run short.
- * Placeholder until the ops-money build replaces this function body.
- */
-export async function run(now: Date): Promise<void> {
-  void now;
+async function once(workspaceId: string, key: string, event: AnyNotificationEvent, mutate?: (tx: Prisma.TransactionClient) => Promise<unknown>) {
+ const after = await prisma.$transaction(async tx => {
+  if (!await tryTransactionLock(tx, key) || await eventAlreadySent(tx, workspaceId, key)) return null;
+  await mutate?.(tx);
+  return (await dispatch(workspaceId, { ...event, dedupeKey: key }, { tx })).afterCommit;
+ }); await after?.();
+}
+export async function run(now: Date) {
+ const workspaces = await prisma.workspace.findMany({ where: { archivedAt: null }, select: { id: true, slug: true } });
+ for (const ws of workspaces) {
+  const admins = await memberIdsAtLeast(prisma, ws.id, "ADMIN");
+  const subscriptions = await prisma.subscription.findMany({ where: { workspaceId: ws.id, status: { in: ["ACTIVE", "CANCELLING"] }, nextRenewalAt: { not: null } } });
+  for (const s of subscriptions) {
+   const renewal = s.nextRenewalAt!;
+   const daysLeft = Math.ceil((renewal.getTime() - now.getTime()) / 86400000);
+   const offset = [...s.reminderOffsets].sort((a,b) => a-b).find(d => daysLeft <= d);
+   if (offset === undefined) continue;
+   await once(ws.id, `renewal:${s.id}:${renewal.toISOString()}:${offset}`, { type: "renewal.due", title: "A subscription renewal is due", recipients: s.ownerId ? [s.ownerId, ...admins] : admins, url: `/w/${ws.slug}/subscriptions`, scope: { subscriptionId: s.id }, data: { subscriptionId: s.id, renewsAt: renewal.toISOString(), daysLeft } }, tx => tx.subscription.updateMany({ where: { id: s.id, workspaceId: ws.id }, data: { lastRemindedFor: renewal, lastReminderOffset: offset } }));
+  }
+  const items = await prisma.vaultItem.findMany({ where: { workspaceId: ws.id, deletedAt: null, rotateEveryDays: { not: null } }, select: { id: true, ownerId: true, rotateEveryDays: true, lastRotatedAt: true, createdAt: true } });
+  for (const item of items) {
+   const due = new Date((item.lastRotatedAt ?? item.createdAt).getTime() + item.rotateEveryDays! * 86400000);
+   if (due > now) continue;
+   await once(ws.id, `rotation:${item.id}:${due.toISOString()}`, { type: "vault.rotation_due", title: "A vault item is due for rotation", recipients: [item.ownerId], url: `/w/${ws.slug}/vault`, data: { itemId: item.id, dueAt: due.toISOString() }, useWorkspaceRules: false });
+  }
+  const checkouts = await prisma.assetCheckout.findMany({ where: { asset: { workspaceId: ws.id }, returnedAt: null, dueAt: { lte: now } } });
+  for (const c of checkouts) await once(ws.id, `overdue:${c.id}:${now.toISOString().slice(0,10)}`, { type: "asset.checkout_overdue", title: "Your borrowed equipment is overdue", recipients: [c.userId, ...admins], url: `/w/${ws.slug}/assets`, data: { assetId: c.assetId, checkoutId: c.id, dueAt: c.dueAt!.toISOString() } }, tx => tx.assetCheckout.updateMany({ where: { id: c.id, asset: { workspaceId: ws.id } }, data: { lastRemindedAt: now } }));
+  const bookings = await prisma.assetBooking.findMany({ where: { asset: { workspaceId: ws.id }, status: "CONFIRMED", startsAt: { gte: now, lte: new Date(now.getTime() + 3600000) } } });
+  for (const b of bookings) await once(ws.id, `booking:${b.id}`, { type: "asset.booking_reminder", title: "Your equipment booking starts soon", recipients: [b.userId], url: `/w/${ws.slug}/assets`, data: { assetId: b.assetId, bookingId: b.id, startsAt: b.startsAt.toISOString() } });
+  const maintenance = await prisma.assetMaintenanceLog.findMany({ where: { asset: { workspaceId: ws.id }, nextDueAt: { lte: now } } });
+  for (const m of maintenance) await once(ws.id, `maintenance:${m.id}`, { type: "asset.maintenance_due", title: "Equipment maintenance is due", recipients: admins, url: `/w/${ws.slug}/assets`, data: { assetId: m.assetId, dueAt: m.nextDueAt!.toISOString() } });
+  const budgets = await prisma.budget.findMany({ where: { workspaceId: ws.id, periodStart: { lte: now }, periodEnd: { gte: now } } });
+  for (const b of budgets) {
+   const agg = await prisma.ledgerEntry.aggregate({ where: { workspaceId: ws.id, budgetId: b.id, currency: b.currency, kind: "EXPENSE", voidedAt: null, occurredOn: { gte: b.periodStart, lte: b.periodEnd } }, _sum: { amountMinor: true } });
+   const spentMinor = agg._sum.amountMinor ?? 0;
+   for (const thresholdPct of b.thresholdsPct) if (b.amountMinor > 0 && spentMinor * 100 >= b.amountMinor * thresholdPct) await once(ws.id, `budget:${b.id}:${thresholdPct}`, { type: "budget.threshold", title: "A budget threshold has been reached", recipients: admins, url: `/w/${ws.slug}/requests`, scope: { budgetId: b.id }, data: { budgetId: b.id, thresholdPct, spentMinor, amountMinor: b.amountMinor, currency: b.currency }, useWorkspaceRules: false }, tx => tx.budget.updateMany({ where: { id: b.id, workspaceId: ws.id }, data: { notifiedPct: { push: thresholdPct } } }));
+  }
+  const gaps = await prisma.serviceCatalogItem.findMany({ where: { workspaceId: ws.id, lifecycle: "ACTIVE", OR: [{ ownerId: null }, { runbookDocId: null }] }, select: { id: true } });
+  if (gaps.length) await once(ws.id, `catalogue-gap:${ws.id}:${Math.floor(now.getTime() / 604800000)}`, { type: "catalogue.gap", title: "Some services need an owner or runbook", recipients: admins, url: `/w/${ws.slug}/catalogue`, data: { serviceIds: gaps.map(g => g.id) }, useWorkspaceRules: false });
+ }
 }
