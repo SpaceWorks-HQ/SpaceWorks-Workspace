@@ -24,7 +24,8 @@ export function contactChannels(row: { emails: unknown; phones: unknown }) {
   return { email: jsonArray(row.emails).find(v => typeof v.value === "string")?.value as string | undefined ?? "", phone: jsonArray(row.phones).find(v => typeof v.e164 === "string")?.e164 as string | undefined ?? "" };
 }
 async function visibleWhere(actor: PeopleActor) {
-  if (!canViewContacts(actor.membership)) return { workspaceId: actor.workspace.id, id: "" };
+  // Callers spread this and add `id`, so the deny filter must not be an `id` key they can overwrite.
+  if (!canViewContacts(actor.membership)) return { workspaceId: actor.workspace.id, AND: [{ id: { in: [] as string[] } }] };
   const base = { workspaceId: actor.workspace.id, deletedAt: null };
   if (canManageContacts(actor.membership)) return base;
   const teamIds = await userTeamIds(actor.workspace.id, actor.user.id);
@@ -192,7 +193,7 @@ export async function importContacts(actor: PeopleActor, csv: unknown): Promise<
     inputs.push(p.data);
   }
   const counts = await prisma.$transaction(async tx => {
-    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`crm:import:${actor.workspace.id}`}))`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`crm:import:${actor.workspace.id}`}))`;
     const existing = (await tx.contact.findMany({ where: { workspaceId: actor.workspace.id, deletedAt: null }, select: { id: true, displayName: true, emails: true, phones: true } })).map(c => ({ id: c.id, displayName: c.displayName, ...contactChannels(c) }));
     let created = 0; let skipped = 0;
     for (const input of inputs) {
@@ -229,7 +230,7 @@ export async function importOrganisations(actor: PeopleActor, csv: unknown): Pro
     inputs.push(parsed.data);
   }
   const counts = await prisma.$transaction(async tx => {
-    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`crm:organisation-import:${actor.workspace.id}`}))`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`crm:organisation-import:${actor.workspace.id}`}))`;
     const existing = await tx.organisation.findMany({ where: { workspaceId: actor.workspace.id, deletedAt: null }, select: { id: true, name: true, domain: true } });
     let created = 0; let skipped = 0;
     for (const input of inputs) {
