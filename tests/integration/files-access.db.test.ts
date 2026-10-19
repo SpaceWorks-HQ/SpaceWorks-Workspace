@@ -60,6 +60,18 @@ describe("task attachment downloads", () => {
   });
 });
 
+describe("request receipt downloads", () => {
+  it("limits purchase-request receipts to the requester and admins", async () => {
+    const file = await prisma.fileObject.create({
+      data: { workspaceId, storageKey: `workspaces/${workspaceId}/files/${suffix}-receipt`, filename: "receipt.pdf", contentType: "application/pdf", size: 4, uploadedById: insider },
+    });
+    await prisma.purchaseRequest.create({ data: { workspaceId, requesterId: insider, title: "Solder", items: [], totalMinor: 50_000, fileIds: [file.id] } });
+    expect(await findDownloadableFile(file.id, insider)).not.toBeNull();
+    expect(await findDownloadableFile(file.id, owner)).not.toBeNull();
+    expect(await findDownloadableFile(file.id, outsider)).toBeNull();
+  });
+});
+
 describe("chat attachment downloads", () => {
   it("limits private-channel attachments to channel members, even for owners", async () => {
     const fileId = await attach(await channel("PRIVATE", [insider]), insider, "private.txt");
