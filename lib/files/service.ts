@@ -11,7 +11,7 @@ import { canContribute, hasRoleAtLeast } from "@/lib/roles";
 import { indexSearchDocument, removeSearchDocument } from "@/lib/search/documents";
 import { buildStorageKey, checkImageSanity, checkUpload, deleteObjects, getObject, normalizeFolder, putObject, sanitizeFilename, uploadWorkspaceFile } from "@/lib/storage";
 import { hiddenTeamIds, teamScopeFilter } from "@/lib/teamAccess";
-import { fileKind, MAX_FILE_VERSIONS, nextVersionNumber, versionsToPrune, type FileKind } from "@/lib/files/versions";
+import { CHAT_FOLDER, fileKind, isReservedFolder, MAX_FILE_VERSIONS, nextVersionNumber, versionsToPrune, type FileKind } from "@/lib/files/versions";
 
 /**
  * Files library rules. The library shows workspace files that belong to no
@@ -53,6 +53,14 @@ const OTHER_AREA_RELATIONS: Prisma.FileObjectWhereInput = {
   signedPdfs: { none: {} },
 };
 
+/** Chat uploads (message attachments, the /chat folder) belong to chat, not the library. */
+const NOT_CHAT: Prisma.FileObjectWhereInput = {
+  messageAttachments: { none: {} },
+  NOT: { OR: [{ folder: CHAT_FOLDER }, { folder: { startsWith: `${CHAT_FOLDER}/` } }] },
+};
+
+const RESERVED_FOLDER = "The chat folder is managed by chat. Choose another folder.";
+
 /** Prisma filter for library files this member may see (`deleted` for the trash view). */
 export async function libraryWhere(actor: FilesActor, options: { deleted?: boolean } = {}): Promise<Prisma.FileObjectWhereInput> {
   const admin = hasRoleAtLeast(actor.membership.role, "ADMIN");
@@ -61,6 +69,7 @@ export async function libraryWhere(actor: FilesActor, options: { deleted?: boole
     workspaceId: actor.workspace.id,
     deletedAt: options.deleted ? { not: null } : null,
     ...OTHER_AREA_RELATIONS,
+    ...NOT_CHAT,
     AND: [
       admin ? {} : { OR: [{ docId: null }, { doc: { visibility: "WORKSPACE" } }] },
       hidden.length === 0 ? {} : { OR: [{ taskId: null }, { task: { projectId: null } }, { task: { project: teamScopeFilter(hidden) } }] },
@@ -104,6 +113,7 @@ async function checkTaskLink(actor: FilesActor, taskId: string) {
 
 export async function uploadLibraryFile(actor: FilesActor, input: { file: File; folder?: string; docId?: string | null; taskId?: string | null }): Promise<FileResult<{ id: string; filename: string; contentType: string }>> {
   if (!canContribute(actor.membership)) return fail(FILE_NOT_ALLOWED);
+  if (isReservedFolder(normalizeFolder(input.folder))) return fail(RESERVED_FOLDER);
   if (input.docId && !(await checkDocLink(actor, input.docId))) return fail("That page doesn't exist or you can't edit it.");
   if (input.taskId && !(await checkTaskLink(actor, input.taskId))) return fail("That task doesn't exist or you can't open it.");
   const result = await uploadWorkspaceFile({
@@ -220,6 +230,7 @@ export async function renameFile(actor: FilesActor, input: { fileId: string; fil
 export async function moveFiles(actor: FilesActor, input: { fileIds: string[]; folder: string }): Promise<FileResult<{ moved: number }>> {
   if (!canContribute(actor.membership)) return fail(FILE_NOT_ALLOWED);
   const folder = normalizeFolder(input.folder);
+  if (isReservedFolder(folder)) return fail(RESERVED_FOLDER);
   const files = await prisma.fileObject.findMany({ where: { id: { in: input.fileIds }, ...(await libraryWhere(actor)) }, select: { id: true } });
   if (files.length === 0) return fail(FILE_NOT_FOUND);
   await prisma.$transaction(async (tx) => {
@@ -285,15 +296,21 @@ export async function restoreFile(actor: FilesActor, input: { fileId: string }):
 
 export type UsageSummary = { files: number; bytes: number; versionBytes: number; trashBytes: number; byKind: Array<{ kind: FileKind; files: number; bytes: number }> };
 
-/** Storage used by the whole workspace (every area), with older versions and the trash shown apart. */
+/**
+ * Storage used by the workspace's files (library, docs and other areas), with
+ * older versions and the trash shown apart. Chat attachments are left out:
+ * they belong to chat and never appear in the library.
+ */
 export async function usageSummary(workspaceId: string): Promise<UsageSummary> {
   const [live, trash, byType, versions] = await Promise.all([
-    prisma.fileObject.aggregate({ where: { workspaceId, deletedAt: null }, _sum: { size: true }, _count: true }),
-    prisma.fileObject.aggregate({ where: { workspaceId, deletedAt: { not: null } }, _sum: { size: true } }),
-    prisma.fileObject.groupBy({ by: ["contentType"], where: { workspaceId, deletedAt: null }, _sum: { size: true }, _count: true }),
+    prisma.fileObject.aggregate({ where: { workspaceId, deletedAt: null, ...NOT_CHAT }, _sum: { size: true }, _count: true }),
+    prisma.fileObject.aggregate({ where: { workspaceId, deletedAt: { not: null }, ...NOT_CHAT }, _sum: { size: true } }),
+    prisma.fileObject.groupBy({ by: ["contentType"], where: { workspaceId, deletedAt: null, ...NOT_CHAT }, _sum: { size: true }, _count: true }),
     prisma.$queryRaw<{ bytes: bigint | null }[]>`
       SELECT SUM(v."size")::bigint AS bytes FROM "FileVersion" v JOIN "FileObject" f ON f."id" = v."fileId"
-      WHERE f."workspaceId" = ${workspaceId} AND v."version" <> f."currentVersion"`,
+      WHERE f."workspaceId" = ${workspaceId} AND v."version" <> f."currentVersion"
+        AND f."folder" <> ${CHAT_FOLDER} AND f."folder" NOT LIKE ${`${CHAT_FOLDER}/%`}
+        AND NOT EXISTS (SELECT 1 FROM "MessageAttachment" a WHERE a."fileId" = f."id")`,
   ]);
   const kinds = new Map<FileKind, { files: number; bytes: number }>();
   for (const row of byType) {
@@ -323,7 +340,7 @@ export async function usageSummary(workspaceId: string): Promise<UsageSummary> {
 export async function purgeDeletedFiles(now: Date, batch = 50) {
   const cutoff = new Date(now.getTime() - FILE_TRASH_DAYS * 86_400_000);
   const candidates = await prisma.fileObject.findMany({
-    where: { deletedAt: { lt: cutoff }, workspace: { legalHold: false }, ...OTHER_AREA_RELATIONS },
+    where: { deletedAt: { lt: cutoff }, workspace: { legalHold: false }, ...OTHER_AREA_RELATIONS, ...NOT_CHAT },
     select: { id: true },
     take: batch,
   });

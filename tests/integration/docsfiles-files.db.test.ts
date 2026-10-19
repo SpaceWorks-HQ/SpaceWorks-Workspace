@@ -172,6 +172,16 @@ describe.sequential("files library", () => {
     const attachment = await prisma.fileObject.create({ data: { workspaceId: wsId, storageKey: `test/${suffix}/chat.png`, filename: "chat.png", contentType: "image/png", size: 4 } });
     await prisma.messageAttachment.create({ data: { messageId: message.id, fileId: attachment.id } });
     expect(await visibleTo(actors.admin!)).not.toContain(attachment.id);
+
+    // Chat uploads under /chat stay out of the library and its usage numbers, even before they are attached.
+    const before = await usageSummary(wsId);
+    const chatUpload = await prisma.fileObject.create({ data: { workspaceId: wsId, storageKey: `test/${suffix}/chat-upload.png`, filename: "chat-upload.png", contentType: "image/png", size: 5000, folder: "/chat" } });
+    expect(await visibleTo(actors.admin!)).not.toContain(chatUpload.id);
+    expect((await usageSummary(wsId)).bytes).toBe(before.bytes);
+    expect(before.byKind.find((kind) => kind.kind === "image")).toBeUndefined();
+    expect(await uploadLibraryFile(actors.member!, { file: text("x.txt", "x"), folder: "/chat/general" })).toMatchObject({ ok: false });
+    const ordinary = (await prisma.fileObject.findFirstOrThrow({ where: { ...(await libraryWhere(actors.member!)) }, select: { id: true } })).id;
+    expect(await moveFiles(actors.member!, { fileIds: [ordinary], folder: "/chat" })).toMatchObject({ ok: false });
   });
 
   it("soft-deletes for the uploader or an admin, restores, and purges after 30 days", async () => {

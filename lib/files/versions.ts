@@ -59,6 +59,11 @@ export function formatBytes(bytes: number): string {
   return `${value >= 100 ? Math.round(value) : value.toFixed(1)} ${units[unit]}`;
 }
 
+/** A relative time label inside a sentence: "2 min ago", "yesterday", "on 13 Oct 2026". */
+export function relativeInSentence(label: string): string {
+  return /^\d{1,2} [A-Z][a-z]{2} \d{4}$/.test(label) ? `on ${label}` : label.charAt(0).toLowerCase() + label.slice(1);
+}
+
 export type FileKind = "image" | "pdf" | "text" | "document" | "spreadsheet" | "archive" | "other";
 
 export function fileKind(contentType: string): FileKind {
@@ -103,6 +108,13 @@ export function joinFolder(parent: string, name: string): string {
 export function folderCrumbs(folder: string): Array<{ name: string; path: string }> {
   const parts = folder.split("/").filter(Boolean);
   return parts.map((name, index) => ({ name, path: `/${parts.slice(0, index + 1).join("/")}` }));
+}
+
+/** Chat uploads live under this folder; the library never shows or accepts it. */
+export const CHAT_FOLDER = "/chat";
+
+export function isReservedFolder(folder: string): boolean {
+  return folder === CHAT_FOLDER || folder.startsWith(`${CHAT_FOLDER}/`);
 }
 
 /** Is `folder` the same as or inside `parent`? */

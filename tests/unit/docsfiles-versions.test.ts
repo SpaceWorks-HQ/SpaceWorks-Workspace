@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { childFolders, fileKind, folderCrumbs, formatBytes, isWithinFolder, listVersions, nextVersionNumber, selectVersion, versionsToPrune } from "@/lib/files/versions";
+import { childFolders, fileKind, folderCrumbs, formatBytes, isReservedFolder, isWithinFolder, listVersions, relativeInSentence, nextVersionNumber, selectVersion, versionsToPrune } from "@/lib/files/versions";
 
 const t = (day: number) => new Date(Date.UTC(2026, 9, day));
 const version = (n: number) => ({ version: n, storageKey: `k${n}`, size: n * 10, contentType: "text/plain", createdAt: t(n), uploadedById: "u1", note: null });
@@ -65,5 +65,18 @@ describe("file helpers", () => {
     expect(folderCrumbs("/builds/bot")).toEqual([{ name: "builds", path: "/builds" }, { name: "bot", path: "/builds/bot" }]);
     expect(isWithinFolder("/builds/bot", "/builds")).toBe(true);
     expect(isWithinFolder("/buildsx", "/builds")).toBe(false);
+  });
+
+  it("reserves the chat folder", () => {
+    expect(isReservedFolder("/chat")).toBe(true);
+    expect(isReservedFolder("/chat/general")).toBe(true);
+    expect(isReservedFolder("/chatter")).toBe(false);
+    expect(isReservedFolder("/")).toBe(false);
+  });
+
+  it("phrases relative times inside a sentence", () => {
+    expect(relativeInSentence("Just now")).toBe("just now");
+    expect(relativeInSentence("2 min ago")).toBe("2 min ago");
+    expect(relativeInSentence("13 Oct 2026")).toBe("on 13 Oct 2026");
   });
 });
