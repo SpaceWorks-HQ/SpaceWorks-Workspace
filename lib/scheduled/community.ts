@@ -1,13 +1,19 @@
 import "server-only";
 
+import { publishDueAnnouncements } from "@/lib/community/announcements";
+import { sendDueReminders } from "@/lib/community/events";
+
 /**
- * Periodic work for the community build: event.reminder for upcoming community events.
+ * Periodic work for the community area, called about once a minute by every
+ * app replica (outbox worker tick and POST /api/internal/outbox):
+ * - publish scheduled announcements whose time has come (`announcement.published`);
+ * - send event reminders a day and an hour before the start (`event.reminder`).
  *
- * Called about once a minute by every app replica (outbox worker tick and
- * POST /api/internal/outbox), so it must be idempotent: claim rows with a
- * conditional update or rely on unique keys, and keep each run short.
- * Placeholder until the community build replaces this function body.
+ * Both are idempotent: each send is keyed (announcement + publish time, event
+ * + reminder + start time), serialised with a transaction advisory lock and
+ * skipped when the stored notification event already exists.
  */
 export async function run(now: Date): Promise<void> {
-  void now;
+  await publishDueAnnouncements(now);
+  await sendDueReminders(now);
 }
