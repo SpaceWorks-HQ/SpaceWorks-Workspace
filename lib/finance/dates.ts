@@ -26,3 +26,8 @@ export function monthKeys(today: string, count: number): string[] {
   for (let i = count - 1; i >= 0; i -= 1) keys.push(new Date(Date.UTC(year, month - 1 - i, 1)).toISOString().slice(0, 7));
   return keys;
 }
+
+/** "13 Oct 2026" for a date-only value (formatted in UTC so the day never shifts). */
+export function formatDay(value: Date): string {
+  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(value);
+}

@@ -1,0 +1,35 @@
+/*
+ * Chart series colours for the kitty (income vs expense). Validated with the
+ * dataviz palette checker against the panel surface in each mode (lightness
+ * band, chroma floor, CVD separation, contrast): light #008C7E / #E0552A on
+ * #FFFFFF, dark #1FA394 / #E0603A on #1F433F. They are the brand teal and
+ * Workshop Orange stepped to pass; fold them into app/styles/tokens.css as
+ * chart tokens when the coordinator next touches tokens.
+ */
+:root {
+  --fin-income: #008c7e;
+  --fin-expense: #e0552a;
+}
+
+:root[data-color-mode="dark"],
+.yy-dark-band {
+  --fin-income: #1fa394;
+  --fin-expense: #e0603a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-color-mode]) {
+    --fin-income: #1fa394;
+    --fin-expense: #e0603a;
+  }
+}
+
+.fin-fill-income { fill: var(--fin-income); }
+.fin-fill-expense { fill: var(--fin-expense); }
+.fin-bg-income { background-color: var(--fin-income); }
+.fin-bg-expense { background-color: var(--fin-expense); }
+
+@media (forced-colors: active) {
+  .fin-fill-income { fill: CanvasText; }
+  .fin-fill-expense { fill: GrayText; }
+}

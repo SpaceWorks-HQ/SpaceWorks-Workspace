@@ -6,6 +6,8 @@
  * invoices can be edited.
  */
 
+import type { InvoiceItem } from "@/lib/finance/money";
+
 export type InvoiceStatusValue = "DRAFT" | "SENT" | "PAID" | "VOID";
 
 export const INVOICE_STATUSES: readonly InvoiceStatusValue[] = ["DRAFT", "SENT", "PAID", "VOID"];
@@ -39,4 +41,15 @@ export const INVOICE_SOURCE_TYPE = "invoice";
 export function isInvoiceOverdue(invoice: { status: InvoiceStatusValue; dueOn: Date | null }, today: string): boolean {
   if (invoice.status !== "SENT" || !invoice.dueOn) return false;
   return invoice.dueOn.toISOString().slice(0, 10) < today;
+}
+
+/** Stored JSON → typed items, dropping anything malformed. */
+export function parseInvoiceItems(value: unknown): InvoiceItem[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((raw) => {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return [];
+    const item = raw as Record<string, unknown>;
+    if (typeof item.description !== "string" || typeof item.quantity !== "number" || typeof item.unitMinor !== "number") return [];
+    return [{ description: item.description, quantity: item.quantity, unitMinor: item.unitMinor, ...(typeof item.taxBps === "number" && item.taxBps > 0 ? { taxBps: item.taxBps } : {}) }];
+  });
 }

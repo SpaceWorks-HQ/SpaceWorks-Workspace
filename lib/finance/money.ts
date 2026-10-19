@@ -97,6 +97,15 @@ export function formatBps(bps: number): string {
   return `${(bps / 100).toLocaleString("en-IN", { maximumFractionDigits: 2 })}%`;
 }
 
+/** "₹" for INR, "¥" for JPY; the code itself when Intl has no symbol. */
+export function currencySymbol(currency: string, locale = "en-IN"): string {
+  try {
+    return new Intl.NumberFormat(locale, { style: "currency", currency }).formatToParts(0).find((part) => part.type === "currency")?.value ?? currency;
+  } catch {
+    return currency;
+  }
+}
+
 /** Minor units → a plain decimal string for inputs and CSV ("1250.50"), no grouping or symbol. */
 export function minorToDecimalString(amountMinor: number, currency = "INR"): string {
   const digits = currencyMinorDigits(currency);

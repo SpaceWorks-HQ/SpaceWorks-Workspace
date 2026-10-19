@@ -12,7 +12,7 @@ import type { WorkspaceContext } from "@/lib/permissions";
 import { RASTER_IMAGE_TYPES, deleteObjects, uploadWorkspaceFile } from "@/lib/storage";
 import { type ImportRow } from "@/lib/finance/csv";
 import { dateOnly, localDate } from "@/lib/finance/dates";
-import { canTransition, formatInvoiceNumber, INVOICE_SOURCE_TYPE, isEditableInvoice, type InvoiceStatusValue } from "@/lib/finance/invoice";
+import { canTransition, formatInvoiceNumber, INVOICE_SOURCE_TYPE, isEditableInvoice, parseInvoiceItems, type InvoiceStatusValue } from "@/lib/finance/invoice";
 import { invoiceTotals, lineSubtotalMinor, MAX_AMOUNT_MINOR, type InvoiceItem } from "@/lib/finance/money";
 import type { categorySchema, invoiceSchema, ledgerEntrySchema } from "@/lib/finance/schemas";
 import type { z } from "zod";
@@ -36,11 +36,12 @@ function isUniqueViolation(error: unknown) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
 }
 
-async function checkCategory(client: DbClient, workspaceId: string, categoryId: string | null, kind: LedgerKind): Promise<string | null> {
+async function checkCategory(client: DbClient, workspaceId: string, categoryId: string | null, kind: LedgerKind, keepId: string | null = null): Promise<string | null> {
   if (!categoryId) return null;
   const category = await client.financeCategory.findFirst({ where: { id: categoryId, workspaceId }, select: { kind: true, archivedAt: true } });
   if (!category) return "Choose a category from the list.";
   if (category.kind !== kind) return kind === "INCOME" ? "Choose an income category." : "Choose an expense category.";
+  if (category.archivedAt && categoryId !== keepId) return "That category is archived. Choose another one.";
   return null;
 }
 
@@ -130,7 +131,7 @@ export async function updateLedgerEntry(
     if (parsed > MAX_AMOUNT_MINOR) return actionError("That amount is too large.", { amount: ["That amount is too large."] });
     amountMinor = parsed;
   }
-  const categoryError = await checkCategory(prisma, workspace.id, values.categoryId, kind);
+  const categoryError = await checkCategory(prisma, workspace.id, values.categoryId, kind, existing.categoryId);
   if (categoryError) return actionError(categoryError, { categoryId: [categoryError] });
   const budgetError = await checkBudget(prisma, workspace.id, values.budgetId);
   if (budgetError) return actionError(budgetError, { budgetId: [budgetError] });
@@ -460,15 +461,4 @@ export function renderInvoiceEmail(invoice: {
     ...(invoice.notes ? ["", invoice.notes] : []),
   ].join("\n");
   return { subject, html: rendered.html, text };
-}
-
-/** Stored JSON → typed items, dropping anything malformed. */
-export function parseInvoiceItems(value: Prisma.JsonValue): InvoiceItem[] {
-  if (!Array.isArray(value)) return [];
-  return value.flatMap((raw) => {
-    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return [];
-    const item = raw as Record<string, unknown>;
-    if (typeof item.description !== "string" || typeof item.quantity !== "number" || typeof item.unitMinor !== "number") return [];
-    return [{ description: item.description, quantity: item.quantity, unitMinor: item.unitMinor, ...(typeof item.taxBps === "number" && item.taxBps > 0 ? { taxBps: item.taxBps } : {}) }];
-  });
 }
