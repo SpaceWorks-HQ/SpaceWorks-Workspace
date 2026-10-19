@@ -1,6 +1,7 @@
 import "server-only";
 
 import { z } from "zod";
+import { APP_REVIEW_TOOLS } from "@/lib/appReviews/tools";
 import { checkRateLimitById } from "@/lib/rateLimit";
 import type { Principal, ToolChannel } from "@/lib/assistant/principal";
 import { CHAT_TOOLS } from "@/lib/assistant/tools/chat";
@@ -19,7 +20,7 @@ export type { ToolResult } from "@/lib/assistant/tools/types";
  * the MCP server and the REST API. Order is fixed so the tool list (and with
  * it the prompt cache prefix) is deterministic.
  */
-export const ALL_TOOLS: readonly ToolDefinition[] = [...TASK_TOOLS, ...CHAT_TOOLS, ...DOC_TOOLS, ...WORKSPACE_TOOLS, ...KNOWLEDGE_TOOLS] as unknown as ToolDefinition[];
+export const ALL_TOOLS: readonly ToolDefinition[] = [...APP_REVIEW_TOOLS, ...TASK_TOOLS, ...CHAT_TOOLS, ...DOC_TOOLS, ...WORKSPACE_TOOLS, ...KNOWLEDGE_TOOLS] as unknown as ToolDefinition[];
 
 const BY_NAME = new Map<string, ToolDefinition>(ALL_TOOLS.map((tool) => [tool.name, tool]));
 

@@ -151,3 +151,7 @@ export const canLinkExternalAccounts = (m: RoleHolder) => atLeast(m, "MEMBER");
 
 /** Workspace-wide export (zip). */
 export const canExportWorkspace = (m: RoleHolder) => atLeast(m, "OWNER");
+
+/** App reviews: members triage and reply; admins manage store credentials. */
+export const canViewAppReviews = (m: RoleHolder) => atLeast(m, "MEMBER");
+export const canManageAppReviews = (m: RoleHolder) => atLeast(m, "ADMIN");

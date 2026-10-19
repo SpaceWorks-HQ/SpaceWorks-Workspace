@@ -203,6 +203,20 @@ owns; everything else is read-only for it.
 - **Emits**: `export.ready`, `import.finished`, `security.new_login`, `digest.ready` for notification digests.
 - **Notes**: the command palette searches `SearchDocument` (full text + trigram) with access filtering at query time (visibility, team via `lib/teamAccess`, project, channel membership). The digest flush sends one email/DM per user through `dispatch` or the email adapter.
 
+### 13. app-reviews
+
+| Routes | Actions / lib / components | Writes | Events |
+| --- | --- | --- | --- |
+| `app-reviews/**`; `/api/app-reviews/slack/events` | `app/actions/appReviews.ts`, `lib/appReviews/`, `components/appReviews/`, `lib/scheduled/appReviews.ts` | `AppStoreAccount`, `ReviewedApp`, `AppReview`, `AppReviewReplyAttempt`, `AppReviewSlackConfig`, `AppReviewSlackEvent`, `AppReviewSlackMember`; one `app_reviews` migration | `app_review.received`, `app_review.replied`, `app_review.reply_failed` |
+
+This new area explicitly owns its appended schema and required shared hooks:
+roles, nav entry, crypto purposes, notification catalogue/scope/rating matcher,
+job registration and read-only assistant/API-scope registration. Members read,
+triage and reply; admins manage credentials and routing. Its Create task action
+may create `Task`, `TaskAssignee` and `TaskActivity` rows atomically with the
+review link, using shared counters, task indexing and private-team checks.
+Setup: [APP_REVIEWS.md](APP_REVIEWS.md). Area notes: [app-reviews](areas/app-reviews.md).
+
 ## Cross-area writes (the only exceptions)
 
 | Writer | Writes | Contract |

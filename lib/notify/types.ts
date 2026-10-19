@@ -9,6 +9,8 @@ export type { EventPayloads, EventType, Severity } from "@/lib/notify/events";
  * under the key from `SCOPE_KEYS`.
  */
 export type NotifyScope = {
+  reviewedAppId?: string;
+  rating?: number;
   monitorId?: string;
   incidentId?: string;
   projectId?: string;
@@ -30,10 +32,11 @@ export type NotifyScope = {
   tags?: string[];
 };
 
-type ScopeIdKey = Exclude<keyof NotifyScope, "tags">;
+type ScopeIdKey = Exclude<keyof NotifyScope, "tags" | "rating">;
 
 /** Event scope key for each scoped rule type. */
 export const SCOPE_KEYS: Record<Exclude<RuleScopeType, "WORKSPACE">, ScopeIdKey> = {
+  REVIEWED_APP: "reviewedAppId",
   MONITOR: "monitorId",
   INCIDENT: "incidentId",
   PROJECT: "projectId",
