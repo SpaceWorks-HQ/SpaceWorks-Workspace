@@ -1,13 +1,25 @@
+import { zonedDatetimeLocalValue } from "@/lib/timeZone";
 import { notFound } from "next/navigation";
-import { ComingSoon } from "@/components/workspace/ComingSoon";
-import { canViewCatalogue, requireWorkspace } from "@/lib/permissions";
-
+import { requireWorkspace, canViewCatalogue } from "@/lib/permissions";
+import { prisma } from "@/lib/db";
+import { listCatalogue } from "@/lib/catalogue/service";
+import { listVault } from "@/lib/vault/service";
+import { opsPickers } from "@/lib/approvals/pickers";
+import { isAdmin } from "@/lib/approvals/context";
+import { saveCatalogueService } from "@/app/actions/catalogue";
+import { OpsForm, type OpsField } from "@/components/requests/OpsForm";
+import { OpsLayout, Editor, Empty, choices, words } from "@/components/requests/OpsLayout";
+import { Card, Chip } from "@/components/ui/display";
+import { formatMoney, currencyMinorDigits } from "@/lib/format/money";
+import { formatDate } from "@/lib/format/datetime";
 export const metadata = { title: "Service catalogue" };
-
-/** Placeholder: replaced by the ops-money build (see docs/ROADMAP-BUILD.md). */
 export default async function CataloguePage({ params }: PageProps<"/w/[workspaceSlug]/catalogue">) {
-  const { workspaceSlug } = await params;
-  const { membership } = await requireWorkspace(workspaceSlug, "MEMBER");
-  if (!canViewCatalogue(membership)) notFound();
-  return <ComingSoon title="Service catalogue" description="What we run, who owns it, how to fix it and when it renews." />;
+ const { workspaceSlug } = await params; const a = await requireWorkspace(workspaceSlug,"MEMBER"); if (!canViewCatalogue(a.membership)) notFound();
+ const [rows,pickers,vault,monitors,resources] = await Promise.all([listCatalogue(a),opsPickers(a),listVault(a),prisma.monitor.findMany({where:{workspaceId:a.workspace.id},select:{id:true,name:true}}),prisma.cloudResource.findMany({where:{workspaceId:a.workspace.id},select:{id:true,name:true}})]);
+ const fields: OpsField[] = [{name:"name",label:"Service name",required:true},{name:"slug",label:"Short name",required:true,helper:"Lower-case words with hyphens."},{name:"kind",label:"Type",required:true,value:"INTERNAL_APP",options:choices(["INTERNAL_APP","WEBSITE","SAAS_ACCOUNT","DOMAIN","SERVER","DATABASE","STORAGE","REPO","BOT","DEVICE","OTHER"])},{name:"url",label:"URL",type:"url"},{name:"description",label:"Description",type:"textarea"},{name:"ownerId",label:"Owner",options:pickers.members},{name:"teamId",label:"Owning team",options:pickers.teams},{name:"environment",label:"Environment",required:true,value:"PROD",options:choices(["PROD","STAGING","DEV","NONE"])},{name:"criticality",label:"Criticality",required:true,value:"TIER2",options:[{value:"TIER1",label:"Tier 1 — critical"},{value:"TIER2",label:"Tier 2 — important"},{value:"TIER3",label:"Tier 3 — supporting"}]},{name:"lifecycle",label:"Lifecycle",value:"ACTIVE",required:true,options:choices(["PLANNED","ACTIVE","DEPRECATED","RETIRED"])},{name:"runbookDocId",label:"Runbook",options:pickers.docs},{name:"renewalAt",label:"Renewal or billing date",type:"date"},{name:"monitorIds",label:"Linked monitors",multiple:true,options:monitors.map(r=>({value:r.id,label:r.name}))},{name:"cloudResourceIds",label:"Linked cloud resources",multiple:true,options:resources.map(r=>({value:r.id,label:r.name}))},{name:"vaultItemIds",label:"Linked vault items",multiple:true,options:vault.map(r=>({value:r.id,label:r.title}))},...(isAdmin(a)?[{name:"amount",label:"Billing cost"},{name:"currency",label:"Currency",value:a.workspace.currency},{name:"costPeriod",label:"Billing cycle",options:choices(["MONTHLY","QUARTERLY","YEARLY","ONE_TIME","USAGE"])}]:[])];
+ return <OpsLayout title="Service catalogue" description="What we run, who owns it and how to keep it healthy." slug={workspaceSlug}>
+  <Editor title="Add a service" open={!rows.length}><OpsForm action={saveCatalogueService.bind(null,workspaceSlug)} label="Save service" fields={fields} /></Editor>
+  {!rows.length&&<Empty>No services yet. Add one to give it an owner and runbook.</Empty>}
+  {rows.map(r=><Card key={r.id}><div className="flex flex-wrap justify-between gap-3"><h2 className="text-h4">{r.name}</h2><Chip tone={r.status==="DOWN"?"danger":r.status==="DEGRADED"?"warning":r.status==="UP"?"success":"neutral"}>{words(r.status)}</Chip></div><p className="mt-2 text-body-ui text-ink-muted">{words(r.kind)} · {words(r.environment)} · {words(r.criticality)} · {words(r.lifecycle)}</p><p className="mt-3 text-body-ui">{r.description}</p><p className="mt-2 text-body-ui">Owner: {pickers.members.find(p=>p.value===r.ownerId)?.label??"Unassigned"} · Team: {pickers.teams.find(p=>p.value===r.teamId)?.label??"Workspace"}</p><div className="my-3 flex flex-wrap gap-4">{r.urls.map(url=><a key={url} href={url} rel="noreferrer" target="_blank" className="inline-flex min-h-11 items-center text-accent-text underline">Open service</a>)}{r.runbook&&<a href={`/w/${workspaceSlug}/docs/${r.runbook.id}`} className="inline-flex min-h-11 items-center text-accent-text underline">Runbook: {r.runbook.title}</a>}{r.vaultItems.map(v=><a key={v.id} href={`/w/${workspaceSlug}/vault#${v.id}`} className="inline-flex min-h-11 items-center text-accent-text underline">Vault: {v.title}</a>)}</div>{r.monitors.map(m=><p className="text-body-ui" key={m.id}>{m.name}: {words(m.status)}</p>)}{r.resources.map(m=><p className="text-body-ui" key={m.id}>{m.name}: {words(m.status)}</p>)}{r.costMinor!=null&&<p className="mt-3 text-body-ui">{formatMoney(r.costMinor,r.costCurrency??a.workspace.currency)} · {words(r.costPeriod??"ONE_TIME")}</p>}{r.renewalAt&&<p className="text-body-ui text-ink-muted">Renews {formatDate(r.renewalAt,a.workspace.timezone)}</p>}<details className="mt-4"><summary className="min-h-11 cursor-pointer text-label">Edit service</summary><OpsForm action={saveCatalogueService.bind(null,workspaceSlug)} label="Save changes" hidden={{id:r.id}} fields={fields.map(f=>({...f,value:f.name==="url"?r.urls[0]:f.name==="renewalAt"?r.renewalAt ? zonedDatetimeLocalValue(r.renewalAt,a.workspace.timezone).slice(0,10) : "":f.name==="monitorIds"?r.monitors.map(x=>x.id).join(","):f.name==="cloudResourceIds"?r.resources.map(x=>x.id).join(","):f.name==="vaultItemIds"?r.vaultItems.map(x=>x.id).join(","):f.name==="amount"?r.costMinor==null?"":String(r.costMinor/10**currencyMinorDigits(r.costCurrency??a.workspace.currency)):f.name==="currency"?r.costCurrency??a.workspace.currency:String((r as Record<string,unknown>)[f.name]??"")}))} /></details></Card>)}
+ </OpsLayout>;
 }

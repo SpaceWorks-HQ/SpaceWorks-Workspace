@@ -1,0 +1,10 @@
+import { approvalInbox, getApprovalView } from "@/lib/approvals/engine";
+import type { OpsActor } from "@/lib/approvals/context";
+import { decideRequest, addApprovalComment } from "@/app/actions/requests";
+import { OpsForm } from "./OpsForm";
+import { Card } from "@/components/ui/display";
+import { formatMoney } from "@/lib/format/money";
+export async function ApprovalInbox({ actor }: { actor: OpsActor }) {
+ const rows = await approvalInbox(actor);
+ return <section className="space-y-4"><h2 className="text-h3">Waiting on you</h2>{rows.length ? await Promise.all(rows.map(async r => { const view = await getApprovalView(actor,r.subjectType,r.subjectId); return <Card key={r.id}><a className="text-title text-accent-text underline" href={r.url}>{r.title}</a><p className="my-3 text-body-ui text-ink-muted">{r.requesterName} · Step {r.step+1} of {r.stepCount}{r.amountMinor != null && r.currency ? ` · ${formatMoney(r.amountMinor, r.currency)}` : ""}</p>{r.details && <p className="mb-4 whitespace-pre-wrap break-words text-body-ui">{r.details}</p>}<OpsForm action={decideRequest.bind(null, actor.workspace.slug)} label="Record decision" hidden={{ requestId: r.id }} fields={[{ name: "decision", label: "Decision", required: true, value: "APPROVED", options: [{ value: "APPROVED", label: "Approve" }, { value: "REJECTED", label: "Reject" }, { value: "CHANGES_REQUESTED", label: "Request changes" }] }, { name: "comment", label: "Comment", type: "textarea", helper: "Required when rejecting or requesting changes. Keep secrets out of comments." }]} /><details className="mt-4"><summary className="min-h-11 cursor-pointer text-label">Discussion</summary>{view?.decisions.filter(d=>d.comment).map((d,i)=><p key={i} className="my-3 whitespace-pre-wrap break-words text-body-ui">{d.approverName}: {d.comment}</p>)}<OpsForm action={addApprovalComment.bind(null,actor.workspace.slug)} hidden={{requestId:r.id}} label="Add comment" fields={[{name:"comment",label:"Comment",type:"textarea",required:true,helper:"Keep secrets out of comments."}]} /></details></Card>;})) : <p className="text-body-ui text-ink-muted">No approvals waiting on you.</p>}</section>;
+}

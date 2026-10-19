@@ -1,13 +1,26 @@
 import { notFound } from "next/navigation";
-import { ComingSoon } from "@/components/workspace/ComingSoon";
-import { canUseVault, requireWorkspace } from "@/lib/permissions";
-
+import { requireWorkspace, canUseVault } from "@/lib/permissions";
+import { prisma } from "@/lib/db";
+import { listVault } from "@/lib/vault/service";
+import { isAdmin } from "@/lib/approvals/context";
+import { opsPickers } from "@/lib/approvals/pickers";
+import { saveVaultItem, saveVaultCollection, removeVaultGrant, askVaultAccess, stepUpVault, archiveVaultItem } from "@/app/actions/vault";
+import { Reveal } from "@/components/vault/Reveal";
+import { OpsForm, type OpsField } from "@/components/requests/OpsForm";
+import { OpsLayout, Editor, Empty, choices, words } from "@/components/requests/OpsLayout";
+import { Card, Chip } from "@/components/ui/display";
+import { formatDate } from "@/lib/format/datetime";
 export const metadata = { title: "Vault" };
-
-/** Placeholder: replaced by the ops-money build (see docs/ROADMAP-BUILD.md). */
 export default async function VaultPage({ params }: PageProps<"/w/[workspaceSlug]/vault">) {
-  const { workspaceSlug } = await params;
-  const { membership } = await requireWorkspace(workspaceSlug, "MEMBER");
-  if (!canUseVault(membership)) notFound();
-  return <ComingSoon title="Vault" description="Shared logins and secrets, encrypted, with per-item access and a reveal log." />;
+ const {workspaceSlug}=await params; const a=await requireWorkspace(workspaceSlug,"MEMBER"); if(!canUseVault(a.membership))notFound();
+ const [items,pickers,collections,grants,logs]=await Promise.all([listVault(a),opsPickers(a),isAdmin(a)?prisma.vaultCollection.findMany({where:{workspaceId:a.workspace.id},select:{id:true,name:true}}):[],isAdmin(a)?prisma.vaultGrant.findMany({where:{workspaceId:a.workspace.id},take:200}):[],isAdmin(a)?prisma.vaultAccessLog.findMany({where:{workspaceId:a.workspace.id},orderBy:{createdAt:"desc"},take:50}):[]]);
+ const itemFields:OpsField[]=[{name:"title",label:"Item title",required:true},{name:"type",label:"Type",value:"LOGIN",required:true,options:choices(["LOGIN","API_KEY","SECRET_NOTE","SSH_KEY","CARD_REFERENCE","WIFI","TOTP"])},{name:"url",label:"Website",type:"url"},{name:"username",label:"Login username",helper:"Used only for login items."},{name:"secret",label:"Secret or card last four digits",type:"password",required:true,helper:"Card references accept exactly four digits. Never enter a full card number or security code."},{name:"sensitivity",label:"Sensitivity",value:"HIGH",required:true,options:[{value:"HIGH",label:"Sensitive — fresh MFA required"},{value:"NORMAL",label:"Normal — grant required"}]},{name:"rotateEveryDays",label:"Rotate every number of days",type:"number"},...(isAdmin(a)?[{name:"collectionId",label:"Collection",options:collections.map(c=>({value:c.id,label:c.name}))}]:[])];
+ return <OpsLayout slug={workspaceSlug} title="Vault" description="Shared credentials with grants, rotation and a reveal log.">
+  <Card><p className="text-body-ui">Secrets are encrypted on the server with a separate vault key. This vault is not end-to-end encrypted. Revealing or copying sensitive items requires a fresh authenticator code.</p><div className="mt-4"><OpsForm action={stepUpVault.bind(null,workspaceSlug)} label="Verify for five minutes" fields={[{name:"code",label:"Authenticator code",required:true,helper:"Enable two-step verification in Account settings first."}]} /></div></Card>
+  <Editor title="Store a credential" open={!items.length}><OpsForm action={saveVaultItem.bind(null,workspaceSlug)} fields={itemFields} label="Store encrypted item" /></Editor>
+  {!items.length&&<Empty>No items available. Store a credential or ask its owner for access.</Empty>}
+  {items.map(r=><Card key={r.id} id={r.id}><div className="flex flex-wrap justify-between gap-3"><h2 className="text-title">{r.title}</h2><Chip>{r.sensitivity==="HIGH"?"Sensitive":"Normal"}</Chip></div><p className="my-3 text-body-ui text-ink-muted">{words(r.type)}{r.username?` · ${r.username}`:""}{r.rotateEveryDays?` · Rotate every ${r.rotateEveryDays} days`:""}</p>{r.canReveal?<Reveal slug={workspaceSlug} itemId={r.id} />:<OpsForm action={askVaultAccess.bind(null,workspaceSlug)} label="Request temporary access" hidden={{itemId:r.id}} fields={[{name:"reason",label:"Reason",required:true},{name:"durationHours",label:"Hours of access",type:"number",value:"24",required:true}]} />}{r.canEdit&&<details className="mt-4"><summary className="min-h-11 cursor-pointer text-label">Rotate secret</summary><OpsForm action={saveVaultItem.bind(null,workspaceSlug)} label="Rotate encrypted secret" hidden={{id:r.id}} fields={itemFields.map(f=>({...f,value:f.name==="secret"?"":String((r as Record<string,unknown>)[f.name]??"")}))} /></details>}{r.canManage&&<details className="mt-4"><summary className="min-h-11 cursor-pointer text-label">Grant item access</summary><p className="mb-3 text-caption text-ink-muted">Person and team grants use the selected member or team. Role grants use the role field.</p><GrantForm slug={workspaceSlug} itemId={r.id} members={pickers.members} teams={pickers.teams} />{r.grants.map(g=><div key={g.id} className="mt-4"><p className="text-body-ui">{pickers.members.find(p=>p.value===g.principalId)?.label??pickers.teams.find(p=>p.value===g.principalId)?.label??words(g.principalId)} · {words(g.permission)}</p><OpsForm action={removeVaultGrant.bind(null,workspaceSlug)} hidden={{grantId:g.id}} label="Revoke item grant" confirm="Revoke this grant?" /></div>)}<div className="mt-4"><OpsForm action={archiveVaultItem.bind(null,workspaceSlug)} hidden={{itemId:r.id}} label="Archive item" confirm="Archive this item and revoke its item grants?" /></div></details>}</Card>)}
+  {isAdmin(a)&&<><Editor title="Create a collection"><OpsForm action={saveVaultCollection.bind(null,workspaceSlug)} label="Create collection" fields={[{name:"name",label:"Collection name",required:true}]} /></Editor>{collections.map(c=><Editor key={c.id} title={`Collection access: ${c.name}`}><GrantForm slug={workspaceSlug} collectionId={c.id} members={pickers.members} teams={pickers.teams} /></Editor>)}<Editor title="Current grants">{grants.map(g=><div key={g.id} className="mb-4 space-y-2"><p className="text-body-ui">{words(g.principalType)}: {pickers.members.find(p=>p.value===g.principalId)?.label??pickers.teams.find(p=>p.value===g.principalId)?.label??words(g.principalId)} · {words(g.permission)} · {g.expiresAt?formatDate(g.expiresAt,a.workspace.timezone):"No expiry"}</p><OpsForm action={removeVaultGrant.bind(null,workspaceSlug)} hidden={{grantId:g.id}} label="Revoke access" confirm="Revoke this grant?" /></div>)}</Editor><Editor title="Recent access log">{logs.map(l=><p key={l.id} className="my-2 text-body-ui">{formatDate(l.createdAt,a.workspace.timezone)} · {pickers.members.find(p=>p.value===l.userId)?.label??"Former member"} · {words(l.action)}</p>)}</Editor></>}
+ </OpsLayout>;
 }
+import { GrantForm } from "@/components/vault/GrantForm";
