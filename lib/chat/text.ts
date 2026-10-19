@@ -25,7 +25,6 @@ export const BROADCAST_TOKEN = /<!(channel|here)>/g;
 export function normalizeBody(input: string): string {
   return input
     .replace(/\r\n?/g, "\n")
-    // eslint-disable-next-line no-control-regex
     .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f\u200b-\u200d\u2028\u2029\ufeff]/g, "")
     .replace(/[ \t]+$/gm, "")
     .replace(/\n{4,}/g, "\n\n\n")

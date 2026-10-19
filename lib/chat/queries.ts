@@ -336,3 +336,28 @@ export async function searchMessages(ctx: ChatContext, query: string, options: {
   return hits;
 }
 
+// ───────────── Layout ─────────────
+
+/** Teams a new channel may belong to (private teams only for their members and admins). */
+export async function listTeamOptions(ctx: ChatContext): Promise<Array<{ id: string; name: string }>> {
+  const hidden = await hiddenTeamIds(ctx.workspace.id, { userId: ctx.user.id, role: ctx.membership.role });
+  return prisma.team.findMany({
+    where: { workspaceId: ctx.workspace.id, archivedAt: null, ...(hidden.length ? { id: { notIn: hidden } } : {}) },
+    select: { id: true, name: true },
+    orderBy: { name: "asc" },
+    take: 200,
+  });
+}
+
+/** Everything the chat frame needs once per navigation. */
+export async function getChatShellData(ctx: ChatContext) {
+  const [sidebar, people, channels, teams] = await Promise.all([getSidebar(ctx), listWorkspacePeople(ctx), listChannelOptions(ctx), listTeamOptions(ctx)]);
+  return {
+    sidebar,
+    people,
+    channels,
+    teams,
+    viewer: { id: ctx.user.id, name: ctx.user.name?.trim() || ctx.user.email, role: ctx.membership.role },
+  };
+}
+

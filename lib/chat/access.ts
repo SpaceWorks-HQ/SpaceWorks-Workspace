@@ -13,6 +13,7 @@ import {
   canRemoveMember,
   canSetTopic,
 } from "@/lib/chat/policy";
+import { dmTitle } from "@/lib/chat/dm";
 import type { ChannelInfo } from "@/lib/chat/types";
 
 /**
@@ -141,10 +142,11 @@ export async function channelInfo(ctx: ChatContext, resolved: ResolvedChannel): 
   const isMember = Boolean(member);
   const archived = Boolean(channel.archivedAt);
   const m = ctx.membership;
+  const persons = people.map((p) => ({ id: p.user.id, name: p.user.name?.trim() || "Former member", image: p.user.image }));
   return {
     id: channel.id,
     kind: channel.kind,
-    name: channel.name,
+    name: channel.kind === "DIRECT" ? dmTitle(persons, ctx.user.id) : channel.name,
     slug: channel.slug,
     href: channelHref(ctx.workspace.slug, channel),
     topic: channel.topic,
@@ -157,7 +159,7 @@ export async function channelInfo(ctx: ChatContext, resolved: ResolvedChannel): 
     isMember,
     notify: member?.notify ?? "ALL",
     lastReadAt: member?.lastReadAt?.toISOString() ?? member?.joinedAt.toISOString() ?? null,
-    people: people.map((p) => ({ id: p.user.id, name: p.user.name ?? "Former member", image: p.user.image })),
+    people: persons,
     can: {
       post: resolved.canPost,
       join: !isMember && !archived && channel.kind === "PUBLIC" && canJoinPublic(m),
