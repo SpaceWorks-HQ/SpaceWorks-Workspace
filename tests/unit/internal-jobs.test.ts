@@ -1,4 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+vi.mock("@/lib/scheduled", () => ({ runScheduledJobs: vi.fn(async () => ({ ran: 12, failed: [] })) }));
 import { POST } from "@/app/api/internal/jobs/route";
 
 const secret = "j".repeat(48);

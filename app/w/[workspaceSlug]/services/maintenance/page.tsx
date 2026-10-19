@@ -1,0 +1,17 @@
+import { notFound } from "next/navigation";
+import { requireWorkspace } from "@/lib/permissions";
+import { canViewServices, canManageServices, canViewCosts } from "@/lib/roles";
+import { prisma } from "@/lib/db";
+import { Card, EmptyState } from "@/components/ui/display";
+import { ServicesNav } from "@/components/services/Display";
+import { CommandForm } from "@/components/services/CommandForm";
+import { formatDayTime } from "@/lib/format/datetime";
+import { parseRrule, describeRecurrence } from "@/lib/monitor/maintenance";
+export default async function Page({ params }: PageProps<"/w/[workspaceSlug]/services/maintenance">) {
+ const { workspaceSlug } = await params;
+ const { workspace, membership } = await requireWorkspace(workspaceSlug, "MEMBER"); if (!canViewServices(membership)) notFound();
+ const manage = canManageServices(membership);
+ const [windows, monitors] = await Promise.all([prisma.maintenanceWindow.findMany({ where: { workspaceId: workspace.id }, orderBy: { startsAt: "desc" }, take: 100 }), prisma.monitor.findMany({ where: { workspaceId: workspace.id }, select: { id: true, name: true } })]);
+ return <div className="space-y-6"><h1 className="text-h1">Maintenance</h1><ServicesNav slug={workspaceSlug} manage={manage} costs={canViewCosts(membership, workspace)} /><p className="text-body-ui text-ink-muted">Times in {workspace.timezone}. Checks continue during maintenance and are excluded from uptime.</p>{windows.map(w => { const recurrence = parseRrule(w.rrule); return <Card key={w.id}><h2 className="text-h3">{w.title}</h2><p className="mt-2">{recurrence ? `${describeRecurrence(recurrence, w.durationMin ?? 60)} (${w.timezone})` : `${w.startsAt ? formatDayTime(w.startsAt, workspace.timezone) : "—"} – ${w.endsAt ? formatDayTime(w.endsAt, workspace.timezone) : "—"}`}</p><p className="mt-2 whitespace-pre-wrap text-body-ui">{w.descriptionMd}</p><p className="mt-2 text-caption text-ink-muted">{w.allMonitors ? "All monitors" : "Selected monitors"} · {w.suppressAlerts ? "Alerts suppressed" : "Alerts enabled"}</p>{manage ? <CommandForm slug={workspaceSlug} command="deleteMaintenance" fixed={{ id: w.id }} label="Delete window…" confirmText="Delete this maintenance window?" /> : null}</Card>; })}{!windows.length ? <EmptyState title="No maintenance planned. Add a window before your next update." /> : null}
+ {manage ? <Card><h2 className="mb-4 text-h3">Plan maintenance</h2><CommandForm slug={workspaceSlug} command="maintenance" fixed={{ timezone: workspace.timezone }} label="Schedule maintenance" fields={[{ name: "title", label: "Title", required: true }, { name: "descriptionMd", label: "Description (Optional)", kind: "textarea" }, { name: "startsAt", label: "Starts at", kind: "datetime", required: true }, { name: "endsAt", label: "Ends at (one-off windows)", kind: "datetime" }, { name: "rrule", label: "Recurrence (Optional)", help: "For weekly Sunday maintenance at 02:00 use FREQ=WEEKLY;BYDAY=SU;BYHOUR=2. Leave blank for a one-off window." }, { name: "durationMin", label: "Duration for recurring windows (minutes)", kind: "number", value: 60 }, { name: "monitorIds", label: "Affected monitors", kind: "ids", options: monitors.map(m => ({ value: m.id, label: m.name })) }, { name: "allMonitors", label: "All monitors", kind: "checkbox" }, { name: "suppressAlerts", label: "Suppress incidents and alerts", kind: "checkbox", value: true }, { name: "showOnStatusPage", label: "Show on the public status page", kind: "checkbox", value: true }]} /></Card> : null}</div>;
+}

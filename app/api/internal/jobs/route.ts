@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { runScheduledJobs } from "@/lib/scheduled";
 import { bearerSecretMatches } from "@/lib/bearerSecret";
 
 export const dynamic = "force-dynamic";
@@ -26,5 +27,6 @@ export async function POST(request: Request) {
   if (!bearerSecretMatches(request.headers.get("authorization"), process.env.CRON_SECRET)) {
     return new NextResponse("Not found", { status: 404, headers: privateHeaders });
   }
-  return new NextResponse(null, { status: 204, headers: privateHeaders });
+  const result = await runScheduledJobs();
+  return result.failed.length ? NextResponse.json({ ok: false }, { status: 500, headers: privateHeaders }) : new NextResponse(null, { status: 204, headers: privateHeaders });
 }

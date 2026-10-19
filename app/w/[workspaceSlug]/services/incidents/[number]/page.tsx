@@ -1,0 +1,23 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { requireWorkspace } from "@/lib/permissions";
+import { canViewServices, canManageServices, canAckIncidents } from "@/lib/roles";
+import { prisma } from "@/lib/db";
+import { Card } from "@/components/ui/display";
+import { Status } from "@/components/services/Display";
+import { CommandForm } from "@/components/services/CommandForm";
+import { formatDayTime } from "@/lib/format/datetime";
+export default async function Page({ params }: PageProps<"/w/[workspaceSlug]/services/incidents/[number]">) {
+ const { workspaceSlug, number } = await params;
+ const { workspace, membership } = await requireWorkspace(workspaceSlug, "MEMBER"); if (!canViewServices(membership)) notFound();
+ if (!/^\d+$/.test(number)) notFound();
+ const incident = await prisma.incident.findFirst({ where: { workspaceId: workspace.id, number: Number(number) }, include: { updates: { orderBy: { createdAt: "asc" } }, monitors: { where: { monitor: { workspaceId: workspace.id } }, select: { monitor: { select: { id: true, name: true } } } } } }); if (!incident) notFound();
+ const manage = canManageServices(membership), canAck = canAckIncidents(membership, workspace);
+ const postmortemDoc = incident.postmortemDocId ? await prisma.doc.findFirst({ where: { id: incident.postmortemDocId, workspaceId: workspace.id, archivedAt: null, ...(!manage ? { visibility: "WORKSPACE" } : {}) }, select: { id: true, title: true } }) : null;
+ const docs = manage ? await prisma.doc.findMany({ where: { workspaceId: workspace.id, archivedAt: null }, select: { id: true, title: true }, take: 100 }) : [];
+ return <div className="space-y-6"><Link className="text-accent-text" href={`/w/${workspaceSlug}/services/incidents`}>Back to incidents</Link><h1 className="min-w-0 break-words text-h1">INC-{number}: {incident.title}</h1><Status status={incident.status} /><p className="text-body-ui text-ink-muted">Started {formatDayTime(incident.startedAt, workspace.timezone)} ({workspace.timezone}){incident.acknowledgedAt ? " · Acknowledged" : ""}</p><div className="flex flex-wrap gap-3">{incident.monitors.map(m => <Link key={m.monitor.id} className="text-accent-text" href={`/w/${workspaceSlug}/services/monitors/${m.monitor.id}`}>{m.monitor.name}</Link>)}</div>
+ {canAck && !incident.acknowledgedAt && incident.status !== "RESOLVED" ? <CommandForm slug={workspaceSlug} command="acknowledge" fixed={{ id: incident.id }} label="Acknowledge incident" /> : null}
+ {postmortemDoc ? <p><Link className="inline-flex min-h-11 items-center text-accent-text underline" href={`/w/${workspaceSlug}/docs/${postmortemDoc.id}`}>Postmortem: {postmortemDoc.title}</Link></p> : null}
+ <Card><h2 className="mb-4 text-h3">Timeline</h2><ol className="space-y-5">{incident.updates.map(u => <li key={u.id} className="border-l-2 border-line pl-4"><p className="mb-2 text-caption text-ink-muted">{formatDayTime(u.createdAt, workspace.timezone)} · {u.public ? "Public" : "Internal"}</p><Status status={u.status} /><p className="mt-3 whitespace-pre-wrap break-words text-body-ui">{u.bodyMd}</p></li>)}</ol></Card>
+ {manage ? <><Card><h2 className="mb-4 text-h3">Post update</h2><CommandForm slug={workspaceSlug} command="updateIncident" fixed={{ id: incident.id }} label="Post update" fields={[{ name: "status", label: "Incident status", kind: "select", value: incident.status, options: ["INVESTIGATING", "IDENTIFIED", "MONITORING", "RESOLVED"].map(s => ({ value: s, label: s.charAt(0) + s.slice(1).toLowerCase() })) }, { name: "bodyMd", label: "Update", kind: "textarea", required: true }, { name: "public", label: "Show this update on the status page", kind: "checkbox", value: false }]} /></Card><Card><h2 className="mb-4 text-h3">Postmortem</h2><CommandForm slug={workspaceSlug} command="postmortem" fixed={{ id: incident.id }} fields={[{ name: "postmortemMd", label: "What happened and what we learned", kind: "textarea", value: incident.postmortemMd ?? "" }, { name: "postmortemDocId", label: "Shared document (Optional)", kind: "select", value: incident.postmortemDocId ?? "", options: [{ value: "", label: "No linked document" }, ...docs.map(d => ({ value: d.id, label: d.title }))] }]} /></Card><Card><h2 className="mb-4 text-h3">Follow-up task</h2><CommandForm slug={workspaceSlug} command="followUp" fixed={{ id: incident.id }} label="Create follow-up task" fields={[{ name: "title", label: "Task title", required: true }]} /></Card></> : incident.postmortemMd ? <Card><h2 className="text-h3">Postmortem</h2><p className="mt-3 whitespace-pre-wrap">{incident.postmortemMd}</p></Card> : null}</div>;
+}
