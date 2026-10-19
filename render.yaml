@@ -1,0 +1,143 @@
+# Render Blueprint for Space Works Workspace.
+# Step-by-step guide: docs/DEPLOYMENT_CLOUD.md (Render section).
+#
+# Default shape: one Docker web service on the Starter plan (always on, so
+# the in-process outbox worker runs and a pre-deploy command applies
+# migrations), Supabase PostgreSQL, Upstash Redis, Cloudflare R2 and Brevo SMTP.
+#
+# Free plan instead: set `plan: free`, delete `preDeployCommand`, set
+# MIGRATE_ON_START=1 and deploy the Cloudflare Worker in deploy/cloudflare-cron
+# (free instances sleep after 15 idle minutes and block SMTP ports 25/465/587;
+# Brevo on 2525 works).
+#
+# `sync: false` values are asked for once, when the Blueprint is created;
+# edit them later in the Render Dashboard (Environment tab).
+services:
+  - type: web
+    name: spaceworks-workspace
+    runtime: docker
+    plan: starter
+    # Closest to your Supabase/Upstash region; cannot change after creation
+    # (oregon, ohio, virginia, frankfurt, singapore).
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    # Applies migrations once per deploy through DIRECT_URL (falls back to DATABASE_URL).
+    preDeployCommand: sh -c "MIGRATE_ON_START=1 docker-entrypoint.sh true"
+    autoDeployTrigger: checksPass
+    buildFilter:
+      ignoredPaths:
+        - docs/**
+        - deploy/**
+        - charts/**
+        - .do/**
+        - "**/*.md"
+    envVars:
+      - key: NODE_OPTIONS
+        value: --max-old-space-size=384
+
+      # --- Public origin: https://work.example.org or https://<service>.onrender.com,
+      # no trailing slash. Both must be identical.
+      - key: NEXT_PUBLIC_BASE_URL
+        sync: false
+      - key: AUTH_URL
+        sync: false
+      - key: SUPER_ADMIN_EMAIL
+        sync: false
+
+      # --- PostgreSQL (Supabase) ---
+      # Transaction pooler (6543), runtime:
+      #   ...pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=5&sslmode=require
+      # Render Postgres instead: paste its External Database URL + ?sslmode=require.
+      - key: DATABASE_URL
+        sync: false
+      # Session pooler (5432), migrations only: ...pooler.supabase.com:5432/postgres?sslmode=require
+      - key: DIRECT_URL
+        sync: false
+
+      # --- Upstash Redis: rediss://default:<password>@<host>.upstash.io:6379 ---
+      - key: REDIS_URL
+        sync: false
+
+      # --- Secrets ---
+      # Render generates random 256-bit base64 values for these.
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: CRON_SECRET
+        generateValue: true # copy it into the Cloudflare Worker secret too
+      - key: HEALTHCHECK_SECRET
+        generateValue: true
+      # Generate each with `openssl rand -base64 32` and keep a copy in your
+      # password manager. Losing MFA_ENCRYPTION_KEY locks out every
+      # authenticator and encrypted setting; never rotate it casually.
+      - key: NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
+        sync: false
+      - key: MFA_ENCRYPTION_KEY
+        sync: false
+      - key: INTEGRATION_ENCRYPTION_KEY
+        sync: false
+      - key: VAULT_MASTER_KEY
+        sync: false
+
+      # --- Client IP trust: Render appends to X-Forwarded-For, so read the
+      # right-most hop. Use cf-connecting-ip (and remove the hops) only when
+      # your own Cloudflare zone proxies the domain.
+      - key: TRUSTED_PROXY_IP_HEADER
+        value: x-forwarded-for
+      - key: TRUSTED_PROXY_HOPS
+        value: "1"
+
+      # --- Cloudflare R2 (private bucket) ---
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_REGION
+        value: auto
+      # https://<account-id>.r2.cloudflarestorage.com
+      - key: S3_ENDPOINT
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: S3_FORCE_PATH_STYLE
+        value: "1"
+
+      # --- Brevo SMTP (bootstrap fallback; /admin settings override it) ---
+      - key: EMAIL_FROM
+        sync: false
+      - key: SMTP_HOST
+        value: smtp-relay.brevo.com
+      - key: SMTP_PORT
+        value: "2525"
+      - key: SMTP_SECURE
+        value: "false"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+
+      # --- Assistant (optional; /admin settings override it) ---
+      - key: ANTHROPIC_API_KEY
+        sync: false
+
+  # Optional paid cron service: a second scheduler next to the in-process
+  # worker (or the only one when OUTBOX_WORKER=0). The Cloudflare Worker in
+  # deploy/cloudflare-cron does the same for free.
+  # - type: cron
+  #   name: spaceworks-workspace-scheduler
+  #   runtime: docker
+  #   plan: starter
+  #   region: singapore
+  #   schedule: "*/5 * * * *"
+  #   dockerfilePath: ./Dockerfile
+  #   dockerContext: .
+  #   dockerCommand: node /app/scripts/scheduler.mjs --once
+  #   envVars:
+  #     - key: APP_URL
+  #       sync: false # https://work.example.org
+  #     - key: CRON_SECRET
+  #       fromService:
+  #         type: web
+  #         name: spaceworks-workspace
+  #         envVarKey: CRON_SECRET

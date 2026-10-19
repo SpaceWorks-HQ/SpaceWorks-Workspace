@@ -1,0 +1,12 @@
+Space Works Workspace is installed.
+
+Runtime configuration comes from the Secret: {{ include "sww.secretName" . }}
+Migrations ran in the pre-install/pre-upgrade Job {{ include "sww.fullname" . }}-migrate.
+{{- if .Values.scheduler.enabled }}
+The CronJob {{ include "sww.fullname" . }}-scheduler calls the outbox and jobs endpoints on "{{ .Values.scheduler.schedule }}".
+{{- end }}
+
+Check the rollout:
+  kubectl rollout status deployment/{{ include "sww.fullname" . }} --namespace {{ .Release.Namespace }}
+
+First run: open https://<your-host>/setup to create the owner account and first workspace.

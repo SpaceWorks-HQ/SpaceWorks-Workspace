@@ -1,0 +1,55 @@
+{{- if .Values.scheduler.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "sww.fullname" . }}-scheduler
+  labels:
+    {{- include "sww.labels" . | nindent 4 }}
+    app.kubernetes.io/component: scheduler
+spec:
+  schedule: {{ .Values.scheduler.schedule | quote }}
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 50
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 120
+      ttlSecondsAfterFinished: 300
+      template:
+        metadata:
+          labels:
+            {{- include "sww.selectorLabels" . | nindent 12 }}
+            app.kubernetes.io/component: scheduler
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            {{- include "sww.podSecurityContext" . | nindent 12 }}
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          containers:
+            - name: scheduler
+              image: {{ include "sww.image" . | quote }}
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              # Bypass the image entrypoint (never migrates) and make one pass.
+              command: ["node", "/app/scripts/scheduler.mjs", "--once"]
+              env:
+                - name: APP_URL
+                  value: "http://{{ include "sww.fullname" . }}:{{ .Values.service.port }}"
+                - name: SCHEDULER_ENDPOINTS
+                  value: {{ .Values.scheduler.endpoints | quote }}
+                # Only the scheduler bearer, never the full runtime secret.
+                - name: CRON_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "sww.secretName" . }}
+                      key: CRON_SECRET
+              securityContext:
+                {{- include "sww.containerSecurityContext" . | nindent 16 }}
+              resources:
+                {{- toYaml .Values.scheduler.resources | nindent 16 }}
+{{- end }}
