@@ -22,8 +22,8 @@ export async function runMessagingAssistant(input: MessagingAssistantInput) {
   if (!member) throw new Error("Your workspace access has changed. Contact an admin.");
   if (input.conversationId && !await prisma.assistantConversation.findFirst({ where: { id: input.conversationId, workspaceId: input.workspaceId, userId: input.userId } })) throw new Error("Start a new assistant conversation.");
   if (!(await checkRateLimitById("assistant", `messaging:${input.userId}`))) throw new Error("Too many requests. Wait a minute and try again.");
-  const runner = (globalThis as Registry)[RUNNER_KEY];
-  if (!runner) return { text: "The assistant is not connected to messaging yet. Ask an admin to enable the assistant runner.", conversationId: null };
+  // The assistant area's runner, unless something else registered one (tests do).
+  const runner = (globalThis as Registry)[RUNNER_KEY] ?? (await import("@/lib/assistant/messaging")).runMessagingTurn;
   const result = await runner(input);
   if (!await prisma.assistantConversation.findFirst({ where: { id: result.conversationId, workspaceId: input.workspaceId, userId: input.userId } })) throw new Error("The assistant conversation could not be verified.");
   return result;
