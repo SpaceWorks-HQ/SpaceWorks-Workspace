@@ -11,18 +11,15 @@ describe("destination adapter registry", () => {
     for (const [channel, adapter] of Object.entries(PERSONAL_CHANNEL_ADAPTERS)) expect(adapter.personalChannel).toBe(channel);
   });
 
-  it("ships email and workspace channels built in, other providers as not-configured placeholders", () => {
+  it("ships configured provider adapters", () => {
     expect(DESTINATION_ADAPTERS.EMAIL.configured).toBe(true);
     expect(DESTINATION_ADAPTERS.WORKSPACE_CHANNEL.configured).toBe(true);
     for (const kind of ["SLACK", "DISCORD", "MATTERMOST", "TELEGRAM", "WHATSAPP", "WEBHOOK"] as const) {
-      expect(DESTINATION_ADAPTERS[kind].configured, kind).toBe(false);
+      expect(DESTINATION_ADAPTERS[kind].configured, kind).toBe(true);
     }
   });
 
-  it("placeholders fail permanently with a clear reason", async () => {
-    const result = await DESTINATION_ADAPTERS.SLACK.send({} as never);
-    expect(result).toEqual({ ok: false, retryable: false, error: "Slack delivery is not configured yet." });
-  });
+
 });
 
 describe("delivery retry backoff", () => {

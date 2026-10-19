@@ -21,7 +21,7 @@ export async function slackApi<T extends Record<string, unknown> = Record<string
   });
   if (!outcome.ok) return outcome;
   if (outcome.data && outcome.data.ok === false) {
-    const code = typeof outcome.data.error === "string" ? outcome.data.error : "unknown_error";
+    const code = typeof outcome.data.error === "string" && /^[a-z_]{1,80}$/.test(outcome.data.error) ? outcome.data.error : "unknown_error";
     return { ok: false, status: outcome.status, retryable: RETRYABLE_SLACK_ERRORS.has(code), error: `Slack refused the request (${code}).`, data: outcome.data };
   }
   return outcome as HttpOutcome<T>;
@@ -50,5 +50,5 @@ export function slackUserInfo(token: string, userId: string) {
 
 /** Incoming webhook: answers the plain text "ok"; errors are plain text codes (no_service, channel_not_found…). */
 export async function postSlackWebhook(url: string, payload: Record<string, unknown>): Promise<HttpOutcome<unknown>> {
-  return requestJson(url, { method: "POST", body: payload, label: "Slack" });
+  return requestJson(url, { method: "POST", body: payload, guard: true, label: "Slack" });
 }

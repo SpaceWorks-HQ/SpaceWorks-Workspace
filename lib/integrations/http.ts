@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { SendResult } from "@/lib/notify/adapters/types";
+import { withGuardedFetch } from "@/lib/integrations/guardedFetch";
 import { checkPublicUrl, type Resolver } from "@/lib/integrations/ssrf";
 
 /**
@@ -60,14 +61,20 @@ function bodyRetryAfter(data: unknown): number | undefined {
 }
 
 async function readBody(response: Response): Promise<unknown> {
-  const text = await response.text().catch(() => "");
-  const clipped = text.length > MAX_BODY_BYTES ? text.slice(0, MAX_BODY_BYTES) : text;
-  if (!clipped) return null;
+  const reader = response.body?.getReader();
+  if (!reader) return null;
+  const chunks: Uint8Array[] = []; let size = 0;
   try {
-    return JSON.parse(clipped);
-  } catch {
-    return clipped;
-  }
+    while (true) {
+      const { done, value } = await reader.read(); if (done) break;
+      size += value.byteLength;
+      if (size > MAX_BODY_BYTES) throw new Error("Response too large.");
+      chunks.push(value);
+    }
+  } finally { await reader.cancel().catch(() => undefined); }
+  const text = Buffer.concat(chunks).toString("utf8");
+  if (!text) return null;
+  try { return JSON.parse(text); } catch { return text; }
 }
 
 /** Short provider-side reason from common error shapes (never echoes request data). */
@@ -97,32 +104,26 @@ export async function requestJson<T = unknown>(url: string, options: RequestOpti
       headers["Content-Type"] ??= "application/json; charset=utf-8";
     }
   }
-  let response: Response;
+  let response: Response; let data: unknown;
+  const init: RequestInit = { method: options.method ?? (body ? "POST" : "GET"), headers, body, redirect: "manual", signal: AbortSignal.timeout(options.timeoutMs ?? 10_000), cache: "no-store" };
   try {
-    response = await fetch(url, {
-      method: options.method ?? (body ? "POST" : "GET"),
-      headers,
-      body,
-      redirect: "manual",
-      signal: AbortSignal.timeout(options.timeoutMs ?? 10_000),
-      cache: "no-store",
-    });
+    const read = async (value: Response) => ({ response: value, data: await readBody(value) });
+    const result = options.guard ? await withGuardedFetch(url, init, read, options.resolver) : await read(await fetch(url, init));
+    response = result.response; data = result.data;
   } catch (error) {
     const timedOut = error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError");
     return { ok: false, status: null, retryable: true, error: timedOut ? `${label} did not answer in time.` : `Could not reach ${label}.` };
   }
-  const data = await readBody(response);
   if (response.status >= 300 && response.status < 400) {
     return { ok: false, status: response.status, retryable: false, error: `${label} answered with a redirect, which is not followed.` };
   }
   if (!response.ok) {
     const retryAfterSec = parseRetryAfter(response.headers.get("retry-after")) ?? bodyRetryAfter(data);
-    const reason = providerReason(data);
     return {
       ok: false,
       status: response.status,
       retryable: isRetryableStatus(response.status),
-      error: response.status === 429 ? `${label} is rate limiting requests.` : `${label} returned ${response.status}${reason ? ` (${reason})` : ""}.`,
+      error: response.status === 429 ? `${label} is rate limiting requests.` : `${label} returned ${response.status}.`,
       ...(retryAfterSec ? { retryAfterSec } : {}),
       data,
     };

@@ -40,5 +40,5 @@ export function escapeMattermostMarkdown(text: string): string {
   return text
     .replace(/([\\*_~`|[\]])/g, "\\$1")
     .replace(/^(\s*)([>#-])/gm, "$1\\$2")
-    .replace(/@(all|channel|here)\b/g, "@\u200b$1");
+    .replace(/@(all|channel|here|everyone)\b/g, "@\u200b$1");
 }

@@ -24,7 +24,7 @@ export async function googleClientCredentials(): Promise<{ clientId: string; cli
 
 export type TokenResult = { ok: true; token: string } | { ok: false; error: string };
 
-export async function getGoogleAccessToken(connection: Pick<IntegrationConnection, "id" | "provider" | "status" | "accessTokenEnc" | "refreshTokenEnc" | "expiresAt">, now = new Date()): Promise<TokenResult> {
+export async function getGoogleAccessToken(connection: Pick<IntegrationConnection, "id" | "workspaceId" | "provider" | "status" | "accessTokenEnc" | "refreshTokenEnc" | "expiresAt">, now = new Date()): Promise<TokenResult> {
   if (connection.provider !== "GOOGLE") return { ok: false, error: "Not a Google connection." };
   if (connection.status === "REVOKED") return { ok: false, error: "Google was disconnected. Connect it again in Settings › Integrations." };
   if (connection.accessTokenEnc && connection.expiresAt && connection.expiresAt.getTime() - now.getTime() > 60_000) {
@@ -52,14 +52,14 @@ export async function getGoogleAccessToken(connection: Pick<IntegrationConnectio
   if (!outcome.ok) {
     const code = outcome.data && typeof outcome.data === "object" ? (outcome.data as { error?: unknown }).error : null;
     if (code === "invalid_grant") {
-      await prisma.integrationConnection.updateMany({ where: { id: connection.id }, data: { status: "ERROR", lastError: "Google access was revoked or expired. Connect again." } });
+      await prisma.integrationConnection.updateMany({ where: { id: connection.id, workspaceId: connection.workspaceId }, data: { status: "ERROR", lastError: "Google access was revoked or expired. Connect again." } });
       return { ok: false, error: "Google access was revoked or expired. Connect Google again." };
     }
     return { ok: false, error: outcome.error };
   }
   const expiresAt = new Date(now.getTime() + Math.max(60, outcome.data.expires_in) * 1000);
   await prisma.integrationConnection.updateMany({
-    where: { id: connection.id },
+    where: { id: connection.id, workspaceId: connection.workspaceId },
     data: { accessTokenEnc: encryptIntegrationToken(outcome.data.access_token), expiresAt, status: "ACTIVE", lastError: null },
   });
   return { ok: true, token: outcome.data.access_token };

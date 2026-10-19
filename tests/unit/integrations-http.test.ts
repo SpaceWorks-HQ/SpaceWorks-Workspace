@@ -58,7 +58,7 @@ describe("requestJson", () => {
     fetchMock.mockResolvedValueOnce(new Response("", { status: 503 }));
     expect(await requestJson("https://example.org")).toMatchObject({ ok: false, retryable: true });
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ message: "Unknown Channel" }), { status: 404 }));
-    expect(await requestJson("https://example.org", { label: "Discord" })).toMatchObject({ ok: false, retryable: false, error: "Discord returned 404 (Unknown Channel)." });
+    expect(await requestJson("https://example.org", { label: "Discord" })).toMatchObject({ ok: false, retryable: false, error: "Discord returned 404." });
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 302, headers: { Location: "http://169.254.169.254/" } }));
     expect(await requestJson("https://example.org")).toMatchObject({ ok: false, retryable: false });
     fetchMock.mockRejectedValueOnce(new TypeError("fetch failed"));

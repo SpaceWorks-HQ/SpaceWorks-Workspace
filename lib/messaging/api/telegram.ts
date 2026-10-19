@@ -26,11 +26,8 @@ export async function telegramApi<T = unknown>(token: string, method: string, bo
     body,
     label: "Telegram",
   });
-  if (!outcome.ok) {
-    const description = outcome.data && typeof outcome.data === "object" ? (outcome.data as { description?: unknown }).description : null;
-    return typeof description === "string" && outcome.status !== 429 ? { ...outcome, error: `Telegram refused the request (${description.slice(0, 120)}).` } : outcome;
-  }
-  if (!outcome.data?.ok) return { ok: false, status: outcome.status, retryable: false, error: `Telegram refused the request (${outcome.data?.description ?? "unknown error"}).` };
+  if (!outcome.ok) return outcome;
+  if (!outcome.data?.ok) return { ok: false, status: outcome.status, retryable: false, error: "Telegram refused the request. Check the bot and chat permissions." };
   return { ok: true, status: outcome.status, data: outcome.data.result as T, headers: outcome.headers };
 }
 
@@ -47,7 +44,7 @@ export function getTelegramMe(token: string) {
 }
 
 export function setTelegramWebhook(token: string, url: string, secretToken: string) {
-  return telegramApi<boolean>(token, "setWebhook", { url, secret_token: secretToken, allowed_updates: ["message", "edited_message", "channel_post", "my_chat_member"], drop_pending_updates: true });
+  return telegramApi<boolean>(token, "setWebhook", { url, secret_token: secretToken, allowed_updates: ["message", "edited_message", "channel_post", "my_chat_member"], drop_pending_updates: false });
 }
 
 export function deleteTelegramWebhook(token: string) {

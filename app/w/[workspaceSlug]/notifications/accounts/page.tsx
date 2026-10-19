@@ -1,13 +1,15 @@
 import { notFound } from "next/navigation";
-import { ComingSoon } from "@/components/workspace/ComingSoon";
 import { canLinkExternalAccounts, requireWorkspace } from "@/lib/permissions";
-
+import { prisma } from "@/lib/db";
+import { ConnectedAccounts } from "@/components/messaging/MessagingSettings";
 export const metadata = { title: "Connected accounts" };
-
-/** Placeholder: replaced by the integrations-messaging build (see docs/ROADMAP-BUILD.md). */
 export default async function NotificationAccountsPage({ params }: PageProps<"/w/[workspaceSlug]/notifications/accounts">) {
   const { workspaceSlug } = await params;
-  const { membership } = await requireWorkspace(workspaceSlug, "MEMBER");
+  const { workspace, user, membership } = await requireWorkspace(workspaceSlug, "MEMBER");
   if (!canLinkExternalAccounts(membership)) notFound();
-  return <ComingSoon title="Connected accounts" description="Link your Telegram, Slack, Discord, Mattermost or WhatsApp to get notifications there and talk to the assistant." />;
+  const [connections, links] = await Promise.all([
+    prisma.messagingConnection.findMany({ where: { workspaceId: workspace.id, status: "ACTIVE", lastVerifiedAt: { not: null } }, select: { id: true, label: true, provider: true, status: true } }),
+    prisma.externalIdentityLink.findMany({ where: { workspaceId: workspace.id, userId: user.id }, select: { id: true, provider: true, connection: { select: { label: true } } } }),
+  ]);
+  return <div className="space-y-6"><h1 className="text-h1">Connected accounts</h1><p>Link your account to receive notifications and talk to the Space Works assistant.</p><ConnectedAccounts slug={workspaceSlug} connections={connections} links={links.map(l => ({ id: l.id, label: l.connection.label, provider: l.provider }))} /></div>;
 }

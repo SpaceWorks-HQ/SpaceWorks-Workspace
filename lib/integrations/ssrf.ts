@@ -11,9 +11,8 @@ import { isIP } from "node:net";
  * unique-local ranges are refused unless ALLOW_PRIVATE_WEBHOOK_TARGETS=true
  * (self-hosters posting to a LAN service).
  *
- * Residual risk: DNS can change between this check and the request (DNS
- * rebinding). Callers never follow redirects automatically, which closes the
- * common bypass; see docs/INTEGRATIONS.md.
+ * The guarded fetch transport also validates DNS when the socket connects.
+ * Callers never follow redirects automatically; see docs/INTEGRATIONS.md.
  */
 
 export type UrlCheck = { ok: true; url: URL } | { ok: false; error: string };
