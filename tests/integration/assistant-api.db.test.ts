@@ -70,6 +70,12 @@ describe.sequential("API tokens, /api/v1 and /api/mcp", () => {
     expect(((await denied.json()) as { error: { code: string } }).error.code).toBe("FORBIDDEN");
     expect((await listChannels(req("/api/v1/channels", reader.token))).status).toBe(403);
     expect((await getDoc(req(`/api/v1/docs/${w.docs.publicDoc.id}`, reader.token), params({ docId: w.docs.publicDoc.id }))).status).toBe(403);
+
+    // Even an admin's token never reads admin-only docs or another tenant's docs.
+    const docs = await w.makeToken(["read:docs"]);
+    expect((await getDoc(req(`/api/v1/docs/${w.docs.publicDoc.id}`, docs.token), params({ docId: w.docs.publicDoc.id }))).status).toBe(200);
+    expect((await getDoc(req(`/api/v1/docs/${w.docs.adminDoc.id}`, docs.token), params({ docId: w.docs.adminDoc.id }))).status).toBe(404);
+    expect((await getDoc(req(`/api/v1/docs/${w.docs.bDoc.id}`, docs.token), params({ docId: w.docs.bDoc.id }))).status).toBe(404);
   });
 
   it("creates through write scopes, audits the token and stops after revocation", async () => {

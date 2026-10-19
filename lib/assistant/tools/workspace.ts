@@ -44,7 +44,7 @@ export function filterSearchHits(
   principal: Pick<Principal, "kind" | "userId" | "role" | "scopes" | "workspace">,
   access: { hiddenTeams: Set<string>; myTeams: Set<string>; readableChannels: Set<string>; adminOnlyDocs: Set<string> },
 ): SearchHit[] {
-  const admin = hasRoleAtLeast(principal.role, "ADMIN") && principal.kind !== "job";
+  const admin = hasRoleAtLeast(principal.role, "ADMIN") && principal.kind === "user";
   const finance = canViewFinance(principal, principal.workspace);
   return hits.filter((hit) => {
     if (NEVER_TYPES(hit.entityType)) return false;

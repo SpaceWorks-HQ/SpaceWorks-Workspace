@@ -51,12 +51,12 @@ export async function channelWhere(principal: Principal): Promise<Prisma.Channel
   return { ...base, AND: [{ OR: [{ kind: "PUBLIC" }, { kind: "PRIVATE", ...member }] }] };
 }
 
-/** Docs the principal may read. */
+/** Docs the principal may read (admin-only docs: signed-in admins only, never tokens or jobs). */
 export function docWhere(principal: Principal): Prisma.DocWhereInput {
   return {
     workspaceId: principal.workspace.id,
     archivedAt: null,
-    ...(hasRoleAtLeast(principal.role, "ADMIN") && principal.kind !== "job" ? {} : { visibility: "WORKSPACE" }),
+    ...(hasRoleAtLeast(principal.role, "ADMIN") && principal.kind === "user" ? {} : { visibility: "WORKSPACE" }),
   };
 }
 
