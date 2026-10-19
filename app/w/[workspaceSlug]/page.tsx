@@ -15,7 +15,7 @@ import {
 } from "@/lib/format/datetime";
 import { formatMoney } from "@/lib/format/money";
 import { requireWorkspace } from "@/lib/permissions";
-import { canContribute } from "@/lib/roles";
+import { canContribute, canViewServices } from "@/lib/roles";
 import { taskUrl } from "@/lib/tasks/links";
 import { shellMessage } from "@/lib/shell/messages";
 export const metadata = { title: "My day" };
@@ -259,7 +259,8 @@ export default async function WorkspaceHome({
               </ul>
             </Card>
           ) : null}
-          {d.services.length ? (
+          {d.unrepliedLowRatings !== null ? <StatTile label="Unreplied low ratings" value={d.unrepliedLowRatings} href={`${base}/app-reviews?replied=no&sort=lowest`} /> : null}
+          {canViewServices(membership) ? (
             <Card>
               <CardHeader
                 title="Services status"
@@ -272,6 +273,7 @@ export default async function WorkspaceHome({
                   </Link>
                 }
               />
+              {!d.services.length ? <p>No monitors yet. <Link className="underline" href={`${base}/services`}>Open services</Link></p> : null}
               <div className="flex flex-wrap gap-3">
                 {d.services.map((s) => (
                   <Chip

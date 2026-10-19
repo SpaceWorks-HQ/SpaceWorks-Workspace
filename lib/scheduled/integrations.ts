@@ -20,7 +20,7 @@ export async function run(now: Date): Promise<void> {
     try { await syncSeoSite(site.workspaceId, site.id, now); }
     catch { await prisma.integrationConnection.updateMany({ where: { id: site.connectionId ?? "", workspaceId: site.workspaceId }, data: { lastError: "Search Console sync failed. Try syncing the site again." } }); }
   }
-  await prisma.inboundEvent.deleteMany({ where: { receivedAt: { lt: new Date(now.getTime() - 14 * 86400000) } } });
+  // Workspace retention owns inbound-event deletion, including legal hold.
   await prisma.linkCode.deleteMany({ where: { expiresAt: { lt: now } } });
   await prisma.oAuthState.deleteMany({ where: { expiresAt: { lt: now } } });
 }

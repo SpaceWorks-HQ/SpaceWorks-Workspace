@@ -23,7 +23,7 @@ let slackDest: string;
 
 const notificationsFor = (userId: string, eventId: string) => prisma.notification.findMany({ where: { userId, eventId } });
 const outboxFor = (deliveryIds: string[]) =>
-  prisma.outboxMessage.findMany({ where: { kind: NOTIFY_DELIVER_KIND, OR: deliveryIds.map((id) => ({ payload: { equals: { deliveryId: id } } })) } });
+  prisma.outboxMessage.findMany({ where: { kind: NOTIFY_DELIVER_KIND, OR: deliveryIds.map((id) => ({ payload: { path: ["deliveryId"], equals: id } })) } });
 
 describe.sequential("notification dispatch", () => {
   beforeAll(async () => {
@@ -280,14 +280,13 @@ describe.sequential("notification dispatch", () => {
   });
 
   it("runs notify jobs from the shared outbox worker", async () => {
-    await prisma.outboxMessage.deleteMany({ where: { kind: { not: NOTIFY_DELIVER_KIND } } });
-    await prisma.outboxMessage.updateMany({ where: { kind: NOTIFY_DELIVER_KIND, status: "PENDING" }, data: { availableAt: new Date(Date.now() + 86_400_000) } });
     const test = await sendTest(workspaceId, channelDest, owner);
     const delivery = test.deliveries[0]!;
     expect(delivery.status).toBe("PENDING");
     expect(await prisma.notificationDelivery.findUniqueOrThrow({ where: { id: delivery.id! } })).toMatchObject({ isTest: true });
 
-    await deliverOutboxBatch(100);
+    const jobs = await outboxFor([delivery.id!]);
+    await deliverOutboxBatch(100, { ids: jobs.map(job => job.id) });
     expect(await prisma.notificationDelivery.findUniqueOrThrow({ where: { id: delivery.id! } })).toMatchObject({ status: "SENT" });
     const [job] = await outboxFor([delivery.id!]);
     expect(job!.status).toBe("SENT");

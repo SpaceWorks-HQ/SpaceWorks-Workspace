@@ -26,8 +26,8 @@ import {
  *   tracks attempts, so this row only mirrors the outcome.
  */
 
-type EmailPayload = { to: string; subject: string; html: string; text: string };
-type InvitePayload = { to: string; workspaceName: string; inviterName?: string | null; role: string; inviteUrl: string; expiresAt: string };
+type EmailPayload = { workspaceId?: string; to: string; subject: string; html: string; text: string };
+type InvitePayload = { workspaceId?: string; to: string; workspaceName: string; inviterName?: string | null; role: string; inviteUrl: string; expiresAt: string };
 type ResetPayload = { to: string; resetUrl: string; expiresAt: string };
 type VerificationPayload = { to: string; verificationUrl: string; expiresAt: string };
 
@@ -137,15 +137,16 @@ async function runNotifyJob(payload: Prisma.JsonValue): Promise<{ status: "done"
 }
 
 /** Deliver a small batch. Safe to run concurrently: each row is claimed with a conditional update. */
-export async function deliverOutboxBatch(limit = 20) {
+export async function deliverOutboxBatch(limit = 20, scope: { ids?: string[] } = {}) {
+  const scoped = scope.ids ? { id: { in: scope.ids } } : {};
   // Return stale claims (worker died mid-send) to the queue first.
   await prisma.outboxMessage.updateMany({
-    where: { status: OutboxStatus.PROCESSING, lockedAt: { lt: new Date(Date.now() - 15 * 60_000) } },
+    where: { ...scoped, status: OutboxStatus.PROCESSING, lockedAt: { lt: new Date(Date.now() - 15 * 60_000) } },
     data: { status: OutboxStatus.PENDING, lockedAt: null },
   });
 
   const messages = await prisma.outboxMessage.findMany({
-    where: { status: OutboxStatus.PENDING, availableAt: { lte: new Date() } },
+    where: { ...scoped, status: OutboxStatus.PENDING, availableAt: { lte: new Date() } },
     orderBy: { createdAt: "asc" },
     take: Math.min(Math.max(limit, 1), 100),
   });

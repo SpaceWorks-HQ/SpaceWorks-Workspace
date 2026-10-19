@@ -50,6 +50,7 @@ export async function createInvitation(input: {
       select: { id: true },
     });
     await enqueueInviteEmail(tx, {
+      workspaceId: input.workspace.id,
       to: email,
       workspaceName: input.workspace.name,
       inviterName: input.invitedBy.name,
@@ -83,6 +84,7 @@ export async function resendInvitation(input: { workspace: { id: string; name: s
     if (updated.count !== 1) return { ok: false as const, error: "That invitation can no longer be resent." };
     const invitation = await tx.invitation.findUniqueOrThrow({ where: { id: input.invitationId }, select: { email: true, role: true } });
     await enqueueInviteEmail(tx, {
+      workspaceId: input.workspace.id,
       to: invitation.email,
       workspaceName: input.workspace.name,
       inviterName: input.actor.name,

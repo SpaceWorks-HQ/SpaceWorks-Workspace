@@ -35,6 +35,7 @@ export async function projectSummary(project: Project): Promise<ProjectSummary> 
     ownerId: project.ownerId,
     teamId: project.teamId,
     teamName: team?.name ?? null,
+    cyclesEnabled: project.cyclesEnabled,
     startsOn: dateOnly(project.startsOn),
     dueOn: dateOnly(project.dueOn),
   };

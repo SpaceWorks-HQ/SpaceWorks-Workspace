@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import { GithubPullRequests } from "@/components/integrations/GithubPullRequests";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PriorityChip } from "@/components/tasks/bits";
@@ -16,10 +18,11 @@ export default async function ProjectOverviewPage({ params }: PageProps<"/w/[wor
   const project = await findProjectByKey(context, key);
   if (!project) notFound();
   const timeZone = context.workspace.timezone;
-  const [overview, summary, owner] = await Promise.all([
+  const [overview, summary, owner, linkedRepo] = await Promise.all([
     getProjectOverview(context, project),
     projectSummary(project),
     project.ownerId ? prisma.user.findUnique({ where: { id: project.ownerId }, select: { name: true, image: true } }) : Promise.resolve(null),
+    prisma.githubRepo.findFirst({ where: { workspaceId: context.workspace.id, linkedProjectId: project.id, connection: { workspaceId: context.workspace.id, status: "ACTIVE" } }, select: { id: true } }),
   ]);
   const total = overview.columns.reduce((sum, column) => sum + column.count, 0);
   const done = overview.columns.filter((column) => column.category === "DONE").reduce((sum, column) => sum + column.count, 0);
@@ -109,6 +112,7 @@ export default async function ProjectOverviewPage({ params }: PageProps<"/w/[wor
           )}
         </Card>
       </div>
+      {linkedRepo ? <Card><Suspense fallback={<p role="status">Loading pull requests and issues…</p>}><GithubPullRequests workspaceSlug={workspaceSlug} projectId={project.id} /></Suspense></Card> : null}
       <Card>
         <CardHeader title="Recent activity" />
         {overview.activity.length === 0 ? (

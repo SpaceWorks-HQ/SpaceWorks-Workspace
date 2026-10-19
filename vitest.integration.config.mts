@@ -48,6 +48,9 @@ export default defineConfig({
       INTEGRATION_ENCRYPTION_KEY: Buffer.alloc(32, 5).toString("base64"),
       NEXT_PUBLIC_BASE_URL: "http://localhost:3100",
       REDIS_URL: "",
+      // Prisma can load local app settings after generation; keep storage hermetic.
+      S3_BUCKET: process.env.TEST_S3_BUCKET ?? "",
+      S3_REGION: process.env.TEST_S3_BUCKET ? (process.env.S3_REGION ?? "us-east-1") : "",
     },
   },
 });

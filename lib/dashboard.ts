@@ -3,6 +3,7 @@ import type { Prisma, Workspace } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import {
   canViewFinance,
+  canViewAppReviews,
   canViewServices,
   canContribute,
   type RoleHolder,
@@ -52,6 +53,7 @@ export async function getDashboardData(
     meetings,
     mentions,
     services,
+    unrepliedLowRatings,
   ] = await Promise.all([
     canContribute(membership) ? prisma.task.count({ where: mine }) : 0,
     canContribute(membership)
@@ -170,6 +172,7 @@ export async function getDashboardData(
           _count: true,
         })
       : [],
+    canViewAppReviews(membership) ? prisma.appReview.count({ where: { workspaceId: workspace.id, rating: { lte: 2 }, replyStatus: { not: "SENT" } } }) : null,
   ]);
   const kittyMinor = ledger
     ? ledger.reduce(
@@ -191,6 +194,7 @@ export async function getDashboardData(
     meetings,
     mentions,
     services,
+    unrepliedLowRatings,
     now,
   };
 }

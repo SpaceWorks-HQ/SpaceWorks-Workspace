@@ -452,7 +452,7 @@ export async function run(now: Date): Promise<void> {
       });
     });
   const workspaces = await prisma.workspace.findMany({
-    where: { legalHold: false, retentionPolicies: { some: {} } },
+    where: { legalHold: false },
     select: { id: true },
   });
   for (const workspace of workspaces) await purgeWorkspace(workspace.id, now);

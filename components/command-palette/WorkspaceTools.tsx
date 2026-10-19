@@ -3,7 +3,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, usePathname } from "next/navigation";
 import { loadWorkspaceTools } from "@/app/actions/search";
-import { shellMessage } from "@/lib/shell/messages";
 import { CommandPalette } from "./CommandPalette";
 import { OfflineRegistration } from "./OfflineRegistration";
 import { NavigationFocus } from "./NavigationFocus";
@@ -51,25 +50,7 @@ export function WorkspaceTools() {
           </div>
           <NotificationBell slug={slug} />
         </div>
-        {current?.pinned.length ? (
-          <nav
-            aria-label={shellMessage(current.locale, "pinned")}
-            className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-label"
-          >
-            <span className="text-ink-muted">
-              {shellMessage(current.locale, "pinned")}
-            </span>
-            {current.pinned.map((link) => (
-              <Link
-                key={link.id}
-                href={`${base}/links#${link.id}`}
-                className="inline-flex min-h-11 max-w-full items-center truncate underline"
-              >
-                {link.title}
-              </Link>
-            ))}
-          </nav>
-        ) : null}
+
       </div>
     </>
   );

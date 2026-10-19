@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { signIn } from "next-auth/react";
+import { signIn, signOut } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Callout } from "@/components/ui/display";
@@ -10,19 +10,19 @@ import { Field, Input, PasswordInput } from "@/components/ui/field";
 import { safeAuthRedirect } from "@/lib/authRedirect";
 
 const ERRORS: Record<string, string> = {
-  not_invited: "There's no account for that Google email. Ask an admin for an invitation.",
+  not_invited: "There's no account for that email. Ask an admin for an invitation.",
   disabled: "This account is disabled. Contact your workspace admin.",
 };
 
-export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
+export function LoginForm({ googleEnabled, oidcProviders = [], ssoMfa = false }: { googleEnabled: boolean; oidcProviders?: { id: string; name: string }[]; ssoMfa?: boolean }) {
   const router = useRouter();
   const params = useSearchParams();
   const callbackUrl = safeAuthRedirect(params.get("callbackUrl"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
-  const [mfaStep, setMfaStep] = useState(false);
-  const [loading, setLoading] = useState<null | "credentials" | "google">(null);
+  const [mfaStep, setMfaStep] = useState(ssoMfa);
+  const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(() => {
     const value = params.get("error");
     if (!value) return null;
@@ -35,7 +35,7 @@ export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
     setError(null);
     setLoading("credentials");
     try {
-      const result = await signIn("credentials", { email, password, totp: mfaStep ? code : undefined, redirect: false });
+      const result = await signIn(ssoMfa ? "sso-mfa" : "credentials", { email, password, totp: mfaStep ? code : undefined, redirect: false });
       if (!result || result.error) {
         if (result?.code === "mfa_required") {
           setMfaStep(true);
@@ -69,6 +69,7 @@ export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
           variant="quiet"
           className="self-center"
           onClick={() => {
+            if (ssoMfa) { void signOut({ callbackUrl: "/login" }); return; }
             setMfaStep(false);
             setCode("");
             setError(null);
@@ -84,6 +85,12 @@ export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
     <div className="flex flex-col gap-4">
       {resetDone ? <Callout tone="success" role="status">Password updated. Sign in with your new password.</Callout> : null}
       {error ? <Callout tone="danger" role="alert">{error}</Callout> : null}
+      {oidcProviders.map((provider) => (
+        <Button key={provider.id} variant="secondary" size="lg" fullWidth loading={loading === provider.id} disabled={loading !== null} onClick={() => {
+          setError(null); setLoading(provider.id);
+          void signIn(`oidc-${provider.id}`, { callbackUrl }).catch(() => { setLoading(null); setError("Sign-in is unavailable right now. Try again."); });
+        }}>Continue with {provider.name}</Button>
+      ))}
       {googleEnabled ? (
         <>
           <Button

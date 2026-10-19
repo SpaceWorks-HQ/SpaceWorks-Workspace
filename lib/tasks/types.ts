@@ -30,6 +30,7 @@ export type BoardTask = {
 };
 
 export type ProjectSummary = {
+  cyclesEnabled: boolean;
   id: string;
   key: string;
   name: string;

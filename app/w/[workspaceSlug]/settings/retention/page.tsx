@@ -37,7 +37,7 @@ export default async function RetentionPage({
       <Card>
         <CardHeader
           title="Retention policies"
-          description="Records older than the chosen number of days are permanently removed by the scheduled worker. Leave blank to keep them indefinitely."
+          description="The scheduled worker removes old content. Blank uses the defaults for inbound events (14 days), completed outbox jobs (30 days, or the instance setting) and monitor results (the services setting). Other areas keep records indefinitely without a policy. Audit records are kept unless you set a policy."
         />
         {Object.entries(RETENTION_AREAS).map(([area, label]) => (
           <RetentionForm

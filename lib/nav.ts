@@ -22,7 +22,10 @@ export type NavItemConfig = {
 export type NavGroupConfig = { key: string; label: string | null; items: NavItemConfig[] };
 
 export const NAV_GROUPS: readonly NavGroupConfig[] = [
-  { key: "home", label: null, items: [{ key: "home", label: "Home", path: "", minRole: "GUEST", exact: true }] },
+  { key: "home", label: null, items: [{ key: "home", label: "Home", path: "", minRole: "GUEST", exact: true },
+      { key: "search", label: "Search", path: "/search", minRole: "GUEST" },
+      { key: "activity", label: "Activity", path: "/activity", minRole: "GUEST" },
+      { key: "links", label: "Links", path: "/links", minRole: "GUEST" }] },
   {
     key: "community",
     label: "Community",
@@ -31,6 +34,8 @@ export const NAV_GROUPS: readonly NavGroupConfig[] = [
       { key: "members", label: "Members", path: "/members", minRole: "GUEST" },
       { key: "teams", label: "Teams", path: "/teams", minRole: "GUEST" },
       { key: "shoutouts", label: "Shoutouts", path: "/shoutouts", minRole: "GUEST" },
+      { key: "my-onboarding", label: "Onboarding", path: "/onboarding", minRole: "GUEST" },
+      { key: "changelog", label: "Changelog", path: "/changelog", minRole: "GUEST" },
       { key: "calendar", label: "Calendar", path: "/calendar", minRole: "GUEST" },
       { key: "polls", label: "Polls", path: "/polls", minRole: "MEMBER" },
       { key: "ideas", label: "Ideas", path: "/ideas", minRole: "MEMBER" },
@@ -44,6 +49,9 @@ export const NAV_GROUPS: readonly NavGroupConfig[] = [
       { key: "my-tasks", label: "My tasks", path: "/my-tasks", minRole: "MEMBER" },
       { key: "cycles", label: "Cycles", path: "/cycles", minRole: "MEMBER" },
       { key: "meetings", label: "Meetings", path: "/meetings", minRole: "GUEST" },
+      { key: "decisions", label: "Decisions", path: "/meetings/decisions", minRole: "GUEST" },
+      { key: "templates", label: "Templates", path: "/templates", minRole: "MEMBER" },
+      { key: "sign-offs", label: "Sign-offs", path: "/sign", minRole: "GUEST" },
       { key: "goals", label: "Goals", path: "/goals", minRole: "MEMBER" },
       { key: "docs", label: "Docs", path: "/docs", minRole: "GUEST" },
       { key: "files", label: "Files", path: "/files", minRole: "GUEST" },
@@ -67,6 +75,8 @@ export const NAV_GROUPS: readonly NavGroupConfig[] = [
       { key: "catalogue", label: "Service catalogue", path: "/catalogue", minRole: "MEMBER" },
       { key: "vault", label: "Vault", path: "/vault", minRole: "MEMBER" },
       { key: "contacts", label: "Contacts", path: "/contacts", minRole: "MEMBER" },
+      { key: "organisations", label: "Organisations", path: "/contacts/organisations", minRole: "MEMBER" },
+      { key: "pipeline", label: "Pipeline", path: "/contacts/pipeline", minRole: "MEMBER" },
       { key: "assets", label: "Assets", path: "/assets", minRole: "MEMBER" },
       { key: "requests", label: "Requests", path: "/requests", minRole: "MEMBER" },
       { key: "finance", label: "Finance", path: "/finance", minRole: "MEMBER", requires: "finance" },
@@ -84,6 +94,11 @@ export const NAV_GROUPS: readonly NavGroupConfig[] = [
       { key: "boardroom", label: "Boardroom", path: "/boardroom", minRole: "MEMBER" },
     ],
   },
+  { key: "personal", label: "Personal", items: [
+      { key: "notifications", label: "Notifications", path: "/notifications", minRole: "GUEST" },
+      { key: "notification-preferences", label: "Notification preferences", path: "/notifications/preferences", minRole: "GUEST" },
+      { key: "notification-accounts", label: "Connected accounts", path: "/notifications/accounts", minRole: "MEMBER" },
+  ] },
   {
     key: "settings",
     label: "Settings",
@@ -91,8 +106,11 @@ export const NAV_GROUPS: readonly NavGroupConfig[] = [
       { key: "settings", label: "Workspace", path: "/settings", minRole: "ADMIN" },
       { key: "notification-routing", label: "Notifications", path: "/settings/notifications", minRole: "ADMIN" },
       { key: "integrations", label: "Integrations", path: "/settings/integrations", minRole: "ADMIN" },
+      { key: "webhooks", label: "Webhooks", path: "/settings/notifications#webhooks", minRole: "ADMIN" },
       { key: "messaging", label: "Messaging", path: "/settings/messaging", minRole: "ADMIN" },
       { key: "cloud-accounts", label: "Cloud accounts", path: "/settings/cloud-accounts", minRole: "ADMIN" },
+      { key: "retention", label: "Retention", path: "/settings/retention", minRole: "ADMIN" },
+      { key: "app-reviews-settings", label: "App review settings", path: "/app-reviews/settings", minRole: "ADMIN" },
       { key: "onboarding", label: "Onboarding templates", path: "/settings/onboarding", minRole: "ADMIN" },
     ],
   },

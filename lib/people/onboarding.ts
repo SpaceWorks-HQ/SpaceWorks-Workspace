@@ -6,7 +6,7 @@ import { actionError, NOT_ALLOWED, validationError, type ActionResult } from "@/
 import { recordAuditEvent } from "@/lib/audit";
 import { canActOnMember, canManageOnboarding } from "@/lib/roles";
 import { dispatch } from "@/lib/notify/dispatch";
-import { adminIds, isActiveMember, type PeopleActor } from "./context";
+import { adminIds, type PeopleActor } from "./context";
 import { buildRunItems, emptyOffboardingSources, offboardingItems, runProgress, templateItemsSchema } from "./checklistItems";
 import { assigneeResolver, createRun, startTemplateRun } from "./checklists";
 import { canSeeChecklistRun, canTickChecklistItem } from "./access";

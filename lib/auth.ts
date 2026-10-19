@@ -10,9 +10,10 @@ import { isActionRateLimited } from "@/lib/actionRateLimit";
 import { prisma } from "@/lib/db";
 import { hasVerifiedGoogleEmail } from "@/lib/googleAuth";
 import { consumeMfaCode, consumeRecoveryCode, decryptMfaSecret } from "@/lib/mfa";
+import { enabledOidcProviders, existingOidcMember } from "@/lib/shell/oidc";
 import { getGoogleSsoSettings } from "@/lib/instanceSettings";
 
-export const SESSION_COOKIE = "sww.session-token.v1";
+export const SESSION_COOKIE = "sww.session-token.v2";
 
 const credentialsSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
@@ -31,10 +32,11 @@ class MfaRequiredError extends CredentialsSignin {
 // Fixed, non-secret bcrypt hash: equal work for unknown and Google-only accounts.
 const DUMMY_HASH = "$2b$12$R9h/cIPz0gi.URNNX3kh2OPST9/PgBkqquzi.Ss7KIUgO2t0jWMUW";
 
-type TokenExtras = { authenticatedAt?: number; sessionVersion?: number };
+type TokenExtras = { authenticatedAt?: number; sessionVersion?: number; mfaPending?: boolean };
+export type SsoMfaChallenge = { userId: string; sessionVersion: number; authenticatedAt: number };
 
 export const { handlers, auth, signIn, signOut } = NextAuth(async () => {
-  const google = await getGoogleSsoSettings().catch(() => null);
+  const [google, oidc] = await Promise.all([getGoogleSsoSettings().catch(() => null), enabledOidcProviders().catch(() => [])]);
   return {
     adapter: authAdapter,
     session: { strategy: "jwt" },
@@ -47,6 +49,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth(async () => {
     },
     pages: { signIn: "/login", error: "/login" },
     providers: [
+      ...oidc,
+      Credentials({
+        id: "sso-mfa",
+        name: "SSO verification",
+        credentials: { totp: { label: "Verification code", type: "text" } },
+        async authorize(raw) {
+          const session = await auth();
+          const proof = (session as typeof session & { ssoMfa?: SsoMfaChallenge })?.ssoMfa;
+          if (!proof || Date.now() - proof.authenticatedAt > 5 * 60_000) return null;
+          if (await isActionRateLimited("auth", proof.userId)) return null;
+          const user = await prisma.user.findUnique({ where: { id: proof.userId } });
+          if (!user || user.disabledAt || user.sessionVersion !== proof.sessionVersion || !user.mfaEnabledAt || !user.mfaSecretEncrypted) return null;
+          const code = z.string().trim().min(1).max(32).safeParse(raw.totp);
+          if (!code.success) return null;
+          const valid = await consumeMfaCode(decryptMfaSecret(user.mfaSecretEncrypted), user.email, code.data);
+          if (!valid && !(await consumeRecoveryCode(user.id, code.data))) return null;
+          return { id: user.id, name: user.name, email: user.email, image: user.image, sessionVersion: user.sessionVersion };
+        },
+      }),
       ...(google
         ? [
             Google({
@@ -90,6 +111,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth(async () => {
     ],
     callbacks: {
       async signIn({ user, account, profile }) {
+        if (account?.provider.startsWith("oidc-")) {
+          const existing = await existingOidcMember(account.provider, profile);
+          if (!existing) return false;
+          const session = await auth();
+          const currentId = session?.user?.id ?? (session as typeof session & { ssoMfa?: SsoMfaChallenge })?.ssoMfa?.userId;
+          if (currentId && currentId !== existing.id) return false;
+          user.email = existing.email;
+          return true;
+        }
         if (account?.provider !== "google") return true;
         if (!hasVerifiedGoogleEmail(profile)) return false;
         const email = user.email?.trim().toLowerCase();
@@ -101,10 +131,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth(async () => {
         if (existing.disabledAt) return "/login?error=disabled";
         return true;
       },
-      async jwt({ token, user }) {
+      async jwt({ token, user, account }) {
         const userId = user?.id ?? token.sub;
         if (!userId) return null;
-        const current = await prisma.user.findUnique({ where: { id: userId }, select: { sessionVersion: true, disabledAt: true } });
+        const current = await prisma.user.findUnique({ where: { id: userId }, select: { sessionVersion: true, disabledAt: true, mfaEnabledAt: true } });
         if (!current || current.disabledAt) return null;
         const extras = token as typeof token & TokenExtras;
         if (user) {
@@ -113,14 +143,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth(async () => {
           const verifiedVersion = (user as typeof user & { sessionVersion?: number }).sessionVersion;
           if (verifiedVersion !== undefined && verifiedVersion !== current.sessionVersion) return null;
           token.sub = user.id;
+          extras.mfaPending = Boolean(current.mfaEnabledAt && account?.type !== "credentials");
           extras.authenticatedAt = Date.now();
           extras.sessionVersion = current.sessionVersion;
         } else if (extras.sessionVersion !== current.sessionVersion) {
           return null;
         }
+        if (extras.mfaPending && Date.now() - (extras.authenticatedAt ?? 0) > 5 * 60_000) return null;
         return token;
       },
       session({ session, token }) {
+        const extras = token as typeof token & TokenExtras;
+        if (extras.mfaPending) {
+          (session as typeof session & { ssoMfa?: SsoMfaChallenge }).ssoMfa = { userId: token.sub!, sessionVersion: extras.sessionVersion!, authenticatedAt: extras.authenticatedAt! };
+          // A pending factor has no authenticated user for any page or API.
+          session.user = undefined as unknown as typeof session.user;
+          return session;
+        }
         if (session.user && token.sub) session.user.id = token.sub;
         (session as typeof session & { authenticatedAt?: number }).authenticatedAt = (token as typeof token & TokenExtras).authenticatedAt;
         return session;

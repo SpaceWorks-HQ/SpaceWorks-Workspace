@@ -12,7 +12,7 @@ This area provides the member's daily overview, permission-filtered search and a
 - `/settings/export`, `/settings/import`, `/settings/retention`: ADMIN and OWNER data controls. The area task explicitly permits ADMIN exports; the existing shared owner-only `canExportWorkspace` helper remains unchanged. Export downloads repeat authorization and expire after seven days.
 - `/admin/sso` and `/admin/backups`: instance operator plus fresh MFA. SSO secrets are encrypted with `sso-secrets`, never returned to a form. Backup posture shows reported successes, age and sizes, with locations and raw errors withheld.
 
-The new workspace `template.tsx` hosts the palette, dropdown bell, navigation focus helper and offline registration without editing the shared layout or chrome. Its tools action re-resolves membership from the slug; it receives no trusted workspace ID from the browser. Pinned links appear in this toolbar. The existing sidebar bell remains the coordinator's direct link.
+The new workspace `template.tsx` hosts the palette, dropdown bell, navigation focus helper and offline registration without editing the shared layout or chrome. Its tools action re-resolves membership from the slug; it receives no trusted workspace ID from the browser. Pinned links now appear in the app sidebar; search and the dropdown bell remain in the toolbar. The existing sidebar bell remains the coordinator's direct link.
 
 ## Access and search contracts
 
@@ -52,17 +52,11 @@ The existing manifest remains authoritative. `public/sww-sw.js` caches only the 
 
 `lib/shell/messages.ts` establishes stable keys and an English fallback for unsupported locales. Workspace.defaultLocale is ADMIN-editable. Shared navigation copy remains coordinator-owned. The existing skip link and main landmark are retained; palette dialogs trap/restore focus, combobox active descendants support keyboard selection, status text announces loading and counts, the navigation helper focuses main after route changes, and every new control has a visible label and a 44px target. New components add no motion.
 
-## Coordinator integration still required
+## Coordinator integration
 
-Shared core was kept read-only. The following work is concrete and ready for its owner:
+The [integration finish](integration-finish.md) connects instance OIDC sign-in and local MFA, moves pinned links into the sidebar, adds the admin/settings tabs and registers cross-area retention writers. The existing adapter still refuses account creation. Deployment owns backup evidence and restore drills; the admin page reports actual runs.
 
-1. Put `NotificationBell`, `CommandPalette` and the `pinnedLinks` result directly into `components/chrome/AppShell.tsx` / `lib/appShell.ts` if the preferred placement is the sidebar. The workspace template currently provides the global tools and a Pinned toolbar; remove the duplicated toolbar controls when moving them.
-2. Wire OIDC into `lib/auth.ts`: await `enabledOidcProviders()` alongside the existing Google settings; spread the returned providers into Auth.js; for providers starting `oidc-`, require `existingOidcMember(account.provider, profile)` in the sign-in callback before allowing account linking. The existing adapter's createUser refusal must remain. The helper requires a verified email, a nonempty subject, an allowed exact domain, an existing enabled user with active membership, an enabled instance provider and a stable linked subject. No auto-provisioning or role assignment is performed. Surface `publicOidcProviders()` as sign-in buttons in the login form. Configuration alone does not enable OIDC sign-in until this wiring is applied.
-3. Add SSO/backups and export/import/retention tabs to the shared admin/settings navigation. Pages link to each other now and the global palette includes the workspace settings commands.
-4. Extract the remaining shared chrome labels into the message catalogue when editing chrome. No shared labels were rewritten by this build.
-5. The deployment build owns BackupRun reporting and restore drills. This page reads actual evidence; it does not fabricate runs or run operator backup scripts.
-
-Outgoing webhook subscriptions, signing and logs belong to integrations-messaging (ownership row 7). No parallel webhook transport was added here.
+Outgoing webhooks use integrations-messaging destinations, signatures and delivery logs. The settings Webhooks shortcut opens that shared configuration.
 
 OIDC API references: [Auth.js provider configuration](https://authjs.dev/reference/core/providers), [Auth.js OAuth configuration](https://authjs.dev/guides/configuring-oauth-providers), [adapter contract](https://authjs.dev/reference/nextjs/adapters).
 

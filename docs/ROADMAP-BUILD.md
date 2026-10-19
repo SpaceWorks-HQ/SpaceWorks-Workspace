@@ -56,7 +56,7 @@ integrations-messaging) · `lib/notifications.ts` · `lib/outbox.ts` ·
 `lib/env.ts` · `.env.example` · `lib/search/documents.ts` · `lib/activity.ts` ·
 `lib/teamAccess.ts` · `lib/realtime*.ts` · `lib/storage/**` · `lib/audit.ts` ·
 `lib/db.ts` · `lib/redis.ts` · `lib/rateLimit.ts` · `lib/actionRateLimit.ts` ·
-`components/ui/**` · `components/chrome/**` · `components/workspace/ComingSoon.tsx` ·
+`components/ui/**` · `components/chrome/**` ·
 `components/settings/SettingsTabs.tsx` · `app/w/[workspaceSlug]/layout.tsx` ·
 `app/w/[workspaceSlug]/settings/layout.tsx` · `app/layout.tsx` · `app/globals.css` ·
 `app/styles/**` · `proxy.ts` · `instrumentation.ts` · `next.config.ts` ·

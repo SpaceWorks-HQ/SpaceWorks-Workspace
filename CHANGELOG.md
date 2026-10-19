@@ -9,8 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Projects, kanban boards, recurring tasks, dependencies, cycles and personal tasks.
+- Channels, direct messages, threads, reactions, pins and live updates.
+- Nested rich-text docs, revisions, verification, private files and versions.
+- Announcements, shoutouts, community events, RSVPs, waitlists and private calendar feeds.
+- Community kitty, invoices, finance categories and public blog publishing.
+- Assistant conversations, workspace tools, memory, skills, scheduled digests, boardroom, MCP and scoped machine APIs.
+- Google, GitHub, SEO, messaging connections, account linking, channel bridges and signed webhooks.
+- Service checks, incidents, maintenance, on-call, public status pages, cloud inventory and costs.
+- Member profiles, teams, onboarding, certifications, availability, rota, contacts, organisations and pipeline.
+- Service catalogue, subscriptions, encrypted vault, assets, bookings, budgets, purchases, reimbursements, approvals and forms.
+- Meetings, decisions, goals, key results, polls, ideas, templates, changelog and sign-offs.
+- My day, global search, activity, pinned links, command palette, notification centre, preferences, exports, imports, legal hold and retention.
+- App-store review inbox, replies, triage, insights, task links and notification routing.
+- Instance OIDC providers for existing active members with verified emails, stable subject linking and local MFA completion. The v2 session cookie requires a fresh sign-in after upgrading.
+- Project cycles settings, GitHub pull requests and issues on project overviews, and role-aware services and app-review summaries on My day.
+- Shared retention writers for chat content, activity, notifications and deliveries, monitor raw results, assistant conversations, audit, inbound events and completed outbox jobs; legal hold protects workspace records.
+
+### Fixed
+
+- Notification-rule rating filters survive editor saves and combine with minimum severity during delivery planning.
+- Global search checks app reviews and incidents against live tenant and role access; decisions also require access to their parent meeting.
+- Outbox retry tests claim their own jobs; integration cleanup removes tenant jobs before deleting their ownership records.
+- All completed areas and settings are reachable through role-aware navigation, with pinned links in the sidebar.
+- Removed unused variables and retired the unused feature placeholder.
+
+### Foundation
+
 - Foundation: Next.js 16 / Prisma 6 / Auth.js v5 project scaffold, tooling and tests.
-- Complete data model for every product area in one initial migration, with
+- Complete data model for every product area with committed migrations, with
   generated full-text search columns on tasks, messages and docs.
 - Space Works brand: tokens, Gilroy and Unbounded fonts, logos, light and dark
   colour modes, and the shared UI primitives in `components/ui`.
@@ -27,7 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   mode, sign out everywhere and a JSON data export.
 - Instance admin with TOTP step-up: encrypted instance settings (SMTP, Google,
   assistant key), workspaces, users and email outbox health.
-- Shared services for later features: realtime SSE fan-out over Redis, private
+- Shared services across features: realtime SSE fan-out over Redis, private
   file storage with an authorised download route, notifications, audit log,
   email outbox, rate limits and per-workspace counters.
 - Health, readiness and outbox scheduler endpoints; demo seed for
