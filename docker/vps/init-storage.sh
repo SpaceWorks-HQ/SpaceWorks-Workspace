@@ -14,7 +14,15 @@ mc version enable "local/$bucket" >/dev/null
 if ! mc ilm rule ls "local/$bucket" >/dev/null 2>&1; then
   mc ilm rule add --noncurrent-expire-days 30 --expire-delete-marker "local/$bucket" >/dev/null
 fi
-sed "s/__BUCKET__/$bucket/g" /bootstrap/storage-policy.json > /tmp/storage-policy.json
+# The mc image has no sed, so the bucket-scoped policy is written directly.
+printf '%s\n' \
+  '{' \
+  '  "Version": "2012-10-17",' \
+  '  "Statement": [' \
+  "    { \"Effect\": \"Allow\", \"Action\": [\"s3:ListBucket\", \"s3:GetBucketLocation\"], \"Resource\": [\"arn:aws:s3:::$bucket\"] }," \
+  "    { \"Effect\": \"Allow\", \"Action\": [\"s3:GetObject\", \"s3:PutObject\", \"s3:DeleteObject\"], \"Resource\": [\"arn:aws:s3:::$bucket/*\"] }" \
+  '  ]' \
+  '}' > /tmp/storage-policy.json
 mc admin user add local sww-app "$S3_APP_PASSWORD" >/dev/null
 mc admin policy create local sww-app /tmp/storage-policy.json >/dev/null
 mc admin policy attach local sww-app --user sww-app >/dev/null 2>&1 || true

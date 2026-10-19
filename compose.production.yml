@@ -86,7 +86,6 @@ services:
     entrypoint: ["/bin/sh", "/bootstrap/init-storage.sh"]
     volumes:
       - ./docker/vps/init-storage.sh:/bootstrap/init-storage.sh:ro
-      - ./docker/vps/storage-policy.json:/bootstrap/storage-policy.json:ro
       - ${SWW_CONFIG_DIR}/tls/ca.crt:/tls/ca.crt:ro
     depends_on:
       storage: { condition: service_healthy }

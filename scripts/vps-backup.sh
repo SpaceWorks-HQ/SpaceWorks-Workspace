@@ -97,6 +97,9 @@ echo "Database: $dump"
 if [[ "$skip_storage" = 0 ]]; then
   echo 'Backing up storage...'
   compose run --rm --no-deps storage-backup backup "$stamp"
+  tar -czf "$backups/storage/storage-$stamp.tar.gz.partial" -C "$backups/storage/mirror" .
+  mv "$backups/storage/storage-$stamp.tar.gz.partial" "$backups/storage/storage-$stamp.tar.gz"
+  echo "Storage archived: storage/storage-$stamp.tar.gz"
 fi
 
 # The configuration archive excludes backups to avoid recursion. It contains

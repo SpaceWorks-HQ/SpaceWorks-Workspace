@@ -2,8 +2,9 @@
 # Silo bucket backup/restore, run by scripts/vps-backup.sh and vps-restore.sh
 # in the `storage-backup` tools container (root storage credential, data network).
 #
-#   storage-backup.sh backup STAMP     mirror the bucket into /backups/storage/mirror,
-#                                      then archive it as storage-STAMP.tar.gz
+#   storage-backup.sh backup STAMP     mirror the bucket into /backups/storage/mirror
+#                                      (the mc image has no tar; vps-backup.sh archives
+#                                      the mirror on the host as storage-STAMP.tar.gz)
 #   storage-backup.sh restore DIR      copy /backups/DIR back into the bucket
 #                                      (existing objects with the same key are overwritten)
 set -eu
@@ -17,9 +18,7 @@ case "${1:-}" in
     # Incremental: only changed objects are copied; deleted objects are removed
     # from the mirror (dated archives and bucket versioning keep history).
     mc mirror --quiet --overwrite --remove "local/$bucket" /backups/storage/mirror
-    tar -czf "/backups/storage/storage-$stamp.tar.gz.partial" -C /backups/storage/mirror .
-    mv "/backups/storage/storage-$stamp.tar.gz.partial" "/backups/storage/storage-$stamp.tar.gz"
-    echo "Storage archived: storage/storage-$stamp.tar.gz"
+    echo "Storage mirrored: storage/mirror"
     ;;
   restore)
     source_dir=${2:?Provide the extracted backup directory}

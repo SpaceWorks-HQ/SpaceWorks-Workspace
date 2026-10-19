@@ -38,7 +38,10 @@ try {
   const object = await s3.send(new GetObjectCommand({ Bucket: process.env.S3_BUCKET, Key: objectKey }));
   assert.equal(await object.Body.transformToString(), "disposable deployment check");
   step = "pages render";
-  for (const path of ["/login", "/api/health"]) assert.equal(await status(path), 200, path);
+  assert.equal(await status("/api/health"), 200, "/api/health");
+  // A fresh install has no accounts yet, so /login sends visitors to /setup.
+  const login = await status("/login");
+  assert.ok(login === 200 || (login >= 300 && login < 400 && (await status("/setup")) === 200), "/login or /setup");
   step = "readiness requires the bearer";
   assert.equal(await status("/api/health/db"), 404);
   step = "internal endpoints require the bearer";
