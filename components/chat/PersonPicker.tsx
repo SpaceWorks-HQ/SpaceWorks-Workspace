@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useMemo, useState } from "react";
-import { X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { Avatar } from "@/components/ui/display";
 import { SearchInput } from "@/components/ui/field";
@@ -84,7 +84,7 @@ export function PersonPicker({
                   {person.role && isWorkspaceRole(person.role) ? <span className="block text-caption text-ink-muted">{roleLabel(person.role)}</span> : null}
                 </span>
                 <span aria-hidden className={cn("inline-flex size-5 items-center justify-center rounded-sm border", checked ? "border-primary bg-primary text-on-primary" : "border-line-strong bg-panel")}>
-                  {checked ? <svg viewBox="0 0 16 16" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M3.5 8.5l3 3 6-7" /></svg> : null}
+                  {checked ? <Check className="size-3.5" strokeWidth={3} /> : null}
                 </span>
               </button>
             </li>
