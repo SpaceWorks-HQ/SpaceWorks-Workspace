@@ -239,7 +239,7 @@ describe.sequential("notification dispatch", () => {
     expect(await prisma.notificationDelivery.findUniqueOrThrow({ where: { id: idFor(emailDest) } })).toMatchObject({ status: "SENT", attempts: 1 });
 
     const failed = await processNotifyDelivery(idFor(slackDest));
-    expect(failed).toEqual({ status: "failed", error: "Slack delivery is not configured yet." });
+    expect(failed).toEqual({ status: "failed", error: "This destination needs an active, verified connection. Check messaging settings." });
     expect(await prisma.notificationDestination.findUniqueOrThrow({ where: { id: slackDest } })).toMatchObject({ health: "ERROR" });
     const alert = await prisma.notification.findFirst({ where: { userId: admin, kind: "destination.failing" } });
     expect(alert?.title).toBe("Notifications to #ops on Slack are failing");
