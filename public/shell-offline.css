@@ -1,0 +1,39 @@
+@font-face {
+  font-family: Gilroy;
+  src: url("/brand/fonts/Gilroy-Regular.woff") format("woff");
+  font-display: swap;
+}
+:root {
+  --sw-cream: #fff4e8;
+  --sw-ink: #142c2a;
+  --sw-teal: #006e63;
+}
+body {
+  margin: 0;
+  background: var(--sw-cream);
+  color: var(--sw-ink);
+  font:
+    18px/1.5 Gilroy,
+    sans-serif;
+}
+main {
+  max-width: 32rem;
+  margin: 10vh auto;
+  padding: 24px;
+}
+h1 {
+  font-weight: 600;
+}
+a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  border-radius: 10px;
+  padding: 0 20px;
+  background: var(--sw-teal);
+  color: var(--sw-cream);
+}
+a:focus-visible {
+  outline: 2px solid var(--sw-ink);
+  outline-offset: 4px;
+}
