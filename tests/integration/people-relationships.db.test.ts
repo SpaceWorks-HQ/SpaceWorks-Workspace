@@ -175,7 +175,8 @@ describe.sequential("people and relationships boundaries", () => {
     expect(run.items.map(i => i.sourceId)).toEqual(expect.arrayContaining([vault.id, service.id, asset.id, key.id]));
     expect((await checklistRuns(member)).some(r => r.id === run.id)).toBe(false);
     expect((await startOffboarding(admin, { userId: owner.user.id })).ok).toBe(false);
-    expect((await startOffboarding(other, { userId: member.user.id })).ok).toBe(false);
+    // `member` also joined the other workspace in an earlier test; the owner never did.
+    expect((await startOffboarding(other, { userId: owner.user.id })).ok).toBe(false);
     for (const item of run.items) expect((await tickChecklistItem(owner, { id: item.id, done: true })).ok).toBe(true);
     expect((await completeChecklist(owner, { id: run.id, suspend: true })).ok).toBe(true);
     expect((await prisma.membership.findFirstOrThrow({ where: { workspaceId: owner.workspace.id, userId: member.user.id } })).status).toBe("SUSPENDED");
