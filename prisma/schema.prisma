@@ -4281,7 +4281,7 @@ model NotificationRuleDestination {
   destinationId String
 
   rule        NotificationRule        @relation(fields: [ruleId], references: [id], onDelete: Cascade)
-  destination NotificationDestination @relation(fields: [destinationId], references: [id], onDelete: Restrict)
+  destination NotificationDestination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
 
   @@id([ruleId, destinationId])
   @@index([destinationId])

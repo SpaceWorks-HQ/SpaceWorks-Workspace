@@ -3292,7 +3292,7 @@ ALTER TABLE "NotificationRule" ADD CONSTRAINT "NotificationRule_workspaceId_fkey
 ALTER TABLE "NotificationRuleDestination" ADD CONSTRAINT "NotificationRuleDestination_ruleId_fkey" FOREIGN KEY ("ruleId") REFERENCES "NotificationRule"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "NotificationRuleDestination" ADD CONSTRAINT "NotificationRuleDestination_destinationId_fkey" FOREIGN KEY ("destinationId") REFERENCES "NotificationDestination"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "NotificationRuleDestination" ADD CONSTRAINT "NotificationRuleDestination_destinationId_fkey" FOREIGN KEY ("destinationId") REFERENCES "NotificationDestination"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "NotificationPreference" ADD CONSTRAINT "NotificationPreference_workspaceId_fkey" FOREIGN KEY ("workspaceId") REFERENCES "Workspace"("id") ON DELETE CASCADE ON UPDATE CASCADE;
