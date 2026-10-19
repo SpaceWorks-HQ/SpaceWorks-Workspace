@@ -12,11 +12,11 @@ export async function listCatalogue(actor: OpsActor) {
  await guard(actor);
  const rows = await prisma.serviceCatalogItem.findMany({ where: { workspaceId: actor.workspace.id, ...teamScopeFilter(await hiddenTeamIds(actor.workspace.id, { userId: actor.user.id, role: actor.membership.role })) }, include: { links: true }, orderBy: { name: "asc" }, take: 500 });
  return Promise.all(rows.map(async row => {
-  const monitors = await prisma.monitor.findMany({ where: { workspaceId: actor.workspace.id, id: { in: row.links.filter(l => l.targetType === "MONITOR").map(l => l.targetId) } }, select: { id: true, name: true, status: true } });
+  const monitors = (await prisma.monitor.findMany({ where: { workspaceId: actor.workspace.id, id: { in: row.links.filter(l => l.targetType === "MONITOR").map(l => l.targetId) } }, select: { id: true, name: true, lastStatus: true } })).map((m) => ({ id: m.id, name: m.name, status: m.lastStatus }));
   const resources = await prisma.cloudResource.findMany({ where: { workspaceId: actor.workspace.id, id: { in: row.links.filter(l => l.targetType === "CLOUD_RESOURCE").map(l => l.targetId) } }, select: { id: true, name: true, status: true } });
   const vaultItems = [];
   for (const link of row.links.filter(l => l.targetType === "VAULT_ITEM")) { const item = await prisma.vaultItem.findFirst({ where: { id: link.targetId, workspaceId: actor.workspace.id, deletedAt: null }, select: { id: true, workspaceId: true, title: true, ownerId: true, collectionId: true } }); if (item && await permitted(actor, item, "LIST")) vaultItems.push({ id: item.id, title: item.title }); }
-  const runbook = row.runbookDocId ? await prisma.doc.findFirst({ where: { id: row.runbookDocId, workspaceId: actor.workspace.id, deletedAt: null, ...(!isAdmin(actor) ? { visibility: "WORKSPACE" } : {}) }, select: { id: true, title: true } }) : null;
+  const runbook = row.runbookDocId ? await prisma.doc.findFirst({ where: { id: row.runbookDocId, workspaceId: actor.workspace.id, archivedAt: null, ...(!isAdmin(actor) ? { visibility: "WORKSPACE" } : {}) }, select: { id: true, title: true } }) : null;
   const costs = canViewCosts(actor.membership, { costsVisibleToMembers: !!actor.workspace.costsVisibleToMembers });
   return { ...row, links: undefined, runbookDocId: runbook?.id ?? null, costMinor: costs ? row.costMinor : null, costCurrency: costs ? row.costCurrency : null, monitors, resources, vaultItems, runbook, status: worstStatus([...monitors.map(m => m.status), ...resources.map(r => cloudStatus(r.status))]) };
  }));
@@ -30,7 +30,7 @@ export async function saveService(actor: OpsActor, input: unknown) {
   if (v.id) { const current = await prisma.serviceCatalogItem.findFirst({ where: { id: v.id, workspaceId: actor.workspace.id, teamId: v.teamId } }); if (!current) throw new OpsError("That service is unavailable."); }
   if (v.costMinor !== undefined || v.costPeriod !== undefined) throw new OpsError("Ask an admin to update billing details.");
  }
- if (v.runbookDocId && !await prisma.doc.findFirst({ where: { id: v.runbookDocId, workspaceId: actor.workspace.id, deletedAt: null, ...(!isAdmin(actor) ? { visibility: "WORKSPACE" } : {}) } })) throw new OpsError("Choose a runbook you can read.");
+ if (v.runbookDocId && !await prisma.doc.findFirst({ where: { id: v.runbookDocId, workspaceId: actor.workspace.id, archivedAt: null, ...(!isAdmin(actor) ? { visibility: "WORKSPACE" } : {}) } })) throw new OpsError("Choose a runbook you can read.");
  if (await prisma.monitor.count({ where: { workspaceId: actor.workspace.id, id: { in: v.monitorIds } } }) !== new Set(v.monitorIds).size || await prisma.cloudResource.count({ where: { workspaceId: actor.workspace.id, id: { in: v.cloudResourceIds } } }) !== new Set(v.cloudResourceIds).size) throw new OpsError("Choose checks and cloud resources in this workspace.");
  for (const itemId of v.vaultItemIds) { const item = await prisma.vaultItem.findFirst({ where: { id: itemId, workspaceId: actor.workspace.id, deletedAt: null } }); if (!item || !await permitted(actor, item, "LIST")) throw new OpsError("Choose vault items you can access."); }
  return prisma.$transaction(async tx => {

@@ -13,7 +13,7 @@ export async function submitMoneyRequest(slug: string, form: FormData) {
   if (files.length > 10) throw new OpsError("Attach at most ten receipts.");
   if (files.reduce((size, file) => size + file.size, 0) > 24 * 1024 * 1024) throw new OpsError("Keep receipts below 24 MB in total.");
   for (const file of files) {
-   const result = await uploadWorkspaceFile({ workspaceId: actor.workspace.id, uploadedById: actor.user.id, file, folder: "requests", allowedTypes: ["application/pdf", "image/jpeg", "image/png", "image/webp"], maxBytes: 10 * 1024 * 1024 });
+   const result = await uploadWorkspaceFile({ workspaceId: actor.workspace.id, uploadedById: actor.user.id, file, folder: "requests", allowedTypes: new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"]), maxBytes: 10 * 1024 * 1024 });
    if (!result.ok) throw new OpsError(result.error); receiptFileIds.push(result.file.id);
   }
   await createRequest(actor, { ...data, receiptFileIds });

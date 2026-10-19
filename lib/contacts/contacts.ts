@@ -184,7 +184,7 @@ export async function importContacts(actor: PeopleActor, csv: unknown): Promise<
   if (typeof csv !== "string") return actionError("Choose a CSV file.");
   let rows: string[][]; try { rows = parseCsv(csv); } catch (e) { return actionError(e instanceof Error ? e.message : "Check the CSV format."); }
   const header = rows.shift()?.map(v => v.toLowerCase().trim()); if (!header?.includes("name") || new Set(header).size !== header.length) return actionError("Use one name column, plus optional email, phone, tags, kinds and notes columns.");
-  const inputs = [];
+  const inputs: z.infer<typeof contactSchema>[] = [];
   for (let index = 0; index < rows.length; index++) {
     const row = rows[index]; if (row.length !== header.length) return actionError(`Row ${index + 2} has a different number of columns.`);
     const values = Object.fromEntries(header.map((key, i) => [key, row[i]]));
