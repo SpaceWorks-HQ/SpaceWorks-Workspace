@@ -29,8 +29,11 @@ export const NAV_GROUPS: readonly NavGroupConfig[] = [
     items: [
       { key: "announcements", label: "Announcements", path: "/announcements", minRole: "GUEST" },
       { key: "members", label: "Members", path: "/members", minRole: "GUEST" },
+      { key: "teams", label: "Teams", path: "/teams", minRole: "GUEST" },
       { key: "shoutouts", label: "Shoutouts", path: "/shoutouts", minRole: "GUEST" },
       { key: "calendar", label: "Calendar", path: "/calendar", minRole: "GUEST" },
+      { key: "polls", label: "Polls", path: "/polls", minRole: "MEMBER" },
+      { key: "ideas", label: "Ideas", path: "/ideas", minRole: "MEMBER" },
     ],
   },
   {
@@ -39,8 +42,12 @@ export const NAV_GROUPS: readonly NavGroupConfig[] = [
     items: [
       { key: "projects", label: "Projects", path: "/projects", minRole: "GUEST" },
       { key: "my-tasks", label: "My tasks", path: "/my-tasks", minRole: "MEMBER" },
+      { key: "cycles", label: "Cycles", path: "/cycles", minRole: "MEMBER" },
+      { key: "meetings", label: "Meetings", path: "/meetings", minRole: "GUEST" },
+      { key: "goals", label: "Goals", path: "/goals", minRole: "MEMBER" },
       { key: "docs", label: "Docs", path: "/docs", minRole: "GUEST" },
       { key: "files", label: "Files", path: "/files", minRole: "GUEST" },
+      { key: "forms", label: "Forms", path: "/forms", minRole: "MEMBER" },
     ],
   },
   {
@@ -55,7 +62,15 @@ export const NAV_GROUPS: readonly NavGroupConfig[] = [
     key: "operations",
     label: "Operations",
     items: [
+      { key: "services", label: "Services", path: "/services", minRole: "MEMBER" },
+      { key: "catalogue", label: "Service catalogue", path: "/catalogue", minRole: "MEMBER" },
+      { key: "vault", label: "Vault", path: "/vault", minRole: "MEMBER" },
+      { key: "contacts", label: "Contacts", path: "/contacts", minRole: "MEMBER" },
+      { key: "assets", label: "Assets", path: "/assets", minRole: "MEMBER" },
+      { key: "requests", label: "Requests", path: "/requests", minRole: "MEMBER" },
       { key: "finance", label: "Finance", path: "/finance", minRole: "MEMBER", requires: "finance" },
+      { key: "subscriptions", label: "Subscriptions", path: "/subscriptions", minRole: "MEMBER" },
+      { key: "rota", label: "Rota", path: "/rota", minRole: "MEMBER" },
       { key: "blog", label: "Blog", path: "/blog", minRole: "ADMIN" },
       { key: "seo", label: "SEO", path: "/seo", minRole: "ADMIN" },
     ],
@@ -73,7 +88,11 @@ export const NAV_GROUPS: readonly NavGroupConfig[] = [
     label: "Settings",
     items: [
       { key: "settings", label: "Workspace", path: "/settings", minRole: "ADMIN" },
+      { key: "notification-routing", label: "Notifications", path: "/settings/notifications", minRole: "ADMIN" },
       { key: "integrations", label: "Integrations", path: "/settings/integrations", minRole: "ADMIN" },
+      { key: "messaging", label: "Messaging", path: "/settings/messaging", minRole: "ADMIN" },
+      { key: "cloud-accounts", label: "Cloud accounts", path: "/settings/cloud-accounts", minRole: "ADMIN" },
+      { key: "onboarding", label: "Onboarding templates", path: "/settings/onboarding", minRole: "ADMIN" },
     ],
   },
 ];

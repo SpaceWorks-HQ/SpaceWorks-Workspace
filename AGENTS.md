@@ -48,12 +48,14 @@ Tenancy is strict: `Workspace` is the tenant boundary.
 | `prisma/` | `schema.prisma` (complete for every phase) and migrations |
 | `scripts/` | Prisma wrapper, seed, storage init, backups, production preflight |
 | `tests/unit`, `tests/integration`, `tests/e2e` | Vitest unit, PostgreSQL integration (`*.db.test.ts`), Playwright |
-| `docs/` | `DESIGN.md` (brand and UI), `ARCHITECTURE.md` (services and flows) |
+| `docs/` | `DESIGN.md` (brand and UI), `ARCHITECTURE.md` (services and flows), `ROADMAP-BUILD.md` (area ownership for parallel builds) |
 
 `prisma/schema.prisma` is authoritative for the data model. It already holds
 the models for every planned area (work, chat, knowledge, community,
-operations, assistant, integrations, SEO, boardroom). Read it before adding
-anything.
+operations, assistant, integrations, SEO, boardroom) plus the platform
+extension (teams, people, approvals, service catalogue, vault, CRM, assets,
+money requests, meetings, polls, goals, rota, forms, the Services monitor and
+messaging + notification routing). Read it before adding anything.
 
 ## Working conventions
 
@@ -118,11 +120,16 @@ action, e.g. "No projects yet. Start one for the next build night."
 - Super-admin is the user whose email equals `SUPER_ADMIN_EMAIL`, plus a fresh
   TOTP step-up (`/admin-mfa`, 10 minutes). Everyone else gets `notFound()`.
 - Bearer capabilities (invitation, password reset, API tokens, OAuth state,
-  Telegram link codes) are random and stored only as SHA-256 hashes. Never log
+  account link codes, heartbeat tokens, calendar feed tokens) are random and
+  stored only as SHA-256 hashes. Never log
   them, put them in audit metadata, or render them back.
 - Secrets at rest: MFA seeds (`MFA_ENCRYPTION_KEY`), instance settings
   (HKDF subkey of it), integration OAuth tokens (`INTEGRATION_ENCRYPTION_KEY`,
-  see `lib/integrationSecrets.ts`). Write-only in every UI.
+  see `lib/integrationSecrets.ts`), and one `encryptSecret` purpose per new
+  encrypted column (messaging, notification, cloud and monitor secrets,
+  emergency contacts, SSO). Vault items use envelope encryption under
+  `VAULT_MASTER_KEY`. Write-only in every UI; vault secrets never reach
+  search, activity, notifications, logs or assistant tools.
 - Files are private. Upload with `uploadWorkspaceFile` (type allow-list, size
   limit, image decode check) and serve only through `/api/files/[id]`, which
   checks membership, admin-only docs and finance visibility.
@@ -138,12 +145,20 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for signatures. In short:
 `requireSuperAdminMfa`), `lib/roles.ts` (capabilities), `lib/realtime.ts`
 (`publish`, `publishToUser`, `subscribe`) + `components/realtime/useRealtime.ts`,
 `lib/storage` (`uploadWorkspaceFile`, `fileUrl`, `deleteObjects`),
-`lib/notifications.ts` (`createNotifications`), `lib/audit.ts`
+`lib/notifications.ts` (`createNotifications`; new features notify through
+`lib/notify` `dispatch()` instead), `lib/audit.ts`
 (`recordAuditEvent`), `lib/outbox.ts` (`enqueueEmail` and friends),
 `lib/counters.ts` (`nextWorkspaceSequence`), `lib/workspaces.ts`
 (`createDefaultBoardColumns`, `joinDefaultChannels`), `lib/nav.ts` (the one
 navigation config), `lib/instanceSettings.ts` (`getAssistantSettings`,
-`getEmailSettings`, `getGoogleSsoSettings`).
+`getEmailSettings`, `getGoogleSsoSettings`), `lib/notify` (`dispatch`,
+`setScopedDestinations`, the event catalogue and destination adapters),
+`lib/search/documents.ts`, `lib/activity.ts`, `lib/teamAccess.ts` and
+`lib/scheduled/<area>.ts` (periodic jobs).
+
+Parallel builds: [docs/ROADMAP-BUILD.md](docs/ROADMAP-BUILD.md) lists, per
+area, the routes, models and helpers it owns and the shared core nobody
+else edits.
 
 ## Verification
 

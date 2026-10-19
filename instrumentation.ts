@@ -7,5 +7,10 @@ export async function register() {
       const { startOutboxWorker } = await import("@/lib/outboxWorker");
       startOutboxWorker();
     }
+    // Development only: run the Services monitor check scheduler in-process.
+    if (process.env.MONITOR_WORKER_INPROCESS === "true") {
+      const { startMonitorWorker } = await import("@/lib/monitor/worker");
+      startMonitorWorker();
+    }
   }
 }

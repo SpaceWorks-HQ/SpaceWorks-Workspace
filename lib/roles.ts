@@ -69,3 +69,85 @@ export function canActOnMember(actor: RoleHolder, targetRole: WorkspaceRole): bo
   // Admins manage members and guests, never other admins or owners.
   return targetRole === "MEMBER" || targetRole === "GUEST";
 }
+
+// ───────────── Platform extension capabilities ─────────────
+// Role gates only. Record-level rules (team LEAD rights, vault grants,
+// approval eligibility, PRIVATE/TEAM visibility) live in each area's lib and
+// are checked after these.
+
+type ServicesWorkspace = { membersCanAckIncidents: boolean };
+type CostsWorkspace = { costsVisibleToMembers: boolean };
+
+/** Teams: create, archive, change leads (team LEADs manage their own members). */
+export const canManageTeams = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** Onboarding/offboarding templates and starting offboarding runs. */
+export const canManageOnboarding = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** Emergency contacts: admins and the member themselves; every view is audited. */
+export const canViewEmergencyContact = (m: RoleHolder, isSelf: boolean) => atLeast(m, "ADMIN") || (isSelf && atLeast(m, "GUEST"));
+
+/** Services monitor: overview, monitors, incidents, cloud resources (guests get 404). */
+export const canViewServices = (m: RoleHolder) => atLeast(m, "MEMBER");
+/** Create/edit/pause monitors, maintenance windows, status page, manual incidents. */
+export const canManageServices = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** Acknowledge incidents: admins, plus members when the workspace allows it. */
+export function canAckIncidents(m: RoleHolder, workspace: ServicesWorkspace): boolean {
+  if (atLeast(m, "ADMIN")) return true;
+  return atLeast(m, "MEMBER") && workspace.membersCanAckIncidents;
+}
+/** Connect or replace cloud provider credentials (write-only). */
+export const canManageCloudAccounts = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** Cloud spend and service costs: admins, members only when the workspace allows it. */
+export function canViewCosts(m: RoleHolder, workspace: CostsWorkspace): boolean {
+  if (atLeast(m, "ADMIN")) return true;
+  return atLeast(m, "MEMBER") && workspace.costsVisibleToMembers;
+}
+
+/** Service catalogue: everyone but guests reads; admins (and owning-team leads) edit. */
+export const canViewCatalogue = (m: RoleHolder) => atLeast(m, "MEMBER");
+export const canManageCatalogue = (m: RoleHolder) => atLeast(m, "ADMIN");
+export const canViewSubscriptions = (m: RoleHolder) => atLeast(m, "MEMBER");
+export const canManageSubscriptions = (m: RoleHolder) => atLeast(m, "ADMIN");
+
+/** Open the vault (what each item shows still depends on grants). Guests never. */
+export const canUseVault = (m: RoleHolder) => atLeast(m, "MEMBER");
+/** Create collections and manage grants workspace-wide. */
+export const canManageVault = (m: RoleHolder) => atLeast(m, "ADMIN");
+
+/** Contacts and organisations: members view (per visibility) and add. */
+export const canViewContacts = (m: RoleHolder) => atLeast(m, "MEMBER");
+/** Delete, merge and bulk-export contacts. */
+export const canManageContacts = (m: RoleHolder) => atLeast(m, "ADMIN");
+
+/** Borrow and book equipment. */
+export const canUseAssets = (m: RoleHolder) => atLeast(m, "MEMBER");
+/** Inventory, maintenance, keys and access credentials. */
+export const canManageAssets = (m: RoleHolder) => atLeast(m, "ADMIN");
+
+/** Submit purchase requests and reimbursement claims. */
+export const canSubmitRequests = (m: RoleHolder) => atLeast(m, "MEMBER");
+/** Approval policies and the "all requests" view; deciding is per policy step. */
+export const canManageApprovals = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** Mark reimbursements paid and post them to the ledger. */
+export const canPayRequests = (m: RoleHolder) => atLeast(m, "ADMIN");
+
+/** Volunteer rota: sign up for shifts. */
+export const canUseRota = (m: RoleHolder) => atLeast(m, "MEMBER");
+/** Shift types and shifts (team leads manage their own team's shifts). */
+export const canManageRota = (m: RoleHolder) => atLeast(m, "ADMIN");
+
+/** Build forms and see every submission. */
+export const canManageForms = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** Record decisions and close motions (meeting facilitators may also record). */
+export const canRecordDecisions = (m: RoleHolder) => atLeast(m, "ADMIN");
+
+/** Notification destinations, workspace rules, delivery log, test sends. */
+export const canManageNotificationRouting = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** Pick external destinations in an entity's "Send to" picker (members: in-app/channel only). */
+export const canPickExternalDestinations = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** Slack/Discord/Mattermost/Telegram/WhatsApp connections and channel bridges. */
+export const canManageMessaging = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** Link one's own Telegram/Slack/… account (guests: not yet). */
+export const canLinkExternalAccounts = (m: RoleHolder) => atLeast(m, "MEMBER");
+
+/** Workspace-wide export (zip). */
+export const canExportWorkspace = (m: RoleHolder) => atLeast(m, "OWNER");

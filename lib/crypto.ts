@@ -38,15 +38,38 @@ export function decodeAes256Key(raw: string | undefined, name: string): Buffer {
 }
 
 /** Purposes for derived subkeys. Never reuse one purpose for another kind of data. */
-export type SecretPurpose = "instance-settings" | "integration-tokens";
+export type SecretPurpose =
+  | "instance-settings"
+  | "integration-tokens"
+  /** MessagingConnection.credentialsEnc, BridgedChannel.outboundWebhookEnc. */
+  | "messaging-credentials"
+  /** NotificationDestination.secretEnc (webhook URLs, signing secrets). */
+  | "notification-secrets"
+  /** CloudConnection.credentialsEnc. */
+  | "cloud-credentials"
+  /** Monitor.secretEnc (auth headers, connection strings). */
+  | "monitor-secrets"
+  /** MemberProfile.emergencyContactEnc. */
+  | "member-emergency"
+  /** SsoProvider.clientSecretEnc. */
+  | "sso-secrets";
 
 const PURPOSE_INFO: Record<SecretPurpose, string> = {
   "instance-settings": "sww-instance-settings-v1",
   "integration-tokens": "sww-integration-tokens-v1",
+  "messaging-credentials": "sww-messaging-credentials-v1",
+  "notification-secrets": "sww-notification-secrets-v1",
+  "cloud-credentials": "sww-cloud-credentials-v1",
+  "monitor-secrets": "sww-monitor-secrets-v1",
+  "member-emergency": "sww-member-emergency-v1",
+  "sso-secrets": "sww-sso-secrets-v1",
 };
 
+/** Third-party credentials use INTEGRATION_ENCRYPTION_KEY when set. */
+const INTEGRATION_PURPOSES = new Set<SecretPurpose>(["integration-tokens", "messaging-credentials", "notification-secrets", "cloud-credentials", "monitor-secrets", "sso-secrets"]);
+
 function rootKeyFor(purpose: SecretPurpose): Buffer {
-  if (purpose === "integration-tokens" && process.env.INTEGRATION_ENCRYPTION_KEY) {
+  if (INTEGRATION_PURPOSES.has(purpose) && process.env.INTEGRATION_ENCRYPTION_KEY) {
     return decodeAes256Key(process.env.INTEGRATION_ENCRYPTION_KEY, "INTEGRATION_ENCRYPTION_KEY");
   }
   return decodeAes256Key(process.env.MFA_ENCRYPTION_KEY, "MFA_ENCRYPTION_KEY");
@@ -78,4 +101,25 @@ export function encryptSecret(purpose: SecretPurpose, plaintext: string): string
 
 export function decryptSecret(purpose: SecretPurpose, value: string): string {
   return decryptWithKey(subkey(purpose), value);
+}
+
+/**
+ * Envelope encryption for the credentials vault. A fresh 256-bit data key
+ * encrypts the secret; the data key is wrapped with the vault master key
+ * (VAULT_MASTER_KEY, separate from every other key). Store both strings and
+ * the key version. Not end-to-end: the server can decrypt on reveal.
+ */
+export function vaultMasterKey(raw = process.env.VAULT_MASTER_KEY): Buffer {
+  if (!raw) throw new Error("VAULT_MASTER_KEY is not set.");
+  return decodeAes256Key(raw, "VAULT_MASTER_KEY");
+}
+
+export function sealEnvelope(masterKey: Buffer, plaintext: string): { secretEnc: string; dataKeyEnc: string } {
+  const dataKey = crypto.randomBytes(32);
+  return { secretEnc: encryptWithKey(dataKey, plaintext), dataKeyEnc: encryptWithKey(masterKey, dataKey.toString("base64")) };
+}
+
+export function openEnvelope(masterKey: Buffer, sealed: { secretEnc: string; dataKeyEnc: string }): string {
+  const dataKey = Buffer.from(decryptWithKey(masterKey, sealed.dataKeyEnc), "base64");
+  return decryptWithKey(dataKey, sealed.secretEnc);
 }

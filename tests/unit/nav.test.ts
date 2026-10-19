@@ -33,6 +33,26 @@ describe("navigation by role", () => {
     expect(visible).not.toContain("assistant");
   });
 
+  it("keeps operations and internal-team areas away from guests", () => {
+    const visible = keys(navForMember("kochi", { role: "GUEST", workspace }));
+    expect(visible).toEqual(expect.arrayContaining(["teams", "meetings"]));
+    for (const key of ["services", "catalogue", "vault", "contacts", "assets", "requests", "subscriptions", "rota", "polls", "ideas", "cycles", "goals", "forms"]) {
+      expect(visible).not.toContain(key);
+    }
+  });
+
+  it("gives members the work and operations areas but no settings", () => {
+    const visible = keys(navForMember("kochi", { role: "MEMBER", workspace }));
+    expect(visible).toEqual(expect.arrayContaining(["services", "catalogue", "vault", "contacts", "assets", "requests", "subscriptions", "rota", "cycles", "meetings", "goals", "forms", "polls", "ideas"]));
+    for (const key of ["notification-routing", "messaging", "cloud-accounts", "onboarding"]) expect(visible).not.toContain(key);
+  });
+
+  it("gives every nav item a unique key and path", () => {
+    const items = NAV_GROUPS.flatMap((group) => group.items);
+    expect(new Set(items.map((item) => item.key)).size).toBe(items.length);
+    expect(new Set(items.map((item) => item.path)).size).toBe(items.length);
+  });
+
   it("drops empty groups and builds hrefs under /w/<slug>", () => {
     const groups = navForMember("tinker space", { role: "GUEST", workspace });
     expect(groups.find((group) => group.key === "settings")).toBeUndefined();
@@ -46,5 +66,7 @@ describe("navigation by role", () => {
     expect(activeNavKey(groups, "/w/kochi/settings/integrations")).toBe("integrations");
     expect(activeNavKey(groups, "/w/kochi/settings/members")).toBe("settings");
     expect(activeNavKey(groups, "/w/kochi/dm/abc")).toBe("dms");
+    expect(activeNavKey(groups, "/w/kochi/settings/notifications")).toBe("notification-routing");
+    expect(activeNavKey(groups, "/w/kochi/services/monitors/abc")).toBe("services");
   });
 });
