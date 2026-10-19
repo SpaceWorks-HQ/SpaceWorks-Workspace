@@ -75,7 +75,7 @@ export default async function FilesPage({ params, searchParams }: PageProps<"/w/
             ))}
           </ul>
           <p className="text-caption text-ink-muted">
-            Includes files attached to pages and other areas, but not chat attachments. <Link href={`/w/${workspace.slug}/files/deleted`} className="text-accent-text underline underline-offset-4">Recently deleted</Link> files still count until they are purged.
+            Includes files attached to pages and other areas, but not chat attachments or <Link href={`/w/${workspace.slug}/files/deleted`} className="text-accent-text underline underline-offset-4">recently deleted</Link> files.
           </p>
         </section>
       ) : null}
