@@ -45,6 +45,21 @@ afterAll(async () => {
   await cleanup([slug], emailSuffix);
 });
 
+describe("task attachment downloads", () => {
+  it("hides attachments on a private team's project from non-members of that team", async () => {
+    const team = await prisma.team.create({ data: { workspaceId, name: `Ops ${suffix}`, slug: `ops-${suffix}`, visibility: "PRIVATE" } });
+    await prisma.teamMember.create({ data: { teamId: team.id, userId: insider } });
+    const project = await prisma.project.create({ data: { workspaceId, key: "OPS", name: "Ops", teamId: team.id } });
+    const task = await prisma.task.create({ data: { workspaceId, projectId: project.id, number: 1, title: "Rotate keys", position: 1, creatorId: insider } });
+    const file = await prisma.fileObject.create({
+      data: { workspaceId, storageKey: `workspaces/${workspaceId}/files/${suffix}-task`, filename: "keys.txt", contentType: "text/plain", size: 4, uploadedById: insider, taskId: task.id },
+    });
+    expect(await findDownloadableFile(file.id, insider)).not.toBeNull();
+    expect(await findDownloadableFile(file.id, owner)).not.toBeNull();
+    expect(await findDownloadableFile(file.id, outsider)).toBeNull();
+  });
+});
+
 describe("chat attachment downloads", () => {
   it("limits private-channel attachments to channel members, even for owners", async () => {
     const fileId = await attach(await channel("PRIVATE", [insider]), insider, "private.txt");

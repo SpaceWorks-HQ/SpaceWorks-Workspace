@@ -8,7 +8,8 @@ import { hiddenTeamIds } from "@/lib/teamAccess";
 /**
  * Can `userId` download file `fileId`? Requires an ACTIVE membership in the
  * file's workspace (non-archived). Files attached to admin-only docs need
- * ADMIN; ledger receipts follow the finance visibility rule; chat attachments
+ * ADMIN; task attachments in a private team's project need that team;
+ * ledger receipts follow the finance visibility rule; chat attachments
  * need read access to a channel the file was posted in. Returns the file
  * or null (callers answer 404 either way, so ids never reveal anything).
  */
@@ -19,6 +20,7 @@ export async function findDownloadableFile(fileId: string, userId: string) {
     select: {
       id: true, workspaceId: true, storageKey: true, filename: true, contentType: true, size: true, deletedAt: true,
       doc: { select: { visibility: true } },
+      task: { select: { project: { select: { teamId: true } } } },
       _count: { select: { ledgerReceipts: true } },
       messageAttachments: { select: { message: { select: { channel: { select: { id: true, kind: true, teamId: true, archivedAt: true } } } } } },
       workspace: { select: { archivedAt: true, financeVisibleToMembers: true } },
@@ -31,6 +33,8 @@ export async function findDownloadableFile(fileId: string, userId: string) {
   });
   if (!membership || membership.status !== "ACTIVE") return null;
   if (file.doc?.visibility === "ADMINS" && !hasRoleAtLeast(membership.role, "ADMIN")) return null;
+  const taskTeamId = file.task?.project?.teamId;
+  if (taskTeamId && (await hiddenTeamIds(file.workspaceId, { userId, role: membership.role })).includes(taskTeamId)) return null;
   if (file._count.ledgerReceipts > 0 && !canViewFinance(membership, file.workspace)) return null;
   if (file.messageAttachments.length > 0 && !(await canReadAnyChannel(file.workspaceId, userId, membership.role, file.messageAttachments.map((a) => a.message.channel)))) return null;
   return file;
