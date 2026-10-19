@@ -556,6 +556,13 @@ model Workspace {
   externalIdentityLinks    ExternalIdentityLink[]
   linkCodes                LinkCode[]
   bridgedChannels          BridgedChannel[]
+  appStoreAccounts         AppStoreAccount[]
+  reviewedApps             ReviewedApp[]
+  appReviews               AppReview[]
+  appReviewReplyAttempts   AppReviewReplyAttempt[]
+  appReviewSlackConfig     AppReviewSlackConfig?
+  appReviewSlackEvents     AppReviewSlackEvent[]
+  appReviewSlackMembers    AppReviewSlackMember[]
 }
 
 model Membership {
@@ -2082,6 +2089,7 @@ enum DigestFrequency {
 
 /// "Send to" picker scopes. Each scoped rule belongs to one entity (scopeId).
 enum RuleScopeType {
+  REVIEWED_APP
   WORKSPACE
   MONITOR
   INCIDENT
@@ -4538,4 +4546,202 @@ model MessagingConversation {
 
   @@unique([connectionId, externalKey, userId])
   @@index([assistantConversationId])
+}
+
+// App reviews. Cross-area links and actor ids follow platform plain-id conventions.
+enum AppReviewPlatform {
+  APPLE
+  GOOGLE
+}
+
+enum AppReviewReplyStatus {
+  NONE
+  SENDING
+  SENT
+  FAILED
+}
+
+enum AppReviewPublishState {
+  PUBLISHED
+  PENDING
+  UNKNOWN
+}
+
+enum AppReviewPostStatus {
+  NONE
+  POSTING
+  POSTED
+  FAILED
+}
+
+enum AppReviewStatus {
+  NEW
+  IN_PROGRESS
+  DONE
+  IGNORED
+}
+
+enum AppReviewReplySource {
+  WORKSPACE
+  SLACK
+}
+
+model AppStoreAccount {
+  id                    String            @id @default(cuid())
+  workspaceId           String
+  platform              AppReviewPlatform
+  name                  String
+  issuerIdEnc           String?
+  keyIdEnc              String?
+  privateKeyP8Enc       String?
+  serviceAccountJsonEnc String?
+  proxyUrlEnc           String?
+  active                Boolean           @default(true)
+  lastError             String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  workspace             Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  apps                  ReviewedApp[]
+
+  @@unique([workspaceId, id, platform])
+  @@index([workspaceId, active])
+}
+
+model ReviewedApp {
+  id                  String            @id @default(cuid())
+  workspaceId         String
+  accountId           String
+  platform            AppReviewPlatform
+  name                String
+  appIdentifier       String
+  active              Boolean           @default(true)
+  pollIntervalMinutes Int               @default(15)
+  lastPolledAt        DateTime?
+  nextPollAt          DateTime          @default(now())
+  pollLeaseUntil      DateTime?
+  pollLeaseToken      String?
+  lastError           String?
+  allowNoProxy        Boolean           @default(false)
+  proxyUrlEnc         String?
+  slackChannelId      String?
+  linkedServiceId     String?
+  linkedProjectId     String?
+  translationLanguage String?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  workspace           Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  account             AppStoreAccount   @relation(fields: [workspaceId, accountId, platform], references: [workspaceId, id, platform], onDelete: Cascade)
+  reviews             AppReview[]
+
+  @@unique([workspaceId, platform, appIdentifier])
+  @@unique([workspaceId, id, platform])
+  @@index([workspaceId, active, nextPollAt])
+}
+
+model AppReview {
+  id                 String                  @id @default(cuid())
+  workspaceId        String
+  appId              String
+  platform           AppReviewPlatform
+  externalReviewId   String
+  author             String
+  title              String                  @default("")
+  body               String
+  rating             Int
+  language           String?
+  territory          String?
+  appVersion         String?
+  storeCreatedAt     DateTime
+  storeUpdatedAt     DateTime
+  replyBody          String?
+  replyStatus        AppReviewReplyStatus    @default(NONE)
+  replyExternalId    String?
+  replySentAt        DateTime?
+  replyPublishState  AppReviewPublishState   @default(UNKNOWN)
+  replyCheckedAt     DateTime?
+  repliedById        String?
+  slackChannelId     String?
+  slackMessageTs     String?
+  slackPostStatus    AppReviewPostStatus     @default(NONE)
+  slackPostAttemptAt DateTime?
+  status             AppReviewStatus         @default(NEW)
+  assigneeId         String?
+  tags               String[]                @default([])
+  linkedTaskId       String?
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  workspace          Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  app                ReviewedApp             @relation(fields: [workspaceId, appId, platform], references: [workspaceId, id, platform], onDelete: Cascade)
+  attempts           AppReviewReplyAttempt[]
+
+  @@unique([workspaceId, appId, externalReviewId])
+  @@unique([workspaceId, id])
+  @@index([workspaceId, storeCreatedAt])
+  @@index([workspaceId, appId, storeCreatedAt])
+  @@index([workspaceId, status, storeCreatedAt])
+  @@index([workspaceId, rating])
+  @@index([workspaceId, replyStatus, replyPublishState])
+  @@index([workspaceId, slackChannelId, slackMessageTs])
+}
+
+model AppReviewReplyAttempt {
+  id          String               @id @default(cuid())
+  workspaceId String
+  reviewId    String
+  source      AppReviewReplySource
+  actorId     String?
+  triggerKey  String
+  body        String
+  status      AppReviewReplyStatus @default(SENDING)
+  error       String?
+  createdAt   DateTime             @default(now())
+  finishedAt  DateTime?
+  workspace   Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  review      AppReview            @relation(fields: [workspaceId, reviewId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, triggerKey])
+  @@index([workspaceId, reviewId, createdAt])
+}
+
+model AppReviewSlackConfig {
+  workspaceId       String    @id
+  botTokenEnc       String
+  signingSecretEnc  String
+  teamId            String
+  botUserId         String
+  replyTriggerEmoji String    @default("white_check_mark")
+  active            Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+// Durable inbound queue, drained by the scheduled job. No review text or secrets.
+model AppReviewSlackEvent {
+  id              String    @id @default(cuid())
+  workspaceId     String
+  externalEventId String
+  channelId       String
+  messageTs       String
+  userId          String
+  status          String    @default("QUEUED")
+  error           String?
+  createdAt       DateTime  @default(now())
+  processedAt     DateTime?
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, externalEventId])
+  @@index([workspaceId, status, createdAt])
+}
+
+// Explicit admin-approved mapping; current membership is checked again at send time.
+model AppReviewSlackMember {
+  id          String    @id @default(cuid())
+  workspaceId String
+  slackUserId String
+  userId      String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, slackUserId])
+  @@index([workspaceId, userId])
 }

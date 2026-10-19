@@ -52,9 +52,26 @@ export type SecretPurpose =
   /** MemberProfile.emergencyContactEnc. */
   | "member-emergency"
   /** SsoProvider.clientSecretEnc. */
-  | "sso-secrets";
+  | "sso-secrets"
+  | "app-review-issuer"
+  | "app-review-key-id"
+  | "app-review-private-key"
+  | "app-review-service-account"
+  | "app-review-account-proxy"
+  | "app-review-app-proxy"
+  | "app-review-slack-token"
+  | "app-review-slack-signing";
 
 const PURPOSE_INFO: Record<SecretPurpose, string> = {
+  "app-review-issuer": "sww-app-review-issuer-v1",
+  "app-review-key-id": "sww-app-review-key-id-v1",
+  "app-review-private-key": "sww-app-review-private-key-v1",
+  "app-review-service-account": "sww-app-review-service-account-v1",
+  "app-review-account-proxy": "sww-app-review-account-proxy-v1",
+  "app-review-app-proxy": "sww-app-review-app-proxy-v1",
+  "app-review-slack-token": "sww-app-review-slack-token-v1",
+  "app-review-slack-signing": "sww-app-review-slack-signing-v1",
+
   "instance-settings": "sww-instance-settings-v1",
   "integration-tokens": "sww-integration-tokens-v1",
   "messaging-credentials": "sww-messaging-credentials-v1",
@@ -69,7 +86,7 @@ const PURPOSE_INFO: Record<SecretPurpose, string> = {
 const INTEGRATION_PURPOSES = new Set<SecretPurpose>(["integration-tokens", "messaging-credentials", "notification-secrets", "cloud-credentials", "monitor-secrets", "sso-secrets"]);
 
 function rootKeyFor(purpose: SecretPurpose): Buffer {
-  if (INTEGRATION_PURPOSES.has(purpose) && process.env.INTEGRATION_ENCRYPTION_KEY) {
+  if ((purpose.startsWith("app-review-") || INTEGRATION_PURPOSES.has(purpose)) && process.env.INTEGRATION_ENCRYPTION_KEY) {
     return decodeAes256Key(process.env.INTEGRATION_ENCRYPTION_KEY, "INTEGRATION_ENCRYPTION_KEY");
   }
   return decodeAes256Key(process.env.MFA_ENCRYPTION_KEY, "MFA_ENCRYPTION_KEY");

@@ -26,13 +26,13 @@ export function eventTypeMatches(pattern: string, type: string): boolean {
   return pattern === type;
 }
 
-export type RuleFilters = { projectIds?: string[]; monitorIds?: string[]; teamIds?: string[]; tagsAny?: string[] };
+export type RuleFilters = { ratings?: number[]; projectIds?: string[]; monitorIds?: string[]; teamIds?: string[]; tagsAny?: string[] };
 
 export function parseRuleFilters(value: unknown): RuleFilters {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
   const raw = value as Record<string, unknown>;
   const list = (key: string) => (Array.isArray(raw[key]) ? (raw[key] as unknown[]).filter((v): v is string => typeof v === "string") : undefined);
-  return { projectIds: list("projectIds"), monitorIds: list("monitorIds"), teamIds: list("teamIds"), tagsAny: list("tagsAny") };
+  return { ratings: Array.isArray(raw.ratings) ? raw.ratings.filter((v): v is number => typeof v === "number" && Number.isInteger(v) && v >= 1 && v <= 5) : undefined, projectIds: list("projectIds"), monitorIds: list("monitorIds"), teamIds: list("teamIds"), tagsAny: list("tagsAny") };
 }
 
 /** The subset of a NotificationRule row that matching needs. */
@@ -71,6 +71,7 @@ export function ruleMatchesEvent(rule: MatchableRule, event: MatchableEvent): bo
   }
   const filters = parseRuleFilters(rule.filters);
   return (
+    (!filters.ratings?.length || (scope.rating !== undefined && filters.ratings.includes(scope.rating))) &&
     filterMatches(filters.projectIds, scope.projectId) &&
     filterMatches(filters.monitorIds, scope.monitorId) &&
     filterMatches(filters.teamIds, scope.teamId) &&

@@ -1,3 +1,5 @@
+type AppReviewPayload = { app: string; platform: "APPLE" | "GOOGLE"; rating: number; author: string; excerpt: string; link: string };
+
 import type { PersonalChannel, WorkspaceRole } from "@prisma/client";
 
 /**
@@ -50,6 +52,9 @@ type GithubRef = { repoId: Id; number: number; url: string };
 
 /** Typed `data` payload per event type. */
 export interface EventPayloads {
+  "app_review.received": AppReviewPayload;
+  "app_review.replied": AppReviewPayload;
+  "app_review.reply_failed": AppReviewPayload;
   // Services
   "monitor.down": { monitorId: Id; incidentId: Id | null; statusCode: number | null; error: string | null };
   "monitor.degraded": { monitorId: Id; latencyMs: number | null };
@@ -166,6 +171,9 @@ const s = (category: NotifyCategory, label: string, audience: EventAudience, sev
   minRole ? { category, label, audience, severity, minRole } : { category, label, audience, severity };
 
 export const EVENT_CATALOG = {
+  "app_review.received": s("operations", "App review received", "broadcast", "info", "MEMBER"),
+  "app_review.replied": s("operations", "App review reply published", "broadcast", "info", "MEMBER"),
+  "app_review.reply_failed": s("operations", "App review reply failed", "broadcast", "warning", "MEMBER"),
   "monitor.down": s("services", "Monitor down", "broadcast", "critical", "MEMBER"),
   "monitor.degraded": s("services", "Monitor degraded", "broadcast", "warning", "MEMBER"),
   "monitor.up": s("services", "Monitor recovered", "broadcast", "info", "MEMBER"),
