@@ -2,11 +2,7 @@
 // reactions, a pin, a mention, a private channel and a direct message.
 //
 // Idempotent through seed-demo.mjs, which deletes and recreates the demo
-// workspace on every run. Not wired in yet (seed-demo.mjs has no registry
-// hook); to enable, add at the end of main() in scripts/seed-demo.mjs:
-//
-//   import { seedChat } from "./seed/chat.mjs";
-//   await seedChat(prisma, { workspaceId: workspace.id, users, channels });
+// workspace on every run. seed-demo.mjs loads every module in scripts/seed/.
 //
 // `users` maps the PEOPLE keys (owner, admin, meera, joel, fathima, guest) to
 // User rows and `channels` maps channel slugs to Channel rows, as seed-demo builds them.

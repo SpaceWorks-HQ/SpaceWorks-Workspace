@@ -7,6 +7,7 @@
 //
 // Idempotent: re-running replaces the demo workspace and its @tinkerspace.test users.
 // Mirrors the defaults in lib/workspaceDefaults.ts.
+import { existsSync, readdirSync } from "node:fs";
 import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
 
@@ -211,6 +212,16 @@ async function main() {
       updatedById: users.owner.id,
     },
   });
+
+  // Area seed modules: every scripts/seed/<area>.mjs exports one async
+  // function taking (prisma, { workspaceId, workspace, users, channels }).
+  // They run in name order after the core demo data.
+  const seedDir = new URL("./seed/", import.meta.url);
+  const modules = existsSync(seedDir) ? readdirSync(seedDir).filter((name) => name.endsWith(".mjs")).sort() : [];
+  for (const name of modules) {
+    const exported = Object.values(await import(new URL(name, seedDir).href)).filter((value) => typeof value === "function");
+    for (const seed of exported) await seed(prisma, { workspaceId: workspace.id, workspace, users, channels });
+  }
 
   console.log(`Seeded ${workspace.name} at /w/${SLUG}`);
   console.log(`Members (password from DEMO_PASSWORD): ${PEOPLE.map((p) => `${p.email} (${p.role.toLowerCase()})`).join(", ")}`);
