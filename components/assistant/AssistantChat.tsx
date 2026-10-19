@@ -270,14 +270,16 @@ export function AssistantChat({
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5" aria-live="polite" aria-busy={streaming}>
           {!configured ? (
-            <Callout tone="warning" title="The assistant isn't set up yet.">
+            <Callout tone="warning" title="The assistant isn't set up yet." className="mb-4">
               {setupHref ? (
                 <>Add an Anthropic API key in <Link href={setupHref} className="font-semibold underline">instance settings</Link> to switch it on.</>
               ) : (
                 "Ask your instance admin to add an AI key in instance settings."
               )}
             </Callout>
-          ) : items.length === 0 ? (
+          ) : null}
+          {items.length === 0 ? (
+            configured ? (
             <EmptyState title="Ask the assistant anything about the workspace." className="border-none">
               <div className="mt-3 flex flex-wrap justify-center gap-2">
                 {SUGGESTIONS.map((suggestion) => (
@@ -287,6 +289,7 @@ export function AssistantChat({
                 ))}
               </div>
             </EmptyState>
+            ) : null
           ) : (
             <ol className="flex flex-col gap-4">
               {items.map((item) => (
