@@ -5,7 +5,7 @@ import type { WorkspaceRole } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { recordAuditEvent } from "@/lib/audit";
 import { enqueueInviteEmail } from "@/lib/outbox";
-import { createNotification } from "@/lib/notifications";
+import { joinedFromInvitation } from "@/lib/people/inviteHook";
 import { joinDefaultChannels } from "@/lib/workspaces";
 import {
   createInvitationToken,
@@ -178,9 +178,11 @@ export async function acceptInvitation(token: string, as: AcceptAs): Promise<Res
     await tx.invitation.update({ where: { id: invitation.id }, data: { acceptedById: userId } });
 
     const existingMembership = await tx.membership.findUnique({ where: { userId_workspaceId: { userId, workspaceId: invitation.workspaceId } }, select: { id: true } });
+    let afterJoined: (() => Promise<void>) | null = null;
     if (!existingMembership) {
       await tx.membership.create({ data: { userId, workspaceId: invitation.workspaceId, role: invitation.role } });
       await joinDefaultChannels(tx, invitation.workspaceId, userId);
+      afterJoined = await joinedFromInvitation(tx, { workspace: { id: invitation.workspaceId, slug: invitation.workspace.slug }, userId, role: invitation.role, invitedById: invitation.invitedById });
     }
     await recordAuditEvent({
       client: tx,
@@ -191,19 +193,10 @@ export async function acceptInvitation(token: string, as: AcceptAs): Promise<Res
       targetId: invitation.id,
       metadata: { role: invitation.role, newAccount: as.kind === "new" },
     });
-    return { ok: true as const, workspaceSlug: invitation.workspace.slug, workspaceId: invitation.workspaceId, invitedById: invitation.invitedById, userId };
+    return { ok: true as const, workspaceSlug: invitation.workspace.slug, workspaceId: invitation.workspaceId, invitedById: invitation.invitedById, userId, afterJoined };
   });
 
   if (!result.ok) return result;
-  if (result.invitedById) {
-    await createNotification({
-      userId: result.invitedById,
-      workspaceId: result.workspaceId,
-      kind: "invite.accepted",
-      title: "Your invitation was accepted",
-      body: "A new member joined the workspace.",
-      url: `/w/${result.workspaceSlug}/members`,
-    }).catch(() => undefined);
-  }
+  await result.afterJoined?.();
   return { ok: true, workspaceSlug: result.workspaceSlug, userId: result.userId };
 }

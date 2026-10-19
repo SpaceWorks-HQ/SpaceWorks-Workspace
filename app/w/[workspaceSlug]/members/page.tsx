@@ -1,11 +1,16 @@
-import { ComingSoon } from "@/components/workspace/ComingSoon";
+import Link from "next/link";
 import { requireWorkspace } from "@/lib/permissions";
-
+import { listMembers } from "@/lib/people/profiles";
+import { listTeams } from "@/lib/teams/teams";
+import { Avatar, Card, Chip, EmptyState, PageHeader } from "@/components/ui/display";
+import { Button } from "@/components/ui/button";
+import { Dropdown, Field, Input } from "@/components/ui/field";
+import { roleLabel } from "@/lib/roles";
 export const metadata = { title: "Members" };
-
-/** Placeholder: replaced by the members build. */
-export default async function MembersPage({ params }: PageProps<"/w/[workspaceSlug]/members">) {
-  const { workspaceSlug } = await params;
-  await requireWorkspace(workspaceSlug, "GUEST");
-  return <ComingSoon title="Members" description="Who's in the crew: skills, roles and how to reach them." />;
+export default async function MembersPage({ params, searchParams }: PageProps<"/w/[workspaceSlug]/members">) {
+  const { workspaceSlug } = await params; const ctx = await requireWorkspace(workspaceSlug, "GUEST"); const query = await searchParams;
+  const str = (v: string | string[] | undefined) => typeof v === "string" ? v : "";
+  const filters = { q: str(query.q), skill: str(query.skill), role: str(query.role), team: str(query.team) };
+  const [all, members, teams] = await Promise.all([listMembers(ctx), listMembers(ctx, filters), listTeams(ctx)]); const skills = [...new Set(all.flatMap(m => m.skills.map(s => s.skill)))].sort(); const base = `/w/${workspaceSlug}`;
+  return <div className="flex flex-col gap-6"><PageHeader title="Members" description="Find your next collaborator in the Space Works crew." actions={<Link href={`${base}/members/availability`} className="text-primary underline">Availability</Link>} /><form className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5"><Field label="Search members"><Input name="q" defaultValue={filters.q} type="search" /></Field><Field label="Skill"><Dropdown name="skill" defaultValue={filters.skill}><option value="">All skills</option>{skills.map(s => <option key={s}>{s}</option>)}</Dropdown></Field><Field label="Team"><Dropdown name="team" defaultValue={filters.team}><option value="">All teams</option>{teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</Dropdown></Field><Field label="Role"><Dropdown name="role" defaultValue={filters.role}><option value="">All roles</option>{(["OWNER", "ADMIN", "MEMBER", "GUEST"] as const).map(r => <option key={r} value={r}>{roleLabel(r)}</option>)}</Dropdown></Field><Button type="submit" variant="secondary" className="self-end">Find members</Button></form><p className="text-caption text-ink-muted">{members.length} members{all.length >= 1000 ? " · Showing the first 1,000. Narrow your filters." : ""}</p>{members.length ? <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{members.map(m => <li key={m.id}><Card className="flex h-full flex-col gap-3"><Link href={`${base}/members/${m.id}`} className="flex min-h-11 items-center gap-3 text-title hover:underline"><span aria-hidden="true"><Avatar name={m.name} src={m.image} /></span><span>{m.name}<span className="block text-caption text-ink-muted">{m.pronouns}</span></span></Link><p className="text-body-ui text-ink-secondary">{m.title || roleLabel(m.role)}</p>{m.email ? <p className="break-all text-caption text-ink-muted">{m.email}</p> : null}<div className="flex flex-wrap gap-2">{m.skills.slice(0, 6).map(s => <Chip key={s.skill}>{s.skill}{s.level === 3 ? " · Can teach" : ""}</Chip>)}</div><div className="flex flex-wrap gap-3">{m.teams.map(t => <Link key={t.id} href={`${base}/teams/${t.slug}`} className="text-caption text-primary underline">{t.name}</Link>)}</div></Card></li>)}</ul> : <EmptyState title="No members match these filters." action={<Link href={`${base}/members`} className="text-primary underline">Clear filters</Link>} />}</div>;
 }
