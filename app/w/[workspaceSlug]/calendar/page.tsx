@@ -54,8 +54,11 @@ export default async function CalendarPage({ params, searchParams }: PageProps<"
   const days = weekDays(anchor);
   const canCreate = canCreateEvents(ctx.membership);
   const newEvent = canCreate ? (
-    <Button asChild variant="primary" startIcon={<Plus />}>
-      <Link href={`${base}/new${view !== "list" ? `?date=${anchor}` : ""}`}>New event</Link>
+    <Button asChild variant="primary">
+      <Link href={`${base}/new${view !== "list" ? `?date=${anchor}` : ""}`}>
+        <Plus aria-hidden className="size-[18px]" />
+        New event
+      </Link>
     </Button>
   ) : null;
 

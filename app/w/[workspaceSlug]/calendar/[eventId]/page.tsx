@@ -66,7 +66,7 @@ export default async function EventPage({ params }: PageProps<"/w/[workspaceSlug
         <ArrowLeft aria-hidden className="size-4" /> Calendar
       </Link>
       <div className="flex gap-4">
-        <DateBlock month={block.month} day={block.day} size="lg" tone={event.cancelledAt ? "draft" : "accent"} />
+        <DateBlock month={block.month} day={block.day} size="lg" tone={event.cancelledAt ? "draft" : "accent"} className="self-start" />
         <PageHeader
           className="min-w-0 flex-1"
           kicker={
@@ -78,8 +78,11 @@ export default async function EventPage({ params }: PageProps<"/w/[workspaceSlug
           title={event.title}
           actions={
             <>
-              <Button asChild variant="secondary" startIcon={<CalendarPlus />}>
-                <a href={`${base}/${event.id}/ics`} download>Add to calendar</a>
+              <Button asChild variant="secondary">
+                <a href={`${base}/${event.id}/ics`} download>
+                  <CalendarPlus aria-hidden className="size-[18px]" />
+                  Add to calendar
+                </a>
               </Button>
               {event.canEdit && !event.cancelledAt ? (
                 <Button asChild variant="secondary">

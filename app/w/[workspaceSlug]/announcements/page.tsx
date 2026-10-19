@@ -28,8 +28,11 @@ export default async function AnnouncementsPage({ params }: PageProps<"/w/[works
         description="News and notices from the organisers."
         actions={
           manage ? (
-            <Button asChild variant="primary" startIcon={<Plus />}>
-              <Link href={`${base}/new`}>New announcement</Link>
+            <Button asChild variant="primary">
+              <Link href={`${base}/new`}>
+                <Plus aria-hidden className="size-[18px]" />
+                New announcement
+              </Link>
             </Button>
           ) : null
         }

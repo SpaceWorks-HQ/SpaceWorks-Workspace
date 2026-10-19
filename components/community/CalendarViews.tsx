@@ -173,7 +173,7 @@ export function EventCard({ event, base, timeZone }: { event: CalendarEvent; bas
   const full = event.capacity !== null && event.going >= event.capacity;
   return (
     <Link href={`${base}/${event.id}`} className="flex gap-4 rounded-xl border border-line bg-panel p-4 transition-colors duration-[120ms] hover:bg-subtle">
-      <DateBlock month={block.month} day={block.day} tone={event.cancelledAt ? "draft" : "accent"} />
+      <DateBlock month={block.month} day={block.day} tone={event.cancelledAt ? "draft" : "accent"} className="self-start" />
       <span className="min-w-0 flex-1">
         <span className="flex flex-wrap items-center gap-2">
           <Chip tone={KIND_TONES[event.kind]} size="sm">{EVENT_KIND_LABELS[event.kind]}</Chip>
