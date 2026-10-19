@@ -8,8 +8,8 @@ const base = PrismaAdapter(prisma);
 
 /**
  * Auth.js adapter. The instance is invite-only, so the adapter never creates
- * users (the Google sign-in callback already refuses unknown emails); it only
- * links a verified Google identity to an existing member.
+ * users (the sign-in callbacks refuse unknown emails); it only
+ * links a verified external identity to an existing member.
  */
 export const authAdapter: Adapter = {
   ...base,
@@ -24,7 +24,7 @@ export const authAdapter: Adapter = {
     return user ? { id: user.id, email: user.email, name: user.name, image: user.image, emailVerified: user.emailVerified } : null;
   },
   linkAccount(account) {
-    // Google is used only for identity. Do not retain reusable OAuth tokens.
+    // Sign-in providers are used only for identity. Do not retain reusable OAuth tokens.
     return base.linkAccount!({
       userId: account.userId,
       type: account.type,

@@ -67,7 +67,7 @@ describe.sequential("scheduled community jobs", () => {
     expect(notified.map((row) => row.userId).sort()).toEqual([memberId, guestId].sort());
     const deliveries = await prisma.notificationDelivery.findMany({ where: { eventId: events[0]!.id, destinationId: slackDest } });
     expect(deliveries).toHaveLength(1);
-    expect(await prisma.outboxMessage.count({ where: { kind: NOTIFY_DELIVER_KIND, payload: { equals: { deliveryId: deliveries[0]!.id } } } })).toBe(1);
+    expect(await prisma.outboxMessage.count({ where: { kind: NOTIFY_DELIVER_KIND, payload: { path: ["deliveryId"], equals: deliveries[0]!.id } } })).toBe(1);
     expect(await prisma.searchDocument.count({ where: { entityType: "announcement", entityId: id } })).toBe(1);
 
     // Editing after it went out never sends it again.

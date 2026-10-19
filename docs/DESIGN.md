@@ -368,7 +368,6 @@ Instance admin pages (`SimpleShell` + underline tabs) stay restrained: panel car
   Appearance, Sessions, Your data, Workspaces.
 - **Auth pages:** `AuthFrame` split layout: form left, calm brand panel right with the single Unbounded
   phrase.
-- **Not built yet:** `ComingSoon` (`components/workspace/ComingSoon.tsx`): "Coming in the next build."
 
 ---
 

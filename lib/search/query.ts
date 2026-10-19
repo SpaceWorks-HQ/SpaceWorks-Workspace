@@ -67,6 +67,8 @@ export function accessSql(actor: SearchActor) {
       "ServiceCatalogItem",
       Prisma.sql`${member} AND ${team(Prisma.sql`r."teamId"`)}`,
     ],
+    ["app_review", "AppReview", Prisma.sql`${member}`],
+    ["incident", "Incident", Prisma.sql`${member}`],
     ["asset", "Asset", Prisma.sql`${member}`],
     [
       "subscription",
@@ -86,12 +88,12 @@ export function accessSql(actor: SearchActor) {
     [
       "meeting",
       "Meeting",
-      Prisma.sql`r.status <> 'CANCELLED' AND ${team(Prisma.sql`r."teamId"`)} AND (${admin} OR r.visibility='WORKSPACE' OR r."createdById"=${actor.userId} OR EXISTS (SELECT 1 FROM "MeetingAttendee" ma WHERE ma."meetingId"=r.id AND ma."userId"=${actor.userId}) OR (r.visibility='TEAM' AND EXISTS (SELECT 1 FROM "TeamMember" tm WHERE tm."teamId"=r."teamId" AND tm."userId"=${actor.userId})))`,
+      Prisma.sql`r.status <> 'CANCELLED' AND ${team(Prisma.sql`r."teamId"`)} AND (${admin} OR r.visibility='WORKSPACE' OR r."createdById"=${actor.userId} OR (r.visibility='TEAM' AND EXISTS (SELECT 1 FROM "TeamMember" tm WHERE tm."teamId"=r."teamId" AND tm."userId"=${actor.userId})))`,
     ],
     [
       "decision",
       "Decision",
-      Prisma.sql`${member} AND ${team(Prisma.sql`r."teamId"`)} AND (${admin} OR r.visibility='WORKSPACE' OR r."createdById"=${actor.userId} OR (r.visibility='TEAM' AND EXISTS (SELECT 1 FROM "TeamMember" tm WHERE tm."teamId"=r."teamId" AND tm."userId"=${actor.userId})))`,
+      Prisma.sql`${team(Prisma.sql`r."teamId"`)} AND (${admin} OR r.visibility='WORKSPACE' OR r."createdById"=${actor.userId} OR (r.visibility='TEAM' AND EXISTS (SELECT 1 FROM "TeamMember" tm WHERE tm."teamId"=r."teamId" AND tm."userId"=${actor.userId}))) AND (r."meetingId" IS NULL OR EXISTS (SELECT 1 FROM "Meeting" mt WHERE mt.id=r."meetingId" AND mt."workspaceId"=${actor.workspaceId} AND ${team(Prisma.sql`mt."teamId"`)} AND (${admin} OR mt.visibility='WORKSPACE' OR mt."createdById"=${actor.userId} OR (mt.visibility='TEAM' AND EXISTS (SELECT 1 FROM "TeamMember" tm WHERE tm."teamId"=mt."teamId" AND tm."userId"=${actor.userId})))))`,
     ],
     ["goal", "Goal", Prisma.sql`${member} AND ${team(Prisma.sql`r."teamId"`)}`],
     [
@@ -135,7 +137,7 @@ export function accessSql(actor: SearchActor) {
   return Prisma.sql`d."workspaceId"=${actor.workspaceId}
     AND EXISTS (SELECT 1 FROM "Membership" mem JOIN "Workspace" w ON w.id=mem."workspaceId" JOIN "User" u ON u.id=mem."userId" WHERE mem."workspaceId"=${actor.workspaceId} AND mem."userId"=${actor.userId} AND mem.status='ACTIVE' AND mem.role::text=${actor.role} AND w."archivedAt" IS NULL AND u."disabledAt" IS NULL)
     AND ${team(Prisma.sql`d."teamId"`)}
-    AND (d.visibility='WORKSPACE' OR ${admin} OR (d.visibility='PRIVATE' AND d."ownerId"=${actor.userId}) OR (d.visibility='TEAM' AND EXISTS (SELECT 1 FROM "TeamMember" tm JOIN "Team" t ON t.id=tm."teamId" WHERE t."workspaceId"=${actor.workspaceId} AND tm."teamId"=d."teamId" AND tm."userId"=${actor.userId})))
+    AND (d.visibility='WORKSPACE' OR (d."entityType"='app_review' AND ${member}) OR ${admin} OR (d.visibility='PRIVATE' AND d."ownerId"=${actor.userId}) OR (d.visibility='TEAM' AND EXISTS (SELECT 1 FROM "TeamMember" tm JOIN "Team" t ON t.id=tm."teamId" WHERE t."workspaceId"=${actor.workspaceId} AND tm."teamId"=d."teamId" AND tm."userId"=${actor.userId})))
     AND (d."projectId" IS NULL OR EXISTS (SELECT 1 FROM "Project" p WHERE p.id=d."projectId" AND p."workspaceId"=${actor.workspaceId} AND ${team(Prisma.sql`p."teamId"`)}))
     AND (d."channelId" IS NULL OR EXISTS (SELECT 1 FROM "Channel" c WHERE c.id=d."channelId" AND c."workspaceId"=${actor.workspaceId} AND c."archivedAt" IS NULL AND ${team(Prisma.sql`c."teamId"`)} AND ((${member} AND c.kind='PUBLIC') OR EXISTS (SELECT 1 FROM "ChannelMember" cm WHERE cm."channelId"=c.id AND cm."userId"=${actor.userId}))))
     AND (${Prisma.join(live, " OR ")})`;

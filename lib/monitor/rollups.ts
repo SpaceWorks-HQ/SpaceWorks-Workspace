@@ -8,12 +8,11 @@ import { claimOnce } from "@/lib/monitor/coord";
  * upserts) and retention: raw checks per workspace `monitorRetentionDays`
  * (7–30, default 14), hourly rollups 90 days, daily rollups 2 years, cloud
  * metric samples 7 days, heartbeat pings 30 days. Workspaces on legal hold
- * are skipped. Purges delete in batches of 10 000.
+ * are skipped. Purges share the workspace lock with legal-hold changes.
  */
 
 const HOUR_MS = 3_600_000;
 const DAY_MS = 86_400_000;
-const BATCH = 10_000;
 
 const iso = (date: Date) => date.toISOString();
 
@@ -86,35 +85,25 @@ export async function runRollupJobs(now: Date) {
   return written;
 }
 
-async function deleteInBatches(run: () => Promise<number>, maxBatches = 20) {
-  let total = 0;
-  for (let i = 0; i < maxBatches; i += 1) {
-    const deleted = await run();
-    total += deleted;
-    if (deleted < BATCH) break;
-  }
-  return total;
-}
-
 /** Daily retention purge (claimed once per day across replicas). */
 export async function runRetention(now: Date, options: { force?: boolean } = {}) {
   if (!options.force && !(await claimOnce(`retention:${iso(dayStart(now))}`, DAY_MS))) return null;
-  const workspaces = await prisma.workspace.findMany({ where: { legalHold: false }, select: { id: true, monitorRetentionDays: true } });
-  let checks = 0;
+  const workspaces = await prisma.workspace.findMany({ select: { id: true } });
+  const totals = { checks: 0, hourly: 0, daily: 0, metrics: 0, pings: 0 };
   for (const ws of workspaces) {
-    const days = Math.min(30, Math.max(7, ws.monitorRetentionDays));
-    const cutoff = new Date(now.getTime() - days * DAY_MS);
-    checks += await deleteInBatches(() =>
-      prisma.$executeRaw`DELETE FROM "MonitorCheck" WHERE "id" IN (SELECT "id" FROM "MonitorCheck" WHERE "workspaceId" = ${ws.id} AND "checkedAt" < (${iso(cutoff)}::timestamptz AT TIME ZONE 'UTC') LIMIT ${BATCH})`,
-    );
+    const counts = await prisma.$transaction(async tx => {
+      const [locked] = await tx.$queryRaw<Array<{ legalHold: boolean; monitorRetentionDays: number }>>`SELECT "legalHold", "monitorRetentionDays" FROM "Workspace" WHERE id=${ws.id} FOR UPDATE`;
+      if (!locked || locked.legalHold) return null;
+      const policy = await tx.retentionPolicy.findUnique({ where: { workspaceId_entityType: { workspaceId: ws.id, entityType: "monitor_results" } } });
+      const days = Math.max(locked.monitorRetentionDays, policy?.keepDays ?? 0);
+      const checks = policy && policy.action !== "DELETE" ? { count: 0 } : await tx.monitorCheck.deleteMany({ where: { workspaceId: ws.id, checkedAt: { lt: new Date(now.getTime() - days * DAY_MS) } } });
+      const hourly = await tx.monitorRollup.deleteMany({ where: { workspaceId: ws.id, granularity: "HOUR", bucketStart: { lt: new Date(now.getTime() - 90 * DAY_MS) } } });
+      const daily = await tx.monitorRollup.deleteMany({ where: { workspaceId: ws.id, granularity: "DAY", bucketStart: { lt: new Date(now.getTime() - 730 * DAY_MS) } } });
+      const metrics = await tx.cloudMetricSample.deleteMany({ where: { resource: { workspaceId: ws.id }, ts: { lt: new Date(now.getTime() - 7 * DAY_MS) } } });
+      const pings = await tx.heartbeatPing.deleteMany({ where: { monitor: { workspaceId: ws.id }, receivedAt: { lt: new Date(now.getTime() - 30 * DAY_MS) } } });
+      return { checks: checks.count, hourly: hourly.count, daily: daily.count, metrics: metrics.count, pings: pings.count };
+    }, { timeout: 30000 });
+    if (counts) for (const key of Object.keys(totals) as Array<keyof typeof totals>) totals[key] += counts[key];
   }
-  const held = new Set((await prisma.workspace.findMany({ where: { legalHold: true }, select: { id: true } })).map((ws) => ws.id));
-  const heldIds = [...held];
-  const hourly = await prisma.monitorRollup.deleteMany({ where: { granularity: "HOUR", bucketStart: { lt: new Date(now.getTime() - 90 * DAY_MS) }, workspaceId: { notIn: heldIds } } });
-  const daily = await prisma.monitorRollup.deleteMany({ where: { granularity: "DAY", bucketStart: { lt: new Date(now.getTime() - 730 * DAY_MS) }, workspaceId: { notIn: heldIds } } });
-  const metrics = await deleteInBatches(() =>
-    prisma.$executeRaw`DELETE FROM "CloudMetricSample" WHERE "id" IN (SELECT "id" FROM "CloudMetricSample" WHERE "resourceId" IN (SELECT "id" FROM "CloudResource" WHERE "workspaceId" IN (SELECT "id" FROM "Workspace" WHERE NOT "legalHold")) AND "ts" < (${iso(new Date(now.getTime() - 7 * DAY_MS))}::timestamptz AT TIME ZONE 'UTC') LIMIT ${BATCH})`,
-  );
-  const pings = await prisma.heartbeatPing.deleteMany({ where: { receivedAt: { lt: new Date(now.getTime() - 30 * DAY_MS) }, monitor: { workspaceId: { notIn: heldIds } } } });
-  return { checks, hourly: hourly.count, daily: daily.count, metrics, pings: pings.count };
+  return totals;
 }

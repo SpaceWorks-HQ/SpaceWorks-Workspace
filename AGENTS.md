@@ -23,7 +23,7 @@ Space Works product, licensed AGPL-3.0-or-later.
 
 Stack: Next.js 16 App Router (`output: "standalone"`), React 19, TypeScript,
 PostgreSQL 16 with Prisma 6, Auth.js v5 (JWT sessions, credentials + optional
-Google, TOTP MFA), Tailwind CSS 4 + Radix primitives, Redis (rate limits and
+Google/instance OIDC, TOTP MFA), Tailwind CSS 4 + Radix primitives, Redis (rate limits and
 realtime fan-out), S3-compatible private storage (Silo locally, Cloudflare R2
 in the cloud), Nodemailer through an outbox, Vitest and Playwright.
 
@@ -43,8 +43,10 @@ Tenancy is strict: `Workspace` is the tenant boundary.
 | `app/api/` | Health, outbox, files, realtime SSE, auth, account export |
 | `components/ui/` | Brand primitives: button, field, select, choice, dialog, menu, tabs, table, display |
 | `components/chrome/` | App shell, auth frame, simple shell, colour-mode toggle |
-| `components/<area>/` | Feature components (settings, account, admin, auth, workspace) |
-| `lib/` | Business rules and services (see "Shared services") |
+| `components/<area>/` | Feature UI for work, chat, knowledge, people, operations, collaboration, services, reviews and integrations |
+| `lib/` | Area services; `lib/search` live access checks, `lib/notify` routing, `lib/shell` platform services and retention writers |
+| `scripts/seed/` | Automatically loaded per-area demo seed modules |
+| `docs/areas/` | Implemented area contracts, operations and known limits |
 | `prisma/` | `schema.prisma` (complete for every phase) and migrations |
 | `scripts/` | Prisma wrapper, seed, storage init, backups, production preflight, scheduler, VPS install/update/backup/restore |
 | `Dockerfile`, `compose.production.yml`, `docker/vps/`, `install.sh` | Container image and the single-VPS stack (see `docs/DEPLOYMENT_VPS.md`) |

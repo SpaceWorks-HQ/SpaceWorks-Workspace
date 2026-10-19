@@ -6,40 +6,34 @@ community kitty, publish a public blog, give each other shoutouts, and ask the
 Space Works Assistant about anything in the workspace.
 
 It is self-hosted, invite-only and built for one community (or a few chapters)
-at a time: every page is behind sign-in except the public blog, and each
+at a time: internal pages require sign-in; public publishing, forms, status pages and bearer feeds have explicit access rules, and each
 workspace's data is strictly separated.
 
 Licensed under the [AGPL-3.0-or-later](LICENSE). Copyright 2026 Space Works.
 
-## Status
+## Features
 
-This is an early build. What exists today and what is planned:
+Invite-only accounts, workspace roles, MFA, instance OIDC sign-in and an audit trail support all areas.
 
-| Area | Status |
-| --- | --- |
-| First-run setup, invite-only sign-in, Google sign-in for invited members | Available |
-| Two-step verification (TOTP) with recovery codes, password reset by email | Available |
-| Workspaces, roles (owner, admin, member, guest), invitations, labels, audit log | Available |
-| Home dashboard, notifications, account settings, personal data export | Available |
-| Instance admin (encrypted SMTP, Google and assistant settings, users, workspaces, outbox) | Available |
-| Projects and kanban boards, my tasks | Planned |
-| Channels and direct messages with threads, reactions, pins and live updates | Planned |
-| Docs and files | Planned |
-| Announcements, member directory, shoutouts, community calendar | Planned |
-| Finance (income, expenses, invoices) and the public blog | Planned |
-| Space Works Assistant with workspace tools, memory, skills and scheduled digests | Planned |
-| Boardroom (a panel of AI advisors debating a question) | Planned |
-| Integrations: Google Calendar, Gmail, Drive and Search Console, GitHub App, Telegram bot | Planned |
-| SEO analytics and on-page audits | Planned |
-| Machine API and MCP endpoint with scoped API tokens | Planned |
-
-The database schema already covers every planned area.
+- [Tasks](docs/areas/tasks.md): Projects, kanban boards, recurring tasks, dependencies, cycles and personal tasks.
+- [Chat](docs/areas/chat.md): Channels, direct messages, threads, reactions, pins and live updates.
+- [Docs files](docs/areas/docs-files.md): Nested rich-text docs, revisions, verification, private files and versions.
+- [Community](docs/areas/community.md): Announcements, shoutouts, community events, RSVPs, waitlists and private calendar feeds.
+- [Finance blog](docs/areas/finance-blog.md): Community kitty, invoices, finance categories and public blog publishing.
+- [Assistant](docs/areas/assistant.md): Assistant conversations, workspace tools, memory, skills, scheduled digests, boardroom, MCP and scoped machine APIs.
+- [Integrations messaging](docs/areas/integrations-messaging.md): Google, GitHub, SEO, messaging connections, account linking, channel bridges and signed webhooks.
+- [Monitor](docs/areas/monitor.md): Service checks, incidents, maintenance, on-call, public status pages, cloud inventory and costs.
+- [People relationships](docs/areas/people-relationships.md): Member profiles, teams, onboarding, certifications, availability, rota, contacts, organisations and pipeline.
+- [Ops money](docs/areas/ops-money.md): Service catalogue, subscriptions, encrypted vault, assets, bookings, budgets, purchases, reimbursements, approvals and forms.
+- [Work collaboration](docs/areas/work-collaboration.md): Meetings, decisions, goals, key results, polls, ideas, templates, changelog and sign-offs.
+- [Platform shell](docs/areas/platform-shell.md): My day, global search, activity, pinned links, command palette, notification centre, preferences, exports, imports, legal hold and retention.
+- [App reviews](docs/areas/app-reviews.md): App-store review inbox, replies, triage, insights, task links and notification routing.
 
 ## Stack
 
 - Next.js 16 (App Router, standalone output), React 19, TypeScript
 - PostgreSQL 16 with Prisma 6
-- Auth.js v5 with email and password, optional Google, TOTP two-step verification
+- Auth.js v5 with email and password, optional Google and instance OIDC, TOTP two-step verification
 - Tailwind CSS 4 with Radix primitives, following the Space Works design system
 - Redis for rate limits and realtime fan-out (Server-Sent Events)
 - S3-compatible private storage (Silo locally or on a VPS, Cloudflare R2 in the cloud)
@@ -51,11 +45,11 @@ The database schema already covers every planned area.
 Requirements: Node.js 22+, Docker.
 
 ```bash
-npm install
+npm ci
 docker compose up -d            # PostgreSQL, Redis, Silo and Mailpit
 cp .env.example .env            # then set AUTH_SECRET, MFA_ENCRYPTION_KEY and friends
 npm run storage:init            # create the private bucket
-npm run db:migrate              # apply migrations
+npm run db:deploy               # apply committed migrations
 npm run dev                     # open http://localhost:3000/setup
 ```
 
@@ -71,7 +65,8 @@ DEMO_PASSWORD="choose-a-long-password" npm run db:seed:demo
 ```
 
 This creates the "TinkerSpace Kochi" workspace with a few members, channels, a
-project board and some activity.
+project board and examples across the feature areas. Modules in `scripts/seed/`
+load automatically. Use a development database for demo data.
 
 ## Useful scripts
 
@@ -124,3 +119,7 @@ and the dev server) or `npm run docker:dev` for the services alone.
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): request flow, data model and shared services
 - [docs/DESIGN.md](docs/DESIGN.md): the Space Works design system in this app
 - [CONTRIBUTING.md](CONTRIBUTING.md) and [CHANGELOG.md](CHANGELOG.md)
+
+## Screenshots
+
+Screenshots of My day, project boards, services, the review inbox and mobile navigation will be added here.

@@ -24,7 +24,7 @@ function NavLink({ href, active, children, onNavigate }: { href: string; active:
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex min-h-10 items-center rounded-[10px] px-3 text-[15px] text-ink transition-colors duration-[120ms] hover:bg-sidebar-hover",
+        "flex min-h-11 items-center rounded-[10px] px-3 text-[15px] text-ink transition-colors duration-[120ms] hover:bg-sidebar-hover",
         active && "bg-sidebar-active font-semibold text-on-sidebar-active hover:bg-sidebar-active",
       )}
     >
@@ -148,6 +148,10 @@ function SidebarContents({ data, onNavigate, headerAction }: { data: ShellData; 
             ))}
           </div>
         ))}
+        {data.pinned.length ? <div className="flex flex-col gap-0.5">
+          <p className="px-3 pb-0.5 text-overline text-ink-muted">Pinned</p>
+          {data.pinned.map((link) => <NavLink key={link.id} href={`/w/${data.workspace.slug}/links#${link.id}`} active={false} onNavigate={onNavigate}>{link.title}</NavLink>)}
+        </div> : null}
       </nav>
       <div className="mt-auto pt-2">
         <AccountMenu data={data} onNavigate={onNavigate} />

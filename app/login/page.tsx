@@ -1,3 +1,5 @@
+import { auth, type SsoMfaChallenge } from "@/lib/auth";
+import { publicOidcProviders } from "@/lib/shell/oidc";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
@@ -13,10 +15,13 @@ export default async function LoginPage() {
   if (await isSetupOpen()) redirect("/setup");
   if (await getCurrentUser()) redirect("/");
   const googleEnabled = Boolean(await getGoogleSsoSettings().catch(() => null));
+  const oidcProviders = await publicOidcProviders().catch(() => []);
+  const session = await auth();
+  const ssoMfa = Boolean((session as typeof session & { ssoMfa?: SsoMfaChallenge })?.ssoMfa);
   return (
     <AuthFrame title="Welcome back." description="Sign in to your community workspace.">
       <Suspense fallback={<p className="text-body-ui text-ink-muted">Loading sign in…</p>}>
-        <LoginForm googleEnabled={googleEnabled} />
+        <LoginForm googleEnabled={googleEnabled} oidcProviders={oidcProviders} ssoMfa={ssoMfa} />
       </Suspense>
     </AuthFrame>
   );

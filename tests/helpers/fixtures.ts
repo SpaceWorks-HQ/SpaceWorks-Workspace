@@ -21,6 +21,9 @@ export async function addMember(workspaceId: string, userId: string, role: Works
 }
 
 export async function cleanup(workspaceSlugs: string[], emailSuffix: string) {
+  const workspaces = await prisma.workspace.findMany({ where: { slug: { in: workspaceSlugs } }, select: { id: true } });
+  const ids = workspaces.map(w => w.id);
+  await prisma.$executeRaw`DELETE FROM "OutboxMessage" o WHERE o.payload->>'workspaceId' IN (SELECT id FROM "Workspace" WHERE slug = ANY(${workspaceSlugs}::text[])) OR (o.kind='notify.deliver' AND EXISTS (SELECT 1 FROM "NotificationDelivery" d WHERE d.id=o.payload->>'deliveryId' AND d."workspaceId" = ANY(${ids}::text[]))) OR o.payload->>'to' LIKE ${'%' + emailSuffix}`;
   await prisma.workspace.deleteMany({ where: { slug: { in: workspaceSlugs } } });
   await prisma.user.deleteMany({ where: { email: { endsWith: emailSuffix } } });
 }

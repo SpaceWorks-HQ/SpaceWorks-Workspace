@@ -19,11 +19,9 @@ export async function ingestReview(app: ReviewedApp, slug: string, remote: Store
       const { storeCreatedAt: _created, ...changed } = content; void _created;
       review = await tx.appReview.update({ where: { id: review.id, workspaceId: app.workspaceId }, data: { ...changed, ...(reply && review.replyStatus !== "SENDING" && !review.repliedById ? { replyBody: reply.body, replyStatus: "SENT", replyExternalId: reply.externalId, replyPublishState: reply.state, replySentAt: reply.sentAt } : {}) } });
     }
-    // The common index cannot express a MEMBER minimum. Keep this private to admins;
-    // the inbox and assistant provide MEMBER-scoped full text search directly.
-    await indexSearchDocument({ workspaceId: app.workspaceId, entityType: "app_review", entityId: review.id, title: `${app.name}: ${review.title || `${review.rating} out of 5`}`, body: `${review.author}\n${review.body}`, url: reviewUrl(slug, review.id), visibility: "PRIVATE" }, tx);
+    await indexSearchDocument({ workspaceId: app.workspaceId, entityType: "app_review", entityId: review.id, title: `${app.name}: ${review.title || `${review.rating} out of 5`}`, body: `${review.author}\n${review.body}`, url: reviewUrl(slug, review.id), visibility: "WORKSPACE" }, tx);
     if (!created.count) return { id: review.id, created: false, notification: null };
-    await recordActivity({ workspaceId: app.workspaceId, verb: "received", entityType: "app_review", entityId: review.id, summary: `New review for ${app.name}`, visibility: "PRIVATE" }, tx);
+    await recordActivity({ workspaceId: app.workspaceId, verb: "received", entityType: "app_review", entityId: review.id, summary: `New review for ${app.name}`, visibility: "WORKSPACE" }, tx);
     return { id: review.id, created: true, notification: await reviewEvent(review, app, slug, "app_review.received", `app-review:${review.id}:received`, tx) };
   });
   await result.notification?.afterCommit(); return { id: result.id, created: result.created };

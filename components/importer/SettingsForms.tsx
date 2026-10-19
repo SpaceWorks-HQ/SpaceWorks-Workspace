@@ -108,7 +108,7 @@ export function RetentionForm({
       >
         <Field
           label={`${label}: days to keep`}
-          helperText="Leave blank to keep indefinitely."
+          helperText="Leave blank to use the area default described above."
         >
           <Input
             type="number"

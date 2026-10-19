@@ -358,7 +358,7 @@ export async function sendInvoice(ctx: Ctx, invoiceId: string, options: { email:
       if (changed.count === 0) return actionError("That invoice changed. Refresh and try again.");
     }
     if (options.email && invoice.clientEmail) {
-      await enqueueEmail(tx, { to: invoice.clientEmail, ...renderInvoiceEmail({ ...invoice, workspaceName: workspace.name, timeZone: workspace.timezone }) });
+      await enqueueEmail(tx, { workspaceId: workspace.id, to: invoice.clientEmail, ...renderInvoiceEmail({ ...invoice, workspaceName: workspace.name, timeZone: workspace.timezone }) });
     }
     await recordAuditEvent({ action: "finance.invoice_sent", workspaceId: workspace.id, actorId: user.id, targetType: "invoice", targetId: invoice.id, metadata: { emailed: options.email }, client: tx });
     await invoiceChanged(tx, ctx, { ...invoice, status: "SENT" }, "sent");

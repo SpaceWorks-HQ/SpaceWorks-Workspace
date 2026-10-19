@@ -8,6 +8,8 @@ const TABS = [
   { href: "/admin/settings", label: "Instance settings" },
   { href: "/admin/workspaces", label: "Workspaces" },
   { href: "/admin/users", label: "Users" },
+  { href: "/admin/sso", label: "SSO" },
+  { href: "/admin/backups", label: "Backups" },
   { href: "/admin/outbox", label: "Email outbox" },
 ];
 

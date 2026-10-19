@@ -268,7 +268,7 @@ async function dispatchWith<T extends EventType>(tx: Tx, workspaceId: string, ev
   const pending = created.filter((row) => row.status === "PENDING");
   if (pending.length > 0) {
     await tx.outboxMessage.createMany({
-      data: pending.map((row) => ({ kind: NOTIFY_DELIVER_KIND, payload: { deliveryId: row.id }, availableAt: row.scheduledFor })),
+      data: pending.map((row) => ({ kind: NOTIFY_DELIVER_KIND, payload: { deliveryId: row.id, workspaceId }, availableAt: row.scheduledFor })),
     });
   }
 
