@@ -57,6 +57,8 @@ WORKDIR /app
 # VPS stack does); leave it empty for a generic image configured at runtime.
 ARG NEXT_PUBLIC_BASE_URL=""
 ENV NEXT_TELEMETRY_DISABLED=1
+# The type check during `next build` needs more than the default 2 GB heap.
+ENV NODE_OPTIONS=--max-old-space-size=4096
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # An empty NEXT_PUBLIC_* variable would be inlined as "" and shadow the

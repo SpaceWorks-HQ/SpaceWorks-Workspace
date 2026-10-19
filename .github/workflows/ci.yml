@@ -18,6 +18,8 @@ env:
   DATABASE_URL: postgresql://build:build@localhost:5432/sww_build
   DIRECT_URL: postgresql://build:build@localhost:5432/sww_build
   NEXT_TELEMETRY_DISABLED: "1"
+  # Type-checking the full schema needs more than Node's default 2 GB heap.
+  NODE_OPTIONS: --max-old-space-size=6144
 
 jobs:
   quality:
@@ -62,6 +64,15 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Private S3 storage for the file-library suites (same image as production).
+      - name: Start Silo storage
+        run: |
+          docker run -d --name silo -p 127.0.0.1:9010:9000 \
+            -e MINIO_ROOT_USER=swwdev -e MINIO_ROOT_PASSWORD=sww_dev_storage_pw \
+            pgsty/silo:RELEASE.2026-09-16T00-00-00Z server /data
+          for i in $(seq 1 30); do curl -fs http://127.0.0.1:9010/minio/health/live && break; sleep 1; done
+          docker run --rm --network host --entrypoint /bin/sh pgsty/mc:RELEASE.2026-09-16T00-00-00Z -c \
+            'mc alias set l http://127.0.0.1:9010 swwdev sww_dev_storage_pw && mc mb --ignore-existing l/sww-docsfiles'
       # Applies committed migrations; also proves they run on an empty database.
       - run: npm run db:test:prepare
       - run: npm run test:integration
