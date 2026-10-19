@@ -78,7 +78,7 @@ export default async function WorkspaceHome({ params }: PageProps<"/w/[workspace
                     <span className="min-w-0 flex-1 truncate text-label text-ink">{item.title}</span>
                     {item.pinned ? <Chip tone="highlight" size="sm">Pinned</Chip> : null}
                   </span>
-                  <span className="line-clamp-2 text-body-ui text-ink-secondary">{item.body}</span>
+                  <span className="line-clamp-2 text-body-ui text-ink-secondary">{item.preview}</span>
                   <span className="text-caption text-ink-muted">
                     {item.author?.name ?? "A member"} · {item.publishedAt ? formatRelativeTime(item.publishedAt, tz) : ""}
                   </span>

@@ -1,0 +1,105 @@
+# Space Works Workspace Helm values. Guide: docs/DEPLOYMENT_KUBERNETES.md
+#
+# The chart runs the application only. Provide PostgreSQL (TLS), Redis
+# (rediss://), private S3-compatible storage and SMTP as managed services.
+
+replicaCount: 2
+
+image:
+  repository: ghcr.io/spaceworks-hq/spaceworks-workspace
+  # Use an immutable tag (sha-<commit>) or a digest; defaults to the chart appVersion.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# Runtime configuration (every production variable in docs/CONFIGURATION.md).
+# Preferred: create the Secret outside Helm (External Secrets, Sealed Secrets,
+# `kubectl create secret generic --from-env-file`) and name it here.
+existingSecret: ""
+
+# Alternative for evaluation clusters: let the chart create the Secret from
+# values. Never commit real values; pass them with --values from a secure path.
+secret:
+  create: false
+  # NAME: value pairs, e.g. DATABASE_URL, AUTH_SECRET, CRON_SECRET ...
+  data: {}
+
+serviceAccount:
+  create: true
+  name: ""
+
+podAnnotations: {}
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # ingress-nginx: stream Server-Sent Events (/api/realtime) and allow uploads.
+    # nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    # nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    # nginx.ingress.kubernetes.io/proxy-body-size: 30m
+    # cert-manager.io/cluster-issuer: letsencrypt
+  hosts:
+    - host: work.example.org
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: work-example-org-tls
+  #    hosts: [work.example.org]
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "2"
+    memory: 1536Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 75
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Pre-install/pre-upgrade Job running `prisma migrate deploy` with the
+# migrator image of the same release. A failed migration blocks the rollout.
+migration:
+  enabled: true
+  image:
+    repository: ghcr.io/spaceworks-hq/spaceworks-workspace-migrator
+    tag: ""
+    pullPolicy: IfNotPresent
+  backoffLimit: 1
+  activeDeadlineSeconds: 600
+
+# CronJob that calls /api/internal/outbox and /api/internal/jobs with the
+# app's CRON_SECRET (scripts/scheduler.mjs --once from the app image).
+scheduler:
+  enabled: true
+  schedule: "* * * * *"
+  # Endpoints to call: outbox, jobs.
+  endpoints: "outbox,jobs"
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      memory: 128Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+topologySpreadConstraints: []

@@ -9,7 +9,11 @@ const TABS = [
   { path: "/invitations", label: "Invitations" },
   { path: "/labels", label: "Labels" },
   { path: "/api-tokens", label: "API tokens" },
+  { path: "/notifications", label: "Notifications" },
   { path: "/integrations", label: "Integrations" },
+  { path: "/messaging", label: "Messaging" },
+  { path: "/cloud-accounts", label: "Cloud accounts" },
+  { path: "/onboarding", label: "Onboarding" },
   { path: "/audit", label: "Audit log" },
 ];
 

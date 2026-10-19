@@ -1,5 +1,35 @@
 import { describe, expect, it } from "vitest";
 import {
+  canAckIncidents,
+  canExportWorkspace,
+  canLinkExternalAccounts,
+  canManageApprovals,
+  canManageAssets,
+  canManageCatalogue,
+  canManageCloudAccounts,
+  canManageContacts,
+  canManageForms,
+  canManageMessaging,
+  canManageNotificationRouting,
+  canManageOnboarding,
+  canManageRota,
+  canManageServices,
+  canManageSubscriptions,
+  canManageTeams,
+  canManageVault,
+  canPayRequests,
+  canPickExternalDestinations,
+  canRecordDecisions,
+  canSubmitRequests,
+  canUseAssets,
+  canUseRota,
+  canUseVault,
+  canViewCatalogue,
+  canViewContacts,
+  canViewCosts,
+  canViewEmergencyContact,
+  canViewServices,
+  canViewSubscriptions,
   assignableRoles,
   canActOnMember,
   canContribute,
@@ -84,5 +114,68 @@ describe("member management rules", () => {
     expect(canActOnMember(admin, "OWNER")).toBe(false);
     expect(canActOnMember(owner, "OWNER")).toBe(true);
     expect(canActOnMember(member, "GUEST")).toBe(false);
+  });
+});
+
+describe("platform extension capabilities", () => {
+  it("keeps admin-only management with admins and owners", () => {
+    for (const check of [
+      canManageTeams,
+      canManageOnboarding,
+      canManageServices,
+      canManageCloudAccounts,
+      canManageCatalogue,
+      canManageSubscriptions,
+      canManageVault,
+      canManageContacts,
+      canManageAssets,
+      canManageApprovals,
+      canPayRequests,
+      canManageRota,
+      canManageForms,
+      canRecordDecisions,
+      canManageNotificationRouting,
+      canPickExternalDestinations,
+      canManageMessaging,
+    ]) {
+      expect(check(owner)).toBe(true);
+      expect(check(admin)).toBe(true);
+      expect(check(member)).toBe(false);
+      expect(check(guest)).toBe(false);
+      expect(check(null)).toBe(false);
+    }
+  });
+
+  it("opens member areas to members but never to guests", () => {
+    for (const check of [canViewServices, canViewCatalogue, canViewSubscriptions, canUseVault, canViewContacts, canUseAssets, canSubmitRequests, canUseRota, canLinkExternalAccounts]) {
+      expect(check(member)).toBe(true);
+      expect(check(admin)).toBe(true);
+      expect(check(guest)).toBe(false);
+      expect(check(undefined)).toBe(false);
+    }
+  });
+
+  it("lets members acknowledge incidents and see costs only when the workspace allows it", () => {
+    expect(canAckIncidents(admin, { membersCanAckIncidents: false })).toBe(true);
+    expect(canAckIncidents(member, { membersCanAckIncidents: false })).toBe(false);
+    expect(canAckIncidents(member, { membersCanAckIncidents: true })).toBe(true);
+    expect(canAckIncidents(guest, { membersCanAckIncidents: true })).toBe(false);
+    expect(canViewCosts(admin, { costsVisibleToMembers: false })).toBe(true);
+    expect(canViewCosts(member, { costsVisibleToMembers: false })).toBe(false);
+    expect(canViewCosts(member, { costsVisibleToMembers: true })).toBe(true);
+    expect(canViewCosts(guest, { costsVisibleToMembers: true })).toBe(false);
+  });
+
+  it("shows emergency contacts to admins and the member themselves only", () => {
+    expect(canViewEmergencyContact(admin, false)).toBe(true);
+    expect(canViewEmergencyContact(member, true)).toBe(true);
+    expect(canViewEmergencyContact(guest, true)).toBe(true);
+    expect(canViewEmergencyContact(member, false)).toBe(false);
+    expect(canViewEmergencyContact(null, true)).toBe(false);
+  });
+
+  it("reserves workspace export to owners", () => {
+    expect(canExportWorkspace(owner)).toBe(true);
+    expect(canExportWorkspace(admin)).toBe(false);
   });
 });

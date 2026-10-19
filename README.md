@@ -86,6 +86,29 @@ project board and some activity.
 | `npm run db:backup` / `db:restore` | Database backups |
 | `npm run production:check` | Production environment preflight |
 
+## Deploy
+
+The quickest production setup is one Linux server with the guided installer.
+It installs Docker if needed, generates every secret, and runs PostgreSQL,
+Redis, private Silo storage, Caddy HTTPS, migrations and a scheduler:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/SpaceWorks-HQ/SpaceWorks-Workspace/main/install.sh -o install.sh
+sudo bash install.sh --ref main        # then open https://<your-host>/setup
+```
+
+| Guide | For |
+| --- | --- |
+| [VPS](docs/DEPLOYMENT_VPS.md) | The installer, upgrades with rollback, backups and restore, DigitalOcean Droplets, Hetzner |
+| [Cloud platforms](docs/DEPLOYMENT_CLOUD.md) | Render (`render.yaml`), DigitalOcean App Platform (`.do/app.yaml`), Fly.io |
+| [AWS](docs/DEPLOYMENT_AWS.md) | EC2 with the installer, or ECS Fargate with RDS, ElastiCache and S3 |
+| [Kubernetes](docs/DEPLOYMENT_KUBERNETES.md) | The Helm chart in `charts/spaceworks-workspace` |
+| [Docker image](docs/DEPLOYMENT_DOCKER.md) · [Container images](docs/CONTAINER_IMAGES.md) | Running and publishing the image yourself |
+| [Configuration](docs/CONFIGURATION.md) · [Operations](docs/production-operations.md) | Every variable; monitoring, restore drills, upgrades, secret rotation |
+
+Local development helpers: `./local.sh start` (services, `.env`, migrations
+and the dev server) or `npm run docker:dev` for the services alone.
+
 ## Operations
 
 - `GET /api/health`: liveness, no dependencies.

@@ -1,0 +1,10 @@
+/* Chart series use the shared, contrast-tested light/dark status tokens. */
+.fin-fill-income { fill: var(--yy-accent-text); }
+.fin-fill-expense { fill: var(--yy-warning-solid); }
+.fin-bg-income { background-color: var(--yy-accent-text); }
+.fin-bg-expense { background-color: var(--yy-warning-solid); }
+
+@media (forced-colors: active) {
+  .fin-fill-income { fill: CanvasText; }
+  .fin-fill-expense { fill: GrayText; }
+}

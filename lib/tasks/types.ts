@@ -1,0 +1,143 @@
+import type { ColumnCategory, LabelTone, ProjectStatus, TaskPriority } from "@prisma/client";
+
+/** Serializable shapes passed from server code to the board, list and task detail (client-safe). */
+
+export type PersonRef = { id: string; name: string | null; image: string | null };
+export type LabelRef = { id: string; name: string; tone: LabelTone };
+
+export type ColumnDTO = { id: string; name: string; position: number; category: ColumnCategory };
+
+export type BoardTask = {
+  id: string;
+  number: number;
+  title: string;
+  priority: TaskPriority;
+  /** ISO start of the local due day. */
+  dueAt: string | null;
+  completedAt: string | null;
+  columnId: string | null;
+  position: number;
+  assigneeIds: string[];
+  labelIds: string[];
+  subtaskCount: number;
+  subtaskDone: number;
+  commentCount: number;
+  attachmentCount: number;
+  blocked: boolean;
+  recurring: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ProjectSummary = {
+  id: string;
+  key: string;
+  name: string;
+  description: string | null;
+  status: ProjectStatus;
+  ownerId: string | null;
+  teamId: string | null;
+  teamName: string | null;
+  startsOn: string | null;
+  dueOn: string | null;
+};
+
+export type ProjectPermissions = {
+  /** Create, edit, move, assign tasks (MEMBER and up). */
+  canEdit: boolean;
+  /** Comment (everyone who can see the project). */
+  canComment: boolean;
+  /** Edit the project, its columns and archive it (ADMIN or the project owner). */
+  canManage: boolean;
+};
+
+export type BoardData = {
+  project: ProjectSummary;
+  columns: ColumnDTO[];
+  tasks: BoardTask[];
+  /** Assignable people (members and up). */
+  members: PersonRef[];
+  labels: LabelRef[];
+  permissions: ProjectPermissions;
+};
+
+export type TaskRef = { id: string; number: number; title: string; projectKey: string | null; completedAt: string | null; archivedAt: string | null };
+
+export type CommentDTO = {
+  id: string;
+  author: PersonRef | null;
+  /** Plain text with mention tokens `<@userId>`. */
+  body: string;
+  createdAt: string;
+  editedAt: string | null;
+  deleted: boolean;
+  canEdit: boolean;
+};
+
+export type ActivityDTO = { id: string; actor: PersonRef | null; kind: string; text: string; createdAt: string };
+
+export type AttachmentDTO = { id: string; filename: string; size: number; contentType: string; url: string; uploadedBy: PersonRef | null; createdAt: string; canDelete: boolean };
+
+export type RecurrenceDTO = {
+  id: string;
+  rrule: string;
+  description: string;
+  createMode: "ON_SCHEDULE" | "ON_COMPLETION";
+  assigneeMode: "FIXED" | "ROTATE";
+  assigneeIds: string[];
+  dueOffsetDays: number | null;
+  nextRunAt: string | null;
+  active: boolean;
+  /** True when this task is the rule's template (the repeat control edits it here). */
+  isTemplate: boolean;
+};
+
+export type TaskDetailDTO = {
+  id: string;
+  number: number;
+  title: string;
+  /** Sanitised HTML. */
+  description: string | null;
+  priority: TaskPriority;
+  dueAt: string | null;
+  completedAt: string | null;
+  archivedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  creator: PersonRef | null;
+  columnId: string | null;
+  project: ProjectSummary | null;
+  columns: ColumnDTO[];
+  parent: TaskRef | null;
+  assignees: PersonRef[];
+  labelIds: string[];
+  subtasks: Array<TaskRef & { assignees: PersonRef[] }>;
+  blockedBy: TaskRef[];
+  blocks: TaskRef[];
+  comments: CommentDTO[];
+  activity: ActivityDTO[];
+  attachments: AttachmentDTO[];
+  recurrence: RecurrenceDTO | null;
+  members: PersonRef[];
+  labels: LabelRef[];
+  permissions: ProjectPermissions;
+  /** Canonical app-relative link. */
+  url: string;
+  reference: string;
+  timeZone: string;
+  viewerId: string;
+};
+
+export type MyTaskDTO = {
+  id: string;
+  number: number;
+  title: string;
+  priority: TaskPriority;
+  dueAt: string | null;
+  completedAt: string | null;
+  projectKey: string | null;
+  projectName: string | null;
+  labelIds: string[];
+  blocked: boolean;
+  url: string;
+};

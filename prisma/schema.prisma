@@ -9,6 +9,13 @@
 // column (`searchVector`) with a GIN index, created in SQL by the initial
 // migration. Prisma treats the column as `Unsupported`, so it is read only
 // through `$queryRaw` (`searchVector @@ websearch_to_tsquery('simple', $1)`).
+//
+// The platform extension (migration `platform_extension`) appends the
+// internal-team, Services monitor and messaging/notification-routing models
+// at the end of this file. Columns that point at people or other areas
+// (`createdById`, `ownerId`, `teamId`…) are plain ids unless a relation is
+// needed for integrity; personal rows cascade with their user and every
+// tenant root cascades with its workspace.
 
 generator client {
   provider = "prisma-client-js"
@@ -110,6 +117,7 @@ enum AttendanceStatus {
   GOING
   MAYBE
   NOT_GOING
+  WAITLIST
 }
 
 enum LedgerKind {
@@ -225,9 +233,27 @@ model User {
   scheduledJobs         ScheduledJob[]
   integrationsConnected IntegrationConnection[]
   oauthStates           OAuthState[]
-  telegramLinks         TelegramLink[]
   seoAudits             SeoAudit[]
   boardroomSessions     BoardroomSession[]
+
+  // Platform extension: personal rows that cascade with the user.
+  teamMemberships         TeamMember[]
+  memberProfiles          MemberProfile[]
+  availability            Availability[]
+  shiftAssignments        ShiftAssignment[]
+  certifications          Certification[]
+  savedViews              SavedView[]
+  bookmarks               Bookmark[]
+  meetingAttendance       MeetingAttendee[]
+  pollBallots             PollBallotReceipt[]
+  ideaVotes               IdeaVote[]
+  calendarFeedTokens      CalendarFeedToken[]
+  notificationPreferences NotificationPreference[]
+  notificationSettings    NotificationUserSettings[]
+  notificationMutes       NotificationMute[]
+  notificationDigestItems NotificationDigestItem[]
+  externalIdentityLinks   ExternalIdentityLink[]
+  linkCodes               LinkCode[]
 }
 
 model Account {
@@ -372,6 +398,8 @@ model AuditEvent {
   @@index([action, createdAt])
 }
 
+/// In-app notification centre item. `kind` is the event type (lib/notify
+/// catalogue) when created by `dispatch()`, which also sets `eventId`.
 model Notification {
   id          String    @id @default(cuid())
   userId      String
@@ -382,12 +410,18 @@ model Notification {
   url         String?
   readAt      DateTime?
   createdAt   DateTime  @default(now())
+  /// NotificationEventRecord that produced it (null for direct createNotifications calls).
+  eventId     String?
+  actorId     String?
+  archivedAt  DateTime?
 
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace?               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  event     NotificationEventRecord? @relation(fields: [eventId], references: [id], onDelete: SetNull)
 
   @@index([userId, readAt, createdAt])
   @@index([workspaceId, createdAt])
+  @@index([eventId])
 }
 
 // ──────────────────────────── Tenancy ────────────────────────────
@@ -406,6 +440,15 @@ model Workspace {
   googleCalendarId        String?
   /// Channel (id) that receives assistant digests by default.
   digestChannelId         String?
+  /// Members may see Services costs (cloud spend, service costs).
+  costsVisibleToMembers   Boolean   @default(false)
+  /// Members (not only admins) may acknowledge Services incidents.
+  membersCanAckIncidents  Boolean   @default(false)
+  /// Pauses retention purges (legal hold).
+  legalHold               Boolean   @default(false)
+  defaultLocale           String    @default("en-IN")
+  /// Raw monitor check retention in days (7–30).
+  monitorRetentionDays    Int       @default(14)
   archivedAt              DateTime?
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
@@ -438,9 +481,88 @@ model Workspace {
   oauthStates       OAuthState[]
   githubRepos       GithubRepo[]
   githubEvents      GithubEvent[]
-  telegramLinks     TelegramLink[]
   seoSites          SeoSite[]
   boardroomSessions BoardroomSession[]
+
+  // Platform extension
+  teams                    Team[]
+  approvalPolicies         ApprovalPolicy[]
+  approvalRequests         ApprovalRequest[]
+  recordLinks              RecordLink[]
+  searchDocuments          SearchDocument[]
+  activityEvents           ActivityEvent[]
+  savedViews               SavedView[]
+  bookmarks                Bookmark[]
+  linkItems                LinkItem[]
+  memberProfiles           MemberProfile[]
+  checklistTemplates       ChecklistTemplate[]
+  checklistRuns            ChecklistRun[]
+  availability             Availability[]
+  shiftTypes               ShiftType[]
+  shifts                   Shift[]
+  certTypes                CertType[]
+  serviceCatalogItems      ServiceCatalogItem[]
+  subscriptions            Subscription[]
+  vaultCollections         VaultCollection[]
+  vaultItems               VaultItem[]
+  vaultGrants              VaultGrant[]
+  vaultAccessRequests      VaultAccessRequest[]
+  assets                   Asset[]
+  accessCredentials        AccessCredential[]
+  organisations            Organisation[]
+  contacts                 Contact[]
+  contactInteractions      ContactInteraction[]
+  deals                    Deal[]
+  budgets                  Budget[]
+  purchaseRequests         PurchaseRequest[]
+  reimbursements           Reimbursement[]
+  taskRecurrences          TaskRecurrence[]
+  taskDependencies         TaskDependency[]
+  cycles                   Cycle[]
+  forms                    Form[]
+  goals                    Goal[]
+  templates                Template[]
+  meetings                 Meeting[]
+  decisions                Decision[]
+  polls                    Poll[]
+  calendarFeedTokens       CalendarFeedToken[]
+  signatureRequests        SignatureRequest[]
+  ideas                    Idea[]
+  changelogEntries         ChangelogEntry[]
+  exportJobs               ExportJob[]
+  importJobs               ImportJob[]
+  retentionPolicies        RetentionPolicy[]
+  ssoProviders             SsoProvider[]
+  monitors                 Monitor[]
+  incidents                Incident[]
+  maintenanceWindows       MaintenanceWindow[]
+  onCallSchedules          OnCallSchedule[]
+  escalationPolicies       EscalationPolicy[]
+  monitorAllowlist         MonitorNetworkAllowlist[]
+  cloudConnections         CloudConnection[]
+  cloudResources           CloudResource[]
+  costSnapshots            CostSnapshot[]
+  costBudgets              CostBudget[]
+  statusPage               StatusPage?
+  messagingConnections     MessagingConnection[]
+  notificationDestinations NotificationDestination[]
+  notificationRules        NotificationRule[]
+  notificationPreferences  NotificationPreference[]
+  notificationUserSettings NotificationUserSettings[]
+  notificationMutes        NotificationMute[]
+  notificationEvents       NotificationEventRecord[]
+  notificationDeliveries   NotificationDelivery[]
+  notificationDigestItems  NotificationDigestItem[]
+  externalIdentityLinks    ExternalIdentityLink[]
+  linkCodes                LinkCode[]
+  bridgedChannels          BridgedChannel[]
+  appStoreAccounts         AppStoreAccount[]
+  reviewedApps             ReviewedApp[]
+  appReviews               AppReview[]
+  appReviewReplyAttempts   AppReviewReplyAttempt[]
+  appReviewSlackConfig     AppReviewSlackConfig?
+  appReviewSlackEvents     AppReviewSlackEvent[]
+  appReviewSlackMembers    AppReviewSlackMember[]
 }
 
 model Membership {
@@ -521,27 +643,35 @@ model WorkspaceCounter {
 // ───────────────────────────── Work ─────────────────────────────
 
 model Project {
-  id          String        @id @default(cuid())
-  workspaceId String
+  id            String        @id @default(cuid())
+  workspaceId   String
   /// Short uppercase key shown in task references, e.g. "BOT".
-  key         String
-  name        String
-  description String?
-  status      ProjectStatus @default(ACTIVE)
-  ownerId     String?
-  startsOn    DateTime?     @db.Date
-  dueOn       DateTime?     @db.Date
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  key           String
+  name          String
+  description   String?
+  status        ProjectStatus @default(ACTIVE)
+  ownerId       String?
+  startsOn      DateTime?     @db.Date
+  dueOn         DateTime?     @db.Date
+  /// Owning team (null = workspace-wide). Private teams hide their projects.
+  teamId        String?
+  /// Per-project toggle for cycles (sprints).
+  cyclesEnabled Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   owner       User?         @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  team        Team?         @relation(fields: [teamId], references: [id], onDelete: SetNull)
   columns     BoardColumn[]
   tasks       Task[]
   githubRepos GithubRepo[]
+  cycles      Cycle[]
+  monitors    Monitor[]
 
   @@unique([workspaceId, key])
   @@index([workspaceId, status])
+  @@index([teamId])
 }
 
 model BoardColumn {
@@ -560,26 +690,32 @@ model BoardColumn {
 }
 
 model Task {
-  id           String                   @id @default(cuid())
-  workspaceId  String
-  projectId    String?
-  columnId     String?
+  id              String                   @id @default(cuid())
+  workspaceId     String
+  projectId       String?
+  columnId        String?
   /// Per-workspace sequence (WorkspaceCounter "task").
-  number       Int
-  title        String
+  number          Int
+  title           String
   /// Sanitised HTML.
-  description  String?
-  priority     TaskPriority             @default(NONE)
-  dueAt        DateTime?
-  position     Float                    @default(0)
-  creatorId    String?
-  parentId     String?
-  completedAt  DateTime?
-  archivedAt   DateTime?
-  createdAt    DateTime                 @default(now())
-  updatedAt    DateTime                 @updatedAt
+  description     String?
+  priority        TaskPriority             @default(NONE)
+  dueAt           DateTime?
+  position        Float                    @default(0)
+  creatorId       String?
+  parentId        String?
+  completedAt     DateTime?
+  archivedAt      DateTime?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
   /// Generated column (see migration); query with $queryRaw only.
-  searchVector Unsupported("tsvector")? @default(dbgenerated())
+  searchVector    Unsupported("tsvector")? @default(dbgenerated())
+  /// Cycle (sprint) the task is planned in.
+  cycleId         String?
+  /// Recurrence rule that created this instance.
+  recurrenceId    String?
+  /// Meeting whose notes produced this action item.
+  sourceMeetingId String?
 
   workspace  Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   project    Project?       @relation(fields: [projectId], references: [id], onDelete: SetNull)
@@ -593,12 +729,24 @@ model Task {
   activities TaskActivity[]
   files      FileObject[]
 
+  cycle              Cycle?              @relation(fields: [cycleId], references: [id], onDelete: SetNull)
+  recurrence         TaskRecurrence?     @relation("TaskRecurrenceInstances", fields: [recurrenceId], references: [id], onDelete: SetNull)
+  sourceMeeting      Meeting?            @relation("TaskSourceMeeting", fields: [sourceMeetingId], references: [id], onDelete: SetNull)
+  recurrenceRules    TaskRecurrence[]    @relation("TaskRecurrenceTemplate")
+  occurrences        TaskOccurrence[]
+  blocking           TaskDependency[]    @relation("TaskBlocking")
+  blockedBy          TaskDependency[]    @relation("TaskBlocked")
+  meetingActionLinks MeetingActionItem[]
+
   @@unique([workspaceId, number])
   @@index([projectId, columnId, position])
   @@index([workspaceId, completedAt])
   @@index([workspaceId, dueAt])
   @@index([parentId])
   @@index([searchVector], type: Gin)
+  @@index([cycleId])
+  @@index([recurrenceId])
+  @@index([sourceMeetingId])
 }
 
 model TaskAssignee {
@@ -682,17 +830,23 @@ model Channel {
   /// For DIRECT channels: "<workspaceId>:<sorted user ids joined by ':'>".
   dmKey         String?     @unique
   lastMessageAt DateTime?
+  /// Owning team (null = workspace-wide). Private teams hide their channels.
+  teamId        String?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
-  workspace Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  createdBy User?           @relation("ChannelCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  workspace Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User?            @relation("ChannelCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  team      Team?            @relation(fields: [teamId], references: [id], onDelete: SetNull)
   members   ChannelMember[]
   messages  Message[]
   jobs      ScheduledJob[]
+  bridges   BridgedChannel[]
+  polls     Poll[]
 
   @@unique([workspaceId, slug])
   @@index([workspaceId, kind])
+  @@index([teamId])
 }
 
 model ChannelMember {
@@ -724,6 +878,9 @@ model Message {
   deletedAt    DateTime?
   pinnedAt     DateTime?
   pinnedById   String?
+  /// Where the message came from: null (typed here), "notify" (dispatch
+  /// WORKSPACE_CHANNEL card) or "bridge:<bridgedChannelId>" (echo prevention).
+  origin       String?
   createdAt    DateTime                 @default(now())
   /// Generated column (see migration); query with $queryRaw only.
   searchVector Unsupported("tsvector")? @default(dbgenerated())
@@ -736,6 +893,7 @@ model Message {
   replies     Message[]           @relation("MessageThread")
   reactions   MessageReaction[]
   attachments MessageAttachment[]
+  bridged     BridgedMessage[]
 
   @@index([channelId, createdAt])
   @@index([parentId, createdAt])
@@ -770,23 +928,26 @@ model MessageAttachment {
 // ─────────────────────────── Knowledge ───────────────────────────
 
 model Doc {
-  id           String                   @id @default(cuid())
-  workspaceId  String
-  parentId     String?
-  title        String
+  id            String                   @id @default(cuid())
+  workspaceId   String
+  parentId      String?
+  title         String
   /// Editor JSON (TipTap). `contentHtml` is the sanitised render, `contentText` the plain text.
-  content      Json?
-  contentHtml  String                   @default("")
-  contentText  String                   @default("")
-  position     Float                    @default(0)
-  createdById  String?
-  updatedById  String?
-  archivedAt   DateTime?
-  visibility   DocVisibility            @default(WORKSPACE)
-  createdAt    DateTime                 @default(now())
-  updatedAt    DateTime                 @updatedAt
+  content       Json?
+  contentHtml   String                   @default("")
+  contentText   String                   @default("")
+  position      Float                    @default(0)
+  createdById   String?
+  updatedById   String?
+  archivedAt    DateTime?
+  visibility    DocVisibility            @default(WORKSPACE)
+  /// Knowledge hygiene: owner confirms the doc is current until this date.
+  verifiedUntil DateTime?
+  verifiedById  String?
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
   /// Generated column (see migration); query with $queryRaw only.
-  searchVector Unsupported("tsvector")? @default(dbgenerated())
+  searchVector  Unsupported("tsvector")? @default(dbgenerated())
 
   workspace Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   parent    Doc?          @relation("DocTree", fields: [parentId], references: [id], onDelete: Cascade)
@@ -795,6 +956,12 @@ model Doc {
   updatedBy User?         @relation("DocUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   revisions DocRevision[]
   files     FileObject[]
+
+  runbookFor        ServiceCatalogItem[]
+  meetingNotesFor   Meeting[]
+  postmortemFor     Incident[]
+  assetManualFor    Asset[]
+  signatureRequests SignatureRequest[]
 
   @@index([workspaceId, parentId, position])
   @@index([searchVector], type: Gin)
@@ -817,27 +984,34 @@ model DocRevision {
 /// A private object in S3-compatible storage (lib/storage). Always served
 /// through /api/files/[id] after a membership check.
 model FileObject {
-  id           String    @id @default(cuid())
-  workspaceId  String
-  storageKey   String    @unique
-  filename     String
-  contentType  String
-  size         Int
-  checksum     String?
-  uploadedById String?
-  folder       String    @default("/")
-  docId        String?
-  taskId       String?
-  deletedAt    DateTime?
-  createdAt    DateTime  @default(now())
+  id             String    @id @default(cuid())
+  workspaceId    String
+  storageKey     String    @unique
+  filename       String
+  contentType    String
+  size           Int
+  checksum       String?
+  uploadedById   String?
+  folder         String    @default("/")
+  docId          String?
+  taskId         String?
+  /// Current version number (FileVersion keeps previous objects).
+  currentVersion Int       @default(1)
+  deletedAt      DateTime?
+  createdAt      DateTime  @default(now())
 
-  workspace          Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  uploadedBy         User?               @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
-  doc                Doc?                @relation(fields: [docId], references: [id], onDelete: SetNull)
-  task               Task?               @relation(fields: [taskId], references: [id], onDelete: SetNull)
-  messageAttachments MessageAttachment[]
-  ledgerReceipts     LedgerEntry[]
-  blogCovers         BlogPost[]
+  workspace             Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  uploadedBy            User?               @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  doc                   Doc?                @relation(fields: [docId], references: [id], onDelete: SetNull)
+  task                  Task?               @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  messageAttachments    MessageAttachment[]
+  ledgerReceipts        LedgerEntry[]
+  blogCovers            BlogPost[]
+  versions              FileVersion[]
+  subscriptionContracts Subscription[]
+  certificationEvidence Certification[]
+  statusPageLogos       StatusPage[]
+  signedPdfs            SignatureRequest[]
 
   @@index([workspaceId, folder])
   @@index([docId])
@@ -873,6 +1047,8 @@ model CommunityEvent {
   startsAt    DateTime
   endsAt      DateTime?
   kind        CommunityEventKind @default(OTHER)
+  /// RSVP cap; extra "going" responses become WAITLIST.
+  capacity    Int?
   createdById String?
   cancelledAt DateTime?
   createdAt   DateTime           @default(now())
@@ -881,6 +1057,8 @@ model CommunityEvent {
   workspace Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   createdBy User?           @relation(fields: [createdById], references: [id], onDelete: SetNull)
   attendees EventAttendee[]
+  meetings  Meeting[]
+  shifts    Shift[]
 
   @@index([workspaceId, startsAt])
 }
@@ -943,6 +1121,11 @@ model LedgerEntry {
   occurredOn    DateTime   @db.Date
   receiptFileId String?
   createdById   String?
+  /// Budget this entry counts against.
+  budgetId      String?
+  /// Idempotent posting from another record, e.g. ("reimbursement", id).
+  sourceType    String?
+  sourceId      String?
   voidedAt      DateTime?
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
@@ -951,9 +1134,12 @@ model LedgerEntry {
   category    FinanceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   receiptFile FileObject?      @relation(fields: [receiptFileId], references: [id], onDelete: SetNull)
   createdBy   User?            @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  budget      Budget?          @relation(fields: [budgetId], references: [id], onDelete: SetNull)
 
+  @@unique([sourceType, sourceId])
   @@index([workspaceId, occurredOn])
   @@index([categoryId])
+  @@index([budgetId])
 }
 
 model Invoice {
@@ -1018,9 +1204,10 @@ model AssistantConversation {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  workspace Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages  AssistantMessage[]
+  workspace        Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user             User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages         AssistantMessage[]
+  messagingThreads MessagingConversation[]
 
   @@index([workspaceId, userId, updatedAt])
 }
@@ -1194,26 +1381,6 @@ model GithubEvent {
   @@index([repoId, receivedAt])
 }
 
-/// Links a member to their Telegram account. A pending link carries a hashed
-/// one-time code the member sends to the bot.
-model TelegramLink {
-  id                String    @id @default(cuid())
-  userId            String
-  workspaceId       String
-  telegramUserId    String?
-  username          String?
-  linkedAt          DateTime?
-  linkCodeHash      String?   @unique
-  linkCodeExpiresAt DateTime?
-  createdAt         DateTime  @default(now())
-
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-
-  @@unique([workspaceId, userId])
-  @@unique([workspaceId, telegramUserId])
-}
-
 // ───────────────────────────── SEO ─────────────────────────────
 
 model SeoSite {
@@ -1320,4 +1487,3261 @@ model BoardroomTurn {
   seat    BoardroomSeat?   @relation(fields: [seatId], references: [id], onDelete: SetNull)
 
   @@index([sessionId, round, createdAt])
+}
+
+// ═══════════════════════ Platform extension ═══════════════════════
+//
+// Internal-team features, the Services monitor and messaging + notification
+// routing. Ownership per area is in docs/ROADMAP-BUILD.md. Encrypted columns
+// (`*Enc`) hold "v1.<iv>.<tag>.<ciphertext>" strings from lib/crypto.ts
+// (`encryptSecret` with a dedicated purpose), except the vault, which uses
+// envelope encryption under VAULT_MASTER_KEY. Money follows the app rule:
+// integer minor units plus an ISO currency (cloud cost snapshots keep the
+// provider's fractional amounts as Decimal).
+
+// ─────────────────────── Extension enums ───────────────────────
+
+enum TeamRole {
+  LEAD
+  MEMBER
+}
+
+enum TeamVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+/// Who can see a record: only its owner (and admins), its team, or everyone in the workspace.
+enum Visibility {
+  PRIVATE
+  TEAM
+  WORKSPACE
+}
+
+enum ApprovalSubjectType {
+  PURCHASE_REQUEST
+  REIMBURSEMENT
+  FORM_SUBMISSION
+  VAULT_ACCESS
+  DOC
+  ACCESS_CREDENTIAL
+  TIME_OFF
+  CUSTOM
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  CHANGES_REQUESTED
+}
+
+enum MembershipType {
+  CORE
+  VOLUNTEER
+  MEMBER
+  ALUMNI
+}
+
+enum ChecklistKind {
+  ONBOARDING
+  OFFBOARDING
+  EVENT
+  OPENING
+  CLOSING
+  CUSTOM
+}
+
+enum ChecklistRunStatus {
+  OPEN
+  DONE
+  CANCELLED
+}
+
+enum AvailabilityType {
+  AWAY
+  LIMITED
+  TRAVEL
+  BUSY
+}
+
+enum ShiftAssignmentStatus {
+  CONFIRMED
+  WAITLIST
+  SWAP_REQUESTED
+  NO_SHOW
+  ATTENDED
+  CANCELLED
+}
+
+enum ShiftSwapStatus {
+  OPEN
+  ACCEPTED
+  APPROVED
+  CANCELLED
+}
+
+enum ServiceKind {
+  INTERNAL_APP
+  WEBSITE
+  SAAS_ACCOUNT
+  DOMAIN
+  SERVER
+  DATABASE
+  STORAGE
+  REPO
+  BOT
+  DEVICE
+  OTHER
+}
+
+enum ServiceEnv {
+  PROD
+  STAGING
+  DEV
+  NONE
+}
+
+enum Criticality {
+  TIER1
+  TIER2
+  TIER3
+}
+
+enum LifecycleStatus {
+  PLANNED
+  ACTIVE
+  DEPRECATED
+  RETIRED
+}
+
+enum DataClass {
+  PUBLIC
+  INTERNAL
+  CONFIDENTIAL
+  PERSONAL
+}
+
+enum ServiceLinkTarget {
+  MONITOR
+  CLOUD_RESOURCE
+  VAULT_ITEM
+  SUBSCRIPTION
+  GITHUB_REPO
+  DOC
+  CHANNEL
+  ASSET
+}
+
+enum SubscriptionKind {
+  DOMAIN
+  SAAS
+  HOSTING
+  INSURANCE
+  LICENSE
+  LEASE
+  MEMBERSHIP
+  OTHER
+}
+
+enum BillingPeriod {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  ONE_TIME
+  USAGE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLING
+  CANCELLED
+  EXPIRED
+}
+
+enum VaultItemType {
+  LOGIN
+  API_KEY
+  SECRET_NOTE
+  WIFI
+  CARD_REFERENCE
+  SSH_KEY
+  TOTP
+}
+
+enum VaultSensitivity {
+  NORMAL
+  HIGH
+}
+
+enum VaultPermission {
+  LIST
+  REVEAL
+  EDIT
+  MANAGE
+}
+
+enum VaultAccessAction {
+  LIST
+  REVEAL
+  COPY
+  EDIT
+  GRANT
+  ROTATE
+  DENIED
+}
+
+enum PrincipalType {
+  USER
+  TEAM
+  ROLE
+}
+
+enum AssetStatus {
+  AVAILABLE
+  CHECKED_OUT
+  IN_MAINTENANCE
+  RESERVED
+  LOST
+  RETIRED
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+}
+
+enum MaintenanceLogType {
+  REPAIR
+  SERVICE
+  INSPECTION
+  NOTE
+}
+
+enum AccessCredentialType {
+  KEY
+  FOB
+  CARD
+  CODE
+}
+
+enum AccessCredentialStatus {
+  ISSUED
+  IN_SAFE
+  LOST
+  RETIRED
+}
+
+enum OrgKind {
+  SPONSOR
+  PARTNER
+  VENDOR
+  VENUE
+  UNIVERSITY
+  GOVERNMENT
+  MEDIA
+  COMMUNITY
+  DONOR
+  OTHER
+}
+
+enum RelationshipStatus {
+  PROSPECT
+  ACTIVE
+  DORMANT
+  DO_NOT_CONTACT
+}
+
+enum InteractionType {
+  CALL
+  MEETING
+  EMAIL
+  MESSAGE
+  EVENT
+  NOTE
+  INTRO
+}
+
+enum DealType {
+  SPONSORSHIP
+  PARTNERSHIP
+  GRANT
+  IN_KIND
+  VENUE
+}
+
+enum PurchaseStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  ORDERED
+  RECEIVED
+  CLOSED
+  CANCELLED
+}
+
+enum ReimbursementStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  PAID
+  CANCELLED
+}
+
+enum PaymentRoute {
+  ORG_CARD
+  INVOICE
+  REIMBURSE
+}
+
+enum RecurrenceCreateMode {
+  ON_SCHEDULE
+  ON_COMPLETION
+}
+
+enum DependencyType {
+  BLOCKS
+  RELATES
+  DUPLICATES
+}
+
+enum CycleStatus {
+  UPCOMING
+  ACTIVE
+  COMPLETED
+}
+
+enum FormVisibility {
+  INTERNAL
+  PUBLIC_LINK
+}
+
+enum SubmissionStatus {
+  NEW
+  TRIAGED
+  ACCEPTED
+  DECLINED
+}
+
+enum GoalStatus {
+  ON_TRACK
+  AT_RISK
+  OFF_TRACK
+  DONE
+}
+
+enum KeyResultMetric {
+  NUMBER
+  PERCENT
+  BOOLEAN
+}
+
+enum TemplateKind {
+  PROJECT
+  TASK
+  DOC
+  MEETING
+  CHECKLIST
+  FORM
+}
+
+enum MeetingStatus {
+  SCHEDULED
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum Rsvp {
+  PENDING
+  YES
+  NO
+  MAYBE
+}
+
+enum AgendaItemStatus {
+  OPEN
+  DISCUSSED
+  CARRIED_OVER
+}
+
+enum DecisionStatus {
+  PROPOSED
+  DECIDED
+  SUPERSEDED
+}
+
+enum PollType {
+  SINGLE
+  MULTI
+  RANKED
+  YES_NO_ABSTAIN
+  SCHEDULING
+}
+
+enum PollResultsVisibility {
+  LIVE
+  AFTER_CLOSE
+}
+
+enum SignatureStatus {
+  PENDING
+  SIGNED
+  DECLINED
+  EXPIRED
+}
+
+enum IdeaStatus {
+  NEW
+  UNDER_REVIEW
+  PLANNED
+  DONE
+  DECLINED
+}
+
+enum ChangelogAudience {
+  INTERNAL
+  PUBLIC
+}
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum RetentionAction {
+  DELETE
+  ANONYMISE
+  ARCHIVE
+}
+
+// Services monitor
+
+enum MonitorType {
+  HTTP
+  TCP
+  PING
+  DNS
+  TLS_CERT
+  DOMAIN_EXPIRY
+  HEARTBEAT
+  POSTGRES
+  REDIS
+  CLOUD_RESOURCE
+  PROMQL
+}
+
+enum MonitorStatus {
+  PENDING
+  UP
+  DEGRADED
+  DOWN
+  PAUSED
+  MAINTENANCE
+  UNKNOWN
+}
+
+enum IncidentSeverity {
+  MINOR
+  MAJOR
+  CRITICAL
+}
+
+enum IncidentStatus {
+  INVESTIGATING
+  IDENTIFIED
+  MONITORING
+  RESOLVED
+}
+
+enum IncidentSource {
+  AUTO
+  MANUAL
+}
+
+enum IncidentImpact {
+  NONE
+  MINOR
+  MAJOR
+  CRITICAL
+}
+
+enum RollupGranularity {
+  HOUR
+  DAY
+}
+
+enum HeartbeatPingKind {
+  SUCCESS
+  START
+  FAIL
+  EXIT
+  LOG
+}
+
+enum OnCallRotation {
+  DAILY
+  WEEKLY
+}
+
+enum CloudProviderKind {
+  DIGITALOCEAN
+  AWS
+  RENDER
+  CLOUDFLARE
+  HETZNER
+  VERCEL
+  NETLIFY
+  FLY
+  RAILWAY
+  GITHUB_ACTIONS
+  PROMETHEUS
+}
+
+enum CloudResourceStatus {
+  HEALTHY
+  DEGRADED
+  UNHEALTHY
+  STOPPED
+  UNKNOWN
+}
+
+enum CostGranularity {
+  DAY
+  MONTH
+  MTD
+  FORECAST
+  BALANCE
+}
+
+// Messaging and notification routing
+
+enum MessagingProvider {
+  SLACK
+  DISCORD
+  MATTERMOST
+  TELEGRAM
+  WHATSAPP
+}
+
+enum ConnectionStatus {
+  ACTIVE
+  ERROR
+  DISABLED
+}
+
+enum DestinationKind {
+  IN_APP_USERS
+  WORKSPACE_CHANNEL
+  EMAIL
+  SLACK
+  DISCORD
+  MATTERMOST
+  TELEGRAM
+  WHATSAPP
+  WEBHOOK
+}
+
+enum DestinationHealth {
+  UNKNOWN
+  OK
+  ERROR
+}
+
+enum PersonalChannel {
+  IN_APP
+  EMAIL
+  TELEGRAM_DM
+  SLACK_DM
+  DISCORD_DM
+  MATTERMOST_DM
+  WHATSAPP_DM
+}
+
+enum NotifySeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum DeliveryStatus {
+  PENDING
+  SENDING
+  SENT
+  FAILED
+  SKIPPED
+  CANCELLED
+}
+
+enum DigestFrequency {
+  IMMEDIATE
+  HOURLY
+  DAILY
+  WEEKLY
+  OFF
+}
+
+/// "Send to" picker scopes. Each scoped rule belongs to one entity (scopeId).
+enum RuleScopeType {
+  REVIEWED_APP
+  WORKSPACE
+  MONITOR
+  INCIDENT
+  PROJECT
+  DIGEST
+  ANNOUNCEMENT
+  FORM
+  CALENDAR
+  SUBSCRIPTION
+  COST_BUDGET
+  CLOUD_CONNECTION
+  GITHUB_REPO
+  SERVICE_CATALOG_ITEM
+  BOARDROOM
+  BUDGET
+  MEETING
+}
+
+enum LinkCodePurpose {
+  IDENTITY
+  DESTINATION
+}
+
+enum BridgeDirection {
+  OUTBOUND
+  INBOUND
+  BOTH
+}
+
+enum BridgeOrigin {
+  WORKSPACE
+  EXTERNAL
+}
+
+enum InboundEventStatus {
+  RECEIVED
+  PROCESSED
+  IGNORED
+  FAILED
+}
+
+// ─────────────────────── Foundations ───────────────────────
+
+model Team {
+  id          String         @id @default(cuid())
+  workspaceId String
+  name        String
+  slug        String
+  /// Brand token name (e.g. "teal", "citron"), never a hex value.
+  color       String?
+  description String?
+  visibility  TeamVisibility @default(PUBLIC)
+  archivedAt  DateTime?
+  createdById String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  workspace Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  members   TeamMember[]
+  channels  Channel[]
+  projects  Project[]
+
+  @@unique([workspaceId, slug])
+  @@index([workspaceId, archivedAt])
+}
+
+model TeamMember {
+  teamId   String
+  userId   String
+  role     TeamRole @default(MEMBER)
+  joinedAt DateTime @default(now())
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([teamId, userId])
+  @@index([userId])
+}
+
+/// Approval chain per subject type. `steps` =
+/// [{ approverType: "ROLE"|"TEAM_LEAD"|"USER"|"TEAM", ref, minApprovals, minAmountMinor? }].
+model ApprovalPolicy {
+  id          String              @id @default(cuid())
+  workspaceId String
+  subjectType ApprovalSubjectType
+  name        String
+  steps       Json
+  isDefault   Boolean             @default(false)
+  createdById String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  workspace Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  requests  ApprovalRequest[]
+
+  @@index([workspaceId, subjectType])
+}
+
+model ApprovalRequest {
+  id             String              @id @default(cuid())
+  workspaceId    String
+  policyId       String?
+  subjectType    ApprovalSubjectType
+  subjectId      String
+  /// Snapshot for the approvals inbox (subject title at request time).
+  title          String
+  requesterId    String
+  status         ApprovalStatus      @default(PENDING)
+  currentStep    Int                 @default(0)
+  /// Policy steps frozen when the request was made.
+  steps          Json
+  amountMinor    Int?
+  currency       String?
+  lastRemindedAt DateTime?
+  createdAt      DateTime            @default(now())
+  decidedAt      DateTime?
+
+  workspace Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  policy    ApprovalPolicy?    @relation(fields: [policyId], references: [id], onDelete: SetNull)
+  decisions ApprovalDecision[]
+
+  @@unique([workspaceId, subjectType, subjectId])
+  @@index([workspaceId, status, createdAt])
+  @@index([requesterId])
+}
+
+model ApprovalDecision {
+  id         String         @id @default(cuid())
+  requestId  String
+  step       Int
+  approverId String
+  /// APPROVED | REJECTED | CHANGES_REQUESTED
+  decision   ApprovalStatus
+  comment    String?
+  createdAt  DateTime       @default(now())
+
+  request ApprovalRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@unique([requestId, step, approverId])
+}
+
+/// Generic polymorphic link (contact ↔ task, organisation ↔ invoice, service ↔ doc…).
+model RecordLink {
+  id          String   @id @default(cuid())
+  workspaceId String
+  fromType    String
+  fromId      String
+  toType      String
+  toId        String
+  label       String?
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, fromType, fromId, toType, toId])
+  @@index([workspaceId, toType, toId])
+}
+
+/// Cross-entity search index (global search + command palette). Filled by the
+/// owning area; `searchVector` is generated in SQL (title A, body B) and
+/// `title` has a trigram index for fuzzy prefix matches. Never index secrets.
+model SearchDocument {
+  id           String                   @id @default(cuid())
+  workspaceId  String
+  entityType   String
+  entityId     String
+  title        String
+  body         String                   @default("")
+  url          String
+  visibility   Visibility               @default(WORKSPACE)
+  teamId       String?
+  projectId    String?
+  channelId    String?
+  ownerId      String?
+  updatedAt    DateTime                 @updatedAt
+  /// Generated column (see migration); query with $queryRaw only.
+  searchVector Unsupported("tsvector")? @default(dbgenerated())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([entityType, entityId])
+  @@index([workspaceId, entityType])
+  @@index([searchVector], type: Gin)
+  @@index([title(ops: raw("gin_trgm_ops"))], type: Gin, map: "SearchDocument_title_trgm_idx")
+}
+
+model ActivityEvent {
+  id          String     @id @default(cuid())
+  workspaceId String
+  actorId     String?
+  verb        String
+  entityType  String
+  entityId    String
+  summary     String
+  visibility  Visibility @default(WORKSPACE)
+  teamId      String?
+  projectId   String?
+  data        Json?
+  createdAt   DateTime   @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt(sort: Desc)])
+  @@index([entityType, entityId, createdAt(sort: Desc)])
+  @@index([actorId, createdAt(sort: Desc)])
+}
+
+model SavedView {
+  id          String     @id @default(cuid())
+  workspaceId String
+  /// task | contact | asset | service | subscription | expense | monitor …
+  entityType  String
+  name        String
+  /// { filters, sort, groupBy, columns }
+  query       Json
+  /// LIST | BOARD | TABLE | CALENDAR
+  layout      String     @default("LIST")
+  ownerId     String
+  shared      Visibility @default(PRIVATE)
+  teamId      String?
+  pinned      Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  owner     User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, entityType])
+  @@index([ownerId])
+}
+
+model Bookmark {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  entityType  String
+  entityId    String
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId, entityType, entityId])
+}
+
+/// Workspace links library ("Bank portal", "Member form"…).
+model LinkItem {
+  id          String    @id @default(cuid())
+  workspaceId String
+  title       String
+  url         String
+  description String?
+  tags        String[]  @default([])
+  teamId      String?
+  pinned      Boolean   @default(false)
+  /// Last HEAD status code from the weekly link check.
+  lastStatus  Int?
+  checkedAt   DateTime?
+  createdById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, pinned])
+}
+
+// ─────────────────────── People ───────────────────────
+
+/// Workspace-specific profile extension (User keeps name, bio, pronouns,
+/// timezone; Membership keeps role and title). Emergency contact is encrypted
+/// (purpose "member-emergency") and visible only to OWNER/ADMIN and the member.
+model MemberProfile {
+  id                  String         @id @default(cuid())
+  workspaceId         String
+  userId              String
+  membershipType      MembershipType @default(MEMBER)
+  location            String?
+  interests           String[]       @default([])
+  /// { telegram, github, linkedin, website }
+  handles             Json           @default("{}")
+  /// e.g. { "tue": "evening", "thu": "evening" }
+  weeklyAvailability  Json?
+  isKeyholder         Boolean        @default(false)
+  /// Encrypted { name, relation, phone, notes }.
+  emergencyContactEnc String?
+  emergencyUpdatedAt  DateTime?
+  leavingAt           DateTime?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  workspace Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skills    MemberSkill[]
+
+  @@unique([workspaceId, userId])
+  @@index([workspaceId, membershipType])
+}
+
+model MemberSkill {
+  id          String @id @default(cuid())
+  profileId   String
+  /// Denormalised for "who can solder SMD?" queries.
+  workspaceId String
+  /// Normalised lowercase tag.
+  skill       String
+  /// 1 (learning) … 3 (can teach).
+  level       Int    @default(1)
+
+  profile MemberProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, skill])
+  @@index([workspaceId, skill])
+}
+
+/// `items` = [{ title, descriptionMd, assigneeRule: SUBJECT|ROLE|TEAM_LEAD|USER, assigneeRef, dueOffsetDays, required, link }].
+model ChecklistTemplate {
+  id           String        @id @default(cuid())
+  workspaceId  String
+  kind         ChecklistKind
+  name         String
+  teamId       String?
+  items        Json
+  /// Auto-start trigger: a MembershipType or a team id.
+  autoStartFor String?
+  createdById  String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  workspace Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  runs      ChecklistRun[]
+
+  @@index([workspaceId, kind])
+}
+
+model ChecklistRun {
+  id            String             @id @default(cuid())
+  workspaceId   String
+  templateId    String?
+  kind          ChecklistKind
+  title         String
+  subjectUserId String?
+  status        ChecklistRunStatus @default(OPEN)
+  dueAt         DateTime?
+  createdById   String?
+  createdAt     DateTime           @default(now())
+  completedAt   DateTime?
+
+  workspace Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  template  ChecklistTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  items     ChecklistRunItem[]
+
+  @@index([workspaceId, status])
+  @@index([subjectUserId])
+}
+
+model ChecklistRunItem {
+  id            String    @id @default(cuid())
+  runId         String
+  title         String
+  descriptionMd String?
+  assigneeId    String?
+  dueAt         DateTime?
+  required      Boolean   @default(true)
+  /// Generated offboarding items point at the record: vault_item | service | asset | access_credential | subscription | identity_link | team | task.
+  sourceType    String?
+  sourceId      String?
+  doneAt        DateTime?
+  doneById      String?
+  note          String?
+  sortOrder     Int       @default(0)
+
+  run ChecklistRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId, sortOrder])
+  @@index([assigneeId, doneAt])
+}
+
+model Availability {
+  id          String           @id @default(cuid())
+  workspaceId String
+  userId      String
+  type        AvailabilityType
+  startsAt    DateTime
+  endsAt      DateTime
+  note        String?
+  visibility  Visibility       @default(WORKSPACE)
+  createdAt   DateTime         @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, startsAt, endsAt])
+  @@index([userId, startsAt])
+}
+
+model ShiftType {
+  id                 String   @id @default(cuid())
+  workspaceId        String
+  name               String
+  teamId             String?
+  /// Brand token name, never a hex value.
+  color              String?
+  defaultCapacity    Int      @default(1)
+  requiresCertTypeId String?
+  requiresKeyholder  Boolean  @default(false)
+  createdAt          DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  shifts    Shift[]
+
+  @@unique([workspaceId, name])
+}
+
+model Shift {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  shiftTypeId     String
+  startsAt        DateTime
+  endsAt          DateTime
+  capacity        Int
+  location        String?
+  calendarEventId String?
+  /// Groups recurring instances; the series root carries `rrule`.
+  seriesId        String?
+  rrule           String?
+  notes           String?
+  createdById     String?
+  createdAt       DateTime @default(now())
+
+  workspace     Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  shiftType     ShiftType         @relation(fields: [shiftTypeId], references: [id], onDelete: Cascade)
+  calendarEvent CommunityEvent?   @relation(fields: [calendarEventId], references: [id], onDelete: SetNull)
+  assignments   ShiftAssignment[]
+
+  @@unique([seriesId, startsAt])
+  @@index([workspaceId, startsAt])
+}
+
+model ShiftAssignment {
+  id          String                @id @default(cuid())
+  shiftId     String
+  userId      String
+  status      ShiftAssignmentStatus @default(CONFIRMED)
+  checkedInAt DateTime?
+  /// Hours worked in hundredths (150 = 1.5 h).
+  hoursCenti  Int?
+  createdAt   DateTime              @default(now())
+
+  shift        Shift              @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  swapRequests ShiftSwapRequest[]
+
+  @@unique([shiftId, userId])
+  @@index([userId, status])
+}
+
+model ShiftSwapRequest {
+  id           String          @id @default(cuid())
+  assignmentId String
+  fromUserId   String
+  toUserId     String?
+  status       ShiftSwapStatus @default(OPEN)
+  createdAt    DateTime        @default(now())
+  decidedAt    DateTime?
+
+  assignment ShiftAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@index([assignmentId, status])
+}
+
+/// Training sign-off type (laser cutter, CNC…); gates assets and shifts.
+model CertType {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  name          String
+  description   String?
+  validityDays  Int?
+  trainerIds    String[] @default([])
+  trainerTeamId String?
+  createdAt     DateTime @default(now())
+
+  workspace      Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  certifications Certification[]
+  gatedAssets    Asset[]
+
+  @@unique([workspaceId, name])
+}
+
+model Certification {
+  id             String    @id @default(cuid())
+  certTypeId     String
+  userId         String
+  grantedById    String?
+  grantedAt      DateTime  @default(now())
+  expiresAt      DateTime?
+  revokedAt      DateTime?
+  evidenceFileId String?
+
+  certType     CertType    @relation(fields: [certTypeId], references: [id], onDelete: Cascade)
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  evidenceFile FileObject? @relation(fields: [evidenceFileId], references: [id], onDelete: SetNull)
+
+  @@unique([certTypeId, userId, grantedAt])
+  @@index([userId])
+}
+
+// ─────────────────────── Operations ───────────────────────
+
+model ServiceCatalogItem {
+  id             String          @id @default(cuid())
+  workspaceId    String
+  name           String
+  slug           String
+  kind           ServiceKind
+  description    String?
+  urls           String[]        @default([])
+  environment    ServiceEnv      @default(PROD)
+  criticality    Criticality     @default(TIER2)
+  lifecycle      LifecycleStatus @default(ACTIVE)
+  ownerId        String?
+  backupOwnerId  String?
+  teamId         String?
+  vendorOrgId    String?
+  runbookDocId   String?
+  supportNotesMd String?
+  dataClass      DataClass?
+  tags           String[]        @default([])
+  costMinor      Int?
+  costCurrency   String?
+  costPeriod     BillingPeriod?
+  renewalAt      DateTime?
+  /// Worst-of linked monitors / cloud resources, refreshed by the monitor worker.
+  cachedStatus   MonitorStatus?
+  createdById    String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  workspace     Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  vendorOrg     Organisation?       @relation(fields: [vendorOrgId], references: [id], onDelete: SetNull)
+  runbookDoc    Doc?                @relation(fields: [runbookDocId], references: [id], onDelete: SetNull)
+  links         ServiceLink[]
+  dependsOn     ServiceDependency[] @relation("ServiceDependent")
+  dependents    ServiceDependency[] @relation("ServiceDependency")
+  subscriptions Subscription[]
+  changelog     ChangelogEntry[]
+
+  @@unique([workspaceId, slug])
+  @@index([workspaceId, criticality])
+  @@index([workspaceId, teamId])
+}
+
+/// Typed links from a service to monitors, cloud resources, vault items, etc.
+model ServiceLink {
+  id         String            @id @default(cuid())
+  serviceId  String
+  targetType ServiceLinkTarget
+  targetId   String
+  label      String?
+
+  service ServiceCatalogItem @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceId, targetType, targetId])
+  @@index([targetType, targetId])
+}
+
+model ServiceDependency {
+  dependentId  String
+  dependencyId String
+
+  dependent  ServiceCatalogItem @relation("ServiceDependent", fields: [dependentId], references: [id], onDelete: Cascade)
+  dependency ServiceCatalogItem @relation("ServiceDependency", fields: [dependencyId], references: [id], onDelete: Cascade)
+
+  @@id([dependentId, dependencyId])
+  @@index([dependencyId])
+}
+
+model Subscription {
+  id                     String             @id @default(cuid())
+  workspaceId            String
+  name                   String
+  kind                   SubscriptionKind
+  vendorOrgId            String?
+  plan                   String?
+  amountMinor            Int?
+  currency               String             @default("INR")
+  period                 BillingPeriod
+  nextRenewalAt          DateTime?
+  autoRenew              Boolean            @default(true)
+  cancellationNoticeDays Int?
+  /// Free text such as "Org Visa ••42" — never full card numbers.
+  paymentMethodLabel     String?
+  /// "ORG" or the paying member's user id (reimbursed).
+  payer                  String?
+  ownerId                String?
+  teamId                 String?
+  serviceId              String?
+  vaultItemId            String?
+  contractFileId         String?
+  /// Days before renewal to remind.
+  reminderOffsets        Int[]              @default([30, 7, 1])
+  status                 SubscriptionStatus @default(ACTIVE)
+  notes                  String?
+  /// Idempotency for reminders: the renewal date and offset last reminded.
+  lastRemindedFor        DateTime?
+  lastReminderOffset     Int?
+  createdById            String?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  workspace    Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  vendorOrg    Organisation?       @relation(fields: [vendorOrgId], references: [id], onDelete: SetNull)
+  service      ServiceCatalogItem? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  vaultItem    VaultItem?          @relation(fields: [vaultItemId], references: [id], onDelete: SetNull)
+  contractFile FileObject?         @relation(fields: [contractFileId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, nextRenewalAt])
+  @@index([workspaceId, status])
+}
+
+model VaultCollection {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  description String?
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  workspace Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  items     VaultItem[]
+  grants    VaultGrant[]
+
+  @@unique([workspaceId, name])
+}
+
+/// Envelope encryption: a random per-item data key encrypts the secret JSON
+/// (AES-256-GCM); the data key is wrapped with VAULT_MASTER_KEY version
+/// `keyVersion`. Secrets never reach search, activity, notifications, logs,
+/// exports or assistant tools. Not end-to-end encrypted.
+model VaultItem {
+  id              String           @id @default(cuid())
+  workspaceId     String
+  collectionId    String?
+  type            VaultItemType
+  title           String
+  url             String?
+  /// LIST-visible metadata; null for API keys.
+  username        String?
+  secretEnc       String
+  dataKeyEnc      String
+  keyVersion      Int              @default(1)
+  sensitivity     VaultSensitivity @default(NORMAL)
+  tags            String[]         @default([])
+  ownerId         String
+  rotateEveryDays Int?
+  lastRotatedAt   DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  deletedAt       DateTime?
+
+  workspace      Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  collection     VaultCollection?     @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  versions       VaultItemVersion[]
+  grants         VaultGrant[]
+  logs           VaultAccessLog[]
+  accessRequests VaultAccessRequest[]
+  subscriptions  Subscription[]
+
+  @@index([workspaceId, collectionId])
+  @@index([workspaceId, deletedAt])
+}
+
+/// Previous secret versions (last 5 kept), same envelope format.
+model VaultItemVersion {
+  id          String   @id @default(cuid())
+  itemId      String
+  secretEnc   String
+  dataKeyEnc  String
+  keyVersion  Int
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  item VaultItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId, createdAt(sort: Desc)])
+}
+
+/// Grant on a collection or a single item to a user, team or role.
+model VaultGrant {
+  id            String          @id @default(cuid())
+  workspaceId   String
+  collectionId  String?
+  itemId        String?
+  principalType PrincipalType
+  /// userId | teamId | WorkspaceRole name.
+  principalId   String
+  permission    VaultPermission
+  expiresAt     DateTime?
+  grantedById   String?
+  createdAt     DateTime        @default(now())
+
+  workspace  Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  collection VaultCollection? @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  item       VaultItem?       @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, principalType, principalId])
+  @@index([collectionId])
+  @@index([itemId])
+}
+
+/// Time-boxed access request; decided through the approvals engine (subjectType VAULT_ACCESS).
+model VaultAccessRequest {
+  id            String          @id @default(cuid())
+  workspaceId   String
+  itemId        String
+  requesterId   String
+  permission    VaultPermission @default(REVEAL)
+  reason        String?
+  durationHours Int             @default(24)
+  status        ApprovalStatus  @default(PENDING)
+  createdAt     DateTime        @default(now())
+  decidedAt     DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  item      VaultItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, status])
+  @@index([requesterId])
+}
+
+/// Every reveal, copy, edit, grant and denied attempt (also mirrored to AuditEvent).
+model VaultAccessLog {
+  id          String            @id @default(cuid())
+  workspaceId String
+  itemId      String
+  userId      String
+  action      VaultAccessAction
+  reason      String?
+  ip          String?
+  userAgent   String?
+  createdAt   DateTime          @default(now())
+
+  item VaultItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId, createdAt(sort: Desc)])
+  @@index([workspaceId, userId, createdAt(sort: Desc)])
+}
+
+model Asset {
+  id                 String      @id @default(cuid())
+  workspaceId        String
+  /// Short code printed as a QR label (/a/<tag>).
+  tag                String
+  name               String
+  category           String
+  location           String?
+  status             AssetStatus @default(AVAILABLE)
+  condition          String?
+  /// "ORG" or the lender's name.
+  ownerLabel         String?
+  ownerUserId        String?
+  serialNumber       String?
+  purchaseDate       DateTime?   @db.Date
+  purchasePriceMinor Int?
+  currency           String?
+  ledgerEntryId      String?
+  photoFileIds       String[]    @default([])
+  manualDocId        String?
+  requiresCertTypeId String?
+  checkoutable       Boolean     @default(true)
+  bookable           Boolean     @default(false)
+  maxCheckoutDays    Int?
+  notes              String?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  workspace        Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  manualDoc        Doc?                  @relation(fields: [manualDocId], references: [id], onDelete: SetNull)
+  requiresCertType CertType?             @relation(fields: [requiresCertTypeId], references: [id], onDelete: SetNull)
+  checkouts        AssetCheckout[]
+  bookings         AssetBooking[]
+  maintenance      AssetMaintenanceLog[]
+
+  @@unique([workspaceId, tag])
+  @@index([workspaceId, status])
+}
+
+model AssetCheckout {
+  id             String    @id @default(cuid())
+  assetId        String
+  userId         String
+  checkedOutAt   DateTime  @default(now())
+  dueAt          DateTime?
+  returnedAt     DateTime?
+  conditionOut   String?
+  conditionIn    String?
+  notes          String?
+  lastRemindedAt DateTime?
+
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId, returnedAt])
+  @@index([userId, returnedAt])
+}
+
+/// Overlaps are prevented in the booking transaction (check-then-insert under
+/// a row lock on the asset).
+model AssetBooking {
+  id        String        @id @default(cuid())
+  assetId   String
+  userId    String
+  startsAt  DateTime
+  endsAt    DateTime
+  status    BookingStatus @default(CONFIRMED)
+  purpose   String?
+  createdAt DateTime      @default(now())
+
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId, startsAt, endsAt])
+  @@index([userId, startsAt])
+}
+
+model AssetMaintenanceLog {
+  id        String             @id @default(cuid())
+  assetId   String
+  type      MaintenanceLogType
+  note      String
+  costMinor Int?
+  byUserId  String?
+  at        DateTime           @default(now())
+  nextDueAt DateTime?
+
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId, at])
+}
+
+/// Physical keys, fobs, cards and door codes register (codes themselves live in the vault).
+model AccessCredential {
+  id           String                 @id @default(cuid())
+  workspaceId  String
+  type         AccessCredentialType
+  label        String
+  area         String?
+  holderUserId String?
+  issuedAt     DateTime?
+  returnedAt   DateTime?
+  status       AccessCredentialStatus @default(IN_SAFE)
+  notes        String?
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, label])
+  @@index([workspaceId, holderUserId])
+}
+
+// ─────────────────────── Relationships (CRM) ───────────────────────
+
+model Organisation {
+  id                String             @id @default(cuid())
+  workspaceId       String
+  name              String
+  kinds             OrgKind[]          @default([])
+  website           String?
+  domain            String?
+  address           String?
+  registrationId    String?
+  tags              String[]           @default([])
+  ownerId           String?
+  teamId            String?
+  status            RelationshipStatus @default(ACTIVE)
+  notesMd           String?
+  socials           Json               @default("{}")
+  visibility        Visibility         @default(WORKSPACE)
+  lastInteractionAt DateTime?
+  createdById       String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  deletedAt         DateTime?
+
+  workspace        Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  roles            ContactOrgRole[]
+  interactions     ContactInteraction[]
+  deals            Deal[]
+  services         ServiceCatalogItem[]
+  subscriptions    Subscription[]
+  purchaseRequests PurchaseRequest[]
+
+  @@index([workspaceId, name])
+  @@index([workspaceId, domain])
+}
+
+model Contact {
+  id                String     @id @default(cuid())
+  workspaceId       String
+  firstName         String?
+  lastName          String?
+  displayName       String
+  pronouns          String?
+  /// [{ type, value, primary }]
+  emails            Json       @default("[]")
+  /// [{ type, e164, sensitive }] — sensitive numbers are hidden from most members.
+  phones            Json       @default("[]")
+  /// mentor | speaker | press | judge | vendor-rep …
+  kinds             String[]   @default([])
+  tags              String[]   @default([])
+  ownerId           String?
+  teamId            String?
+  visibility        Visibility @default(WORKSPACE)
+  preferredChannel  String?
+  timezone          String?
+  handles           Json       @default("{}")
+  /// GRANTED | DENIED | UNKNOWN
+  consentStatus     String?
+  consentSource     String?
+  consentAt         DateTime?
+  doNotContact      Boolean    @default(false)
+  source            String?
+  notesMd           String?
+  birthday          DateTime?  @db.Date
+  lastInteractionAt DateTime?
+  nextFollowUpAt    DateTime?
+  createdById       String?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  deletedAt         DateTime?
+
+  workspace         Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  orgRoles          ContactOrgRole[]
+  interactions      ContactInteraction[]
+  meetingAttendance MeetingAttendee[]
+
+  @@index([workspaceId, displayName])
+  @@index([workspaceId, ownerId])
+  @@index([workspaceId, nextFollowUpAt])
+}
+
+model ContactOrgRole {
+  contactId      String
+  organisationId String
+  title          String?
+  isPrimary      Boolean   @default(false)
+  startedAt      DateTime?
+  endedAt        DateTime?
+
+  contact      Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  @@id([contactId, organisationId])
+  @@index([organisationId])
+}
+
+model ContactInteraction {
+  id              String          @id @default(cuid())
+  workspaceId     String
+  contactId       String?
+  organisationId  String?
+  type            InteractionType
+  occurredAt      DateTime
+  summary         String
+  bodyMd          String?
+  byUserId        String?
+  attendeeUserIds String[]        @default([])
+  meetingId       String?
+  followUpTaskId  String?
+  createdAt       DateTime        @default(now())
+
+  workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contact      Contact?      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  organisation Organisation? @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  @@index([contactId, occurredAt(sort: Desc)])
+  @@index([organisationId, occurredAt(sort: Desc)])
+  @@index([workspaceId, occurredAt(sort: Desc)])
+}
+
+/// Sponsorship / partnership pipeline. `stage` is a configurable key.
+model Deal {
+  id              String    @id @default(cuid())
+  workspaceId     String
+  organisationId  String
+  title           String
+  type            DealType
+  stage           String
+  amountMinor     Int?
+  currency        String    @default("INR")
+  probability     Int?
+  expectedCloseAt DateTime?
+  ownerId         String?
+  /// CommunityEvent id.
+  eventId         String?
+  invoiceId       String?
+  /// [{ title, done }]
+  benefits        Json      @default("[]")
+  lostReason      String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  workspace    Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, stage])
+}
+
+// ─────────────────────── Money ───────────────────────
+
+model Budget {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  name          String
+  teamId        String?
+  projectId     String?
+  /// CommunityEvent id.
+  eventId       String?
+  periodStart   DateTime @db.Date
+  periodEnd     DateTime @db.Date
+  amountMinor   Int
+  currency      String   @default("INR")
+  categories    String[] @default([])
+  thresholdsPct Int[]    @default([50, 80, 100])
+  /// Thresholds already announced (idempotent `budget.threshold`).
+  notifiedPct   Int[]    @default([])
+  createdById   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  workspace        Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  ledgerEntries    LedgerEntry[]
+  purchaseRequests PurchaseRequest[]
+  reimbursements   Reimbursement[]
+
+  @@index([workspaceId, periodStart])
+}
+
+model PurchaseRequest {
+  id            String         @id @default(cuid())
+  workspaceId   String
+  requesterId   String
+  title         String
+  justification String?
+  /// [{ description, qty, unitMinor, url }]
+  items         Json
+  totalMinor    Int
+  currency      String         @default("INR")
+  vendorOrgId   String?
+  budgetId      String?
+  teamId        String?
+  projectId     String?
+  eventId       String?
+  neededBy      DateTime?      @db.Date
+  paymentRoute  PaymentRoute   @default(ORG_CARD)
+  status        PurchaseStatus @default(DRAFT)
+  /// Quotes and attachments.
+  fileIds       String[]       @default([])
+  ledgerEntryId String?
+  submittedAt   DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  workspace      Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  vendorOrg      Organisation?   @relation(fields: [vendorOrgId], references: [id], onDelete: SetNull)
+  budget         Budget?         @relation(fields: [budgetId], references: [id], onDelete: SetNull)
+  reimbursements Reimbursement[]
+
+  @@index([workspaceId, status])
+  @@index([requesterId])
+}
+
+model Reimbursement {
+  id                String              @id @default(cuid())
+  workspaceId       String
+  claimantId        String
+  purchaseRequestId String?
+  budgetId          String?
+  teamId            String?
+  /// [{ date, category, description, amountMinor }]
+  items             Json
+  totalMinor        Int
+  currency          String              @default("INR")
+  receiptFileIds    String[]            @default([])
+  status            ReimbursementStatus @default(DRAFT)
+  /// Free-text payout reference — never bank account numbers.
+  payoutReference   String?
+  paidAt            DateTime?
+  paidById          String?
+  ledgerEntryId     String?
+  submittedAt       DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  workspace       Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  purchaseRequest PurchaseRequest? @relation(fields: [purchaseRequestId], references: [id], onDelete: SetNull)
+  budget          Budget?          @relation(fields: [budgetId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, status])
+  @@index([claimantId])
+}
+
+// ─────────────────────── Work extensions ───────────────────────
+
+/// Recurring task rule; the scheduler copies `templateTask` into new tasks.
+model TaskRecurrence {
+  id                String               @id @default(cuid())
+  workspaceId       String
+  templateTaskId    String
+  /// RFC 5545 RRULE.
+  rrule             String
+  timezone          String               @default("Asia/Kolkata")
+  createMode        RecurrenceCreateMode @default(ON_SCHEDULE)
+  /// { type: FIXED|ROTATE|TEAM_ROUND_ROBIN, userIds, teamId, index }
+  assigneeRule      Json
+  dueOffsetDays     Int?
+  nextRunAt         DateTime?
+  lastCreatedTaskId String?
+  active            Boolean              @default(true)
+  createdById       String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  workspace    Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  templateTask Task             @relation("TaskRecurrenceTemplate", fields: [templateTaskId], references: [id], onDelete: Cascade)
+  instances    Task[]           @relation("TaskRecurrenceInstances")
+  occurrences  TaskOccurrence[]
+
+  @@index([active, nextRunAt])
+  @@index([workspaceId])
+}
+
+/// One row per generated occurrence: makes creation idempotent across workers.
+model TaskOccurrence {
+  recurrenceId   String
+  occurrenceDate DateTime
+  taskId         String
+
+  recurrence TaskRecurrence @relation(fields: [recurrenceId], references: [id], onDelete: Cascade)
+  task       Task           @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@id([recurrenceId, occurrenceDate])
+  @@index([taskId])
+}
+
+model TaskDependency {
+  workspaceId    String
+  blockingTaskId String
+  blockedTaskId  String
+  type           DependencyType @default(BLOCKS)
+  createdById    String?
+  createdAt      DateTime       @default(now())
+
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  blockingTask Task      @relation("TaskBlocking", fields: [blockingTaskId], references: [id], onDelete: Cascade)
+  blockedTask  Task      @relation("TaskBlocked", fields: [blockedTaskId], references: [id], onDelete: Cascade)
+
+  @@id([blockingTaskId, blockedTaskId])
+  @@index([blockedTaskId])
+  @@index([workspaceId])
+}
+
+model Cycle {
+  id          String      @id @default(cuid())
+  workspaceId String
+  projectId   String?
+  teamId      String?
+  number      Int
+  name        String?
+  goal        String?
+  startsAt    DateTime
+  endsAt      DateTime
+  status      CycleStatus @default(UPCOMING)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project   Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks     Task[]
+
+  @@unique([projectId, number])
+  @@index([workspaceId, status])
+}
+
+/// Form builder + request intake. `fields` = [{ id, type, label, required, options }];
+/// `destination` = { type: CREATE_TASK|CREATE_CONTACT|CREATE_PURCHASE_REQUEST|APPROVAL|NONE, projectId, mapping }.
+model Form {
+  id               String         @id @default(cuid())
+  workspaceId      String
+  title            String
+  description      String?
+  fields           Json
+  visibility       FormVisibility @default(INTERNAL)
+  publicSlug       String?        @unique
+  captcha          Boolean        @default(false)
+  destination      Json           @default("{\"type\":\"NONE\"}")
+  approvalPolicyId String?
+  ownerIds         String[]       @default([])
+  teamId           String?
+  closesAt         DateTime?
+  maxResponses     Int?
+  createdById      String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  submissions FormSubmission[]
+
+  @@index([workspaceId])
+}
+
+model FormSubmission {
+  id              String           @id @default(cuid())
+  formId          String
+  answers         Json
+  submitterUserId String?
+  submitterEmail  String?
+  /// SHA-256 of the client IP for rate limiting public forms.
+  ipHash          String?
+  status          SubmissionStatus @default(NEW)
+  linkedType      String?
+  linkedId        String?
+  createdAt       DateTime         @default(now())
+
+  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@index([formId, status, createdAt])
+}
+
+model Goal {
+  id            String     @id @default(cuid())
+  workspaceId   String
+  title         String
+  description   String?
+  ownerId       String?
+  teamId        String?
+  parentGoalId  String?
+  periodStart   DateTime   @db.Date
+  periodEnd     DateTime   @db.Date
+  status        GoalStatus @default(ON_TRACK)
+  lastCheckInAt DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  workspace  Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parent     Goal?       @relation("GoalTree", fields: [parentGoalId], references: [id], onDelete: SetNull)
+  children   Goal[]      @relation("GoalTree")
+  keyResults KeyResult[]
+
+  @@index([workspaceId, periodStart])
+}
+
+model KeyResult {
+  id         String          @id @default(cuid())
+  goalId     String
+  title      String
+  metricType KeyResultMetric @default(NUMBER)
+  start      Float           @default(0)
+  target     Float
+  current    Float           @default(0)
+  /// [{ at, value, note, by }]
+  checkIns   Json            @default("[]")
+  sortOrder  Int             @default(0)
+  updatedAt  DateTime        @updatedAt
+
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId, sortOrder])
+}
+
+/// Project, task, doc, meeting, checklist and form templates (knowledge gallery).
+model Template {
+  id          String       @id @default(cuid())
+  workspaceId String
+  kind        TemplateKind
+  name        String
+  description String?
+  content     Json
+  teamId      String?
+  scope       Visibility   @default(WORKSPACE)
+  createdById String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, kind])
+}
+
+// ─────────────────────── Collaboration ───────────────────────
+
+model Meeting {
+  id                 String        @id @default(cuid())
+  workspaceId        String
+  title              String
+  /// Recurring series id; the series root carries `rrule`.
+  seriesId           String?
+  rrule              String?
+  startsAt           DateTime
+  endsAt             DateTime?
+  location           String?
+  teamId             String?
+  calendarEventId    String?
+  notesDocId         String?
+  facilitatorId      String?
+  noteTakerId        String?
+  status             MeetingStatus @default(SCHEDULED)
+  visibility         Visibility    @default(TEAM)
+  summaryPublishedAt DateTime?
+  createdById        String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  workspace     Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  calendarEvent CommunityEvent?     @relation(fields: [calendarEventId], references: [id], onDelete: SetNull)
+  notesDoc      Doc?                @relation(fields: [notesDocId], references: [id], onDelete: SetNull)
+  attendees     MeetingAttendee[]
+  agenda        AgendaItem[]
+  decisions     Decision[]
+  actionItems   MeetingActionItem[]
+  sourcedTasks  Task[]              @relation("TaskSourceMeeting")
+  polls         Poll[]
+
+  @@index([workspaceId, startsAt])
+  @@index([seriesId, startsAt])
+}
+
+/// A member (`userId`) or an external contact (`contactId`).
+model MeetingAttendee {
+  id        String   @id @default(cuid())
+  meetingId String
+  userId    String?
+  contactId String?
+  rsvp      Rsvp     @default(PENDING)
+  attended  Boolean?
+
+  meeting Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  user    User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contact Contact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@unique([meetingId, userId])
+  @@index([userId])
+}
+
+model AgendaItem {
+  id            String           @id @default(cuid())
+  meetingId     String
+  title         String
+  ownerId       String?
+  durationMin   Int?
+  notesMd       String?
+  status        AgendaItemStatus @default(OPEN)
+  sortOrder     Int              @default(0)
+  carriedFromId String?
+  createdAt     DateTime         @default(now())
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@index([meetingId, sortOrder])
+}
+
+/// Decisions log (from meetings, motions or standalone).
+model Decision {
+  id             String         @id @default(cuid())
+  workspaceId    String
+  meetingId      String?
+  pollId         String?
+  title          String
+  contextMd      String?
+  decisionMd     String
+  status         DecisionStatus @default(DECIDED)
+  decidedAt      DateTime       @default(now())
+  deciderIds     String[]       @default([])
+  supersededById String?
+  tags           String[]       @default([])
+  teamId         String?
+  visibility     Visibility     @default(WORKSPACE)
+  createdById    String?
+  createdAt      DateTime       @default(now())
+
+  workspace    Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  meeting      Meeting?   @relation(fields: [meetingId], references: [id], onDelete: SetNull)
+  poll         Poll?      @relation(fields: [pollId], references: [id], onDelete: SetNull)
+  supersededBy Decision?  @relation("DecisionSupersede", fields: [supersededById], references: [id], onDelete: SetNull)
+  supersedes   Decision[] @relation("DecisionSupersede")
+
+  @@index([workspaceId, decidedAt(sort: Desc)])
+}
+
+/// Meeting ↔ the Task created from an action item in its notes.
+model MeetingActionItem {
+  meetingId String
+  taskId    String
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  task    Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@id([meetingId, taskId])
+  @@index([taskId])
+}
+
+/// `eligibility` = { type: ALL_MEMBERS|TEAM|ROLE|LIST, ref }; `quorum` = { count } | { percent }.
+model Poll {
+  id                String                @id @default(cuid())
+  workspaceId       String
+  question          String
+  descriptionMd     String?
+  type              PollType
+  anonymous         Boolean               @default(false)
+  resultsVisibility PollResultsVisibility @default(AFTER_CLOSE)
+  eligibility       Json                  @default("{\"type\":\"ALL_MEMBERS\"}")
+  quorum            Json?
+  /// SIMPLE_MAJORITY | TWO_THIRDS
+  passThreshold     String?
+  isMotion          Boolean               @default(false)
+  channelId         String?
+  meetingId         String?
+  closesAt          DateTime?
+  closedAt          DateTime?
+  outcome           Json?
+  createdById       String?
+  createdAt         DateTime              @default(now())
+
+  workspace Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  channel   Channel?            @relation(fields: [channelId], references: [id], onDelete: SetNull)
+  meeting   Meeting?            @relation(fields: [meetingId], references: [id], onDelete: SetNull)
+  options   PollOption[]
+  votes     PollVote[]
+  receipts  PollBallotReceipt[]
+  decisions Decision[]
+
+  @@index([workspaceId, closesAt])
+}
+
+model PollOption {
+  id        String    @id @default(cuid())
+  pollId    String
+  label     String
+  /// SCHEDULING polls: the proposed slot.
+  startsAt  DateTime?
+  sortOrder Int       @default(0)
+
+  poll Poll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+
+  @@index([pollId, sortOrder])
+}
+
+/// For anonymous polls `voterId` is null and the receipt table enforces one vote.
+model PollVote {
+  id        String   @id @default(cuid())
+  pollId    String
+  voterId   String?
+  /// optionIds | ranking | "YES"/"NO"/"ABSTAIN"
+  choice    Json
+  createdAt DateTime @default(now())
+
+  poll Poll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, voterId])
+}
+
+model PollBallotReceipt {
+  pollId  String
+  userId  String
+  votedAt DateTime @default(now())
+
+  poll Poll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([pollId, userId])
+}
+
+/// Tokenised ICS feed URL (only a SHA-256 of the token is stored).
+model CalendarFeedToken {
+  id          String    @id @default(cuid())
+  workspaceId String
+  userId      String?
+  /// PERSONAL | CALENDAR
+  scope       String
+  tokenHash   String    @unique
+  createdAt   DateTime  @default(now())
+  revokedAt   DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, userId])
+}
+
+/// E-sign-lite over an immutable doc version hash (not a qualified e-signature).
+model SignatureRequest {
+  id            String          @id @default(cuid())
+  workspaceId   String
+  docId         String
+  docRevisionId String?
+  contentHash   String
+  signerUserId  String?
+  signerEmail   String?
+  status        SignatureStatus @default(PENDING)
+  typedName     String?
+  signedAt      DateTime?
+  ip            String?
+  userAgent     String?
+  pdfFileId     String?
+  createdById   String?
+  createdAt     DateTime        @default(now())
+
+  workspace Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  doc       Doc         @relation(fields: [docId], references: [id], onDelete: Cascade)
+  pdfFile   FileObject? @relation(fields: [pdfFileId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, status])
+  @@index([signerUserId])
+}
+
+model Idea {
+  id            String     @id @default(cuid())
+  workspaceId   String
+  title         String
+  bodyMd        String?
+  status        IdeaStatus @default(NEW)
+  /// Null when submitted anonymously.
+  authorId      String?
+  tags          String[]   @default([])
+  convertedType String?
+  convertedId   String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  workspace Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  votes     IdeaVote[]
+
+  @@index([workspaceId, status])
+}
+
+model IdeaVote {
+  ideaId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([ideaId, userId])
+}
+
+model ChangelogEntry {
+  id              String            @id @default(cuid())
+  workspaceId     String
+  title           String
+  bodyMd          String
+  version         String?
+  tags            String[]          @default([])
+  audience        ChangelogAudience @default(INTERNAL)
+  serviceId       String?
+  githubReleaseId String?           @unique
+  blogPostId      String?
+  publishedAt     DateTime?
+  createdById     String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  workspace Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  service   ServiceCatalogItem? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, publishedAt])
+}
+
+// ─────────────────────── Platform ───────────────────────
+
+/// Previous objects of a FileObject (FileObject.currentVersion is the live one).
+model FileVersion {
+  id           String   @id @default(cuid())
+  fileId       String
+  version      Int
+  storageKey   String   @unique
+  size         Int
+  checksum     String?
+  contentType  String
+  uploadedById String?
+  note         String?
+  createdAt    DateTime @default(now())
+
+  file FileObject @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@unique([fileId, version])
+}
+
+model ExportJob {
+  id            String    @id @default(cuid())
+  workspaceId   String
+  requestedById String?
+  /// { entities: [...], includeMessages: false }
+  scope         Json
+  /// ZIP_JSON | CSV
+  format        String    @default("ZIP_JSON")
+  status        JobStatus @default(QUEUED)
+  storageKey    String?
+  error         String?
+  createdAt     DateTime  @default(now())
+  finishedAt    DateTime?
+  expiresAt     DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+}
+
+model ImportJob {
+  id            String    @id @default(cuid())
+  workspaceId   String
+  requestedById String?
+  entityType    String
+  sourceFileId  String
+  mapping       Json
+  dryRun        Boolean   @default(true)
+  status        JobStatus @default(QUEUED)
+  /// { total, created, updated, skipped, errors }
+  stats         Json?
+  errorFileId   String?
+  createdAt     DateTime  @default(now())
+  finishedAt    DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+}
+
+/// Instance-level backup runs reported by the backup script.
+model BackupRun {
+  id         String    @id @default(cuid())
+  /// DB | FILES
+  kind       String
+  status     JobStatus
+  startedAt  DateTime
+  finishedAt DateTime?
+  sizeBytes  BigInt?
+  location   String?
+  checksum   String?
+  error      String?
+
+  @@index([kind, startedAt(sort: Desc)])
+}
+
+model RetentionPolicy {
+  id          String          @id @default(cuid())
+  workspaceId String
+  entityType  String
+  keepDays    Int
+  action      RetentionAction @default(DELETE)
+  updatedById String?
+  updatedAt   DateTime        @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, entityType])
+}
+
+/// OIDC provider; workspaceId null = instance-wide (super-admin).
+model SsoProvider {
+  id              String        @id @default(cuid())
+  workspaceId     String?
+  name            String
+  issuer          String
+  clientId        String
+  clientSecretEnc String
+  allowedDomains  String[]      @default([])
+  defaultRole     WorkspaceRole @default(MEMBER)
+  required        Boolean       @default(false)
+  enabled         Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+}
+
+// ─────────────────────── Services monitor ───────────────────────
+
+/// Uptime monitor. `config` holds type-specific non-secret settings; secrets
+/// (auth headers, DB URLs) are in `secretEnc` (purpose "monitor-secrets").
+/// Heartbeat tokens are stored only as SHA-256 (`heartbeatTokenHash`).
+model Monitor {
+  id                   String           @id @default(cuid())
+  workspaceId          String
+  name                 String
+  type                 MonitorType
+  enabled              Boolean          @default(true)
+  tags                 String[]         @default([])
+  projectId            String?
+  severity             IncidentSeverity @default(MAJOR)
+  config               Json             @default("{}")
+  secretEnc            String?
+  heartbeatTokenHash   String?          @unique
+  heartbeatTokenHint   String?
+  intervalSec          Int              @default(60)
+  timeoutMs            Int              @default(10000)
+  retries              Int              @default(1)
+  retryIntervalSec     Int              @default(20)
+  failureThreshold     Int              @default(3)
+  successThreshold     Int              @default(2)
+  degradedLatencyMs    Int?
+  incidentOnDegraded   Boolean          @default(false)
+  reminderIntervalMin  Int              @default(60)
+  /// Also apply workspace-level NotificationRules (off = only the monitor's "Send to").
+  useWorkspaceRules    Boolean          @default(true)
+  cloudResourceId      String?
+  lastStatus           MonitorStatus    @default(PENDING)
+  lastCheckedAt        DateTime?
+  lastLatencyMs        Int?
+  consecutiveFailures  Int              @default(0)
+  consecutiveSuccesses Int              @default(0)
+  flapping             Boolean          @default(false)
+  nextCheckAt          DateTime         @default(now())
+  leaseUntil           DateTime?
+  expectedNextAt       DateTime?
+  lastPingAt           DateTime?
+  createdById          String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  workspace        Workspace                  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project          Project?                   @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  cloudResource    CloudResource?             @relation(fields: [cloudResourceId], references: [id], onDelete: SetNull)
+  checks           MonitorCheck[]
+  rollups          MonitorRollup[]
+  heartbeatPings   HeartbeatPing[]
+  incidents        IncidentMonitor[]
+  maintenances     MaintenanceWindowMonitor[]
+  statusComponents StatusPageComponent[]
+
+  @@index([workspaceId, enabled])
+  @@index([enabled, nextCheckAt])
+  @@index([type, expectedNextAt])
+}
+
+model MonitorCheck {
+  id            String        @id @default(cuid())
+  monitorId     String
+  workspaceId   String
+  checkedAt     DateTime      @default(now())
+  /// UP | DEGRADED | DOWN | UNKNOWN
+  status        MonitorStatus
+  latencyMs     Int?
+  statusCode    Int?
+  /// Machine code: TIMEOUT, DNS_FAIL, CONN_REFUSED, TLS_ERROR, ASSERTION_FAILED, SSRF_BLOCKED…
+  error         String?
+  message       String?
+  inMaintenance Boolean       @default(false)
+  meta          Json?
+
+  monitor Monitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+
+  @@index([monitorId, checkedAt(sort: Desc)])
+  @@index([workspaceId, checkedAt])
+  @@index([checkedAt], type: Brin)
+}
+
+model MonitorRollup {
+  id          String            @id @default(cuid())
+  monitorId   String
+  workspaceId String
+  granularity RollupGranularity
+  bucketStart DateTime
+  total       Int
+  up          Int
+  degraded    Int
+  down        Int
+  maintenance Int
+  downtimeSec Int
+  latencyAvg  Float?
+  latencyMin  Int?
+  latencyMax  Int?
+  latencyP50  Int?
+  latencyP95  Int?
+
+  monitor Monitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+
+  @@unique([monitorId, granularity, bucketStart])
+  @@index([workspaceId, granularity, bucketStart])
+}
+
+/// Last pings of a heartbeat monitor (detail page).
+model HeartbeatPing {
+  id         String            @id @default(cuid())
+  monitorId  String
+  receivedAt DateTime          @default(now())
+  kind       HeartbeatPingKind
+  exitCode   Int?
+  runId      String?
+  durationMs Int?
+  sourceIp   String?
+  /// First 10 KB of the POST body.
+  body       String?
+
+  monitor Monitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+
+  @@index([monitorId, receivedAt(sort: Desc)])
+}
+
+model Incident {
+  id                 String           @id @default(cuid())
+  workspaceId        String
+  /// Per-workspace number (WorkspaceCounter "incident").
+  number             Int
+  title              String
+  source             IncidentSource
+  status             IncidentStatus   @default(INVESTIGATING)
+  impact             IncidentImpact   @default(MAJOR)
+  severity           IncidentSeverity @default(MAJOR)
+  startedAt          DateTime         @default(now())
+  acknowledgedAt     DateTime?
+  acknowledgedById   String?
+  resolvedAt         DateTime?
+  durationSec        Int?
+  firstCheckId       String?
+  escalationPolicyId String?
+  escalationStep     Int              @default(0)
+  nextEscalationAt   DateTime?
+  nextReminderAt     DateTime?
+  reminderCount      Int              @default(0)
+  /// Shown on the public status page.
+  public             Boolean          @default(true)
+  postmortemMd       String?
+  postmortemDocId    String?
+  createdById        String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  workspace        Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  escalationPolicy EscalationPolicy? @relation(fields: [escalationPolicyId], references: [id], onDelete: SetNull)
+  postmortemDoc    Doc?              @relation(fields: [postmortemDocId], references: [id], onDelete: SetNull)
+  monitors         IncidentMonitor[]
+  updates          IncidentUpdate[]
+
+  @@unique([workspaceId, number])
+  @@index([workspaceId, status, startedAt(sort: Desc)])
+  @@index([nextEscalationAt])
+  @@index([nextReminderAt])
+}
+
+model IncidentMonitor {
+  incidentId String
+  monitorId  String
+
+  incident Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  monitor  Monitor  @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+
+  @@id([incidentId, monitorId])
+  @@index([monitorId])
+}
+
+model IncidentUpdate {
+  id         String         @id @default(cuid())
+  incidentId String
+  status     IncidentStatus
+  bodyMd     String
+  public     Boolean        @default(true)
+  /// Null = system update.
+  authorId   String?
+  createdAt  DateTime       @default(now())
+
+  incident Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@index([incidentId, createdAt])
+}
+
+model MaintenanceWindow {
+  id               String    @id @default(cuid())
+  workspaceId      String
+  title            String
+  descriptionMd    String?
+  startsAt         DateTime?
+  endsAt           DateTime?
+  rrule            String?
+  durationMin      Int?
+  timezone         String    @default("Asia/Kolkata")
+  allMonitors      Boolean   @default(false)
+  suppressAlerts   Boolean   @default(true)
+  showOnStatusPage Boolean   @default(true)
+  createdById      String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  workspace Workspace                  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  monitors  MaintenanceWindowMonitor[]
+
+  @@index([workspaceId, startsAt])
+}
+
+model MaintenanceWindowMonitor {
+  maintenanceWindowId String
+  monitorId           String
+
+  window  MaintenanceWindow @relation(fields: [maintenanceWindowId], references: [id], onDelete: Cascade)
+  monitor Monitor           @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+
+  @@id([maintenanceWindowId, monitorId])
+  @@index([monitorId])
+}
+
+model OnCallSchedule {
+  id           String         @id @default(cuid())
+  workspaceId  String
+  name         String
+  timezone     String         @default("Asia/Kolkata")
+  rotation     OnCallRotation @default(WEEKLY)
+  /// "09:00"
+  handoffTime  String         @default("09:00")
+  /// Ordered user ids.
+  participants String[]       @default([])
+  /// [{ userId, start, end }]
+  overrides    Json           @default("[]")
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+}
+
+/// `steps` = [{ delayMin, targets: [{ type: "SCHEDULE"|"USER"|"DESTINATION", id }] }].
+model EscalationPolicy {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  steps       Json
+  repeat      Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  incidents Incident[]
+
+  @@index([workspaceId])
+}
+
+/// SSRF allow-list for private targets (only when MONITOR_ALLOW_PRIVATE_TARGETS=true).
+model MonitorNetworkAllowlist {
+  id          String   @id @default(cuid())
+  workspaceId String
+  cidrOrHost  String
+  note        String?
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, cidrOrHost])
+}
+
+/// Read-only cloud account. Credentials JSON is encrypted (purpose
+/// "cloud-credentials") and write-only; `credentialsHint` is the last 4 chars.
+model CloudConnection {
+  id              String            @id @default(cuid())
+  workspaceId     String
+  provider        CloudProviderKind
+  label           String
+  accountLabel    String?
+  credentialsEnc  String
+  credentialsHint String?
+  /// { regions, accountId, zoneIds, teamId… }
+  config          Json              @default("{}")
+  enabled         Boolean           @default(true)
+  lastVerifiedAt  DateTime?
+  lastSyncAt      DateTime?
+  lastCostSyncAt  DateTime?
+  lastError       String?
+  nextSyncAt      DateTime          @default(now())
+  createdById     String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  workspace   Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  resources   CloudResource[]
+  costs       CostSnapshot[]
+  costBudgets CostBudget[]
+
+  @@index([workspaceId, provider])
+  @@index([enabled, nextSyncAt])
+}
+
+model CloudResource {
+  id           String              @id @default(cuid())
+  workspaceId  String
+  connectionId String
+  externalId   String
+  /// droplet | app | database | ec2 | rds | ecs_service | worker | r2_bucket | zone | server …
+  kind         String
+  name         String
+  region       String?
+  status       CloudResourceStatus
+  statusDetail String?
+  url          String?
+  raw          Json?
+  lastSeenAt   DateTime
+  goneAt       DateTime?
+
+  workspace  Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  connection CloudConnection     @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  metrics    CloudMetricSample[]
+  monitors   Monitor[]
+
+  @@unique([connectionId, externalId])
+  @@index([workspaceId, status])
+}
+
+model CloudMetricSample {
+  id         String   @id @default(cuid())
+  resourceId String
+  /// cpu_pct, mem_pct, disk_free_pct, net_in_mbps, http_5xx, invocations, errors…
+  metric     String
+  ts         DateTime
+  value      Float
+
+  resource CloudResource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@unique([resourceId, metric, ts])
+  @@index([ts])
+}
+
+model CostSnapshot {
+  id           String          @id @default(cuid())
+  workspaceId  String
+  connectionId String
+  periodStart  DateTime
+  periodEnd    DateTime
+  granularity  CostGranularity
+  amount       Decimal         @db.Decimal(14, 4)
+  currency     String          @default("USD")
+  /// [{ service, amount }]
+  breakdown    Json?
+  isEstimate   Boolean         @default(false)
+  fetchedAt    DateTime        @default(now())
+
+  workspace  Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  connection CloudConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@unique([connectionId, granularity, periodStart])
+  @@index([workspaceId, periodStart])
+}
+
+/// Monthly cloud spend threshold → `cost.threshold_exceeded`.
+model CostBudget {
+  id                String   @id @default(cuid())
+  workspaceId       String
+  /// Null = all providers.
+  connectionId      String?
+  monthlyLimitMinor Int
+  currency          String   @default("USD")
+  thresholdsPct     Int[]    @default([50, 80, 100])
+  notifiedPct       Int[]    @default([])
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  workspace  Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  connection CloudConnection? @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+}
+
+/// Public status page at /status/<slug> (only when enabled).
+model StatusPage {
+  id                    String   @id @default(cuid())
+  workspaceId           String   @unique
+  enabled               Boolean  @default(false)
+  slug                  String   @unique
+  title                 String
+  descriptionMd         String?
+  logoFileId            String?
+  /// Brand token name, never a hex value.
+  accentToken           String?
+  showUptimePercent     Boolean  @default(true)
+  showPastIncidentsDays Int      @default(14)
+  footerMd              String?
+  noindex               Boolean  @default(true)
+  updatedAt             DateTime @updatedAt
+
+  workspace  Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  logoFile   FileObject?           @relation(fields: [logoFileId], references: [id], onDelete: SetNull)
+  components StatusPageComponent[]
+}
+
+model StatusPageComponent {
+  id           String  @id @default(cuid())
+  statusPageId String
+  monitorId    String
+  /// Public, stable slug used in badge URLs.
+  key          String
+  displayName  String
+  group        String?
+  sortOrder    Int     @default(0)
+  showLatency  Boolean @default(false)
+
+  statusPage StatusPage @relation(fields: [statusPageId], references: [id], onDelete: Cascade)
+  monitor    Monitor    @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+
+  @@unique([statusPageId, key])
+  @@index([monitorId])
+}
+
+// ─────────────── Messaging and notification routing ───────────────
+
+/// A workspace's bot/app on Slack, Discord, Mattermost, Telegram or WhatsApp.
+/// Credentials JSON is encrypted (purpose "messaging-credentials"), write-only.
+model MessagingConnection {
+  id              String            @id @default(cuid())
+  workspaceId     String
+  provider        MessagingProvider
+  label           String
+  credentialsEnc  String
+  credentialsHint String?
+  /// Non-secret: serverUrl, guildId, phoneNumberId, botUsername, templates map…
+  config          Json              @default("{}")
+  /// Our bot's user id on the platform (echo prevention).
+  botExternalId   String?
+  status          ConnectionStatus  @default(ACTIVE)
+  lastError       String?
+  lastVerifiedAt  DateTime?
+  createdById     String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  workspace     Workspace                 @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  destinations  NotificationDestination[]
+  identityLinks ExternalIdentityLink[]
+  linkCodes     LinkCode[]
+  bridges       BridgedChannel[]
+  inboundEvents InboundEvent[]
+  conversations MessagingConversation[]
+
+  @@index([workspaceId, provider])
+}
+
+/// Saved, named target ("#ops on Slack"). Non-secret settings in `config`
+/// (channelId, chatId, userIds, roles, teamIds, to, memberSelectable…);
+/// webhook URLs and signing secrets in `secretEnc` (purpose "notification-secrets").
+model NotificationDestination {
+  id             String            @id @default(cuid())
+  workspaceId    String
+  name           String
+  kind           DestinationKind
+  connectionId   String?
+  config         Json              @default("{}")
+  secretEnc      String?
+  enabled        Boolean           @default(true)
+  health         DestinationHealth @default(UNKNOWN)
+  lastDeliveryAt DateTime?
+  lastError      String?
+  createdById    String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  workspace  Workspace                     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  connection MessagingConnection?          @relation(fields: [connectionId], references: [id], onDelete: SetNull)
+  rules      NotificationRuleDestination[]
+  deliveries NotificationDelivery[]
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId, kind])
+}
+
+/// Event types (+ filters) → destinations. WORKSPACE rules live in settings;
+/// scoped rules are written by an entity's "Send to" picker (one per entity).
+/// `filters` = { projectIds, monitorIds, tagsAny, teamIds };
+/// `quietHours` = { start: "22:00", end: "07:00", tz, days: [1..7] }.
+model NotificationRule {
+  id                    String         @id @default(cuid())
+  workspaceId           String
+  name                  String?
+  scopeType             RuleScopeType  @default(WORKSPACE)
+  scopeId               String?
+  /// Exact types, "area.*" prefixes or "*".
+  eventTypes            String[]       @default([])
+  minSeverity           NotifySeverity @default(INFO)
+  filters               Json           @default("{}")
+  quietHours            Json?
+  criticalBypassesQuiet Boolean        @default(true)
+  dedupeWindowSec       Int            @default(300)
+  reminderIntervalMin   Int            @default(0)
+  enabled               Boolean        @default(true)
+  createdById           String?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  workspace    Workspace                     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  destinations NotificationRuleDestination[]
+
+  @@unique([workspaceId, scopeType, scopeId])
+  @@index([workspaceId, enabled])
+}
+
+model NotificationRuleDestination {
+  ruleId        String
+  destinationId String
+
+  rule        NotificationRule        @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  destination NotificationDestination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@id([ruleId, destinationId])
+  @@index([destinationId])
+}
+
+/// A member's channels per event category. `userId` null = workspace default
+/// row (ADMIN-editable); read with findFirst, there is at most one per category.
+model NotificationPreference {
+  id              String            @id @default(cuid())
+  workspaceId     String
+  userId          String?
+  category        String
+  channels        PersonalChannel[] @default([])
+  digestFrequency DigestFrequency   @default(IMMEDIATE)
+  updatedAt       DateTime          @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId, category])
+}
+
+model NotificationUserSettings {
+  workspaceId           String
+  userId                String
+  /// { start, end, tz, days }
+  quietHours            Json?
+  criticalBypassesQuiet Boolean   @default(true)
+  snoozedUntil          DateTime?
+  updatedAt             DateTime  @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([workspaceId, userId])
+}
+
+model NotificationMute {
+  id           String    @id @default(cuid())
+  workspaceId  String
+  userId       String
+  /// project | channel | thread | monitor | task
+  resourceType String
+  resourceId   String
+  until        DateTime?
+  createdAt    DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId, resourceType, resourceId])
+}
+
+/// Every dispatched event (also the dedupe and threading memory).
+model NotificationEventRecord {
+  id          String         @id @default(cuid())
+  workspaceId String
+  type        String
+  severity    NotifySeverity
+  title       String
+  /// The full NotificationEvent envelope.
+  payload     Json
+  dedupeKey   String?
+  threadKey   String?
+  reminderOf  String?
+  actorId     String?
+  isTest      Boolean        @default(false)
+  createdAt   DateTime       @default(now())
+
+  workspace     Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  deliveries    NotificationDelivery[]
+  notifications Notification[]
+
+  @@index([workspaceId, dedupeKey, createdAt])
+  @@index([workspaceId, type, createdAt])
+}
+
+/// One send of one event to a destination or to one member's personal channel.
+model NotificationDelivery {
+  id                String           @id @default(cuid())
+  workspaceId       String
+  eventId           String
+  destinationId     String?
+  userId            String?
+  personalChannel   PersonalChannel?
+  ruleId            String?
+  status            DeliveryStatus   @default(PENDING)
+  scheduledFor      DateTime         @default(now())
+  attempts          Int              @default(0)
+  lastAttemptAt     DateTime?
+  nextAttemptAt     DateTime?
+  lastError         String?
+  providerMessageId String?
+  providerThreadId  String?
+  threadKey         String?
+  isTest            Boolean          @default(false)
+  createdAt         DateTime         @default(now())
+
+  workspace   Workspace                @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  event       NotificationEventRecord  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  destination NotificationDestination? @relation(fields: [destinationId], references: [id], onDelete: SetNull)
+
+  @@index([status, nextAttemptAt])
+  @@index([workspaceId, createdAt(sort: Desc)])
+  @@index([destinationId, threadKey])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([eventId])
+}
+
+/// Personal deliveries held for an hourly/daily/weekly digest.
+model NotificationDigestItem {
+  id          String          @id @default(cuid())
+  workspaceId String
+  userId      String
+  channel     PersonalChannel
+  eventId     String
+  dueAt       DateTime
+  sentAt      DateTime?
+  createdAt   DateTime        @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, channel, dueAt])
+  @@index([workspaceId, sentAt, dueAt])
+}
+
+/// A member's verified account on a messaging platform (replaces the earlier
+/// Telegram-only link). Required before a personal *_DM channel is usable.
+model ExternalIdentityLink {
+  id               String            @id @default(cuid())
+  workspaceId      String
+  userId           String
+  provider         MessagingProvider
+  connectionId     String
+  /// Slack U…, Discord snowflake, Telegram user id, Mattermost user id, WhatsApp E.164.
+  externalUserId   String
+  externalUsername String?
+  /// Slack D…, Telegram chat id, Mattermost DM channel.
+  dmChannelId      String?
+  verifiedAt       DateTime
+  /// WhatsApp opt-in evidence.
+  optInAt          DateTime?
+  createdAt        DateTime          @default(now())
+
+  workspace  Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  connection MessagingConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@unique([connectionId, externalUserId])
+  @@unique([userId, connectionId])
+  @@index([workspaceId, userId])
+}
+
+/// Single-use 10-minute code for account linking or a Telegram group
+/// `/connect`. Only a SHA-256 of the code is stored.
+model LinkCode {
+  id           String            @id @default(cuid())
+  workspaceId  String
+  userId       String
+  provider     MessagingProvider
+  connectionId String?
+  purpose      LinkCodePurpose   @default(IDENTITY)
+  codeHash     String            @unique
+  expiresAt    DateTime
+  usedAt       DateTime?
+  createdAt    DateTime          @default(now())
+
+  workspace  Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user       User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  connection MessagingConnection? @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, userId, expiresAt])
+  @@index([expiresAt])
+}
+
+model BridgedChannel {
+  id                  String          @id @default(cuid())
+  workspaceId         String
+  workspaceChannelId  String
+  connectionId        String
+  externalChannelId   String
+  externalChannelName String?
+  direction           BridgeDirection @default(BOTH)
+  mirrorEdits         Boolean         @default(true)
+  mirrorDeletes       Boolean         @default(false)
+  includeThreads      Boolean         @default(true)
+  /// LINK | UPLOAD
+  attachmentMode      String          @default("LINK")
+  /// Discord/Mattermost webhook for impersonated posts (purpose "messaging-credentials").
+  outboundWebhookEnc  String?
+  enabled             Boolean         @default(true)
+  createdById         String?
+  createdAt           DateTime        @default(now())
+
+  workspace        Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceChannel Channel             @relation(fields: [workspaceChannelId], references: [id], onDelete: Cascade)
+  connection       MessagingConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  messages         BridgedMessage[]
+
+  @@unique([connectionId, externalChannelId])
+  @@unique([workspaceChannelId, connectionId])
+  @@index([workspaceId])
+}
+
+model BridgedMessage {
+  id                 String       @id @default(cuid())
+  bridgedChannelId   String
+  workspaceMessageId String
+  externalMessageId  String
+  originSide         BridgeOrigin
+  createdAt          DateTime     @default(now())
+
+  bridge           BridgedChannel @relation(fields: [bridgedChannelId], references: [id], onDelete: Cascade)
+  workspaceMessage Message        @relation(fields: [workspaceMessageId], references: [id], onDelete: Cascade)
+
+  @@unique([bridgedChannelId, externalMessageId])
+  @@unique([bridgedChannelId, workspaceMessageId])
+  @@index([workspaceMessageId])
+}
+
+/// Inbound webhook dedupe (purged after 14 days).
+model InboundEvent {
+  id              String             @id @default(cuid())
+  provider        MessagingProvider
+  connectionId    String
+  externalEventId String
+  kind            String
+  status          InboundEventStatus @default(RECEIVED)
+  payload         Json
+  error           String?
+  receivedAt      DateTime           @default(now())
+  processedAt     DateTime?
+
+  connection MessagingConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, connectionId, externalEventId])
+  @@index([receivedAt])
+  @@index([status, receivedAt])
+}
+
+/// External thread ↔ assistant conversation (bot follow-ups keep context).
+model MessagingConversation {
+  id                      String   @id @default(cuid())
+  connectionId            String
+  /// "{channelId}:{threadId}"
+  externalKey             String
+  userId                  String
+  assistantConversationId String
+  lastMessageAt           DateTime @default(now())
+
+  connection            MessagingConnection   @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  assistantConversation AssistantConversation @relation(fields: [assistantConversationId], references: [id], onDelete: Cascade)
+
+  @@unique([connectionId, externalKey, userId])
+  @@index([assistantConversationId])
+}
+
+// App reviews. Cross-area links and actor ids follow platform plain-id conventions.
+enum AppReviewPlatform {
+  APPLE
+  GOOGLE
+}
+
+enum AppReviewReplyStatus {
+  NONE
+  SENDING
+  SENT
+  FAILED
+}
+
+enum AppReviewPublishState {
+  PUBLISHED
+  PENDING
+  UNKNOWN
+}
+
+enum AppReviewPostStatus {
+  NONE
+  POSTING
+  POSTED
+  FAILED
+}
+
+enum AppReviewStatus {
+  NEW
+  IN_PROGRESS
+  DONE
+  IGNORED
+}
+
+enum AppReviewReplySource {
+  WORKSPACE
+  SLACK
+}
+
+model AppStoreAccount {
+  id                    String            @id @default(cuid())
+  workspaceId           String
+  platform              AppReviewPlatform
+  name                  String
+  issuerIdEnc           String?
+  keyIdEnc              String?
+  privateKeyP8Enc       String?
+  serviceAccountJsonEnc String?
+  proxyUrlEnc           String?
+  active                Boolean           @default(true)
+  lastError             String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  workspace             Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  apps                  ReviewedApp[]
+
+  @@unique([workspaceId, id, platform])
+  @@index([workspaceId, active])
+}
+
+model ReviewedApp {
+  id                  String            @id @default(cuid())
+  workspaceId         String
+  accountId           String
+  platform            AppReviewPlatform
+  name                String
+  appIdentifier       String
+  active              Boolean           @default(true)
+  pollIntervalMinutes Int               @default(15)
+  lastPolledAt        DateTime?
+  nextPollAt          DateTime          @default(now())
+  pollLeaseUntil      DateTime?
+  pollLeaseToken      String?
+  lastError           String?
+  allowNoProxy        Boolean           @default(false)
+  proxyUrlEnc         String?
+  slackChannelId      String?
+  linkedServiceId     String?
+  linkedProjectId     String?
+  translationLanguage String?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  workspace           Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  account             AppStoreAccount   @relation(fields: [workspaceId, accountId, platform], references: [workspaceId, id, platform], onDelete: Cascade)
+  reviews             AppReview[]
+
+  @@unique([workspaceId, platform, appIdentifier])
+  @@unique([workspaceId, id, platform])
+  @@index([workspaceId, active, nextPollAt])
+}
+
+model AppReview {
+  id                 String                  @id @default(cuid())
+  workspaceId        String
+  appId              String
+  platform           AppReviewPlatform
+  externalReviewId   String
+  author             String
+  title              String                  @default("")
+  body               String
+  rating             Int
+  language           String?
+  territory          String?
+  appVersion         String?
+  storeCreatedAt     DateTime
+  storeUpdatedAt     DateTime
+  replyBody          String?
+  replyStatus        AppReviewReplyStatus    @default(NONE)
+  replyExternalId    String?
+  replySentAt        DateTime?
+  replyPublishState  AppReviewPublishState   @default(UNKNOWN)
+  replyCheckedAt     DateTime?
+  repliedById        String?
+  slackChannelId     String?
+  slackMessageTs     String?
+  slackPostStatus    AppReviewPostStatus     @default(NONE)
+  slackPostAttemptAt DateTime?
+  status             AppReviewStatus         @default(NEW)
+  assigneeId         String?
+  tags               String[]                @default([])
+  linkedTaskId       String?
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  workspace          Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  app                ReviewedApp             @relation(fields: [workspaceId, appId, platform], references: [workspaceId, id, platform], onDelete: Cascade)
+  attempts           AppReviewReplyAttempt[]
+
+  @@unique([workspaceId, appId, externalReviewId])
+  @@unique([workspaceId, id])
+  @@index([workspaceId, storeCreatedAt])
+  @@index([workspaceId, appId, storeCreatedAt])
+  @@index([workspaceId, status, storeCreatedAt])
+  @@index([workspaceId, rating])
+  @@index([workspaceId, replyStatus, replyPublishState])
+  @@index([workspaceId, slackChannelId, slackMessageTs])
+}
+
+model AppReviewReplyAttempt {
+  id          String               @id @default(cuid())
+  workspaceId String
+  reviewId    String
+  source      AppReviewReplySource
+  actorId     String?
+  triggerKey  String
+  body        String
+  status      AppReviewReplyStatus @default(SENDING)
+  error       String?
+  createdAt   DateTime             @default(now())
+  finishedAt  DateTime?
+  workspace   Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  review      AppReview            @relation(fields: [workspaceId, reviewId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, triggerKey])
+  @@index([workspaceId, reviewId, createdAt])
+}
+
+model AppReviewSlackConfig {
+  workspaceId       String    @id
+  botTokenEnc       String
+  signingSecretEnc  String
+  teamId            String
+  botUserId         String
+  replyTriggerEmoji String    @default("white_check_mark")
+  active            Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+// Durable inbound queue, drained by the scheduled job. No review text or secrets.
+model AppReviewSlackEvent {
+  id              String    @id @default(cuid())
+  workspaceId     String
+  externalEventId String
+  channelId       String
+  messageTs       String
+  userId          String
+  status          String    @default("QUEUED")
+  error           String?
+  createdAt       DateTime  @default(now())
+  processedAt     DateTime?
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, externalEventId])
+  @@index([workspaceId, status, createdAt])
+}
+
+// Explicit admin-approved mapping; current membership is checked again at send time.
+model AppReviewSlackMember {
+  id          String    @id @default(cuid())
+  workspaceId String
+  slackUserId String
+  userId      String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, slackUserId])
+  @@index([workspaceId, userId])
 }

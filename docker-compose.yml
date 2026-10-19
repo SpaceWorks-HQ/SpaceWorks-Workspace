@@ -1,10 +1,12 @@
 # Local development services for Space Works Workspace.
 #
-#   docker compose up -d
+#   npm run docker:dev        (docker compose up -d --wait)
+#   ./local.sh start          (services + .env + migrations + dev server)
 #
 # PostgreSQL 16, Redis 7, Silo (S3-compatible private storage) and Mailpit
 # (catches outgoing email at http://127.0.0.1:8025). Ports match .env.example.
 # Then: `npm run storage:init`, `npm run db:migrate`, `npm run dev`.
+# Development only: production uses compose.production.yml (docs/DEPLOYMENT_VPS.md).
 services:
   postgres:
     image: postgres:16-alpine
@@ -43,6 +45,11 @@ services:
       - "127.0.0.1:9011:9001"
     volumes:
       - sww_silodata:/data
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:9000/minio/health/live"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   mailpit:
     image: axllent/mailpit:latest

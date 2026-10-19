@@ -1,0 +1,163 @@
+/*
+ * Doc body typography for the editor and read-only renders (history,
+ * previews). Tokens only (app/styles/tokens.css); Gilroy for text, the
+ * system monospace face only inside code.
+ */
+
+.prose {
+  color: var(--yy-text-secondary);
+  font-size: 16px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+  max-width: 760px;
+}
+
+.prose:focus {
+  outline: none;
+}
+
+.prose > * + * {
+  margin-top: 0.75em;
+}
+
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--yy-text);
+  letter-spacing: -0.01em;
+}
+
+.prose h1 { font-size: 28px; line-height: 1.2; margin-top: 1.4em; }
+.prose h2 { font-size: 22px; line-height: 1.25; margin-top: 1.3em; }
+.prose h3 { font-size: 19px; line-height: 1.3; margin-top: 1.2em; }
+.prose h4 { font-size: 17px; line-height: 1.35; margin-top: 1.1em; }
+.prose > :first-child { margin-top: 0; }
+
+.prose strong { color: var(--yy-text); font-weight: 700; }
+.prose a { color: var(--yy-accent-text); text-decoration: underline; text-underline-offset: 3px; }
+
+.prose ul { list-style: disc; padding-left: 1.4em; }
+.prose ol { list-style: decimal; padding-left: 1.4em; }
+.prose li + li { margin-top: 0.25em; }
+.prose li > p + * { margin-top: 0.25em; }
+
+.prose ul[data-type="taskList"] { list-style: none; padding-left: 0.2em; }
+.prose li[data-type="taskItem"] { display: flex; align-items: flex-start; gap: 0.6em; }
+.prose li[data-type="taskItem"] > label { margin-top: 0.3em; flex-shrink: 0; }
+.prose li[data-type="taskItem"] > div { flex: 1; min-width: 0; }
+.prose li[data-type="taskItem"][data-checked="true"] > div { color: var(--yy-text-muted); text-decoration: line-through; }
+.prose li[data-type="taskItem"] input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--yy-primary);
+  cursor: pointer;
+}
+
+.prose blockquote {
+  border-left: 3px solid var(--yy-border-strong);
+  padding-left: 1em;
+  color: var(--yy-text-muted);
+}
+
+.prose code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--yy-bg-surface);
+  border: 1px solid var(--yy-border);
+  border-radius: 6px;
+  padding: 0.05em 0.35em;
+  color: var(--yy-text);
+}
+
+.prose pre {
+  background: var(--yy-inverse-surface);
+  color: var(--yy-on-inverse);
+  border-radius: 12px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.prose pre code {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+}
+
+.prose hr { border: 0; border-top: 1px solid var(--yy-border); margin: 1.5em 0; }
+
+.prose img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid var(--yy-border);
+}
+
+.prose img:global(.ProseMirror-selectednode) {
+  outline: 2px solid var(--yy-focus);
+  outline-offset: 2px;
+}
+
+.prose table {
+  border-collapse: collapse;
+  width: 100%;
+  table-layout: fixed;
+  overflow: hidden;
+  font-size: 15px;
+}
+
+.prose th,
+.prose td {
+  border: 1px solid var(--yy-border);
+  padding: 6px 10px;
+  vertical-align: top;
+  position: relative;
+  min-width: 60px;
+}
+
+.prose th { background: var(--yy-bg-surface); color: var(--yy-text); font-weight: 600; text-align: left; }
+.prose th > p,
+.prose td > p { margin: 0; }
+
+.prose :global(.tableWrapper) { overflow-x: auto; }
+.prose :global(.selectedCell)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--yy-accent-soft);
+  pointer-events: none;
+}
+.prose :global(.column-resize-handle) {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--yy-focus);
+  pointer-events: none;
+}
+
+.prose :global(.mention) {
+  background: var(--yy-accent-soft);
+  color: var(--yy-accent-text);
+  border-radius: 6px;
+  padding: 0 0.25em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.prose p:global(.is-editor-empty):first-child::before {
+  content: attr(data-placeholder);
+  color: var(--yy-text-muted);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.prose :global(.ProseMirror-gapcursor)::after { border-top-color: var(--yy-text); }

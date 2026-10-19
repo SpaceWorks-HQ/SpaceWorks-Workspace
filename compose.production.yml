@@ -1,0 +1,227 @@
+# Space Works Workspace: complete single-VPS stack.
+#
+# Always run it through scripts/vps-compose.sh, which loads the external
+# configuration ($SWW_CONFIG_DIR/compose.env) and never the development .env.
+# The guided installer (install.sh → scripts/setup-vps.sh) creates that
+# configuration. Guide: docs/DEPLOYMENT_VPS.md.
+#
+# Networks are segmented and only `proxy` publishes ports:
+#   edge  (bridge)    proxy ↔ app; the app's outbound internet (SMTP, AI, OAuth)
+#   jobs  (internal)  scheduler → app
+#   data  (internal)  app, migrator and operator tools ↔ PostgreSQL, Redis, Silo
+# PostgreSQL, Redis and Silo accept TLS only, using a private CA whose public
+# certificate is mounted read-only; the CA key never enters a container.
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+x-hardened: &hardened
+  security_opt: ["no-new-privileges:true"]
+  cap_drop: [ALL]
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    env_file: ${SWW_CONFIG_DIR:?Set SWW_CONFIG_DIR (use scripts/vps-compose.sh)}/postgres.env
+    entrypoint: ["/bin/sh", "/bootstrap/postgres-start.sh"]
+    shm_size: 256mb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ${SWW_CONFIG_DIR}/tls/postgres:/run/server-tls:ro
+      - ./docker/vps/postgres-start.sh:/bootstrap/postgres-start.sh:ro
+      - ./docker/vps/init-database.sh:/docker-entrypoint-initdb.d/10-app-role.sh:ro
+      - ./docker/vps/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "postgres", "-U", "sww", "-d", "sww"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    networks: [data]
+    logging: *logging
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "/bootstrap/redis-start.sh"]
+    volumes:
+      - redis_data:/data
+      - ${SWW_CONFIG_DIR}/tls/redis:/run/server-tls:ro
+      - ${SWW_CONFIG_DIR}/tls/ca.crt:/tls/ca.crt:ro
+      - ${SWW_CONFIG_DIR}/redis.conf:/run/redis.conf:ro
+      - ./docker/vps/redis-start.sh:/bootstrap/redis-start.sh:ro
+    healthcheck:
+      # Proves TLS is up; authentication is verified by docker/vps/check.mjs.
+      test: ["CMD-SHELL", "redis-cli --tls --cacert /tls/ca.crt -h redis ping 2>&1 | grep -q NOAUTH"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    networks: [data]
+    logging: *logging
+
+  storage:
+    image: pgsty/silo:RELEASE.2026-09-16T00-00-00Z
+    restart: unless-stopped
+    env_file: ${SWW_CONFIG_DIR}/storage.env
+    command: ["server", "/data", "--certs-dir", "/server-tls"]
+    volumes:
+      - storage_data:/data
+      - ${SWW_CONFIG_DIR}/tls/storage:/server-tls:ro
+      - ${SWW_CONFIG_DIR}/tls/ca.crt:/tls/ca.crt:ro
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--cacert", "/tls/ca.crt", "https://storage:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    networks: [data]
+    logging: *logging
+
+  storage-init:
+    image: pgsty/mc:RELEASE.2026-09-16T00-00-00Z
+    restart: "no"
+    env_file: ${SWW_CONFIG_DIR}/storage-init.env
+    entrypoint: ["/bin/sh", "/bootstrap/init-storage.sh"]
+    volumes:
+      - ./docker/vps/init-storage.sh:/bootstrap/init-storage.sh:ro
+      - ${SWW_CONFIG_DIR}/tls/ca.crt:/tls/ca.crt:ro
+    depends_on:
+      storage: { condition: service_healthy }
+    networks: [data]
+    logging: *logging
+
+  migrator:
+    image: sww-migrator:${SWW_VERSION:?Set SWW_VERSION in compose.env}
+    build:
+      context: .
+      target: migrator
+    restart: "no"
+    env_file: ${SWW_CONFIG_DIR}/migrator.env
+    volumes:
+      - ${SWW_CONFIG_DIR}/tls/ca.crt:/tls/ca.crt:ro
+    depends_on:
+      postgres: { condition: service_healthy }
+    networks: [data]
+    logging: *logging
+
+  app:
+    <<: *hardened
+    image: sww-app:${SWW_VERSION}
+    build:
+      context: .
+      target: runner
+      args:
+        NEXT_PUBLIC_BASE_URL: ${PUBLIC_ORIGIN:?Set PUBLIC_ORIGIN in compose.env}
+    restart: unless-stopped
+    env_file: ${SWW_CONFIG_DIR}/app.env
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.next/cache:uid=1001,gid=1001
+    volumes:
+      - ${SWW_CONFIG_DIR}/tls/ca.crt:/tls/ca.crt:ro
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      storage-init: { condition: service_completed_successfully }
+      migrator: { condition: service_completed_successfully }
+    networks: [edge, jobs, data]
+    logging: *logging
+
+  proxy:
+    <<: *hardened
+    cap_add: [NET_BIND_SERVICE]
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      PUBLIC_HOST: ${PUBLIC_HOST:?Set PUBLIC_HOST in compose.env}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+      CADDY_TLS: ${CADDY_TLS:-acme}
+    ports:
+      - "${SWW_BIND_PREFIX:-}${SWW_HTTP_PORT:-80}:80"
+      - "${SWW_BIND_PREFIX:-}${SWW_HTTPS_PORT:-443}:443"
+      - "${SWW_BIND_PREFIX:-}${SWW_HTTPS_PORT:-443}:443/udp"
+    volumes:
+      - ./docker/vps/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      app: { condition: service_healthy }
+    networks: [edge]
+    logging: *logging
+
+  # Calls /api/internal/outbox and /api/internal/jobs every minute (Bearer
+  # CRON_SECRET) from the app image. Holds no database or storage credential.
+  scheduler:
+    <<: *hardened
+    image: sww-app:${SWW_VERSION}
+    restart: unless-stopped
+    read_only: true
+    env_file: ${SWW_CONFIG_DIR}/scheduler.env
+    entrypoint: ["node", "/app/scripts/scheduler.mjs"]
+    command: []
+    healthcheck:
+      disable: true
+    depends_on:
+      app: { condition: service_healthy }
+    networks: [jobs]
+    logging: *logging
+
+  # ── Operator tools (profile `tools`, run on demand) ──────────────────────
+  ops:
+    image: sww-ops:${SWW_VERSION}
+    profiles: [tools]
+    build:
+      context: .
+      target: ops
+    env_file: ${SWW_CONFIG_DIR}/app.env
+    volumes:
+      - ${SWW_CONFIG_DIR}/tls/ca.crt:/tls/ca.crt:ro
+    networks: [data]
+    logging: *logging
+
+  # Mirrors the bucket into $SWW_CONFIG_DIR/backups (scripts/vps-backup.sh) and
+  # back (scripts/vps-restore.sh). Root storage credential, data network only.
+  storage-backup:
+    image: pgsty/mc:RELEASE.2026-09-16T00-00-00Z
+    profiles: [tools]
+    env_file: ${SWW_CONFIG_DIR}/storage-init.env
+    entrypoint: ["/bin/sh", "/bootstrap/storage-backup.sh"]
+    volumes:
+      - ./docker/vps/storage-backup.sh:/bootstrap/storage-backup.sh:ro
+      - ${SWW_CONFIG_DIR}/tls/ca.crt:/tls/ca.crt:ro
+      - ${SWW_CONFIG_DIR}/backups:/backups
+    networks: [data]
+    logging: *logging
+
+  # Optional off-site copy of database and storage backups to any S3 bucket
+  # ($SWW_CONFIG_DIR/backup-remote.env). Sees only the backups directory.
+  offsite:
+    image: pgsty/mc:RELEASE.2026-09-16T00-00-00Z
+    profiles: [tools]
+    env_file:
+      - path: ${SWW_CONFIG_DIR}/backup-remote.env
+        required: false
+    entrypoint: ["/bin/sh", "/bootstrap/offsite-backup.sh"]
+    volumes:
+      - ./docker/vps/offsite-backup.sh:/bootstrap/offsite-backup.sh:ro
+      - ${SWW_CONFIG_DIR}/backups:/backups:ro
+    networks: [offsite]
+    logging: *logging
+
+networks:
+  edge:
+  jobs:
+    internal: true
+  data:
+    internal: true
+  offsite:
+
+volumes:
+  postgres_data:
+  redis_data:
+  storage_data:
+  caddy_data:
+  caddy_config:

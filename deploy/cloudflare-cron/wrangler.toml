@@ -1,0 +1,17 @@
+# Cloudflare Worker that drives the Space Works Workspace outbox and periodic
+# jobs every minute. Deploy from this folder: npm ci && npx wrangler deploy
+# Secrets (never commit them): npx wrangler secret put APP_URL
+#                              npx wrangler secret put CRON_SECRET
+name = "spaceworks-workspace-cron"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+
+# No public workers.dev URL: this Worker only runs on its schedule.
+workers_dev = false
+preview_urls = false
+
+[triggers]
+crons = ["* * * * *"]
+
+[observability]
+enabled = true

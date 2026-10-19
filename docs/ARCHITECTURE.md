@@ -29,9 +29,22 @@ feature should build on.
 | Community | `Announcement`, `CommunityEvent`, `EventAttendee`, `Shoutout` |
 | Operations | `FinanceCategory`, `LedgerEntry`, `Invoice`, `BlogPost` |
 | Assistant | `AssistantConversation`, `AssistantMessage`, `AssistantMemory`, `AssistantSkill`, `ScheduledJob` |
-| Integrations | `IntegrationConnection`, `OAuthState`, `GithubRepo`, `GithubEvent`, `TelegramLink` |
+| Integrations | `IntegrationConnection`, `OAuthState`, `GithubRepo`, `GithubEvent` |
 | SEO | `SeoSite`, `SeoMetricDaily`, `SeoAudit` |
 | Boardroom | `BoardroomSession`, `BoardroomSeat`, `BoardroomTurn` |
+| Foundations (extension) | `Team`, `TeamMember`, `ApprovalPolicy`, `ApprovalRequest`, `ApprovalDecision`, `RecordLink`, `SearchDocument`, `ActivityEvent`, `SavedView`, `Bookmark`, `LinkItem` |
+| People | `MemberProfile`, `MemberSkill`, `ChecklistTemplate`, `ChecklistRun`, `ChecklistRunItem`, `Availability`, `ShiftType`, `Shift`, `ShiftAssignment`, `ShiftSwapRequest`, `CertType`, `Certification` |
+| Operations (extension) | `ServiceCatalogItem`, `ServiceLink`, `ServiceDependency`, `Subscription`, `VaultCollection`, `VaultItem`, `VaultItemVersion`, `VaultGrant`, `VaultAccessRequest`, `VaultAccessLog`, `Asset`, `AssetCheckout`, `AssetBooking`, `AssetMaintenanceLog`, `AccessCredential` |
+| Relationships | `Organisation`, `Contact`, `ContactOrgRole`, `ContactInteraction`, `Deal` |
+| Money (extension) | `Budget`, `PurchaseRequest`, `Reimbursement` |
+| Work (extension) | `TaskRecurrence`, `TaskOccurrence`, `TaskDependency`, `Cycle`, `Form`, `FormSubmission`, `Goal`, `KeyResult`, `Template` |
+| Collaboration | `Meeting`, `MeetingAttendee`, `AgendaItem`, `Decision`, `MeetingActionItem`, `Poll`, `PollOption`, `PollVote`, `PollBallotReceipt`, `CalendarFeedToken`, `SignatureRequest`, `Idea`, `IdeaVote`, `ChangelogEntry` |
+| Platform | `FileVersion`, `ExportJob`, `ImportJob`, `BackupRun`, `RetentionPolicy`, `SsoProvider` |
+| Services monitor | `Monitor`, `MonitorCheck`, `MonitorRollup`, `HeartbeatPing`, `Incident`, `IncidentMonitor`, `IncidentUpdate`, `MaintenanceWindow`, `MaintenanceWindowMonitor`, `OnCallSchedule`, `EscalationPolicy`, `MonitorNetworkAllowlist`, `CloudConnection`, `CloudResource`, `CloudMetricSample`, `CostSnapshot`, `CostBudget`, `StatusPage`, `StatusPageComponent` |
+| Messaging and routing | `MessagingConnection`, `NotificationDestination`, `NotificationRule`, `NotificationRuleDestination`, `NotificationPreference`, `NotificationUserSettings`, `NotificationMute`, `NotificationEventRecord`, `NotificationDelivery`, `NotificationDigestItem`, `ExternalIdentityLink`, `LinkCode`, `BridgedChannel`, `BridgedMessage`, `InboundEvent`, `MessagingConversation` |
+
+Who builds and owns each model, route and helper is in
+[ROADMAP-BUILD.md](ROADMAP-BUILD.md).
 
 Notes:
 
@@ -41,6 +54,19 @@ Notes:
   `nextWorkspaceSequence(tx, workspaceId, "task" | "invoice")`.
 - Money is an integer in minor units (`amountMinor`, `totalMinor`) plus an
   ISO currency code.
+- Platform extension conventions: tenant roots cascade with their
+  workspace and personal rows with their user; `createdById`, `ownerId`,
+  `teamId` and similar actor/owner columns are plain ids (resolve names by
+  lookup, show "Former member" when gone). Encrypted columns (`*Enc`) are
+  `lib/crypto.ts` strings with a dedicated purpose; the vault uses envelope
+  encryption under `VAULT_MASTER_KEY`. `Channel.teamId` / `Project.teamId`
+  scope records to a team (private teams hide them, see `lib/teamAccess.ts`).
+  `Message.origin` marks routing cards (`"notify"`) and bridged messages
+  (`"bridge:<id>"`). `TelegramLink` was replaced by the generic
+  `ExternalIdentityLink` + `LinkCode`.
+- Global search across areas: `SearchDocument` has a generated
+  `searchVector` (title A, body B) and a trigram index on `title`
+  (`pg_trgm`), queried with `$queryRaw` like the per-table vectors below.
 - Full-text search: `Task`, `Message` and `Doc` have a generated
   `searchVector tsvector` column (config `simple`) with a GIN index. Prisma
   maps it as `Unsupported`, so query it with raw SQL, always filtered by
@@ -122,6 +148,55 @@ markNotificationsRead(userId, ids?)
 // NotificationInput = { userId, workspaceId?, kind, title, body?, url? (app-relative) }
 ```
 
+### Notification routing — `lib/notify`
+
+```ts
+dispatch(workspaceId, event: NotificationEvent<T>, { tx?, onlyDestinationIds?, test?, now? }): Promise<DispatchResult>
+sendTest(workspaceId, destinationId, actorId)
+setScopedDestinations(client, { workspaceId, scopeType, scopeId, destinationIds, actorId, eventTypes? })   // "Send to" picker data
+getScopedDestinationIds(workspaceId, scopeType, scopeId) / listPickableDestinations(workspaceId, role)
+EVENT_CATALOG / EventPayloads / NOTIFY_CATEGORIES (lib/notify/events.ts, client-safe)
+```
+
+- Every notification goes through `dispatch`. The event `type` must be in
+  the catalogue and `data` matches its payload type. Broadcast events are
+  routed by enabled rules (`eventTypes` exact / `area.*` / `*`, minimum
+  severity, filters, scope): workspace rules unless `useWorkspaceRules:
+  false`, plus the entity's scoped rule when `scope` carries its id
+  (`SCOPE_KEYS`). Personal events go to `recipients` minus the actor who are
+  active members at the catalogue's minimum role and have not muted the
+  resource: always in-app, plus their preferred channels (member row →
+  workspace default → catalogue default; DM channels need a verified
+  `ExternalIdentityLink`; guests get in-app and email only).
+- Quiet hours (rule or member), snooze and digests delay or hold
+  non-critical deliveries; critical events bypass when allowed.
+  `dedupeKey` drops repeats per target inside the rule window (personal:
+  `dedupeWindowSec`, default 300 s); `reminderOf` bypasses dedupe;
+  `threadKey` lets adapters reply in thread.
+- In-app notifications (`Notification`, with `eventId`) and `IN_APP_USERS`
+  destinations are written inline. Every other delivery is a
+  `NotificationDelivery` plus an outbox row of kind `notify.deliver`; the
+  outbox worker calls `processNotifyDelivery`, which renders a
+  `RenderedMessage` and calls the adapter registered in
+  `lib/notify/adapters/index.ts` (built in: email via `enqueueEmail`,
+  workspace channel SYSTEM message; Slack, Discord, Mattermost, Telegram,
+  WhatsApp and webhook are "not configured" placeholders replaced file by
+  file). Retries back off 30 s → 6 h for six attempts; a shared destination
+  that fails for good turns `ERROR` and admins get one
+  `destination.failing` alert a day.
+- With `{ tx }` the event commits with the caller's change; call
+  `result.afterCommit()` after the transaction for realtime nudges.
+
+### Shared extension hooks
+
+```ts
+indexSearchDocument(input, client?) / removeSearchDocument(entityType, entityId, client?)   // lib/search/documents.ts
+recordActivity(input, client?)                                                                // lib/activity.ts
+userTeamIds(workspaceId, userId) / hiddenTeamIds(workspaceId, member) / teamScopeFilter(hidden) // lib/teamAccess.ts
+run(now)  // lib/scheduled/<area>.ts — called about once a minute by the outbox tick (idempotent)
+sealEnvelope(masterKey, plaintext) / openEnvelope(masterKey, sealed) / vaultMasterKey()       // lib/crypto.ts
+```
+
 ### Audit — `lib/audit.ts`
 
 ```ts
@@ -180,6 +255,13 @@ delivery or terminal failure.
 
 ### Placeholder routes (to be replaced)
 
+The platform extension added more placeholders (teams, polls, ideas,
+cycles, meetings, goals, forms, services, catalogue, vault, contacts,
+assets, requests, subscriptions, rota, settings/notifications,
+settings/messaging, settings/cloud-accounts, settings/onboarding,
+notifications/preferences, notifications/accounts); see
+[ROADMAP-BUILD.md](ROADMAP-BUILD.md) for their roles and owners.
+
 These pages exist so navigation works; each renders the shared
 `ComingSoon` component and already calls `requireWorkspace` with its minimum
 role. Replace the file in place:
@@ -205,5 +287,7 @@ role. Replace the file in place:
 | `app/w/[workspaceSlug]/settings/integrations/page.tsx` | ADMIN |
 
 Not created yet (later phases add them): the public blog
-`/blog/[workspaceSlug]/[postSlug]`, `/api/mcp`, `/api/v1/*`, and webhook
-endpoints for GitHub and Telegram.
+`/blog/[workspaceSlug]/[postSlug]`, `/api/mcp`, `/api/v1/*`, the public
+status page `/status/[workspaceSlug]`, heartbeats `/api/hb/[token]`, public
+forms `/f/[publicSlug]`, calendar feeds `/ics/[token]`, and the integration
+webhooks under `/api/integrations/**`.
