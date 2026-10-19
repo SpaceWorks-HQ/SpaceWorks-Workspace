@@ -72,7 +72,7 @@ export async function loadOwnConversation(principal: Principal, conversationId: 
 
 /**
  * Run one chat request: an optional new user message and/or a decision on
- * pending changes, then the tool loop until the model answers or asks for
+ * pending changes, then the tool cycle until the model answers or asks for
  * another confirmation. Streams events through `emit`.
  */
 export async function runChatTurn(input: {

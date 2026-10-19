@@ -16,9 +16,9 @@ import { executeTool, isWriteTool, toolJsonSchema, type ExecuteOutcome } from "@
 import type { ToolDefinition } from "@/lib/assistant/tools/types";
 
 /**
- * The tool-use loop shared by the web chat and scheduled jobs: stream a
+ * The tool-use cycle shared by the web chat and scheduled jobs: stream a
  * model turn, run the requested sw_* tools with the caller's rights, feed the
- * results back, repeat. In chat, a turn that asks for a write stops the loop
+ * results back, repeat. In chat, a turn that asks for a write stops the cycle
  * with `pending` so the person can confirm first.
  */
 
@@ -103,7 +103,7 @@ export type LoopInput = {
   maxTokens: number;
   system: BetaTextBlockParam[];
   tools: readonly ToolDefinition[];
-  /** History so far (API shape). The loop appends to a copy. */
+  /** History so far (API shape). The run appends to a copy. */
   messages: BetaMessageParam[];
   principal: Principal;
   via: ToolChannel;
