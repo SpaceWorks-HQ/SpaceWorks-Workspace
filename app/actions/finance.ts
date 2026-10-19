@@ -100,7 +100,7 @@ export async function setLedgerEntryVoidedAction(slug: string, input: unknown): 
 
 // ───────────── CSV import ─────────────
 
-const csvSchema = z.string().min(1, "Choose a CSV file.").max(MAX_IMPORT_BYTES, "That file is too large. Import at most 1 MB at a time.");
+const csvSchema = z.string().min(1, "Choose a CSV file.").max(MAX_IMPORT_BYTES, "That file is too large. Import at most 1 MB at a time.").refine((csv) => Buffer.byteLength(csv, "utf8") <= MAX_IMPORT_BYTES, "That file is too large. Import at most 1 MB at a time.");
 
 async function previewFor(ctx: WorkspaceContext, csv: string): Promise<ImportPreview> {
   const parsed = parseCsv(csv);

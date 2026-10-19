@@ -8,8 +8,13 @@ import { currencyMinorDigits } from "@/lib/format/money";
 
 export type LedgerKindValue = "INCOME" | "EXPENSE";
 
-/** Largest single amount we accept (₹10 crore in paise): far below Number.MAX_SAFE_INTEGER even when summed. */
-export const MAX_AMOUNT_MINOR = 10_000_000_000;
+/** The schema stores each amount in a PostgreSQL signed 32-bit integer. */
+export const MAX_AMOUNT_MINOR = 2_147_483_647;
+
+/** The shared display parser accepts currency prefixes; finance also rejects negative input. */
+export function isNegativeMoney(input: string): boolean {
+  return /[-−(]/.test(input);
+}
 
 /** +amount for income, −amount for expenses. */
 export function signedAmount(kind: LedgerKindValue, amountMinor: number): number {

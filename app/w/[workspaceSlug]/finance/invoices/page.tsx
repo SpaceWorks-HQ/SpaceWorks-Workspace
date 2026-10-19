@@ -5,6 +5,7 @@ import { Chip, EmptyState, SectionHeading } from "@/components/ui/display";
 import { NavTabs } from "@/components/ui/tabs";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { formatDay, localDate } from "@/lib/finance/dates";
+import { parseLedgerFilters } from "@/lib/finance/filters";
 import { INVOICE_STATUS_LABEL, INVOICE_STATUSES, isInvoiceOverdue, type InvoiceStatusValue } from "@/lib/finance/invoice";
 import { INVOICE_STATUS_TONE } from "@/lib/finance/labels";
 import { listInvoices } from "@/lib/finance/queries";
@@ -17,13 +18,17 @@ export default async function InvoicesPage({ params, searchParams }: PageProps<"
   const { workspaceSlug } = await params;
   const { workspace, membership } = await requireWorkspace(workspaceSlug, "MEMBER");
   if (!canViewFinance(membership, workspace)) notFound();
-  const raw = String((await searchParams).status ?? "").toUpperCase();
+  const query = await searchParams;
+  const raw = String(query.status ?? "").toUpperCase();
+  const { page } = parseLedgerFilters(query);
   const status = (INVOICE_STATUSES as readonly string[]).includes(raw) ? (raw as InvoiceStatusValue) : null;
-  const { invoices, counts } = await listInvoices(workspace.id, status);
+  const { invoices, counts, pageCount } = await listInvoices(workspace.id, status, page);
+  if (page > pageCount) notFound();
   const href = `/w/${workspace.slug}/finance/invoices`;
   const today = localDate(new Date(), workspace.timezone);
   const manage = canManageFinance(membership);
   const total = Object.values(counts).reduce((sum, n) => sum + (n ?? 0), 0);
+  const pageHref = (n: number) => `${href}?${status ? `status=${status.toLowerCase()}&` : ""}page=${n}`;
 
   return (
     <div className="flex flex-col gap-5">
@@ -82,6 +87,15 @@ export default async function InvoicesPage({ params, searchParams }: PageProps<"
           </TBody>
         </Table>
       )}
+      {pageCount > 1 ? (
+        <nav aria-label="Invoice pages" className="flex flex-wrap items-center justify-between gap-3">
+          <span className="text-caption text-ink-muted">Page {page} of {pageCount}</span>
+          <div className="flex gap-2">
+            {page > 1 ? <Button asChild variant="secondary"><Link href={pageHref(page - 1)}>Newer</Link></Button> : null}
+            {page < pageCount ? <Button asChild variant="secondary"><Link href={pageHref(page + 1)}>Older</Link></Button> : null}
+          </div>
+        </nav>
+      ) : null}
     </div>
   );
 }

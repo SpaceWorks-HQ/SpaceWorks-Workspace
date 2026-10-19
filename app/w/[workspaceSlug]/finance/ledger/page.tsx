@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Paperclip } from "lucide-react";
+import { LedgerFilterForm } from "@/components/finance/LedgerFilters";
 import { LedgerRowActions, LedgerToolbar } from "@/components/finance/LedgerControls";
 import { Button } from "@/components/ui/button";
 import { Chip, EmptyState, SectionHeading } from "@/components/ui/display";
-import { CheckboxField } from "@/components/ui/choice";
-import { Dropdown, Field, Input } from "@/components/ui/field";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { formatDay, isoDay, localDate } from "@/lib/finance/dates";
 import { hasActiveFilters, ledgerFiltersToQuery, parseLedgerFilters } from "@/lib/finance/filters";
@@ -37,7 +36,7 @@ export default async function LedgerPage({ params, searchParams }: PageProps<"/w
     currency: workspace.currency,
     today: localDate(new Date(), workspace.timezone),
     categories: categories.map((c) => ({ id: c.id, name: c.name, kind: c.kind, archived: c.archived })),
-    budgets: budgets.map((b) => ({ id: b.id, name: b.name })),
+    budgets: budgets.filter((b) => b.currency === workspace.currency).map((b) => ({ id: b.id, name: b.name })),
   };
   const filtered = hasActiveFilters(filters);
   const { page: _page, ...withoutPage } = filters;
@@ -58,46 +57,7 @@ export default async function LedgerPage({ params, searchParams }: PageProps<"/w
         }
       />
 
-      <form method="get" action={ledgerHref} className="grid gap-3 rounded-xl border border-line bg-panel p-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_repeat(4,minmax(0,1fr))_auto] lg:items-end" role="search" aria-label="Filter the ledger">
-        <Field label="Search">
-          <Input name="q" defaultValue={filters.q ?? ""} placeholder="Description, payee or category" />
-        </Field>
-        <Field label="Type">
-          <Dropdown name="kind" defaultValue={filters.kind?.toLowerCase() ?? ""}>
-            <option value="">In and out</option>
-            <option value="income">Money in</option>
-            <option value="expense">Money out</option>
-          </Dropdown>
-        </Field>
-        <Field label="Category">
-          <Dropdown name="category" defaultValue={filters.categoryId ?? ""}>
-            <option value="">All categories</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-                {c.archived ? " (archived)" : ""}
-              </option>
-            ))}
-          </Dropdown>
-        </Field>
-        <Field label="From">
-          <Input type="date" name="from" defaultValue={filters.from ?? ""} />
-        </Field>
-        <Field label="To">
-          <Input type="date" name="to" defaultValue={filters.to ?? ""} />
-        </Field>
-        <div className="flex flex-wrap items-center gap-3 sm:col-span-2 lg:col-span-1">
-          <Button type="submit" variant="secondary">
-            Apply
-          </Button>
-          {filtered ? (
-            <Link href={ledgerHref} className="text-label text-ink-secondary underline-offset-4 hover:underline">
-              Clear
-            </Link>
-          ) : null}
-        </div>
-        <CheckboxField name="voided" value="1" defaultChecked={filters.includeVoided} label="Show voided entries" className="sm:col-span-2 lg:col-span-6" />
-      </form>
+      <LedgerFilterForm href={ledgerHref} filters={filters} categories={categories} filtered={filtered} />
 
       <dl className="grid gap-3 sm:grid-cols-3" aria-label={filtered ? "Totals for these filters" : "Totals"}>
         <div className="rounded-xl border border-line bg-panel px-4 py-3">
@@ -177,7 +137,7 @@ export default async function LedgerPage({ params, searchParams }: PageProps<"/w
                   {manage ? (
                     <TD className="w-12 text-right">
                       <LedgerRowActions
-                        shared={shared}
+                        shared={{ ...shared, currency: row.currency, budgets: budgets.filter((b) => b.currency === row.currency).map((b) => ({ id: b.id, name: b.name })) }}
                         voided={voided}
                         entry={{
                           id: row.id,

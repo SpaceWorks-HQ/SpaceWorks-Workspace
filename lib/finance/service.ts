@@ -3,6 +3,7 @@ import "server-only";
 import { Prisma, type LedgerKind } from "@prisma/client";
 import { actionError, SAVE_FAILED, type ActionResult } from "@/lib/actionResult";
 import { recordAuditEvent } from "@/lib/audit";
+import { recordActivity } from "@/lib/activity";
 import { nextWorkspaceSequence } from "@/lib/counters";
 import { prisma, type DbClient, type Tx } from "@/lib/db";
 import { escapeHtml, renderNotificationEmail } from "@/lib/email/templates";
@@ -13,7 +14,7 @@ import { RASTER_IMAGE_TYPES, deleteObjects, uploadWorkspaceFile } from "@/lib/st
 import { type ImportRow } from "@/lib/finance/csv";
 import { dateOnly, localDate } from "@/lib/finance/dates";
 import { canTransition, formatInvoiceNumber, INVOICE_SOURCE_TYPE, isEditableInvoice, parseInvoiceItems, type InvoiceStatusValue } from "@/lib/finance/invoice";
-import { invoiceTotals, lineSubtotalMinor, MAX_AMOUNT_MINOR, type InvoiceItem } from "@/lib/finance/money";
+import { invoiceTotals, isNegativeMoney, lineSubtotalMinor, MAX_AMOUNT_MINOR, type InvoiceItem } from "@/lib/finance/money";
 import type { categorySchema, invoiceSchema, ledgerEntrySchema } from "@/lib/finance/schemas";
 import type { z } from "zod";
 
@@ -32,6 +33,10 @@ const INVOICE_NOT_FOUND = "That invoice isn't available any more. Refresh and tr
 type Ctx = Pick<WorkspaceContext, "user" | "workspace">;
 type LedgerValues = z.output<typeof ledgerEntrySchema>;
 
+async function financeActivity(client: DbClient, ctx: Ctx, entityType: string, entityId: string, verb: string) {
+  await recordActivity({ workspaceId: ctx.workspace.id, actorId: ctx.user.id, entityType, entityId, verb, summary: "A finance record changed.", visibility: "PRIVATE" }, client);
+}
+
 function isUniqueViolation(error: unknown) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
 }
@@ -45,10 +50,10 @@ async function checkCategory(client: DbClient, workspaceId: string, categoryId: 
   return null;
 }
 
-async function checkBudget(client: DbClient, workspaceId: string, budgetId: string | null): Promise<string | null> {
+async function checkBudget(client: DbClient, workspaceId: string, budgetId: string | null, currency: string): Promise<string | null> {
   if (!budgetId) return null;
-  const budget = await client.budget.findFirst({ where: { id: budgetId, workspaceId }, select: { id: true } });
-  return budget ? null : "Choose a budget from the list.";
+  const budget = await client.budget.findFirst({ where: { id: budgetId, workspaceId, currency }, select: { id: true } });
+  return budget ? null : "Choose a budget in the entry's currency from this workspace.";
 }
 
 /** Soft-delete receipt/cover files we uploaded once nothing links to them, so they never surface in the files library. */
@@ -64,12 +69,12 @@ export async function retireUnlinkedFile(client: DbClient, workspaceId: string, 
 
 export async function createLedgerEntry(ctx: Ctx, values: LedgerValues, receipt: File | null): Promise<ActionResult<{ id: string }>> {
   const { workspace, user } = ctx;
-  const amountMinor = parseMoneyToMinor(values.amount, workspace.currency);
+  const amountMinor = isNegativeMoney(values.amount) ? null : parseMoneyToMinor(values.amount, workspace.currency);
   if (amountMinor === null || amountMinor <= 0) return actionError("Enter a positive amount.", { amount: ["Enter a positive amount."] });
   if (amountMinor > MAX_AMOUNT_MINOR) return actionError("That amount is too large.", { amount: ["That amount is too large."] });
   const categoryError = await checkCategory(prisma, workspace.id, values.categoryId, values.kind);
   if (categoryError) return actionError(categoryError, { categoryId: [categoryError] });
-  const budgetError = await checkBudget(prisma, workspace.id, values.budgetId);
+  const budgetError = await checkBudget(prisma, workspace.id, values.budgetId, workspace.currency);
   if (budgetError) return actionError(budgetError, { budgetId: [budgetError] });
 
   let uploadedKey: string | null = null;
@@ -99,6 +104,7 @@ export async function createLedgerEntry(ctx: Ctx, values: LedgerValues, receipt:
           },
         });
         await recordAuditEvent({ action: "finance.entry_created", workspaceId: workspace.id, actorId: user.id, targetType: "ledger_entry", targetId: entry.id, metadata: { kind: entry.kind, amountMinor, currency: entry.currency }, client: tx });
+        await financeActivity(tx, ctx, "ledger_entry", entry.id, "created");
         return { ok: true as const, data: { id: entry.id } };
       },
       { timeout: 30_000 },
@@ -126,14 +132,14 @@ export async function updateLedgerEntry(
   const kind = linked ? existing.kind : values.kind;
   let amountMinor = existing.amountMinor;
   if (!linked) {
-    const parsed = parseMoneyToMinor(values.amount, existing.currency);
+    const parsed = isNegativeMoney(values.amount) ? null : parseMoneyToMinor(values.amount, existing.currency);
     if (parsed === null || parsed <= 0) return actionError("Enter a positive amount.", { amount: ["Enter a positive amount."] });
     if (parsed > MAX_AMOUNT_MINOR) return actionError("That amount is too large.", { amount: ["That amount is too large."] });
     amountMinor = parsed;
   }
   const categoryError = await checkCategory(prisma, workspace.id, values.categoryId, kind, existing.categoryId);
   if (categoryError) return actionError(categoryError, { categoryId: [categoryError] });
-  const budgetError = await checkBudget(prisma, workspace.id, values.budgetId);
+  const budgetError = await checkBudget(prisma, workspace.id, values.budgetId, existing.currency);
   if (budgetError) return actionError(budgetError, { budgetId: [budgetError] });
 
   let uploadedKey: string | null = null;
@@ -150,7 +156,7 @@ export async function updateLedgerEntry(
           receiptFileId = null;
         }
         const changed = await tx.ledgerEntry.updateMany({
-          where: { id: existing.id, workspaceId: workspace.id, voidedAt: null },
+          where: { id: existing.id, workspaceId: workspace.id, voidedAt: null, updatedAt: existing.updatedAt },
           data: {
             ...(linked ? {} : { kind, amountMinor, occurredOn: dateOnly(values.occurredOn) }),
             description: values.description,
@@ -160,9 +166,11 @@ export async function updateLedgerEntry(
             receiptFileId,
           },
         });
-        if (changed.count === 0) return actionError(NOT_FOUND);
+        // Roll back an uploaded FileObject too if another edit/void won the race.
+        if (changed.count === 0) throw new Error("Entry changed during save");
         if (existing.receiptFileId && existing.receiptFileId !== receiptFileId) await retireUnlinkedFile(tx, workspace.id, existing.receiptFileId);
         await recordAuditEvent({ action: "finance.entry_updated", workspaceId: workspace.id, actorId: user.id, targetType: "ledger_entry", targetId: existing.id, metadata: { amountMinor, linked }, client: tx });
+        await financeActivity(tx, ctx, "ledger_entry", existing.id, "updated");
         return { ok: true as const };
       },
       { timeout: 30_000 },
@@ -184,6 +192,7 @@ export async function setLedgerEntryVoided(ctx: Ctx, entryId: string, voided: bo
   await prisma.$transaction(async (tx) => {
     await tx.ledgerEntry.updateMany({ where: { id: existing.id, workspaceId: workspace.id }, data: { voidedAt: voided ? new Date() : null } });
     await recordAuditEvent({ action: voided ? "finance.entry_voided" : "finance.entry_restored", workspaceId: workspace.id, actorId: user.id, targetType: "ledger_entry", targetId: existing.id, client: tx });
+    await financeActivity(tx, ctx, "ledger_entry", existing.id, voided ? "voided" : "restored");
   });
   return { ok: true };
 }
@@ -211,6 +220,7 @@ export async function importLedgerRows(ctx: Ctx, rows: ImportRow[]): Promise<Act
       })),
     });
     await recordAuditEvent({ action: "finance.ledger_imported", workspaceId: workspace.id, actorId: user.id, targetType: "ledger", metadata: { count: rows.length }, client: tx });
+    await financeActivity(tx, ctx, "ledger", workspace.id, "imported");
   });
   return { ok: true, data: { count: rows.length } };
 }
@@ -251,10 +261,23 @@ export async function setCategoryArchived(ctx: Ctx, categoryId: string, archived
 
 type InvoiceValues = z.output<typeof invoiceSchema>;
 
+/** Lock before reading money facts, so payments use the last committed edit. */
+async function lockedInvoice(tx: Tx, workspaceId: string, invoiceId: string) {
+  await tx.$queryRaw`SELECT "id" FROM "Invoice" WHERE "id" = ${invoiceId} AND "workspaceId" = ${workspaceId} FOR UPDATE`;
+  return tx.invoice.findFirst({ where: { id: invoiceId, workspaceId } });
+}
+
+async function invoiceChanged(tx: DbClient, ctx: Ctx, invoice: { id: string; number: string; clientName: string; status: string }, verb: string) {
+  // Shared search/activity visibility has no finance/admin gate. Never copy
+  // client names, invoice numbers or amounts into a workspace-wide index.
+  await financeActivity(tx, ctx, "invoice", invoice.id, verb);
+}
+
+
 function toItems(values: InvoiceValues, currency: string): { ok: true; items: InvoiceItem[] } | { ok: false; error: string; field: string } {
   const items: InvoiceItem[] = [];
   for (const [index, item] of values.items.entries()) {
-    const unitMinor = parseMoneyToMinor(item.unitPrice, currency);
+    const unitMinor = isNegativeMoney(item.unitPrice) ? null : parseMoneyToMinor(item.unitPrice, currency);
     if (unitMinor === null) return { ok: false, error: `Line ${index + 1}: enter a valid unit price.`, field: `items.${index}.unitPrice` };
     if (unitMinor > MAX_AMOUNT_MINOR) return { ok: false, error: `Line ${index + 1}: that price is too large.`, field: `items.${index}.unitPrice` };
     items.push({ description: item.description, quantity: Math.round(item.quantity * 100) / 100, unitMinor, ...(item.taxBps ? { taxBps: item.taxBps } : {}) });
@@ -287,6 +310,7 @@ export async function createInvoice(ctx: Ctx, values: InvoiceValues): Promise<Ac
       },
     });
     await recordAuditEvent({ action: "finance.invoice_created", workspaceId: workspace.id, actorId: user.id, targetType: "invoice", targetId: created.id, metadata: { number, totalMinor: totals.totalMinor }, client: tx });
+    await invoiceChanged(tx, ctx, created, "created");
     return created;
   });
   return { ok: true, data: { id: invoice.id, number: invoice.number } };
@@ -315,6 +339,8 @@ export async function updateInvoice(ctx: Ctx, invoiceId: string, values: Invoice
     });
     if (changed.count === 0) return actionError("Paid and void invoices can't be edited.");
     await recordAuditEvent({ action: "finance.invoice_updated", workspaceId: workspace.id, actorId: user.id, targetType: "invoice", targetId: existing.id, metadata: { totalMinor: totals.totalMinor }, client: tx });
+    const updated = await tx.invoice.findFirstOrThrow({ where: { id: existing.id, workspaceId: workspace.id } });
+    await invoiceChanged(tx, ctx, updated, "updated");
     return { ok: true as const };
   });
 }
@@ -322,11 +348,11 @@ export async function updateInvoice(ctx: Ctx, invoiceId: string, values: Invoice
 /** Mark sent (DRAFT → SENT) and optionally email the client. Re-sending a SENT invoice only emails again. */
 export async function sendInvoice(ctx: Ctx, invoiceId: string, options: { email: boolean }): Promise<ActionResult<{ emailed: boolean }>> {
   const { workspace, user } = ctx;
-  const invoice = await prisma.invoice.findFirst({ where: { id: invoiceId, workspaceId: workspace.id } });
-  if (!invoice) return actionError(INVOICE_NOT_FOUND);
-  if (invoice.status !== "DRAFT" && invoice.status !== "SENT") return actionError("Only draft or sent invoices can be sent.");
-  if (options.email && !invoice.clientEmail) return actionError("Add the client's email address first.");
   return prisma.$transaction(async (tx) => {
+    const invoice = await lockedInvoice(tx, workspace.id, invoiceId);
+    if (!invoice) return actionError(INVOICE_NOT_FOUND);
+    if (invoice.status !== "DRAFT" && invoice.status !== "SENT") return actionError("Only draft or sent invoices can be sent.");
+    if (options.email && !invoice.clientEmail) return actionError("Add the client's email address first.");
     if (invoice.status === "DRAFT") {
       const changed = await tx.invoice.updateMany({ where: { id: invoice.id, workspaceId: workspace.id, status: "DRAFT" }, data: { status: "SENT" } });
       if (changed.count === 0) return actionError("That invoice changed. Refresh and try again.");
@@ -335,6 +361,7 @@ export async function sendInvoice(ctx: Ctx, invoiceId: string, options: { email:
       await enqueueEmail(tx, { to: invoice.clientEmail, ...renderInvoiceEmail({ ...invoice, workspaceName: workspace.name, timeZone: workspace.timezone }) });
     }
     await recordAuditEvent({ action: "finance.invoice_sent", workspaceId: workspace.id, actorId: user.id, targetType: "invoice", targetId: invoice.id, metadata: { emailed: options.email }, client: tx });
+    await invoiceChanged(tx, ctx, { ...invoice, status: "SENT" }, "sent");
     return { ok: true as const, data: { emailed: options.email } };
   });
 }
@@ -346,16 +373,15 @@ export async function sendInvoice(ctx: Ctx, invoiceId: string, options: { email:
  */
 export async function markInvoicePaid(ctx: Ctx, invoiceId: string, options: { paidOn?: string | null; categoryId?: string | null } = {}): Promise<ActionResult> {
   const { workspace, user } = ctx;
-  const invoice = await prisma.invoice.findFirst({ where: { id: invoiceId, workspaceId: workspace.id } });
-  if (!invoice) return actionError(INVOICE_NOT_FOUND);
-  if (invoice.status !== "PAID" && !canTransition(invoice.status, "PAID")) {
-    return actionError(invoice.status === "DRAFT" ? "Send the invoice before marking it paid." : "Void invoices can't be paid.");
-  }
   const categoryId = options.categoryId ?? null;
   const categoryError = await checkCategory(prisma, workspace.id, categoryId, "INCOME");
   if (categoryError) return actionError(categoryError, { categoryId: [categoryError] });
   const paidOn = options.paidOn ?? localDate(new Date(), workspace.timezone);
   return prisma.$transaction(async (tx) => {
+    const invoice = await lockedInvoice(tx, workspace.id, invoiceId);
+    if (!invoice) return actionError(INVOICE_NOT_FOUND);
+    if (invoice.status === "PAID") return { ok: true as const };
+    if (!canTransition(invoice.status, "PAID")) return actionError(invoice.status === "DRAFT" ? "Send the invoice before marking it paid." : "Void invoices can't be paid.");
     const claimed = await tx.invoice.updateMany({ where: { id: invoice.id, workspaceId: workspace.id, status: "SENT" }, data: { status: "PAID", paidAt: dateOnly(paidOn) } });
     if (claimed.count === 0) {
       const current = await tx.invoice.findFirst({ where: { id: invoice.id, workspaceId: workspace.id }, select: { status: true } });
@@ -363,6 +389,7 @@ export async function markInvoicePaid(ctx: Ctx, invoiceId: string, options: { pa
     }
     await postInvoiceIncome(tx, { ...invoice, workspaceId: workspace.id }, { paidOn, categoryId, actorId: user.id });
     if (claimed.count > 0) {
+      await invoiceChanged(tx, ctx, { ...invoice, status: "PAID" }, "paid");
       await recordAuditEvent({ action: "finance.invoice_paid", workspaceId: workspace.id, actorId: user.id, targetType: "invoice", targetId: invoice.id, metadata: { totalMinor: invoice.totalMinor }, client: tx });
     }
     return { ok: true as const };
@@ -396,7 +423,7 @@ async function postInvoiceIncome(
 
 export async function voidInvoice(ctx: Ctx, invoiceId: string): Promise<ActionResult> {
   const { workspace, user } = ctx;
-  const invoice = await prisma.invoice.findFirst({ where: { id: invoiceId, workspaceId: workspace.id }, select: { id: true, status: true } });
+  const invoice = await prisma.invoice.findFirst({ where: { id: invoiceId, workspaceId: workspace.id }, select: { id: true, status: true, number: true, clientName: true } });
   if (!invoice) return actionError(INVOICE_NOT_FOUND);
   if (invoice.status === "VOID") return { ok: true };
   const from = invoice.status as InvoiceStatusValue;
@@ -404,6 +431,7 @@ export async function voidInvoice(ctx: Ctx, invoiceId: string): Promise<ActionRe
   return prisma.$transaction(async (tx) => {
     const changed = await tx.invoice.updateMany({ where: { id: invoice.id, workspaceId: workspace.id, status: from }, data: { status: "VOID" } });
     if (changed.count === 0) return actionError("That invoice changed. Refresh and try again.");
+    await invoiceChanged(tx, ctx, { ...invoice, status: "VOID" }, "voided");
     // A paid invoice's income leaves the kitty with it.
     await tx.ledgerEntry.updateMany({ where: { workspaceId: workspace.id, sourceType: INVOICE_SOURCE_TYPE, sourceId: invoice.id, voidedAt: null }, data: { voidedAt: new Date() } });
     await recordAuditEvent({ action: "finance.invoice_voided", workspaceId: workspace.id, actorId: user.id, targetType: "invoice", targetId: invoice.id, metadata: { from }, client: tx });
@@ -412,10 +440,12 @@ export async function voidInvoice(ctx: Ctx, invoiceId: string): Promise<ActionRe
 }
 
 export async function deleteDraftInvoice(ctx: Ctx, invoiceId: string): Promise<ActionResult> {
-  const deleted = await prisma.invoice.deleteMany({ where: { id: invoiceId, workspaceId: ctx.workspace.id, status: "DRAFT" } });
-  if (deleted.count === 0) return actionError("Only draft invoices can be deleted. Void it instead.");
-  await recordAuditEvent({ action: "finance.invoice_deleted", workspaceId: ctx.workspace.id, actorId: ctx.user.id, targetType: "invoice", targetId: invoiceId });
-  return { ok: true };
+  return prisma.$transaction(async (tx) => {
+    const deleted = await tx.invoice.deleteMany({ where: { id: invoiceId, workspaceId: ctx.workspace.id, status: "DRAFT" } });
+    if (deleted.count === 0) return actionError("Only draft invoices can be deleted. Void it instead.");
+    await recordAuditEvent({ action: "finance.invoice_deleted", workspaceId: ctx.workspace.id, actorId: ctx.user.id, targetType: "invoice", targetId: invoiceId, client: tx });
+    return { ok: true as const };
+  });
 }
 
 // ───────────── Invoice email ─────────────
@@ -442,7 +472,7 @@ export function renderInvoiceEmail(invoice: {
   const bodyHtml = [
     `<p>Hello ${escapeHtml(invoice.clientName)},</p>`,
     `<p>Here is invoice <strong>${escapeHtml(invoice.number)}</strong> from ${escapeHtml(invoice.workspaceName)}, issued ${escapeHtml(day(invoice.issuedOn))}${invoice.dueOn ? `, due ${escapeHtml(day(invoice.dueOn))}` : ""}.</p>`,
-    `<table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left">Item</th><th style="text-align:right;padding:0 8px">Qty</th><th style="text-align:right">Amount</th></tr></thead><tbody>${rows}</tbody></table>`,
+    `<table style="width:100%;border-collapse:collapse"><thead><tr><th scope="col" style="text-align:left">Item</th><th scope="col" style="text-align:right;padding:0 8px">Qty</th><th scope="col" style="text-align:right">Amount</th></tr></thead><tbody>${rows}</tbody></table>`,
     totals.taxMinor ? `<p>Subtotal ${escapeHtml(money(totals.subtotalMinor))} · Tax ${escapeHtml(money(totals.taxMinor))}</p>` : "",
     `<p><strong>Total due: ${escapeHtml(money(totals.totalMinor))}</strong></p>`,
     invoice.notes ? `<p>${escapeHtml(invoice.notes).replace(/\n/g, "<br>")}</p>` : "",

@@ -20,7 +20,7 @@ const PRINT_CSS = `
   @page { margin: 16mm; }
   html, body { background: transparent !important; }
   body * { visibility: hidden !important; }
-  #invoice-print, #invoice-print * { visibility: visible !important; color: black !important; background: transparent !important; border-color: silver !important; box-shadow: none !important; }
+  #invoice-print, #invoice-print * { visibility: visible !important; color: var(--sw-ink) !important; background: transparent !important; border-color: var(--sw-ink) !important; box-shadow: none !important; }
   #invoice-print { position: absolute; left: 0; top: 0; width: 100%; }
 }`;
 

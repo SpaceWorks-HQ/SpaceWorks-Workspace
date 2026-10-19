@@ -30,7 +30,7 @@ function barPath(x: number, y: number, width: number, height: number) {
 
 /**
  * Money in vs money out per month: grouped columns, one baseline, legend,
- * per-month hover/focus readout and a table view (docs: dataviz skill).
+ * per-month hover/focus readout and a table view.
  */
 export function MonthlyChart({ data, currency }: { data: MonthDatum[]; currency: string }) {
   const frame = useRef<HTMLDivElement>(null);
@@ -111,7 +111,7 @@ export function MonthlyChart({ data, currency }: { data: MonthDatum[]; currency:
                 <g
                   key={d.month}
                   tabIndex={0}
-                  role="button"
+                  role="img"
                   aria-label={`${d.label}: money in ${money(d.incomeMinor)}, money out ${money(d.expenseMinor)}`}
                   onPointerEnter={() => setActive(index)}
                   onPointerLeave={() => setActive((a) => (a === index ? null : a))}

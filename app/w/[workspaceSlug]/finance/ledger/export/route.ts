@@ -27,6 +27,7 @@ export async function GET(request: Request, ctx: RouteContext<"/w/[workspaceSlug
   const { page: _page, ...filters } = parseLedgerFilters(params);
   void _page;
   const entries = await ledgerForExport(workspace.id, filters);
+  if (entries.length > 20_000) return new Response("This export has more than 20,000 entries. Narrow the date range or filters and export again.", { status: 422, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "private, no-store" } });
   await recordAuditEvent({ action: "finance.ledger_exported", workspaceId: workspace.id, actorId: userId, targetType: "ledger", metadata: { count: entries.length } });
   const csv = ledgerToCsv(entries.map((entry) => ({ ...entry, categoryName: entry.category?.name ?? null })));
   const filename = `${workspace.slug}-ledger-${localDate(new Date(), workspace.timezone)}.csv`;

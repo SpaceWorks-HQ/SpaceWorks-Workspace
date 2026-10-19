@@ -146,7 +146,7 @@ export async function ledgerForExport(workspaceId: string, filters: Omit<LedgerF
   return prisma.ledgerEntry.findMany({
     where: ledgerWhere(workspaceId, filters),
     orderBy: [{ occurredOn: "asc" }, { createdAt: "asc" }, { id: "asc" }],
-    take: 20_000,
+    take: 20_001,
     select: { occurredOn: true, kind: true, amountMinor: true, currency: true, description: true, counterparty: true, category: { select: { name: true } } },
   });
 }
@@ -182,7 +182,7 @@ export async function getFinanceSummary(workspace: Ws, now = new Date()) {
       take: 8,
       select: { id: true, name: true, amountMinor: true, currency: true, periodStart: true, periodEnd: true },
     }),
-    prisma.invoice.aggregate({ where: { workspaceId: workspace.id, status: "SENT" }, _sum: { totalMinor: true }, _count: true }),
+    prisma.invoice.aggregate({ where: { workspaceId: workspace.id, status: "SENT", currency: workspace.currency }, _sum: { totalMinor: true }, _count: true }),
     prisma.ledgerEntry.findMany({
       where: { workspaceId: workspace.id, voidedAt: null },
       orderBy: [{ occurredOn: "desc" }, { createdAt: "desc" }],
@@ -206,14 +206,14 @@ export async function getFinanceSummary(workspace: Ws, now = new Date()) {
   const categoryIds = topCategories.map((row) => row.categoryId).filter((id): id is string => Boolean(id));
   const names = new Map((await prisma.financeCategory.findMany({ where: { workspaceId: workspace.id, id: { in: categoryIds } }, select: { id: true, name: true } })).map((c) => [c.id, c.name]));
 
-  const actuals = budgets.length
-    ? await prisma.ledgerEntry.groupBy({
-        by: ["budgetId"],
-        where: { workspaceId: workspace.id, voidedAt: null, kind: "EXPENSE", budgetId: { in: budgets.map((b) => b.id) } },
-        _sum: { amountMinor: true },
-      })
-    : [];
-  const spent = new Map(actuals.map((row) => [row.budgetId, row._sum.amountMinor ?? 0]));
+  const actuals = await Promise.all(budgets.map(async (budget) => {
+    const sum = await prisma.ledgerEntry.aggregate({
+      where: { workspaceId: workspace.id, voidedAt: null, kind: "EXPENSE", budgetId: budget.id, currency: budget.currency, occurredOn: { gte: budget.periodStart, lte: budget.periodEnd } },
+      _sum: { amountMinor: true },
+    });
+    return [budget.id, sum._sum.amountMinor ?? 0] as const;
+  }));
+  const spent = new Map(actuals);
   const thisMonth = series[series.length - 1]!;
 
   return {
@@ -231,17 +231,19 @@ export async function getFinanceSummary(workspace: Ws, now = new Date()) {
 
 // ───────────── Invoices ─────────────
 
-export async function listInvoices(workspaceId: string, status: "DRAFT" | "SENT" | "PAID" | "VOID" | null) {
+export async function listInvoices(workspaceId: string, status: "DRAFT" | "SENT" | "PAID" | "VOID" | null, page = 1) {
   const [invoices, counts] = await Promise.all([
     prisma.invoice.findMany({
       where: { workspaceId, ...(status ? { status } : {}) },
-      orderBy: [{ issuedOn: "desc" }, { createdAt: "desc" }],
-      take: 200,
+      orderBy: [{ issuedOn: "desc" }, { createdAt: "desc" }, { id: "desc" }],
+      skip: (page - 1) * 50,
+      take: 50,
       select: { id: true, number: true, clientName: true, status: true, issuedOn: true, dueOn: true, totalMinor: true, currency: true, paidAt: true },
     }),
     prisma.invoice.groupBy({ by: ["status"], where: { workspaceId }, _count: true }),
   ]);
-  return { invoices, counts: Object.fromEntries(counts.map((row) => [row.status, row._count])) as Partial<Record<"DRAFT" | "SENT" | "PAID" | "VOID", number>> };
+  const total = counts.filter((row) => !status || row.status === status).reduce((sum, row) => sum + row._count, 0);
+  return { invoices, pageCount: Math.max(1, Math.ceil(total / 50)), counts: Object.fromEntries(counts.map((row) => [row.status, row._count])) as Partial<Record<"DRAFT" | "SENT" | "PAID" | "VOID", number>> };
 }
 
 export async function getInvoice(workspaceId: string, id: string) {

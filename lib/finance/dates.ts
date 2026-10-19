@@ -1,5 +1,7 @@
 /** Date-only helpers for the kitty (client-safe). Ledger and invoice dates are @db.Date values at UTC midnight. */
 
+import { formatDate } from "@/lib/format/datetime";
+
 /** The calendar date (YYYY-MM-DD) of `now` in a time zone. */
 export function localDate(now: Date, timeZone: string): string {
   try {
@@ -29,5 +31,5 @@ export function monthKeys(today: string, count: number): string[] {
 
 /** "13 Oct 2026" for a date-only value (formatted in UTC so the day never shifts). */
 export function formatDay(value: Date): string {
-  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(value);
+  return formatDate(value, "UTC");
 }

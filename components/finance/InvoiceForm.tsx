@@ -8,7 +8,7 @@ import { useToast } from "@/components/feedback/ToastProvider";
 import { Button, IconButton } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/display";
 import { Field, Input, PrefixInput, Textarea } from "@/components/ui/field";
-import { currencySymbol, invoiceTotals, lineSubtotalMinor, parsePercentToBps, type InvoiceItem } from "@/lib/finance/money";
+import { currencySymbol, invoiceTotals, isNegativeMoney, lineSubtotalMinor, parsePercentToBps, type InvoiceItem } from "@/lib/finance/money";
 import { formatMoney, parseMoneyToMinor } from "@/lib/format/money";
 
 export type InvoiceFormLine = { key: string; description: string; quantity: string; unitPrice: string; tax: string };
@@ -19,7 +19,7 @@ const blankLine = (): InvoiceFormLine => ({ key: `line-${Date.now()}-${counter++
 
 function toItem(line: InvoiceFormLine, currency: string): InvoiceItem | null {
   const quantity = Number(line.quantity);
-  const unitMinor = parseMoneyToMinor(line.unitPrice, currency);
+  const unitMinor = isNegativeMoney(line.unitPrice) ? null : parseMoneyToMinor(line.unitPrice, currency);
   const taxBps = parsePercentToBps(line.tax);
   if (!Number.isFinite(quantity) || quantity <= 0 || unitMinor === null || taxBps === null) return null;
   return { description: line.description, quantity, unitMinor, ...(taxBps ? { taxBps } : {}) };

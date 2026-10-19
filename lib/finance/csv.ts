@@ -9,7 +9,7 @@
  */
 
 import { isValidCurrency, parseMoneyToMinor } from "@/lib/format/money";
-import { MAX_AMOUNT_MINOR, minorToDecimalString, type LedgerKindValue } from "@/lib/finance/money";
+import { isNegativeMoney, MAX_AMOUNT_MINOR, minorToDecimalString, type LedgerKindValue } from "@/lib/finance/money";
 
 export const LEDGER_CSV_COLUMNS = ["date", "kind", "amount", "currency", "category", "description", "counterparty"] as const;
 export const MAX_IMPORT_ROWS = 1000;
@@ -17,7 +17,7 @@ export const MAX_IMPORT_BYTES = 1024 * 1024;
 
 // ───────────── Writing ─────────────
 
-const FORMULA_START = /^[=+\-@\t\r]/;
+const FORMULA_START = /^(?:[\t\r\n]|\s*[=+\-@])/;
 const PLAIN_NUMBER = /^-?\d+(\.\d+)?$/;
 
 export function csvCell(value: string | number | null | undefined): string {
@@ -67,6 +67,7 @@ export function parseCsv(text: string): { ok: true; rows: string[][] } | { ok: f
   let row: string[] = [];
   let field = "";
   let quoted = false;
+  let closedQuote = false;
   let i = 0;
   while (i < input.length) {
     const char = input[i]!;
@@ -78,6 +79,7 @@ export function parseCsv(text: string): { ok: true; rows: string[][] } | { ok: f
           continue;
         }
         quoted = false;
+        closedQuote = true;
         i += 1;
         continue;
       }
@@ -85,16 +87,21 @@ export function parseCsv(text: string): { ok: true; rows: string[][] } | { ok: f
       i += 1;
       continue;
     }
-    if (char === '"' && field === "") {
+    if (closedQuote && char !== "," && char !== "\n" && char !== "\r") return { ok: false, error: "A quoted value has extra text after it. Check the file and try again." };
+    if (char === '"' && field === "" && !closedQuote) {
       quoted = true;
+    } else if (char === '"') {
+      return { ok: false, error: "A quote appears inside an unquoted value. Check the file and try again." };
     } else if (char === ",") {
       row.push(field);
       field = "";
+      closedQuote = false;
     } else if (char === "\n" || char === "\r") {
       row.push(field);
       rows.push(row);
       row = [];
       field = "";
+      closedQuote = false;
       if (char === "\r" && input[i + 1] === "\n") i += 1;
     } else {
       field += char;
@@ -148,6 +155,7 @@ function stripFormulaGuard(value: string): string {
 export function validateLedgerImport(rows: string[][], options: { currency: string; categories: ReadonlyArray<ImportCategory> }): ImportPreview {
   if (rows.length === 0) return { ok: false, error: "That file is empty. Export the ledger to see the expected columns." };
   const header = rows[0]!.map((cell) => cell.trim().toLowerCase());
+  if (new Set(header).size !== header.length) return { ok: false, error: "The header has duplicate columns. Use each column once." };
   const index: Record<string, number> = {};
   for (const column of LEDGER_CSV_COLUMNS) index[column] = header.indexOf(column);
   const missing = (["date", "kind", "amount", "description"] as const).filter((column) => index[column] === -1);
@@ -163,6 +171,7 @@ export function validateLedgerImport(rows: string[][], options: { currency: stri
     const line = offset + 2;
     const get = (column: (typeof LEDGER_CSV_COLUMNS)[number]) => (index[column]! >= 0 ? stripFormulaGuard((cells[index[column]!] ?? "").trim()) : "");
     const rowProblems: string[] = [];
+    if (cells.length !== header.length) rowProblems.push("the number of values must match the header");
 
     const occurredOn = get("date");
     if (!isValidIsoDate(occurredOn)) rowProblems.push("date must look like 2026-10-14");
@@ -176,7 +185,7 @@ export function validateLedgerImport(rows: string[][], options: { currency: stri
     else if (currency !== options.currency) rowProblems.push(`currency must be ${options.currency}, the workspace currency`);
 
     const amountRaw = get("amount");
-    const amountMinor = isValidCurrency(currency) && !amountRaw.includes("-") ? parseMoneyToMinor(amountRaw, currency) : null;
+    const amountMinor = isValidCurrency(currency) && !isNegativeMoney(amountRaw) ? parseMoneyToMinor(amountRaw, currency) : null;
     if (amountMinor === null || amountMinor <= 0) rowProblems.push("amount must be a positive number");
     else if (amountMinor > MAX_AMOUNT_MINOR) rowProblems.push("amount is too large");
 

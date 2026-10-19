@@ -19,7 +19,7 @@ export default async function FinanceOverviewPage({ params }: PageProps<"/w/[wor
   const base = `/w/${workspace.slug}/finance`;
   const money = (minor: number) => formatMoney(minor, workspace.currency);
   const manage = canManageFinance(membership);
-  const hasHistory = summary.series.some((m) => m.incomeMinor || m.expenseMinor) || summary.recent.length > 0;
+  const hasHistory = summary.series.some((m) => m.incomeMinor || m.expenseMinor) || summary.recent.length > 0 || summary.outstanding.count > 0 || summary.budgets.length > 0;
 
   if (!hasHistory) {
     return (
