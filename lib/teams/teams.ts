@@ -135,7 +135,7 @@ export async function saveTeam(actor: PeopleActor, input: unknown, teamId: strin
   const data = parsed.data;
 
   const saved = await prisma.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`teams:${actor.workspace.id}`}))`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`teams:${actor.workspace.id}`}))`;
     if (teamId) {
       const existing = await tx.team.findFirst({ where: { id: teamId, workspaceId: actor.workspace.id }, select: { id: true, name: true } });
       if (!existing) return null;

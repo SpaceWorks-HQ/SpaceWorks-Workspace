@@ -177,7 +177,7 @@ export async function resolveSteps(client: DbClient, workspaceId: string, subjec
  */
 export async function requestApproval(tx: Tx, input: RequestApprovalInput): Promise<RequestApprovalResult> {
   const now = input.now ?? new Date();
-  await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`approval:${input.workspace.id}:${input.subjectType}:${input.subjectId}`}))`;
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`approval:${input.workspace.id}:${input.subjectType}:${input.subjectId}`}))`;
   const key = { workspaceId: input.workspace.id, subjectType: input.subjectType, subjectId: input.subjectId };
   const existing = await tx.approvalRequest.findUnique({ where: { workspaceId_subjectType_subjectId: key } });
   if (existing?.status === "APPROVED") return { requestId: existing.id, status: "APPROVED", approverIds: [], afterCommit: async () => undefined };

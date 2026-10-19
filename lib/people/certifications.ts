@@ -15,7 +15,7 @@ export async function saveCertType(actor: PeopleActor, input: unknown): Promise<
   const { id, ...data } = p.data;
   if (id && !await prisma.certType.findFirst({ where: { id, workspaceId: actor.workspace.id }, select: { id: true } })) return actionError(NOT_ALLOWED);
   const saved = await prisma.$transaction(async tx => {
-    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`people:training:${actor.workspace.id}`}))`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`people:training:${actor.workspace.id}`}))`;
     if (await tx.certType.findFirst({ where: { workspaceId: actor.workspace.id, name: data.name, ...(id ? { id: { not: id } } : {}) }, select: { id: true } })) return false;
     const row = id ? await tx.certType.update({ where: { id, workspaceId: actor.workspace.id }, data }) : await tx.certType.create({ data: { workspaceId: actor.workspace.id, ...data } });
     await recordAuditEvent({ client: tx, workspaceId: actor.workspace.id, actorId: actor.user.id, action: id ? "people.cert_type_updated" : "people.cert_type_created", targetType: "CertType", targetId: row.id });

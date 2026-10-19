@@ -36,7 +36,7 @@ export async function decideTimeOff(actor: PeopleActor, input: unknown): Promise
     const request = timeOffSchema.safeParse(JSON.parse(run.items[0]?.descriptionMd || "{}")); if (!request.success) return { result: actionError("That request is invalid. Ask the member to try again."), notify: null };
     const userId = run.subjectUserId;
     if (!await tx.membership.findFirst({ where: { workspaceId: actor.workspace.id, userId, status: "ACTIVE" }, select: { id: true } })) return { result: actionError(NOT_ALLOWED), notify: null };
-    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`availability:${actor.workspace.id}:${userId}`}))`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`availability:${actor.workspace.id}:${userId}`}))`;
     const range = dayRange(request.data.from, request.data.to, actor.workspace.timezone);
     if (p.data.approved && await tx.availability.findFirst({ where: { workspaceId: actor.workspace.id, userId, startsAt: { lt: range.endsAt }, endsAt: { gt: range.startsAt } }, select: { id: true } })) return { result: actionError("This overlaps approved time off. Adjust the request first."), notify: null };
     const row = p.data.approved ? await tx.availability.create({ data: { workspaceId: actor.workspace.id, userId, ...range, type: request.data.type, note: request.data.note || null, visibility: request.data.visibility } }) : null;

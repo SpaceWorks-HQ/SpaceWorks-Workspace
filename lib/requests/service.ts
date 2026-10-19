@@ -65,7 +65,7 @@ export async function savePolicy(actor: OpsActor, input: unknown) {
   if ((step.approverType === "TEAM" || step.approverType === "TEAM_LEAD") && step.ref !== "*" && !await prisma.team.findFirst({ where: { id: step.ref, workspaceId: actor.workspace.id, archivedAt: null } })) throw new OpsError("Choose a team in this workspace.");
  }
  return prisma.$transaction(async tx => {
-  await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`policy:${actor.workspace.id}:${v.subjectType}`}))`;
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`policy:${actor.workspace.id}:${v.subjectType}`}))`;
   await tx.approvalPolicy.deleteMany({ where: { workspaceId: actor.workspace.id, subjectType: v.subjectType, requests: { none: {} } } });
   await tx.approvalPolicy.updateMany({ where: { workspaceId: actor.workspace.id, subjectType: v.subjectType }, data: { isDefault: false } });
   const row = await tx.approvalPolicy.create({ data: { ...v, steps: v.steps as Prisma.InputJsonValue, workspaceId: actor.workspace.id, isDefault: true, createdById: actor.user.id } });
@@ -91,7 +91,7 @@ export async function resubmitRequest(actor: OpsActor, kind: "purchase_request" 
  const changes = input === undefined ? null : parse(requestSchema.omit({ kind: true, receiptFileIds: true }), input);
  const r = await prisma.$transaction(async tx => {
   // Match the engine lock order, then lock the source after its approval.
-  await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`approval:${actor.workspace.id}:${kind === "purchase_request" ? "PURCHASE_REQUEST" : "REIMBURSEMENT"}:${requestId}`}))`;
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`approval:${actor.workspace.id}:${kind === "purchase_request" ? "PURCHASE_REQUEST" : "REIMBURSEMENT"}:${requestId}`}))`;
   await tx.$queryRaw`SELECT "id" FROM "ApprovalRequest" WHERE "subjectId"=${requestId} AND "workspaceId"=${actor.workspace.id} FOR UPDATE`;
   const row = kind === "purchase_request" ? await tx.purchaseRequest.findFirst({ where: { id: requestId, workspaceId: actor.workspace.id, requesterId: actor.user.id, status: "DRAFT" } }) : await tx.reimbursement.findFirst({ where: { id: requestId, workspaceId: actor.workspace.id, claimantId: actor.user.id, status: "DRAFT" } });
   if (!row) throw new OpsError("That draft is unavailable.");

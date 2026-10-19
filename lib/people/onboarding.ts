@@ -42,7 +42,7 @@ export async function startChecklist(actor: PeopleActor, input: unknown): Promis
   if (!template || !member || (template.kind === "OFFBOARDING" && !canActOnMember(actor.membership, member.role))) return actionError(NOT_ALLOWED);
   if (template.kind === "OFFBOARDING") return startOffboarding(actor, { userId: p.data.userId, templateId: template.id });
   const result = await prisma.$transaction(async tx => {
-    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`checklist:${actor.workspace.id}:${p.data.userId}`}))`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`checklist:${actor.workspace.id}:${p.data.userId}`}))`;
     const existing = await tx.checklistRun.findFirst({ where: { workspaceId: actor.workspace.id, templateId: template.id, subjectUserId: p.data.userId, status: "OPEN" }, select: { id: true } });
     return existing ?? startTemplateRun(tx, { workspaceId: actor.workspace.id, template, subjectUserId: p.data.userId, subjectName: member.user.name, actorId: actor.user.id });
   });
@@ -77,7 +77,7 @@ export async function startOffboarding(actor: PeopleActor, input: unknown): Prom
   const target = await prisma.membership.findFirst({ where: { workspaceId: actor.workspace.id, userId: p.data.userId }, select: { role: true, user: { select: { name: true } } } });
   if (!target || p.data.userId === actor.user.id || !canActOnMember(actor.membership, target.role)) return actionError(NOT_ALLOWED);
   const outcome = await prisma.$transaction(async tx => {
-    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`checklist:${actor.workspace.id}:${p.data.userId}`}))`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`checklist:${actor.workspace.id}:${p.data.userId}`}))`;
     const existing = await tx.checklistRun.findFirst({ where: { workspaceId: actor.workspace.id, subjectUserId: p.data.userId, kind: "OFFBOARDING", status: "OPEN" }, select: { id: true } });
     if (existing) return { run: existing, notify: null };
     const template = p.data.templateId ? await tx.checklistTemplate.findFirst({ where: { workspaceId: actor.workspace.id, id: p.data.templateId, kind: "OFFBOARDING" } }) : null;

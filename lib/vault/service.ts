@@ -118,7 +118,7 @@ export async function requestAccess(actor: OpsActor, input: unknown) {
  const item = await prisma.vaultItem.findFirst({ where: { id: v.itemId, workspaceId: actor.workspace.id, deletedAt: null } });
  if (!item || !await permitted(actor, item, "LIST")) throw new OpsError("That item is unavailable.");
  const result = await prisma.$transaction(async tx => {
-  await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`vault-access:${item.id}:${actor.user.id}`}))`;
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`vault-access:${item.id}:${actor.user.id}`}))`;
   if (await tx.vaultAccessRequest.findFirst({ where: { workspaceId: actor.workspace.id, itemId: item.id, requesterId: actor.user.id, status: "PENDING" } })) throw new OpsError("An access request is already pending.");
   const row = await tx.vaultAccessRequest.create({ data: { ...v, requesterId: actor.user.id, workspaceId: actor.workspace.id } });
   const approval = await requestApproval(tx, { workspace: actor.workspace, subjectType: "VAULT_ACCESS", subjectId: row.id, title: "Vault access", requesterId: actor.user.id, steps: [{ approverType: "USER", ref: item.ownerId, minApprovals: 1 }], notifyApprovers: false });

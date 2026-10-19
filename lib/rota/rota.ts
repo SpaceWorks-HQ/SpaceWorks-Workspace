@@ -39,7 +39,7 @@ export async function saveShiftType(actor: PeopleActor, input: unknown): Promise
   if (p.data.requiresCertTypeId && !await prisma.certType.findFirst({ where: { id: p.data.requiresCertTypeId, workspaceId: actor.workspace.id }, select: { id: true } })) return actionError(NOT_ALLOWED);
   const { id, ...data } = p.data;
   const saved = await prisma.$transaction(async tx => {
-    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`rota:templates:${actor.workspace.id}`}))`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`rota:templates:${actor.workspace.id}`}))`;
     if (await tx.shiftType.findFirst({ where: { workspaceId: actor.workspace.id, name: data.name, ...(id ? { id: { not: id } } : {}) }, select: { id: true } })) return false;
     const row = id ? await tx.shiftType.update({ where: { id, workspaceId: actor.workspace.id }, data }) : await tx.shiftType.create({ data: { workspaceId: actor.workspace.id, ...data } });
     await audit(tx, actor, id ? "template_updated" : "template_created", row.id, "ShiftType");
@@ -70,7 +70,7 @@ async function audit(tx: Prisma.TransactionClient, actor: PeopleActor, verb: str
   await recordAuditEvent({ client: tx, workspaceId: actor.workspace.id, actorId: actor.user.id, action: `rota.${verb}`, targetType, targetId: id });
   await recordActivity({ workspaceId: actor.workspace.id, actorId: actor.user.id, verb, entityType: "shift", entityId: id, summary: "Updated the volunteer rota", visibility: "PRIVATE" }, tx);
 }
-async function lockUsers(tx: Prisma.TransactionClient, workspaceId: string, ids: string[]) { for (const id of [...new Set(ids)].sort()) await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`rota:user:${workspaceId}:${id}`}))`; }
+async function lockUsers(tx: Prisma.TransactionClient, workspaceId: string, ids: string[]) { for (const id of [...new Set(ids)].sort()) await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`rota:user:${workspaceId}:${id}`}))`; }
 async function eligible(tx: Prisma.TransactionClient, actor: PeopleActor, shift: { id: string; startsAt: Date; endsAt: Date; shiftType: { requiresCertTypeId: string | null; requiresKeyholder: boolean } }, userId: string) {
   if (!await isActiveMember(actor.workspace.id, userId, tx)) return "That person is no longer an active member.";
   const member = await tx.membership.findFirst({ where: { workspaceId: actor.workspace.id, userId, status: "ACTIVE" }, select: { role: true } });

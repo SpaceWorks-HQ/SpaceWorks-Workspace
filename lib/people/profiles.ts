@@ -72,7 +72,7 @@ export async function saveOwnProfile(actor: PeopleActor, input: unknown): Promis
   const { skills, bio, pronouns, timezone, ...data } = parsed.data;
   if (new Set(skills.map(s => s.skill)).size !== skills.length) return actionError("Use each skill once.");
   await prisma.$transaction(async tx => {
-    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`profile:${actor.workspace.id}:${actor.user.id}`}))`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`profile:${actor.workspace.id}:${actor.user.id}`}))`;
     const old = await tx.memberProfile.findFirst({ where: { workspaceId: actor.workspace.id, userId: actor.user.id }, select: { handles: true } });
     const handles = { ...(old?.handles as Prisma.JsonObject ?? {}), profile: { bio, pronouns, timezone } };
     const profile = await tx.memberProfile.upsert({ where: { workspaceId_userId: { workspaceId: actor.workspace.id, userId: actor.user.id } }, create: { workspaceId: actor.workspace.id, userId: actor.user.id, ...data, handles }, update: { ...data, handles } });
@@ -90,7 +90,7 @@ export async function saveAdminProfile(actor: PeopleActor, userId: string, input
   const target = await prisma.membership.findFirst({ where: { workspaceId: actor.workspace.id, userId, status: "ACTIVE" } });
   if (!target || !canActOnMember(actor.membership, target.role)) return actionError(NOT_ALLOWED);
   const callbacks = await prisma.$transaction(async tx => {
-    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`profile:${actor.workspace.id}:${userId}`}))`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`profile:${actor.workspace.id}:${userId}`}))`;
     const old = await tx.memberProfile.findFirst({ where: { workspaceId: actor.workspace.id, userId }, select: { handles: true, membershipType: true } });
     const { title, notes, ...data } = parsed.data;
     const handles = { ...(old?.handles as Prisma.JsonObject ?? {}), title, adminNotes: notes };
