@@ -1,11 +1,12 @@
-import { ComingSoon } from "@/components/workspace/ComingSoon";
+import { AssistantChat } from "@/components/assistant/AssistantChat";
 import { requireWorkspace } from "@/lib/permissions";
+import { loadChatPage } from "@/lib/assistant/pageData";
 
 export const metadata = { title: "Assistant" };
 
-/** Placeholder: replaced by the assistant build. */
 export default async function AssistantPage({ params }: PageProps<"/w/[workspaceSlug]/assistant">) {
   const { workspaceSlug } = await params;
-  await requireWorkspace(workspaceSlug, "MEMBER");
-  return <ComingSoon title="Assistant" description="Ask the Space Works Assistant about anything in the workspace." />;
+  const { user, workspace } = await requireWorkspace(workspaceSlug, "MEMBER");
+  const data = (await loadChatPage({ workspaceId: workspace.id, timeZone: workspace.timezone, userId: user.id, userEmail: user.email }))!;
+  return <AssistantChat key="new" slug={workspace.slug} conversations={data.conversations} active={null} configured={data.configured} setupHref={data.setupHref} />;
 }
