@@ -50,6 +50,8 @@ const optionalDate = z
   .pipe(date.nullable());
 export const attachmentTypes = [
   "STAGED",
+  "RECURRING",
+  "ADVANCE",
   "LEDGER",
   "BILL",
   "FUND",

@@ -1,6 +1,7 @@
 import "server-only";
 import { run as marketingIt } from "@/lib/scheduled/marketingIt";
 import { run as productOps } from "@/lib/scheduled/productOps";
+import { run as recurringCosts } from "@/lib/scheduled/recurringCosts";
 import type { JobDefinition } from "@/lib/queue/definitions";
 import { enqueueDueOutbox } from "@/lib/queue/enqueue";
 import { purgeExpiredOperationalData } from "@/lib/retention";
@@ -49,6 +50,7 @@ export const SCHEDULED_JOBS: ReadonlyArray<JobDefinition> = [
   { area: "docs-files", queue: "documents", run: docsFiles },
   { area: "community", run: community },
   { area: "finance", run: finance },
+  { area: "recurring-costs", run: recurringCosts },
   { area: "documents", run: documents },
   { area: "assistant", run: assistant },
   { area: "integrations-messaging", queue: "sync", run: integrations },

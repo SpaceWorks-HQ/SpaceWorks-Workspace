@@ -93,6 +93,7 @@ export const detailsSchemas = {
   REPLENISHMENT: z.object({ reference: text }),
   HANDOVER: z.object({ reference: text }),
   DEPOSIT: z.object({
+    refundable: z.enum(["YES","NO"]).default("YES"),
     direction: z.enum(["GIVEN", "RECEIVED"]),
     counterparty: z.string().trim().min(1).max(200),
     reference: text,

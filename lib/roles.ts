@@ -214,3 +214,7 @@ export const canManageProductEstimates = (m: RoleHolder) => atLeast(m, "ADMIN");
 
 /** Publishing into the existing changelog retains its admin-only permission. */
 export const canPublishProductChangelog = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** Fixed costs are finance-manager tools; staff recovery also permits the person. */
+export const canManageRecurringCosts = canManageFinance;
+export const canReadStaffAdvance = (m: RoleHolder, grant: PayrollGrant, userId: string, personId: string) =>
+  atLeast(m, "MEMBER") && (canManagePayroll(m, grant) || userId === personId);

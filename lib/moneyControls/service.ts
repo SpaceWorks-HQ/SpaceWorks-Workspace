@@ -490,6 +490,7 @@ export async function transitionControl(actor: ControlsActor, input: unknown) {
       row = await controlRecord(actor, v.id, false, tx),
       d = details(row),
       date = new Date(v.occurredOn);
+    if (/^(staff-advance:|emi:)/.test(row.recordKey??"")) throw new FinanceError("Manage this movement from Staff advances or Upcoming dues.");
     if (row.payroll)
       required(
         a.payrollManage,
@@ -1009,6 +1010,8 @@ export async function markControlMovement(actor: ControlsActor, id: string) {
       where: { workspaceId: actor.workspace.id, id },
     });
     required(row, "That movement is unavailable.");
+    const record = await controlRecord(actor,row.recordId,false,tx);
+    if(record.payroll) required((await controlsAccess(actor,tx)).payrollManage,"Payroll movements need a Manage payroll grant.");
     await assertOpen(tx, row.workspaceId, row.occurredOn, row.accountId);
     await tx.moneyControlMovement.updateMany({
       where: { workspaceId: row.workspaceId, id },

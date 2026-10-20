@@ -1,4 +1,5 @@
 import "server-only";
+import { monthlyCashFlow } from "@/lib/finance/recurring/cash-flow";
 import { prisma } from "@/lib/db";
 import { Prisma } from "@prisma/client";
 import { dateOnly, localDate, monthKeys } from "@/lib/finance/dates";
@@ -377,9 +378,7 @@ export async function financeReports(actor: FinanceActor, query: FinanceQuery) {
       (e) => e.counterparty ?? "Not recorded",
     ),
     centres: groupMoney(entries, (e) => e.costCentre?.name ?? "No cost centre"),
-    monthly: groupMoney(entries, (e) =>
-      e.occurredOn.toISOString().slice(0, 7),
-    ).sort((a, b) => a.name.localeCompare(b.name)),
+    monthly: await monthlyCashFlow(actor.workspace.id,period,query.centre),
     budgets: budgetRows,
     disbursementPurposes: groupMoney(
       entries.filter((e) => e.sourceType === "finance_disbursement"),
@@ -494,6 +493,7 @@ export async function toolLists(
         ? prisma.financeBill.findMany({
             where: {
               workspaceId,
+              privatePayroll: false,
               OR: [
                 { vendor: { contains: q, mode: "insensitive" } },
                 { number: { contains: q, mode: "insensitive" } },

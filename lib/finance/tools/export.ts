@@ -111,6 +111,7 @@ export async function financeCsv(
       await prisma.financeBill.findMany({
         where: {
           workspaceId,
+          privatePayroll: false,
           currency: c,
           issuedOn: { gte: dateOnly(p.from), lte: dateOnly(p.to) },
           ...(query.centre ? { costCentreId: query.centre } : {}),

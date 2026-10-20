@@ -59,6 +59,7 @@ export interface EventPayloads {
 
   "product_ops.reminder": { recordId: Id; dueOn: Iso };
   "product_ops.estimate_due": { recordId: Id; dueOn: Iso };
+  "finance.recurring.due": { recordId: Id; dueOn: Iso };
   "moneycontrols.reminder": { recordId: Id; dueOn: Iso };
   "documents.receivable.due": { documentId: Id };
   "ops.people_changed": { recordId: Id };
@@ -208,6 +209,7 @@ export const EVENT_CATALOG = {
   "it.restore_due": s("security", "Restore test due", "personal", "warning", "ADMIN"),
   "product_ops.reminder": s("operations", "Product work due", "personal", "warning", "MEMBER"),
   "product_ops.estimate_due": s("finance", "Funding estimate due", "personal", "warning", "ADMIN"),
+  "finance.recurring.due": s("finance", "Recurring cost due", "personal", "warning", "MEMBER"),
   "moneycontrols.reminder": s("finance", "Internal control due", "personal", "warning", "MEMBER"),
   "ops.people_changed": s("operations", "People tool update", "personal", "info", "MEMBER"),
   "ops.reminder": s("operations", "People and service reminder", "personal", "info", "MEMBER"),

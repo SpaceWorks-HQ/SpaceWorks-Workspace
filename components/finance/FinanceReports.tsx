@@ -320,7 +320,7 @@ export function FinanceReportsScreen({
         }
       />
       <Card>
-        <CardHeader title="Monthly cash flow" />
+        <CardHeader title="Monthly cash flow" description="Cash received and paid, including aggregate payroll, loan principal and deposits. Internal transfers are excluded. Income and spending tables retain their expense basis." />
         {data.monthly.length ? (
           <MonthlyChart
             currency={c}
