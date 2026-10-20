@@ -23,6 +23,7 @@ export default async function ProjectsPage({ params, searchParams }: PageProps<"
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Projects" description="Every build the community is working on. Open one to see its board." actions={create} />
+      <Link className="inline-flex min-h-11 items-center text-accent-text underline" href={`${base}/blockers`}>Review project blockers</Link>
       <NavTabs
         label="Project status"
         items={PROJECT_STATUS_FILTERS.map((option) => ({

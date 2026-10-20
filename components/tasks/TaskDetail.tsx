@@ -30,6 +30,7 @@ import { BlockedChip, DueChip, PriorityChip } from "./bits";
 import { MultiSelect } from "./MultiSelect";
 import { RepeatControl } from "./RepeatControl";
 import { RichTextEditor, RichTextView } from "./RichTextEditor";
+import { TaskPlan } from "@/components/projects/TaskPlan";
 import { TaskAttachments } from "./TaskAttachments";
 import { TaskComments } from "./TaskComments";
 import { TaskDependencies } from "./TaskDependencies";
@@ -318,7 +319,7 @@ export function TaskDetail({ slug, initial, variant, onChanged }: { slug: string
           ) : (
             <Chip tone="neutral">Open</Chip>
           )}
-          {task.blockedBy.some((item) => !item.completedAt && !item.archivedAt) ? <BlockedChip size="md" /> : null}
+          {(Boolean(task.blockerReason) || task.blockedBy.some((item) => !item.completedAt && !item.archivedAt)) ? <BlockedChip size="md" /> : null}
           {task.archivedAt ? <Chip tone="outline">Archived</Chip> : null}
           <DueChip dueAt={task.dueAt} completedAt={task.completedAt} timeZone={task.timeZone} size="md" />
           <div className="ml-auto flex items-center gap-1.5">
@@ -426,6 +427,7 @@ export function TaskDetail({ slug, initial, variant, onChanged }: { slug: string
               <p className="text-body-ui text-ink-muted">{canEdit ? "Add the details someone needs to pick this up." : "No description."}</p>
             )}
           </section>
+          <TaskPlan key={`${task.id}-${task.updatedAt}`} slug={slug} task={task} reload={reload} />
           <TaskSubtasks slug={slug} task={task} run={run} />
           <TaskDependencies slug={slug} task={task} run={run} />
           <TaskAttachments slug={slug} task={task} run={run} />

@@ -40,6 +40,8 @@ export function accessSql(actor: SearchActor) {
     ["org_attendance", "AttendanceEntry", Prisma.sql`${member} AND r."userId"=${actor.userId}`],
     ["marketing_it", "MarketingItRecord", Prisma.sql`${member} AND r."archivedAt" IS NULL AND (${admin} OR r.kind='CONTENT' OR (r.kind='BRAND' AND r.status='APPROVED') OR (r.kind='INCIDENT' AND r.details->>'confidential'='false') OR (r.kind='DEVICE' AND EXISTS (SELECT 1 FROM "Asset" da WHERE da."workspaceId"=${actor.workspaceId} AND da.id=r."assetId" AND da."ownerUserId"=${actor.userId})) OR (r.kind='LICENCE' AND r.details->'assigneeIds' ? ${actor.userId}))`],
     ["product_ops", "ProductRecord", Prisma.sql`${member} AND (r.kind <> 'ESTIMATE' OR ${admin}) AND r."archivedAt" IS NULL AND ${project}`],
+    ["project_milestone", "ProjectMilestone", project],
+    ["project_update", "ProjectStatusUpdate", project],
     ["funding", "FundingRecord", Prisma.sql`${admin} AND r."archivedAt" IS NULL`],
     ["money_control", "MoneyControlRecord", Prisma.sql`${member} AND r.payroll=false AND (${admin} OR (r.kind IN ('HANDOVER','ASSIGNMENT') AND (r."ownerId"=${actor.userId} OR r.details->>'outgoingId'=${actor.userId})))`],
     ["governance", "GovernanceRecord", Prisma.sql`${admin} AND r."archivedAt" IS NULL`],

@@ -17,43 +17,57 @@ function size(bytes: number) {
 /** Files attached to the task (stored privately, downloaded through /api/files/[id]). */
 export function TaskAttachments({ slug, task, run }: { slug: string; task: TaskDetailDTO; run: RunAction }) {
   const input = useRef<HTMLInputElement>(null);
+  const camera = useRef<HTMLInputElement>(null);
+  const uploading = useRef(false);
   const [busy, setBusy] = useState(false);
   const canEdit = task.permissions.canEdit && !task.archivedAt;
   if (task.attachments.length === 0 && !canEdit) return null;
 
   const upload = async (files: FileList | null) => {
-    if (!files?.length) return;
+    if (!files?.length || uploading.current || !canEdit) return;
+    uploading.current = true;
     setBusy(true);
-    for (const file of Array.from(files).slice(0, 10)) {
-      const form = new FormData();
-      form.set("taskId", task.id);
-      form.set("file", file);
-      await run(() => uploadTaskAttachmentAction(slug, form), `Attached ${file.name}.`);
+    try {
+      for (const file of Array.from(files).slice(0, 10)) {
+        const form = new FormData();
+        form.set("taskId", task.id);
+        form.set("file", file);
+        await run(() => uploadTaskAttachmentAction(slug, form), `Attached ${file.name}.`);
+      }
+    } finally {
+      uploading.current = false;
+      setBusy(false);
+      if (input.current) input.current.value = "";
+      if (camera.current) camera.current.value = "";
     }
-    setBusy(false);
-    if (input.current) input.current.value = "";
   };
 
   return (
-    <section aria-labelledby={`files-${task.id}`} className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-3">
+    <section aria-labelledby={`files-${task.id}`} className="flex flex-col gap-3"
+      onDragOver={event => { if (canEdit) event.preventDefault(); }}
+      onDrop={event => { if (canEdit) { event.preventDefault(); void upload(event.dataTransfer.files); } }}>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 id={`files-${task.id}`} className="text-title text-ink">
           Attachments
         </h3>
         {canEdit ? (
           <>
             <input ref={input} type="file" multiple className="sr-only" tabIndex={-1} aria-hidden onChange={(event) => void upload(event.target.files)} />
+            <input ref={camera} type="file" accept="image/*,application/pdf" capture="environment" multiple className="sr-only" tabIndex={-1} aria-hidden onChange={event => void upload(event.target.files)} />
+            <Button variant="secondary" size="sm" disabled={busy} onClick={() => camera.current?.click()}>Add photo or PDF</Button>
             <Button variant="ghost" size="sm" startIcon={<Paperclip />} loading={busy} loadingLabel="Uploading" onClick={() => input.current?.click()}>
               Attach files
             </Button>
           </>
         ) : null}
       </div>
+      {canEdit ? <p className="text-caption text-ink-muted">Drop up to 10 files here, choose files, or use your phone camera. Upload size and type limits apply.</p> : null}
       {task.attachments.length ? (
         <ul className="divide-y divide-line rounded-xl border border-line bg-panel">
           {task.attachments.map((file) => (
             <li key={file.id} className="flex min-h-12 items-center gap-3 px-3 py-2">
-              <a href={file.url} target="_blank" rel="noopener" className="min-w-0 flex-1 text-body-ui text-ink underline-offset-4 hover:underline">
+              <a href={file.url} target="_blank" rel="noopener" aria-label={`${file.contentType.startsWith("image/") || file.contentType === "application/pdf" ? "Preview" : "Download"} ${file.filename}`} className="min-w-0 flex-1 text-body-ui text-ink underline-offset-4 hover:underline">
                 <span className="flex items-center gap-1.5 truncate">
                   <span className="truncate">{file.filename}</span>
                   <ArrowUpRight aria-hidden className="size-4 shrink-0 text-ink-muted" />
@@ -63,7 +77,7 @@ export function TaskAttachments({ slug, task, run }: { slug: string; task: TaskD
                 </span>
               </a>
               {file.canDelete ? (
-                <IconButton label={`Remove ${file.filename}`} size="sm" onClick={() => void run(() => removeTaskAttachmentAction(slug, { taskId: task.id, fileId: file.id }), "Attachment removed.")}>
+                <IconButton label={`Remove ${file.filename}`} onClick={() => void run(() => removeTaskAttachmentAction(slug, { taskId: task.id, fileId: file.id }), "Attachment removed.")}>
                   <X />
                 </IconButton>
               ) : null}
@@ -71,7 +85,7 @@ export function TaskAttachments({ slug, task, run }: { slug: string; task: TaskD
           ))}
         </ul>
       ) : (
-        <p className="text-body-ui text-ink-muted">Add photos, schematics or datasheets. Up to 25 MB each.</p>
+        <p className="text-body-ui text-ink-muted">Add photos, schematics or datasheets. Images and PDFs open in a private preview.</p>
       )}
     </section>
   );

@@ -609,6 +609,9 @@ model Workspace {
   recurringDues            RecurringCostDue[]
   staffAdvances            StaffAdvance[]
   advanceRecoveries        StaffAdvanceRecovery[]
+  projectMilestones        ProjectMilestone[]
+  projectMilestoneTasks    ProjectMilestoneTask[]
+  projectStatusUpdates     ProjectStatusUpdate[]
 }
 
 model Membership {
@@ -706,16 +709,19 @@ model Project {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  owner       User?         @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: SetNull)
-  team        Team?         @relation(fields: [teamId], references: [id], onDelete: SetNull)
-  columns     BoardColumn[]
-  tasks       Task[]
-  githubRepos GithubRepo[]
-  cycles      Cycle[]
-  monitors    Monitor[]
+  workspace     Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  owner         User?                 @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  team          Team?                 @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  columns       BoardColumn[]
+  tasks         Task[]
+  githubRepos   GithubRepo[]
+  cycles        Cycle[]
+  monitors      Monitor[]
+  milestones    ProjectMilestone[]
+  statusUpdates ProjectStatusUpdate[]
 
   @@unique([workspaceId, key])
+  @@unique([workspaceId, id])
   @@index([workspaceId, status])
   @@index([teamId])
 }
@@ -775,16 +781,21 @@ model Task {
   activities TaskActivity[]
   files      FileObject[]
 
-  cycle              Cycle?              @relation(fields: [cycleId], references: [id], onDelete: SetNull)
-  recurrence         TaskRecurrence?     @relation("TaskRecurrenceInstances", fields: [recurrenceId], references: [id], onDelete: SetNull)
-  sourceMeeting      Meeting?            @relation("TaskSourceMeeting", fields: [sourceMeetingId], references: [id], onDelete: SetNull)
-  recurrenceRules    TaskRecurrence[]    @relation("TaskRecurrenceTemplate")
+  cycle              Cycle?                 @relation(fields: [cycleId], references: [id], onDelete: SetNull)
+  recurrence         TaskRecurrence?        @relation("TaskRecurrenceInstances", fields: [recurrenceId], references: [id], onDelete: SetNull)
+  sourceMeeting      Meeting?               @relation("TaskSourceMeeting", fields: [sourceMeetingId], references: [id], onDelete: SetNull)
+  recurrenceRules    TaskRecurrence[]       @relation("TaskRecurrenceTemplate")
   occurrences        TaskOccurrence[]
-  blocking           TaskDependency[]    @relation("TaskBlocking")
-  blockedBy          TaskDependency[]    @relation("TaskBlocked")
+  blocking           TaskDependency[]       @relation("TaskBlocking")
+  blockedBy          TaskDependency[]       @relation("TaskBlocked")
   meetingActionLinks MeetingActionItem[]
+  startsOn           DateTime?              @db.Date
+  blockerReason      String?
+  blockerOwnerId     String?
+  milestones         ProjectMilestoneTask[]
 
   @@unique([workspaceId, number])
+  @@unique([workspaceId, projectId, id])
   @@index([projectId, columnId, position])
   @@index([workspaceId, completedAt])
   @@index([workspaceId, dueAt])
@@ -793,6 +804,7 @@ model Task {
   @@index([cycleId])
   @@index([recurrenceId])
   @@index([sourceMeetingId])
+  @@index([workspaceId, blockerOwnerId])
 }
 
 model TaskAssignee {
@@ -6429,4 +6441,53 @@ model StaffAdvanceRecovery {
 
   @@unique([workspaceId, advanceId, instalment])
   @@index([workspaceId, dueOn])
+}
+
+// Simple manual project planning and weekly check-ins.
+model ProjectMilestone {
+  id          String                 @id @default(cuid())
+  workspaceId String
+  projectId   String
+  name        String
+  targetOn    DateTime               @db.Date
+  status      String                 @default("PENDING")
+  notes       String                 @default("")
+  createdById String?
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  workspace   Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project     Project                @relation(fields: [workspaceId, projectId], references: [workspaceId, id], onDelete: Cascade)
+  tasks       ProjectMilestoneTask[]
+
+  @@unique([workspaceId, projectId, id])
+  @@index([workspaceId, projectId, targetOn])
+}
+
+model ProjectMilestoneTask {
+  workspaceId String
+  projectId   String
+  milestoneId String
+  taskId      String
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  milestone   ProjectMilestone @relation(fields: [workspaceId, projectId, milestoneId], references: [workspaceId, projectId, id], onDelete: Cascade)
+  task        Task             @relation(fields: [workspaceId, projectId, taskId], references: [workspaceId, projectId, id], onDelete: Cascade)
+
+  @@id([workspaceId, milestoneId, taskId])
+  @@index([workspaceId, taskId])
+}
+
+model ProjectStatusUpdate {
+  id          String    @id @default(cuid())
+  workspaceId String
+  projectId   String
+  status      String
+  note        String
+  blockers    String[]  @default([])
+  nextSteps   String[]  @default([])
+  authorId    String?
+  createdAt   DateTime  @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project     Project   @relation(fields: [workspaceId, projectId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, projectId, createdAt])
 }
