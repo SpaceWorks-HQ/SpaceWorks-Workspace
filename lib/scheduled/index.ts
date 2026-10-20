@@ -1,4 +1,5 @@
 import "server-only";
+import { run as documents } from "@/lib/scheduled/documents";
 import { run as funding } from "@/lib/scheduled/funding";
 import { run as social } from "@/lib/scheduled/social";
 
@@ -36,6 +37,7 @@ export const SCHEDULED_JOBS: ReadonlyArray<{ area: string; run: (now: Date) => P
   { area: "docs-files", run: docsFiles },
   { area: "community", run: community },
   { area: "finance", run: finance },
+  { area: "documents", run: documents },
   { area: "assistant", run: assistant },
   { area: "integrations-messaging", run: integrations },
   { area: "monitor", run: monitor },

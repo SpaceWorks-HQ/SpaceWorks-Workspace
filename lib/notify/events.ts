@@ -51,6 +51,7 @@ type GithubRef = { repoId: Id; number: number; url: string };
 
 /** Typed `data` payload per event type. */
 export interface EventPayloads {
+  "documents.receivable.due": { documentId: Id };
   "ops.people_changed": { recordId: Id };
   "ops.reminder": { recordId: Id };
   "ops.ticket_changed": { recordId: Id };
@@ -199,6 +200,7 @@ export const EVENT_CATALOG = {
   "social.comment.received": s("operations", "Social comment received", "broadcast", "info", "MEMBER"),
   "social.reply.failed": s("operations", "Social reply failed", "broadcast", "warning", "MEMBER"),
   "social.token.expiring": s("operations", "Social connection expiring", "broadcast", "warning", "ADMIN"),
+  "documents.receivable.due": s("finance", "Receivable follow-up", "personal", "warning", "ADMIN"),
   "funding.reminder": s("finance", "Funding deadline", "personal", "warning", "ADMIN"),
   "funding.pledge_due": s("finance", "Pledge instalment due", "personal", "warning", "ADMIN"),
   "funding.thank_you_due": s("finance", "Donation thank-you due", "personal", "info", "ADMIN"),

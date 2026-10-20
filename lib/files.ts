@@ -1,4 +1,5 @@
 import "server-only";
+import { mayDownloadDocumentFile } from "@/lib/documents/files";
 import { canDownloadOpsFile } from "@/lib/opsGaps/attachments";
 import { mayDownloadFinanceFile } from "@/lib/finance/tools/files";
 
@@ -41,6 +42,7 @@ export async function findDownloadableFile(fileId: string, userId: string) {
   if (file.folder === "/governance" || file.folder.startsWith("/governance/") || file.governanceAttachments.length) {
     if (!hasRoleAtLeast(membership.role, "ADMIN")) return null;
   }
+  if (!(await mayDownloadDocumentFile(file, userId))) return null;
   if (file.folder === "/funding" || file.folder.startsWith("/funding/") || await prisma.fundingAttachment.count({ where: { workspaceId: file.workspaceId, fileId: file.id } })) {
     if (!hasRoleAtLeast(membership.role, "ADMIN") || !await prisma.fundingAttachment.findFirst({ where: { workspaceId: file.workspaceId, fileId: file.id, record: { workspaceId: file.workspaceId, archivedAt: null } }, select: { id: true } })) return null;
   }

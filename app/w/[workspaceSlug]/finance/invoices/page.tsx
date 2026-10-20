@@ -33,9 +33,9 @@ export default async function InvoicesPage({ params, searchParams }: PageProps<"
   return (
     <div className="flex flex-col gap-5">
       <SectionHeading
-        title="Invoices"
-        description="Bill sponsors, clients and workshop partners. Paid invoices land on the ledger."
-        action={manage ? <Button asChild variant="primary"><Link href={`${href}/new`}>New invoice</Link></Button> : null}
+        title="Legacy invoices"
+        description="Retain existing commercial invoices here. Use Documents for reviewed tax invoices, receipts and immutable issued PDFs."
+        action={manage ? <Button asChild variant="primary"><Link href={`/w/${workspace.slug}/documents/new`}>Create document</Link></Button> : null}
       />
       <NavTabs
         label="Invoice status"

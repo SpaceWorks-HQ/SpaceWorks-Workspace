@@ -30,7 +30,7 @@ export const RETENTION_WRITERS: Record<string, Writer> = {
   },
   monitor_results: async (tx, workspaceId, cutoff) => (await tx.monitorCheck.deleteMany({ where: { workspaceId, checkedAt: { lt: cutoff } } })).count,
   assistant: async (tx, workspaceId, cutoff) => (await tx.assistantConversation.deleteMany({ where: { workspaceId, updatedAt: { lt: cutoff } } })).count,
-  audit: async (tx, workspaceId, cutoff) => (await tx.auditEvent.deleteMany({ where: { workspaceId, createdAt: { lt: cutoff } } })).count,
+  audit: async (tx, workspaceId, cutoff) => (await tx.auditEvent.deleteMany({ where: { workspaceId, createdAt: { lt: cutoff }, NOT: { action: { startsWith: "documents." } } } })).count,
   inbound: async (tx, workspaceId, cutoff) => (await tx.inboundEvent.deleteMany({ where: { connection: { workspaceId }, receivedAt: { lt: cutoff }, status: { in: ["PROCESSED", "IGNORED", "FAILED"] } } })).count,
   outbox: async (tx, workspaceId, cutoff) => {
     const explicit = await tx.outboxMessage.deleteMany({ where: { payload: { path: ["workspaceId"], equals: workspaceId }, createdAt: { lt: cutoff }, status: { in: ["SENT", "FAILED"] } } });
