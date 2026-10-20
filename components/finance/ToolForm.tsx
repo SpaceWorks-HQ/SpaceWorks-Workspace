@@ -132,6 +132,7 @@ export function ToolForm({
   const [error, setError] = useState("");
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [saved, setSaved] = useState(false);
+  const [fundWarnings, setFundWarnings] = useState<string[]>([]);
   const id = useId();
   const formRef = useRef<HTMLFormElement>(null);
   return (
@@ -146,6 +147,7 @@ export function ToolForm({
         setError("");
         setErrors({});
         setSaved(false);
+        setFundWarnings([]);
         start(async () => {
           try {
             const result = await financeToolAction(slug, operation, form);
@@ -155,6 +157,7 @@ export function ToolForm({
               return;
             }
             setSaved(true);
+            setFundWarnings(result.data?.warnings ?? []);
             if (remember) {
               try {
                 sessionStorage.setItem(
@@ -194,6 +197,11 @@ export function ToolForm({
           </Callout>
         </div>
       ) : null}
+      {fundWarnings.map((warning) => (
+        <Callout key={warning} tone="warning" role="status">
+          {warning}
+        </Callout>
+      ))}
       {saved ? (
         <p role="status" className="text-body-ui text-success-fg">
           Saved.

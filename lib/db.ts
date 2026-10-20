@@ -3,8 +3,8 @@ import { PrismaClient, type Prisma } from "@prisma/client";
 const PRISMA_KEY = Symbol.for("sww.prisma");
 type GlobalWithPrisma = typeof globalThis & { [PRISMA_KEY]?: PrismaClient };
 
-function createPrismaClient() {
-  return new PrismaClient({
+function createPrismaClient(): PrismaClient {
+  return new PrismaClient<Prisma.PrismaClientOptions>({
     log: process.env.PRISMA_LOG_QUERIES === "1" ? ["query", "error", "warn"] : ["error"],
   });
 }

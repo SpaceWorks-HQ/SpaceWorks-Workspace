@@ -1,4 +1,5 @@
 import "server-only";
+import { checkFundRecord } from "@/lib/moneyControls/funds";
 import { prisma, type DbClient } from "@/lib/db";
 import { recordAuditEvent } from "@/lib/audit";
 import { recordActivity } from "@/lib/activity";
@@ -27,6 +28,7 @@ export async function financeNote(
   title?: string,
   section?: string,
 ) {
+  await checkFundRecord(tx, actor.workspace.id, actor.user.id, type, id);
   await recordAuditEvent({
     workspaceId: actor.workspace.id,
     actorId: actor.user.id,

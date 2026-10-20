@@ -258,8 +258,10 @@ export async function reportEntries(actor: FinanceActor, query: FinanceQuery) {
     files.push(a.file);
     byRecord.set(key, files);
   }
+  const controlProofs = await prisma.moneyControlAttachment.findMany({where:{workspaceId:actor.workspace.id,recordId:{in:entries.filter(e=>["cash_voucher","asset_disposal"].includes(e.sourceType??"")).map(e=>e.sourceId!)},file:{deletedAt:null},record:{payroll:false}},select:{recordId:true,file:{select:{id:true,filename:true,contentType:true}}}});
   const receiptsFor = (e: (typeof entries)[number]) => {
     const files = [
+      ...(canManageFinance(access.member) && ["cash_voucher","asset_disposal"].includes(e.sourceType??"") ? controlProofs.filter(f=>f.recordId===e.sourceId).map(f=>f.file) : []),
       ...(byRecord.get(`LEDGER:${e.id}`) ?? []),
       ...(e.sourceType === "finance_bill_payment"
         ? (byRecord.get(`BILL:${billId.get(e.sourceId!)}`) ?? [])
@@ -291,7 +293,7 @@ export async function reportEntries(actor: FinanceActor, query: FinanceQuery) {
   return {
     access,
     period: p,
-    entries: entries.map((e) => ({ ...e, receipts: receiptsFor(e) })),
+    entries: entries.map((e) => ({ ...e, hasControlProof: ["cash_voucher","asset_disposal"].includes(e.sourceType??"") && controlProofs.some(f=>f.recordId===e.sourceId), receipts: receiptsFor(e) })),
   };
 }
 export function groupMoney<T extends { kind: string; amountMinor: number }>(
@@ -436,7 +438,7 @@ export async function spendingReview(actor: FinanceActor, query: FinanceQuery) {
     ...current,
     previous: previous.entries.filter((e) => e.kind === "EXPENSE"),
     byPerson: groupMoney(expenses, (e) => e.createdBy?.name ?? "Former member"),
-    missingReceipts: expenses.filter((e) => !e.receipts.length),
+    missingReceipts: expenses.filter((e) => !e.receipts.length && !e.hasControlProof),
     biggest: [...expenses]
       .sort((a, b) => b.amountMinor - a.amountMinor)
       .slice(0, 10),
@@ -619,10 +621,11 @@ export async function toolLists(
           n + (r.kind === "INCOME" ? 1 : -1) * (r._sum.amountMinor ?? 0),
         0,
       );
+    const cashMovements = await prisma.moneyControlMovement.aggregate({where:{workspaceId,currency:period.currency},_sum:{amountMinor:true}});
     cashSummary = {
       currency: period.currency,
       restrictedMinor: net(restricted),
-      unrestrictedMinor: opening + net(all) - net(restricted),
+      unrestrictedMinor: opening + net(all) + (cashMovements._sum.amountMinor ?? 0) - net(restricted),
     };
   }
   const accountEntries =

@@ -87,6 +87,7 @@ export const NAV_GROUPS: readonly NavGroupConfig[] = [
       { key: "assets", label: "Assets", path: "/assets", minRole: "MEMBER" },
       { key: "requests", label: "Requests", path: "/requests", minRole: "MEMBER" },
       { key: "finance", label: "Finance", path: "/finance", minRole: "MEMBER", requires: "finance" },
+      { key: "money-controls", label: "Money controls", path: "/money-controls", minRole: "ADMIN" },
       { key: "payroll", label: "Payroll", path: "/finance/payroll", minRole: "MEMBER", requires: "payroll" },
       { key: "subscriptions", label: "Subscriptions", path: "/subscriptions", minRole: "MEMBER" },
       { key: "rota", label: "Rota", path: "/rota", minRole: "MEMBER" },
