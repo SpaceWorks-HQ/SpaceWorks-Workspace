@@ -114,6 +114,7 @@ export function folderCrumbs(folder: string): Array<{ name: string; path: string
 export const CHAT_FOLDER = "/chat";
 
 export function isReservedFolder(folder: string): boolean {
+  if (folder.startsWith("/org-people")) return true;
   if (folder === "/safeguarding" || folder.startsWith("/safeguarding/") || folder === "/governance" || folder.startsWith("/governance/")) return true;
   if (folder === "/funding" || folder.startsWith("/funding/")) return true;
   if (folder.startsWith("/finance-tools") || folder.startsWith("/money-controls")) return true;

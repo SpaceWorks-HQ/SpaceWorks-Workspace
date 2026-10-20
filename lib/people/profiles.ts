@@ -16,7 +16,7 @@ import { hiddenTeamIds } from "@/lib/teamAccess";
 import { startAutoChecklists } from "./checklists";
 
 const text = (max: number) => z.string().trim().max(max).default("");
-export const profileSchema = z.object({ bio: text(2000), pronouns: text(60), timezone: text(80).refine(v => { try { if (v) new Intl.DateTimeFormat("en", { timeZone: v }); return true; } catch { return false; } }, "Pick a valid time zone."), location: text(120), interests: z.array(text(40)).max(30).default([]), skills: z.array(z.object({ skill: z.string().trim().toLowerCase().min(1).max(60), level: z.coerce.number().int().min(1).max(3) })).max(40).default([]) });
+export const profileSchema = z.object({ contactPhone: z.string().trim().max(60).optional(), contactHandle: z.string().trim().max(120).optional(), contactVisibility: z.enum(["PRIVATE", "WORKSPACE"]).optional(), bio: text(2000), pronouns: text(60), timezone: text(80).refine(v => { try { if (v) new Intl.DateTimeFormat("en", { timeZone: v }); return true; } catch { return false; } }, "Pick a valid time zone."), location: text(120), interests: z.array(text(40)).max(30).default([]), skills: z.array(z.object({ skill: z.string().trim().toLowerCase().min(1).max(60), level: z.coerce.number().int().min(1).max(3) })).max(40).default([]) });
 const emergencySchema = z.object({ name: z.string().trim().min(1).max(100), relation: text(80), phone: z.string().trim().min(3).max(60), notes: text(500) });
 export type EmergencyContact = z.infer<typeof emergencySchema>;
 export function profileFields(handles: unknown) {
@@ -58,10 +58,11 @@ export async function memberProfile(actor: PeopleActor, userId: string) {
   if (!member) return null;
   const hidden = await hiddenTeamIds(actor.workspace.id, { userId: actor.user.id, role: actor.membership.role });
   const [profile, activity] = await Promise.all([
-    prisma.memberProfile.findFirst({ where: { workspaceId: actor.workspace.id, userId }, select: { handles: true, interests: true, isKeyholder: true, membershipType: true, engagementType: true, engagementStart: true, engagementEnd: true, emergencyUpdatedAt: true } }),
+    prisma.memberProfile.findFirst({ where: { workspaceId: actor.workspace.id, userId }, select: { contactPhone: true, contactHandle: true, contactVisibility: true, handles: true, interests: true, isKeyholder: true, membershipType: true, engagementType: true, engagementStart: true, engagementEnd: true, emergencyUpdatedAt: true } }),
     prisma.activityEvent.findMany({ where: { workspaceId: actor.workspace.id, actorId: userId, visibility: "WORKSPACE", OR: [{ teamId: null }, { teamId: { notIn: hidden } }], projectId: null }, orderBy: { createdAt: "desc" }, take: 12, select: { id: true, summary: true, createdAt: true } }),
   ]);
-  return { ...member, engagementType: profile?.engagementType ?? "VOLUNTEER", engagementStart: profile?.engagementStart ?? null, engagementEnd: profile?.engagementEnd ?? null, interests: profile?.interests ?? [], membershipType: profile?.membershipType ?? "MEMBER", isKeyholder: profile?.isKeyholder ?? false, hasEmergency: Boolean(profile?.emergencyUpdatedAt), adminNotes: canManageMembers(actor.membership) ? profileFields(profile?.handles).adminNotes : undefined, activity };
+  const contactAllowed = actor.membership.role !== "GUEST" && (profile?.contactVisibility === "WORKSPACE" || canManageMembers(actor.membership)) || actor.user.id === userId;
+  return { ...member, contactPhone: contactAllowed ? profile?.contactPhone ?? null : null, contactHandle: contactAllowed ? profile?.contactHandle ?? null : null, contactVisibility: profile?.contactVisibility ?? "PRIVATE", engagementType: profile?.engagementType ?? "VOLUNTEER", engagementStart: profile?.engagementStart ?? null, engagementEnd: profile?.engagementEnd ?? null, interests: profile?.interests ?? [], membershipType: profile?.membershipType ?? "MEMBER", isKeyholder: profile?.isKeyholder ?? false, hasEmergency: Boolean(profile?.emergencyUpdatedAt), adminNotes: canManageMembers(actor.membership) ? profileFields(profile?.handles).adminNotes : undefined, activity };
 }
 export async function saveOwnProfile(actor: PeopleActor, input: unknown): Promise<ActionResult> {
   const parsed = profileSchema.safeParse(input);

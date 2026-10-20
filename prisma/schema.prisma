@@ -409,6 +409,11 @@ model Notification {
 // ──────────────────────────── Tenancy ────────────────────────────
 
 model Workspace {
+  departments             Department[]
+  responsibilities        Responsibility[]
+  attendanceEntries       AttendanceEntry[]
+  orgEscalations          OrgEscalationPath[]
+  orgPeopleAttachments    OrgPeopleAttachment[]
   socialAccounts          SocialAccount[]
   socialMetrics           SocialMetricDaily[]
   socialPosts             SocialPost[]
@@ -1041,6 +1046,7 @@ model FileObject {
   financeAttachments      FinanceAttachment[]
   moneyControlAttachments MoneyControlAttachment[]
   safeguardingAttachments SafeguardingAttachment[]
+  orgPeopleAttachments    OrgPeopleAttachment[]
 
   @@unique([workspaceId, id])
   @@index([workspaceId, folder])
@@ -2337,6 +2343,12 @@ model LinkItem {
 /// timezone; Membership keeps role and title). Emergency contact is encrypted
 /// (purpose "member-emergency") and visible only to OWNER/ADMIN and the member.
 model MemberProfile {
+  departmentId        String?
+  managerId           String?
+  contactPhone        String?
+  contactHandle       String?
+  contactVisibility   Visibility     @default(PRIVATE)
+  department          Department?    @relation(fields: [workspaceId, departmentId], references: [workspaceId, id], onDelete: NoAction)
   id                  String         @id @default(cuid())
   workspaceId         String
   userId              String
@@ -2363,6 +2375,8 @@ model MemberProfile {
   skills    MemberSkill[]
 
   @@unique([workspaceId, userId])
+  @@index([workspaceId, departmentId])
+  @@index([workspaceId, managerId])
   @@index([workspaceId, membershipType])
 }
 
@@ -5879,4 +5893,91 @@ model SafeguardingAttachment {
 
   @@unique([workspaceId, fileId])
   @@index([workspaceId, caseId])
+}
+
+// Organisation structure and manual people registers. Actor/member ids are resolved in the tenant.
+model Department {
+  id          String          @id @default(cuid())
+  workspaceId String
+  name        String
+  headId      String?
+  parentId    String?
+  notes       String          @default("")
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  workspace   Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parent      Department?     @relation("DepartmentTree", fields: [workspaceId, parentId], references: [workspaceId, id], onDelete: NoAction)
+  children    Department[]    @relation("DepartmentTree")
+  members     MemberProfile[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, name])
+  @@index([workspaceId, parentId])
+}
+
+model Responsibility {
+  id             String    @id @default(cuid())
+  workspaceId    String
+  title          String
+  status         String    @default("ACTIVE")
+  responsibleIds String[]  @default([])
+  accountableId  String
+  consultedIds   String[]  @default([])
+  informedIds    String[]  @default([])
+  backupId       String?
+  reviewOn       DateTime  @db.Date
+  reminderDays   Int       @default(7)
+  notes          String    @default("")
+  createdById    String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, status, reviewOn])
+  @@index([workspaceId, accountableId])
+}
+
+model AttendanceEntry {
+  id           String    @id @default(cuid())
+  workspaceId  String
+  userId       String
+  dateOn       DateTime  @db.Date
+  status       String
+  notes        String    @default("")
+  recordedById String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId, dateOn])
+  @@index([workspaceId, dateOn])
+}
+
+model OrgEscalationPath {
+  id          String    @id @default(cuid())
+  workspaceId String
+  title       String
+  hoursNote   String    @default("")
+  notes       String    @default("")
+  steps       Json      @default("[]")
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, active])
+}
+
+model OrgPeopleAttachment {
+  id          String     @id @default(cuid())
+  workspaceId String
+  kind        String
+  recordId    String
+  fileId      String
+  createdAt   DateTime   @default(now())
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  file        FileObject @relation(fields: [workspaceId, fileId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, fileId])
+  @@index([workspaceId, kind, recordId])
 }

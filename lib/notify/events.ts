@@ -51,6 +51,7 @@ type GithubRef = { repoId: Id; number: number; url: string };
 
 /** Typed `data` payload per event type. */
 export interface EventPayloads {
+  "people.responsibility_review_due": { responsibilityId: Id; reviewOn: Iso };
   "moneycontrols.reminder": { recordId: Id; dueOn: Iso };
   "ops.people_changed": { recordId: Id };
   "ops.reminder": { recordId: Id };
@@ -192,6 +193,7 @@ const s = (category: NotifyCategory, label: string, audience: EventAudience, sev
   minRole ? { category, label, audience, severity, minRole } : { category, label, audience, severity };
 
 export const EVENT_CATALOG = {
+  "people.responsibility_review_due": s("people", "Responsibility review due", "personal", "info", "MEMBER"),
   "moneycontrols.reminder": s("finance", "Internal control due", "personal", "warning", "MEMBER"),
   "ops.people_changed": s("operations", "People tool update", "personal", "info", "MEMBER"),
   "ops.reminder": s("operations", "People and service reminder", "personal", "info", "MEMBER"),
