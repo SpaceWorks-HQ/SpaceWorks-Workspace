@@ -11,7 +11,7 @@ async function run<T>(slug: string, fn: (actor: Actor) => Promise<T>, bucket: "a
   const actor = await getWorkspaceForAction(slug, "ADMIN");
   if (!actor || !canManageFunding(actor.membership)) return { ok: false, error: NOT_ALLOWED };
   if (await isActionRateLimited(bucket, actor.user.id)) return { ok: false, error: RATE_LIMITED };
-  try { const data = await fn(actor); revalidatePath(`/w/${actor.workspace.slug}/funding`, "layout"); return { ok: true, data }; }
+  try { const data = await fn(actor); revalidatePath(`/w/${actor.workspace.slug}/funding`, "layout"); revalidatePath(`/w/${actor.workspace.slug}/documents`,"layout"); return { ok: true, data }; }
   catch (e) {
     if (e instanceof z.ZodError) return validationError(e);
     if (e instanceof FundingError) return { ok: false, error: e.message };

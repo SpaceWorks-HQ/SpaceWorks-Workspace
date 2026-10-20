@@ -173,6 +173,13 @@ export type PayrollGrant = { manage: boolean } | null | undefined;
 export const canViewPayroll = (m: RoleHolder, grant: PayrollGrant) => atLeast(m, "MEMBER") && grant != null;
 export const canManagePayroll = (m: RoleHolder, grant: PayrollGrant) => canViewPayroll(m, grant) && grant?.manage === true;
 
+/** Issued money documents and donor tax identities stay restricted to finance administrators. */
+export const canIssueFinancialDocuments = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** HR letters use the existing internal-operations administrator role. */
+export const canIssueLetters = (m: RoleHolder) => atLeast(m, "ADMIN");
+export const canCancelDocuments = (m: RoleHolder) => atLeast(m, "ADMIN");
+export const canManageDocumentSettings = (m: RoleHolder) => atLeast(m, "ADMIN");
+export const canExportDocumentFilings = (m: RoleHolder) => atLeast(m, "ADMIN");
 /** Funding includes donor identity and proof; only workspace admins read or edit. */
 export const canManageFunding = (m: RoleHolder) => atLeast(m, "ADMIN");
 export const canViewFunding = canManageFunding;

@@ -187,7 +187,9 @@ export async function deliverOutboxBatch(limit = 20, scope: { ids?: string[] } =
     }
 
     try {
-      const rendered = renderOutboxMessage(message.kind, message.payload);
+      const rendered = message.kind === "documents.email"
+        ? await (await import("@/lib/documents/email")).renderDocumentEmail(message.payload)
+        : renderOutboxMessage(message.kind, message.payload);
       if (rendered === "expired") {
         await prisma.outboxMessage.deleteMany({ where: mine });
         failed += 1;
@@ -201,7 +203,7 @@ export async function deliverOutboxBatch(limit = 20, scope: { ids?: string[] } =
         const { fundingReceiptAttachment } = await import("@/lib/funding/email");
         attachments = [await fundingReceiptAttachment(workspaceId, receipt, rendered.to)];
       }
-      await sendRenderedEmail(rendered.to, { ...rendered.email, attachments }, `<sww-${message.id}@outbox.invalid>`);
+      await sendRenderedEmail(rendered.to, { ...rendered.email, attachments: [...(rendered.email.attachments ?? []), ...attachments] }, `<sww-${message.id}@outbox.invalid>`);
       if (isCapability) {
         await prisma.outboxMessage.deleteMany({ where: mine });
       } else {

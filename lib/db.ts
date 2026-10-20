@@ -1,7 +1,7 @@
 import { PrismaClient, type Prisma } from "@prisma/client";
 
 const PRISMA_KEY = Symbol.for("sww.prisma");
-type GlobalWithPrisma = typeof globalThis & { [PRISMA_KEY]?: PrismaClient };
+type GlobalWithPrisma = typeof globalThis & { [PRISMA_KEY]?: Db };
 
 function createPrismaClient(): PrismaClient {
   return new PrismaClient<Prisma.PrismaClientOptions>({
@@ -15,9 +15,13 @@ function createPrismaClient(): PrismaClient {
  * client picks up the new delegates.
  */
 const store = globalThis as GlobalWithPrisma;
-export const prisma: PrismaClient = store[PRISMA_KEY] ?? (store[PRISMA_KEY] = createPrismaClient());
+export const prisma: Db =
+  store[PRISMA_KEY] ??
+  (store[PRISMA_KEY] = createPrismaClient() as unknown as Db);
 
-export type Db = PrismaClient;
+// The root client implements the transaction delegate surface. Preserve its
+// identity so defaults do not structurally compare every generated delegate.
+export type Db = PrismaClient & Prisma.TransactionClient;
 export type Tx = Prisma.TransactionClient;
 /** Either the root client or an interactive transaction client. */
 export type DbClient = PrismaClient | Tx;

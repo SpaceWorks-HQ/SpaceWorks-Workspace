@@ -208,5 +208,11 @@
     "name": "SsoMfaChallenge",
     "id": "Shared34",
     "value": false
+  },
+  {
+    "module": "lib/documents/service",
+    "name": "DocumentSnapshot",
+    "id": "Shared35",
+    "value": false
   }
 ]

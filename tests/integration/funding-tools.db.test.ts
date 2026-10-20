@@ -106,7 +106,7 @@ describe("funding permissions and manual flows", () => {
     await saveRecord(actor, input("RECEIPT_SETTINGS", { organisationName: "Community Office Trust", address: "Kochi, Kerala", pan: "AAAAA1234A", registration80G: "Illustrative approval", receiptPrefix: "SW/", signatory: "Treasurer" }));
     await Promise.all([operate(actor, { op: "receipt", id: giftId }), operate(actor, { op: "receipt", id: giftId })]);
     const gift = await prisma.fundingRecord.findFirstOrThrow({ where: { workspaceId: actor.workspace.id, id: giftId } });
-    expect(gift.receiptNumber).toBe("SW/000001"); expect(await prisma.fundingAttachment.count({ where: { workspaceId: actor.workspace.id, recordId: giftId, generated: true } })).toBe(1);
+    expect(gift.receiptNumber).toMatch(/^DR\/\d{4}\/\d{5}$/); expect(await prisma.fundingAttachment.count({ where: { workspaceId: actor.workspace.id, recordId: giftId, generated: true } })).toBe(1);
     const file = await findDownloadableFile(gift.receiptFileId!, actor.user.id); const bytes = await getObject(file!.storageKey); expect(Buffer.from(bytes!.body).subarray(0, 4).toString()).toBe("%PDF");
     await expect(saveRecord(actor, donation({ id: giftId, amountMinor: 10 }))).rejects.toThrow(); await expect(detachFile(actor, giftId, gift.receiptFileId!)).rejects.toThrow();
     await operate(actor, { op: "email", id: giftId });

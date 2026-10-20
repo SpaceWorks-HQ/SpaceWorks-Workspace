@@ -409,6 +409,12 @@ model Notification {
 // ──────────────────────────── Tenancy ────────────────────────────
 
 model Workspace {
+  businessDocuments       BusinessDocument[]
+  documentSeries          DocumentSeries[]
+  documentReferences      DocumentReference[]
+  documentFiles           DocumentFile[]
+  documentAllocations     DocumentAllocation[]
+  documentDeliveries      DocumentDelivery[]
   socialAccounts          SocialAccount[]
   socialMetrics           SocialMetricDaily[]
   socialPosts             SocialPost[]
@@ -1007,21 +1013,22 @@ model DocRevision {
 /// A private object in S3-compatible storage (lib/storage). Always served
 /// through /api/files/[id] after a membership check.
 model FileObject {
-  id             String    @id @default(cuid())
+  documentFiles  DocumentFile[]
+  id             String         @id @default(cuid())
   workspaceId    String
-  storageKey     String    @unique
+  storageKey     String         @unique
   filename       String
   contentType    String
   size           Int
   checksum       String?
   uploadedById   String?
-  folder         String    @default("/")
+  folder         String         @default("/")
   docId          String?
   taskId         String?
   /// Current version number (FileVersion keeps previous objects).
-  currentVersion Int       @default(1)
+  currentVersion Int            @default(1)
   deletedAt      DateTime?
-  createdAt      DateTime  @default(now())
+  createdAt      DateTime       @default(now())
 
   workspace             Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   uploadedBy            User?                  @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
@@ -5879,4 +5886,133 @@ model SafeguardingAttachment {
 
   @@unique([workspaceId, fileId])
   @@index([workspaceId, caseId])
+}
+
+// Shared manual financial documents and people letters. Issued snapshots are immutable.
+model BusinessDocument {
+  id             String               @id @default(cuid())
+  workspaceId    String
+  type           String
+  status         String               @default("DRAFT")
+  title          String
+  issuedOn       DateTime             @db.Date
+  dueOn          DateTime?            @db.Date
+  currency       String               @default("INR")
+  financialYear  String?
+  number         String?
+  registrationId String               @default("")
+  ownerId        String
+  sourceType     String?
+  sourceId       String?
+  parentId       String?
+  /// Validated draft inputs; frozen with identity/calculations at reservation.
+  input          Json
+  snapshot       Json?
+  totalMinor     Int                  @default(0)
+  issuedAt       DateTime?
+  issuedById     String?
+  cancelledAt    DateTime?
+  cancelledById  String?
+  cancelReason   String?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  workspace      Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parent         BusinessDocument?    @relation("DocumentCorrection", fields: [workspaceId, parentId], references: [workspaceId, id], onDelete: NoAction)
+  corrections    BusinessDocument[]   @relation("DocumentCorrection")
+  files          DocumentFile[]
+  allocations    DocumentAllocation[] @relation("AllocationInvoice")
+  payments       DocumentAllocation[] @relation("AllocationReceipt")
+  deliveries     DocumentDelivery[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, financialYear, number])
+  @@index([workspaceId, sourceType, sourceId])
+  @@index([workspaceId, status, issuedOn])
+  @@index([workspaceId, ownerId])
+  @@index([workspaceId, parentId])
+}
+
+model DocumentSeries {
+  id             String    @id @default(cuid())
+  workspaceId    String
+  type           String
+  registrationId String    @default("")
+  financialYear  String
+  prefix         String
+  padding        Int       @default(5)
+  nextNumber     Int       @default(1)
+  locked         Boolean   @default(false)
+  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, type, registrationId, financialYear])
+  @@index([workspaceId, financialYear])
+}
+
+/// Editable item/rate/template records; revisions survive through document snapshots.
+model DocumentReference {
+  id          String    @id @default(cuid())
+  workspaceId String
+  kind        String
+  name        String
+  data        Json
+  archivedAt  DateTime?
+  createdById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId, kind, archivedAt])
+}
+
+model DocumentFile {
+  id          String            @id @default(cuid())
+  workspaceId String
+  documentId  String?
+  /// PROFILE, SOURCE, PDF, IRP_QR, IRP_JSON, OFFICIAL_CERTIFICATE, FILING_ACK.
+  kind        String
+  fileId      String
+  createdAt   DateTime          @default(now())
+  workspace   Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  document    BusinessDocument? @relation(fields: [workspaceId, documentId], references: [workspaceId, id], onDelete: NoAction)
+  file        FileObject        @relation(fields: [workspaceId, fileId], references: [workspaceId, id], onDelete: NoAction)
+
+  @@unique([workspaceId, fileId])
+  @@index([workspaceId, documentId, kind])
+}
+
+/// Signed allocations: invoice settlement, credits, advances and refund reversals.
+model DocumentAllocation {
+  id          String           @id @default(cuid())
+  workspaceId String
+  receiptId   String
+  invoiceId   String
+  cashMinor   Int
+  tdsMinor    Int              @default(0)
+  key         String
+  createdById String
+  createdAt   DateTime         @default(now())
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  receipt     BusinessDocument @relation("AllocationReceipt", fields: [workspaceId, receiptId], references: [workspaceId, id], onDelete: NoAction)
+  invoice     BusinessDocument @relation("AllocationInvoice", fields: [workspaceId, invoiceId], references: [workspaceId, id], onDelete: NoAction)
+
+  @@unique([workspaceId, key])
+  @@index([workspaceId, invoiceId])
+  @@index([workspaceId, receiptId])
+}
+
+model DocumentDelivery {
+  id          String           @id @default(cuid())
+  workspaceId String
+  documentId  String
+  recipient   String
+  fileId      String
+  checksum    String
+  outboxId    String
+  createdById String
+  createdAt   DateTime         @default(now())
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  document    BusinessDocument @relation(fields: [workspaceId, documentId], references: [workspaceId, id], onDelete: NoAction)
+
+  @@index([workspaceId, documentId, createdAt])
 }

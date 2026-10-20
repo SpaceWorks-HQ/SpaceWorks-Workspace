@@ -23,5 +23,5 @@ const today = localDate(new Date(), workspace.timezone);
 const manage = canManageFinance(membership);
 const total = Object.values(counts).reduce((sum, n) => sum + (n ?? 0), 0);
 const pageHref = (n: number) => `${href}?${status ? `status=${status.toLowerCase()}&` : ""}page=${n}`;
-return viewDto({ page, status, invoices, counts, pageCount, href, today, manage, total } as const);
+return viewDto({ workspace, page, status, invoices, counts, pageCount, href, today, manage, total } as const);
 }

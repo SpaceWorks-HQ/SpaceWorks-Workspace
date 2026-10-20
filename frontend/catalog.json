@@ -321,6 +321,26 @@
       "id": "w-workspaceSlug-docs-page:loadDocsPage"
     },
     {
+      "module": "lib/views/generated/w-workspaceSlug-documents-documentId-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-documents-documentId-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-documents-new-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-documents-new-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-documents-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-documents-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-documents-settings-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-documents-settings-page:loadPage"
+    },
+    {
       "module": "lib/views/generated/w-workspaceSlug-files-fileId-page-loadgenerateMetadata",
       "name": "loadgenerateMetadata",
       "id": "w-workspaceSlug-files-fileId-page:loadgenerateMetadata"
@@ -1516,6 +1536,11 @@
       "module": "app/actions/docs",
       "name": "verifyDocAction",
       "id": "docs:verifyDocAction"
+    },
+    {
+      "module": "app/actions/documents",
+      "name": "documentAction",
+      "id": "documents:documentAction"
     },
     {
       "module": "app/actions/exports",

@@ -33,6 +33,7 @@ export function accessSql(actor: SearchActor) {
   const channel = Prisma.sql`EXISTS (SELECT 1 FROM "Channel" c WHERE c.id=r."channelId" AND c."workspaceId"=${actor.workspaceId} AND c."archivedAt" IS NULL AND ${team(Prisma.sql`c."teamId"`)} AND ((${member} AND c.kind='PUBLIC') OR EXISTS (SELECT 1 FROM "ChannelMember" cm WHERE cm."channelId"=c.id AND cm."userId"=${actor.userId})))`;
   const project = Prisma.sql`(r."projectId" IS NULL OR EXISTS (SELECT 1 FROM "Project" p WHERE p.id=r."projectId" AND p."workspaceId"=${actor.workspaceId} AND p.status <> 'ARCHIVED' AND ${team(Prisma.sql`p."teamId"`)}))`;
   const registry: Array<[string, string, Prisma.Sql]> = [
+    ["business_document", "BusinessDocument", Prisma.sql`${admin} AND (r."sourceType" IS NULL OR r."sourceType" <> 'PAY_RUN')`],
     ["funding", "FundingRecord", Prisma.sql`${admin} AND r."archivedAt" IS NULL`],
     ["money_control", "MoneyControlRecord", Prisma.sql`${member} AND r.payroll=false AND (${admin} OR (r.kind IN ('HANDOVER','ASSIGNMENT') AND (r."ownerId"=${actor.userId} OR r.details->>'outgoingId'=${actor.userId})))`],
     ["governance", "GovernanceRecord", Prisma.sql`${admin} AND r."archivedAt" IS NULL`],

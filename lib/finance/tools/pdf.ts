@@ -1,4 +1,5 @@
 import "server-only";
+import { retainPayslipDocument } from "@/lib/documents/payroll";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
@@ -231,7 +232,7 @@ export async function generatePayslip(actor: FinanceActor, runId: string) {
           },
           select: { fileId: true },
         });
-        if (existing && run.status === "PAID") return existing.fileId;
+        if (existing && run.status === "PAID") { await retainPayslipDocument(actor,run,existing.fileId,tx); return existing.fileId; }
         if (run.status !== "PAID")
           throw new FinanceError(
             "Record payment before generating the final payslip.",
@@ -272,6 +273,7 @@ export async function generatePayslip(actor: FinanceActor, runId: string) {
           targetId: run.id,
           client: tx,
         });
+        await retainPayslipDocument(actor,run,upload.file.id,tx);
         return upload.file.id;
       },
       { timeout: 30000 },

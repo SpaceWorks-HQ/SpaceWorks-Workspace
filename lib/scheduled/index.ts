@@ -3,6 +3,7 @@ import type { JobDefinition } from "@/lib/queue/definitions";
 import { enqueueDueOutbox } from "@/lib/queue/enqueue";
 import { purgeExpiredOperationalData } from "@/lib/retention";
 import { runDueChecks } from "@/lib/monitor/scheduler";
+import { run as documents } from "@/lib/scheduled/documents";
 import { run as funding } from "@/lib/scheduled/funding";
 import { run as moneyControls } from "@/lib/scheduled/moneyControls";
 import { run as govextras } from "@/lib/scheduled/govextras";
@@ -44,6 +45,7 @@ export const SCHEDULED_JOBS: ReadonlyArray<JobDefinition> = [
   { area: "docs-files", queue: "documents", run: docsFiles },
   { area: "community", run: community },
   { area: "finance", run: finance },
+  { area: "documents", run: documents },
   { area: "assistant", run: assistant },
   { area: "integrations-messaging", queue: "sync", run: integrations },
   { area: "monitor", queue: "monitor", run: monitor },

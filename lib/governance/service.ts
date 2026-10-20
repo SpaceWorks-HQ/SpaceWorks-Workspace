@@ -220,7 +220,9 @@ export async function saveRecord(actor: Actor, raw: unknown) {
       startsOn: input.startsOn ? new Date(input.startsOn) : null,
       endsOn: input.endsOn ? new Date(input.endsOn) : null,
       notes: input.notes,
-      details,
+      details: input.kind === "LEGAL_ENTITY" && old && old.details && typeof old.details === "object" && !Array.isArray(old.details) && old.details.documents
+        ? { ...details, documents: old.details.documents as Prisma.InputJsonValue }
+        : details,
       reminderDays: input.reminderDays,
     };
     const row = old
