@@ -40,7 +40,7 @@ RUNNER_HOME=/var/lib/sww-runner
 RUNNER_DIR=${SWW_RUNNER_DIR:-/opt/spaceworks-workspace-runner}
 WRAPPER=/usr/local/sbin/sww-deploy
 SUDOERS=/etc/sudoers.d/spaceworks-workspace-deploy
-is_safe_path "$RUNNER_DIR" && [[ "$RUNNER_DIR" != "$SWW_DIR" && ! -L "$RUNNER_DIR" ]] || die 'Use a dedicated absolute runner directory.'
+if ! is_safe_path "$RUNNER_DIR" || [[ "$RUNNER_DIR" == "$SWW_DIR" || -L "$RUNNER_DIR" ]]; then die 'Use a dedicated absolute runner directory.'; fi
 repository=${SWW_REPOSITORY:-$(conf_get "$(install_conf)" SWW_REPOSITORY)}
 repository=${repository:-$SWW_DEFAULT_REPOSITORY}
 is_repository "$repository" || die 'SWW_REPOSITORY must be a GitHub owner/name.'

@@ -32,7 +32,7 @@
     "frontend:catalog": "next typegen && node scripts/generate-frontend-catalog.mjs && node scripts/generate-frontend-types.mjs",
     "frontend:prepare": "node scripts/prepare-frontend.mjs",
     "build:frontend": "npm run build --workspace=frontend",
-    "typecheck:frontend": "npm run frontend:prepare && npm run typecheck --workspace=frontend",
+    "typecheck:frontend": "node scripts/check-frontend-boundary.mjs && npm run frontend:prepare && npm run typecheck --workspace=frontend",
     "test:e2e:split": "node scripts/test-split-hosting.mjs",
     "test:e2e:vps": "node scripts/test-split-hosting.mjs --monolith",
     "db:verify": "node scripts/verify-production-schema.mjs",
