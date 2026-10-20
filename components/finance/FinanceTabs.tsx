@@ -16,6 +16,7 @@ export function FinanceTabs({ base, canManage, canView = true, payroll = false }
     { href: `${base}/spending`, label: "Spending", active: pathname.startsWith(`${base}/spending`) },
     { href: `${base}/close`, label: "Month-end", active: pathname.startsWith(`${base}/close`) },
     { href: `${base}/reports`, label: "Reports and export", active: pathname.startsWith(`${base}/reports`) },
+    ...(canManage ? [{ href: `${base.replace(/\/finance$/, "")}/money-controls/cash`, label: "Money controls", active: pathname.includes("/money-controls/") }] : []),
     ...(canManage ? [{ href: `${base}/receipt`, label: "Add an entry", active: pathname.startsWith(`${base}/receipt`) }] : []),
     ...(canManage ? [{ href: `${base}/categories`, label: "Categories", active: pathname.startsWith(`${base}/categories`) }] : []),
   ];

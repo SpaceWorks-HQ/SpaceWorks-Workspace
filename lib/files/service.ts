@@ -49,6 +49,7 @@ const OTHER_AREA_RELATIONS: Prisma.FileObjectWhereInput = {
   messageAttachments: { none: {} },
   ledgerReceipts: { none: {} },
   financeAttachments: { none: {} },
+  moneyControlAttachments: { none: {} },
   subscriptionContracts: { none: {} },
   certificationEvidence: { none: {} },
   statusPageLogos: { none: {} },
@@ -59,7 +60,7 @@ const OTHER_AREA_RELATIONS: Prisma.FileObjectWhereInput = {
 /** Chat uploads (message attachments, the /chat folder) belong to chat, not the library. */
 const NOT_CHAT: Prisma.FileObjectWhereInput = {
   messageAttachments: { none: {} },
-  NOT: { OR: [{ folder: "/funding" }, { folder: { startsWith: "/funding/" } },{ folder: "/people-service" }, { folder: { startsWith: "/people-service/" } }, { folder: CHAT_FOLDER }, { folder: { startsWith: `${CHAT_FOLDER}/` } }, { folder: "/governance" }, { folder: { startsWith: "/governance/" } }, { folder: "/calendar" }, { folder: { startsWith: "/calendar/" } }, { folder: { startsWith: "/finance-tools" } }] },
+  NOT: { OR: [{ folder: { startsWith: "/money-controls" } },{ folder: "/funding" }, { folder: { startsWith: "/funding/" } },{ folder: "/people-service" }, { folder: { startsWith: "/people-service/" } }, { folder: CHAT_FOLDER }, { folder: { startsWith: `${CHAT_FOLDER}/` } }, { folder: "/governance" }, { folder: { startsWith: "/governance/" } }, { folder: "/calendar" }, { folder: { startsWith: "/calendar/" } }, { folder: { startsWith: "/finance-tools" } }] },
 };
 
 const RESERVED_FOLDER = "That folder is managed by its tool. Choose another folder.";

@@ -1,5 +1,6 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import { fundWarningsForRecord } from "@/lib/moneyControls/funds";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getWorkspaceForAction } from "@/lib/permissions";
@@ -115,7 +116,7 @@ export async function financeToolAction(
   slug: string,
   operation: string,
   form: FormData,
-): Promise<ActionResult<{ id: string }>> {
+): Promise<ActionResult<{ id: string; warnings?: string[] }>> {
   const actor = await getWorkspaceForAction(slug, "MEMBER");
   if (!actor) return actionError(NOT_ALLOWED);
   if (await isActionRateLimited("apiWrite", `finance-tools:${actor.user.id}`))
@@ -198,7 +199,27 @@ export async function financeToolAction(
     const id = await handlers[op](actor, values);
     revalidatePath(`/w/${actor.workspace.slug}/finance`, "layout");
     revalidatePath(`/w/${actor.workspace.slug}/requests`);
-    return { ok: true, data: { id } };
+    const source = (
+      {
+        entry: "entry",
+        tags: "entry",
+        bill: "bill",
+        billPayment: "bill",
+        payRun: "pay_run",
+        payBookkeeping: "pay_run",
+        payTransition: "pay_run",
+        disbursement: "disbursement",
+        disbursementTransition: "disbursement",
+      } as Record<string, string>
+    )[op];
+    const warnings = source
+      ? await fundWarningsForRecord(
+          actor.workspace.id,
+          source,
+          op === "billPayment" ? String(form.get("billId")) : id,
+        ).catch(() => [])
+      : [];
+    return { ok: true, data: { id, warnings } };
   } catch (e) {
     return failure(e);
   }

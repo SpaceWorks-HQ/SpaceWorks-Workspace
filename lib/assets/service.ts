@@ -14,6 +14,11 @@ export async function saveAsset(actor: OpsActor, input: unknown) {
  const v = parse(z.object({ id: optionalId, name: title, category: title, location: z.string().trim().max(200).optional(), condition: z.string().trim().max(200).optional(), status: z.enum(["AVAILABLE", "IN_MAINTENANCE", "LOST", "RETIRED"]).default("AVAILABLE") }), input);
  return prisma.$transaction(async tx => {
   if (v.id) await lockAsset(tx, actor.workspace.id, v.id);
+  if (v.id) {
+   const disposed=await tx.moneyControlRecord.findFirst({where:{workspaceId:actor.workspace.id,assetId:v.id,kind:"DISPOSAL",status:"POSTED"}});
+   if(disposed && v.status!=="RETIRED") throw new OpsError("Disposed equipment stays retired. Add a new inventory record if it is acquired again.");
+   if(!disposed && v.status==="RETIRED" && await tx.moneyControlRecord.findFirst({where:{workspaceId:actor.workspace.id,assetId:v.id,kind:"SCHEDULE",status:"ACTIVE"}})) throw new OpsError("Record this asset’s disposal with supporting evidence in Money controls.");
+  }
   const { id: assetId, ...data } = v;
   const row = assetId ? await tx.asset.update({ where: { id: assetId, workspaceId: actor.workspace.id }, data }) : await tx.asset.create({ data: { ...data, workspaceId: actor.workspace.id, tag: randomToken(12) } });
   await note(actor, "asset", row.id, "saved", tx); await searchable(actor, "asset", row.id, row.name, "assets", null, tx); return row.id;

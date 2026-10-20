@@ -102,7 +102,7 @@ export async function remindReceipt(actor: FinanceActor, input: unknown) {
         file: { deletedAt: null },
       },
     });
-    if (files) throw new FinanceError("This entry already has a receipt.");
+    if (files || (["cash_voucher","asset_disposal"].includes(e.sourceType??"") && await tx.moneyControlAttachment.count({where:{workspaceId:actor.workspace.id,recordId:e.sourceId!,file:{deletedAt:null}}}))) throw new FinanceError("This entry already has a receipt.");
     const day = localDate(new Date(), actor.workspace.timezone);
     return once(
       tx,

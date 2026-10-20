@@ -4,6 +4,7 @@ import { enqueueDueOutbox } from "@/lib/queue/enqueue";
 import { purgeExpiredOperationalData } from "@/lib/retention";
 import { runDueChecks } from "@/lib/monitor/scheduler";
 import { run as funding } from "@/lib/scheduled/funding";
+import { run as moneyControls } from "@/lib/scheduled/moneyControls";
 import { run as social } from "@/lib/scheduled/social";
 
 import { run as calendar } from "@/lib/scheduled/calendar";
@@ -30,6 +31,7 @@ import { run as shell } from "@/lib/scheduled/shell";
  */
 export const SCHEDULED_JOBS: ReadonlyArray<JobDefinition> = [
   { area: "funding-tools", run: funding },
+  { area: "money-controls", run: moneyControls },
   { area: "ops-gaps", run: opsGaps },
   { area: "social", queue: "sync", run: social },
   { area: "team-calendar", run: calendar },

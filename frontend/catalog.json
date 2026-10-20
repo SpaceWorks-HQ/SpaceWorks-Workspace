@@ -591,6 +591,16 @@
       "id": "w-workspaceSlug-members-page:loadMembersPage"
     },
     {
+      "module": "lib/views/generated/w-workspaceSlug-money-controls-section-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-money-controls-section-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-money-controls-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-money-controls-page:loadPage"
+    },
+    {
       "module": "lib/views/generated/w-workspaceSlug-my-tasks-page-loadMyTasksPage",
       "name": "loadMyTasksPage",
       "id": "w-workspaceSlug-my-tasks-page:loadMyTasksPage"
@@ -1766,6 +1776,31 @@
       "module": "app/actions/messaging",
       "name": "updateMessaging",
       "id": "messaging:updateMessaging"
+    },
+    {
+      "module": "app/actions/money-controls",
+      "name": "saveMoneyControlAction",
+      "id": "money-controls:saveMoneyControlAction"
+    },
+    {
+      "module": "app/actions/money-controls",
+      "name": "transitionMoneyControlAction",
+      "id": "money-controls:transitionMoneyControlAction"
+    },
+    {
+      "module": "app/actions/money-controls",
+      "name": "uploadMoneyControlFilesAction",
+      "id": "money-controls:uploadMoneyControlFilesAction"
+    },
+    {
+      "module": "app/actions/money-controls",
+      "name": "removeMoneyControlFileAction",
+      "id": "money-controls:removeMoneyControlFileAction"
+    },
+    {
+      "module": "app/actions/money-controls",
+      "name": "reconcileMoneyMovementAction",
+      "id": "money-controls:reconcileMoneyMovementAction"
     },
     {
       "module": "app/actions/notepad",

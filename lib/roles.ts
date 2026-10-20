@@ -176,3 +176,12 @@ export const canManagePayroll = (m: RoleHolder, grant: PayrollGrant) => canViewP
 /** Funding includes donor identity and proof; only workspace admins read or edit. */
 export const canManageFunding = (m: RoleHolder) => atLeast(m, "ADMIN");
 export const canViewFunding = canManageFunding;
+/** Internal cash, asset accounting and tax registers require finance management rights. */
+export const canManageMoneyControls = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** People can acknowledge their own assignment or custodian handover. */
+export function canReadMoneyControl(m: RoleHolder, userId: string, row: { kind: string; ownerId: string | null; createdById: string; details?: unknown }) {
+ if (!atLeast(m,"MEMBER")) return false;
+ if (canManageMoneyControls(m)) return true;
+ const d = row.details && typeof row.details === "object" ? row.details as Record<string,unknown> : {};
+ return ["HANDOVER","ASSIGNMENT"].includes(row.kind) && (row.ownerId === userId || d.outgoingId === userId);
+}

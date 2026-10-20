@@ -578,6 +578,10 @@ model Workspace {
   payRuns                  FinancePayRun[]
   disbursements            FinanceDisbursement[]
   financeReviewRules       FinanceReviewRule[]
+  moneyControlRecords      MoneyControlRecord[]
+  moneyControlAttachments  MoneyControlAttachment[]
+  moneyControlMovements    MoneyControlMovement[]
+  moneyControlEvents       MoneyControlEvent[]
 }
 
 model Membership {
@@ -1030,7 +1034,8 @@ model FileObject {
   governanceAttachments GovernanceAttachment[]
   fundingAttachments    FundingAttachment[]
 
-  financeAttachments FinanceAttachment[]
+  financeAttachments      FinanceAttachment[]
+  moneyControlAttachments MoneyControlAttachment[]
 
   @@unique([workspaceId, id])
   @@index([workspaceId, folder])
@@ -5345,6 +5350,8 @@ model FinanceAccount {
   entries         LedgerEntry[]
   reconciliations FinanceReconciliation[]
 
+  moneyControlMovements MoneyControlMovement[] @relation("MoneyControlMovementAccount")
+
   @@unique([workspaceId, id])
   @@unique([workspaceId, name])
   @@index([workspaceId, reconciledUpTo])
@@ -5672,4 +5679,121 @@ model FundingAnalyticsSnapshot {
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@unique([workspaceId, dateOn])
+}
+
+// Internal money and asset controls. Kind-specific details are validated by the service.
+enum MoneyControlKind {
+  FLOAT
+  VOUCHER
+  COUNT
+  REPLENISHMENT
+  HANDOVER
+  DEPOSIT
+  TRANSFER
+  ASSET_CATEGORY
+  SCHEDULE
+  VERIFICATION
+  DISPOSAL
+  ASSIGNMENT
+  TDS_DEDUCTION
+  CERTIFICATE
+  FILING
+  FUND_RULE
+}
+
+model MoneyControlRecord {
+  id             String                   @id @default(cuid())
+  workspaceId    String
+  kind           MoneyControlKind
+  title          String
+  status         String                   @default("DRAFT")
+  recordKey      String?
+  number         Int?
+  ownerId        String?
+  accountId      String?
+  otherAccountId String?
+  assetId        String?
+  fundId         String?
+  categoryId     String?
+  parentId       String?
+  complianceId   String?
+  checklistRunId String?
+  amountMinor    Int                      @default(0)
+  settledMinor   Int                      @default(0)
+  currency       String                   @default("INR")
+  occurredOn     DateTime                 @db.Date
+  endsOn         DateTime?                @db.Date
+  dueOn          DateTime?                @db.Date
+  reminderDays   Int                      @default(7)
+  payroll        Boolean                  @default(false)
+  notes          String                   @default("")
+  details        Json                     @default("{}")
+  createdById    String
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+  workspace      Workspace                @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parent         MoneyControlRecord?      @relation("MoneyControlParent", fields: [workspaceId, parentId], references: [workspaceId, id], onDelete: NoAction)
+  children       MoneyControlRecord[]     @relation("MoneyControlParent")
+  attachments    MoneyControlAttachment[]
+  movements      MoneyControlMovement[]
+  events         MoneyControlEvent[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, kind, recordKey])
+  @@unique([workspaceId, kind, number])
+  @@index([workspaceId, kind, occurredOn])
+  @@index([workspaceId, ownerId, status, dueOn])
+  @@index([workspaceId, assetId, kind])
+  @@index([workspaceId, fundId, kind])
+}
+
+model MoneyControlAttachment {
+  id          String             @id @default(cuid())
+  workspaceId String
+  recordId    String
+  fileId      String             @unique
+  createdAt   DateTime           @default(now())
+  workspace   Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  record      MoneyControlRecord @relation(fields: [workspaceId, recordId], references: [workspaceId, id], onDelete: Cascade)
+  file        FileObject         @relation(fields: [workspaceId, fileId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, recordId])
+}
+
+// These movements affect cash only, never income or expense reports.
+model MoneyControlMovement {
+  id           String             @id @default(cuid())
+  workspaceId  String
+  recordId     String
+  accountId    String
+  amountMinor  Int
+  currency     String
+  occurredOn   DateTime           @db.Date
+  reference    String
+  operationKey String
+  reconciledAt DateTime?
+  createdAt    DateTime           @default(now())
+  workspace    Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  account      FinanceAccount     @relation("MoneyControlMovementAccount", fields: [workspaceId, accountId], references: [workspaceId, id], onDelete: NoAction, onUpdate: Cascade, map: "MoneyControlMovement_account_tenant_fkey")
+  record       MoneyControlRecord @relation(fields: [workspaceId, recordId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, operationKey, accountId])
+  @@index([workspaceId, accountId, occurredOn])
+  @@index([workspaceId, recordId])
+}
+
+// Append-only action and filing acknowledgement history; no uploaded file bodies.
+model MoneyControlEvent {
+  id          String             @id @default(cuid())
+  workspaceId String
+  recordId    String
+  actorId     String
+  action      String
+  reference   String             @default("")
+  notes       String             @default("")
+  createdAt   DateTime           @default(now())
+  workspace   Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  record      MoneyControlRecord @relation(fields: [workspaceId, recordId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, recordId, createdAt])
 }

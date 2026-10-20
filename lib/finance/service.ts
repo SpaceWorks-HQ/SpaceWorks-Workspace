@@ -1,5 +1,6 @@
 import "server-only";
-import { assertOpen, lockFinance } from "@/lib/finance/tools/access";
+import { checkFundRecord } from "@/lib/moneyControls/funds";
+import { assertOpen, lockFinance, FinanceError } from "@/lib/finance/tools/access";
 
 import { Prisma, type LedgerKind } from "@prisma/client";
 import { actionError, SAVE_FAILED, type ActionResult } from "@/lib/actionResult";
@@ -35,6 +36,7 @@ type Ctx = Pick<WorkspaceContext, "user" | "workspace">;
 type LedgerValues = z.output<typeof ledgerEntrySchema>;
 
 async function financeActivity(client: DbClient, ctx: Ctx, entityType: string, entityId: string, verb: string) {
+  if (entityType === "ledger_entry") await checkFundRecord(client,ctx.workspace.id,ctx.user.id,"entry",entityId);
   await recordActivity({ workspaceId: ctx.workspace.id, actorId: ctx.user.id, entityType, entityId, verb, summary: "A finance record changed.", visibility: "PRIVATE" }, client);
 }
 
@@ -114,9 +116,9 @@ export async function createLedgerEntry(ctx: Ctx, values: LedgerValues, receipt:
     );
     if (!result.ok && uploadedKey) await deleteObjects([uploadedKey]).catch(() => undefined);
     return result;
-  } catch {
+  } catch (e) {
     if (uploadedKey) await deleteObjects([uploadedKey]).catch(() => undefined);
-    return actionError(SAVE_FAILED);
+    return actionError(e instanceof FinanceError ? e.message : SAVE_FAILED);
   }
 }
 
@@ -184,9 +186,9 @@ export async function updateLedgerEntry(
     );
     if (!result.ok && uploadedKey) await deleteObjects([uploadedKey]).catch(() => undefined);
     return result;
-  } catch {
+  } catch (e) {
     if (uploadedKey) await deleteObjects([uploadedKey]).catch(() => undefined);
-    return actionError(SAVE_FAILED);
+    return actionError(e instanceof FinanceError ? e.message : SAVE_FAILED);
   }
 }
 

@@ -131,8 +131,9 @@ export async function accountBalance(
     },
     _sum: { amountMinor: true },
   });
+  const movements = await client.moneyControlMovement.aggregate({where:{workspaceId,accountId,currency:account.currency,occurredOn:{gte:account.openingOn,lte:upTo}},_sum:{amountMinor:true}});
   const balanceMinor =
-    account.openingMinor +
+    account.openingMinor + (movements._sum.amountMinor ?? 0) +
     totals.reduce(
       (n, r) => n + (r.kind === "INCOME" ? 1 : -1) * (r._sum.amountMinor ?? 0),
       0,
@@ -195,6 +196,8 @@ export async function reconcileAccount(actor: FinanceActor, input: unknown) {
           occurredOn: { gte: account.openingOn, lte: upTo },
         },
       });
+      const uncheckedMovements = await tx.moneyControlMovement.count({where:{workspaceId:actor.workspace.id,accountId:account.id,reconciledAt:null,occurredOn:{gte:account.openingOn,lte:upTo}}});
+      if (uncheckedMovements) throw new FinanceError("Mark transfers and deposit movements reconciled in Cash controls first.");
       if (remaining)
         throw new FinanceError(
           "Mark every entry through this date reconciled before signing off.",
