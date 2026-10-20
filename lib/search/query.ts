@@ -2,6 +2,7 @@ import "server-only";
 
 import { Prisma, type WorkspaceRole } from "@prisma/client";
 import { prisma, type DbClient } from "@/lib/db";
+import { findDownloadableFile } from "@/lib/files";
 import { hasRoleAtLeast } from "@/lib/roles";
 
 export type SearchActor = {
@@ -32,6 +33,8 @@ export function accessSql(actor: SearchActor) {
   const channel = Prisma.sql`EXISTS (SELECT 1 FROM "Channel" c WHERE c.id=r."channelId" AND c."workspaceId"=${actor.workspaceId} AND c."archivedAt" IS NULL AND ${team(Prisma.sql`c."teamId"`)} AND ((${member} AND c.kind='PUBLIC') OR EXISTS (SELECT 1 FROM "ChannelMember" cm WHERE cm."channelId"=c.id AND cm."userId"=${actor.userId})))`;
   const project = Prisma.sql`(r."projectId" IS NULL OR EXISTS (SELECT 1 FROM "Project" p WHERE p.id=r."projectId" AND p."workspaceId"=${actor.workspaceId} AND p.status <> 'ARCHIVED' AND ${team(Prisma.sql`p."teamId"`)}))`;
   const registry: Array<[string, string, Prisma.Sql]> = [
+    ["member", "MemberProfile", Prisma.sql`EXISTS (SELECT 1 FROM "Membership" mem JOIN "User" u ON u.id=mem."userId" WHERE mem."workspaceId"=${actor.workspaceId} AND mem."userId"=r."userId" AND mem.status='ACTIVE' AND u."disabledAt" IS NULL)`],
+    ["team", "Team", Prisma.sql`r."archivedAt" IS NULL AND ${team(Prisma.sql`r.id`)}`],
     [
       "task",
       "Task",
@@ -160,6 +163,10 @@ export function buildSearchQuery(
     AND (d."searchVector" @@ websearch_to_tsquery('simple', ${query}) OR d.title ILIKE ${pattern} OR similarity(d.title, ${query}) > 0.2)
     ORDER BY rank DESC, d."updatedAt" DESC, d.id LIMIT 50 OFFSET ${Math.max(0, Math.min(offset, 500))}`;
 }
+async function readableFile(actor: SearchActor, id: string) {
+  return (await findDownloadableFile(id, actor.userId))?.workspaceId === actor.workspaceId;
+}
+
 export async function searchDocuments(
   actor: SearchActor,
   query: string,
@@ -171,8 +178,9 @@ export async function searchDocuments(
   const rows = await client.$queryRaw<SearchHit[]>(
     buildSearchQuery(actor, query, type, offset),
   );
+  const readable = await Promise.all(rows.map(async (row) => row.entityType !== "file" || await readableFile(actor, row.entityId)));
   return rows.filter(
-    (row) => row.url.startsWith("/w/") && !/[\\\r\n]/.test(row.url),
+    (row, index) => readable[index] && row.url.startsWith("/w/") && !/[\\\r\n]/.test(row.url),
   );
 }
 export async function listActivity(
@@ -180,9 +188,11 @@ export async function listActivity(
   before?: Date,
   type?: string,
 ) {
-  return prisma.$queryRaw<
-    Array<{ id: string; summary: string; entityType: string; createdAt: Date }>
-  >`SELECT d.id, d.summary, d."entityType", d."createdAt" FROM (SELECT a.*, a."actorId" AS "ownerId", NULL::text AS "channelId" FROM "ActivityEvent" a) d WHERE ${accessSql(actor)} AND ${before ? Prisma.sql`d."createdAt" < ${before}` : Prisma.sql`TRUE`} AND ${type ? Prisma.sql`d."entityType"=${type}` : Prisma.sql`TRUE`} ORDER BY d."createdAt" DESC, d.id DESC LIMIT 40`;
+  const rows = await prisma.$queryRaw<
+    Array<{ id: string; summary: string; entityType: string; entityId: string; createdAt: Date }>
+  >`SELECT d.id, d.summary, d."entityType", d."entityId", d."createdAt" FROM (SELECT a.*, a."actorId" AS "ownerId", NULL::text AS "channelId" FROM "ActivityEvent" a) d WHERE ${accessSql(actor)} AND ${before ? Prisma.sql`d."createdAt" < ${before}` : Prisma.sql`TRUE`} AND ${type ? Prisma.sql`d."entityType"=${type}` : Prisma.sql`TRUE`} ORDER BY d."createdAt" DESC, d.id DESC LIMIT 40`;
+  const readable = await Promise.all(rows.map(async (row) => row.entityType !== "file" || await readableFile(actor, row.entityId)));
+  return rows.filter((_, index) => readable[index]).map(({ entityId, ...row }) => { void entityId; return row; });
 }
 
 /** Authorise a polymorphic resource without trusting index metadata or requiring an index row. */
@@ -195,5 +205,5 @@ export async function canAccessResource(
   const rows = await client.$queryRaw<
     Array<{ ok: number }>
   >`SELECT 1 AS ok FROM (SELECT ${actor.workspaceId}::text AS "workspaceId",${type}::text AS "entityType",${id}::text AS "entityId",'WORKSPACE'::"Visibility" AS visibility,NULL::text AS "teamId",NULL::text AS "projectId",NULL::text AS "channelId",NULL::text AS "ownerId") d WHERE ${accessSql(actor)}`;
-  return rows.length > 0;
+  return rows.length > 0 && (type !== "file" || await readableFile(actor, id));
 }
