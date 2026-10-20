@@ -55,7 +55,7 @@ export default async function PublicBlogIndex({ params, searchParams }: PageProp
       </section>
 
       {total === 0 ? (
-        <EmptyState mood="sleepy" title="No posts yet.">
+        <EmptyState patch title="No posts yet.">
           The crew is still writing. Subscribe to the feed to hear about the first one.
         </EmptyState>
       ) : (

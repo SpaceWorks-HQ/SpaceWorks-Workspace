@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AlertTriangle, CheckCircle2, Info, Repeat, XCircle } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { MoodTile, type Mood } from "@/components/brand/MoodTile";
+import { Patch, type PatchPose } from "@/components/brand/Patch";
 import { AvatarImage } from "./avatar-image";
 
 /* ---------- Status pills (docs/DESIGN.md §4.5) ---------- */
@@ -105,10 +106,14 @@ export function Callout({ tone = "info", title, children, action, className, rol
  * Empty, success or error message in a card: a short line plus one action.
  * Optional `mood` tile (Sleepy for empty lists, Sad for errors).
  */
-export function EmptyState({ title, children, action, className, icon, mood }: { title?: ReactNode; children?: ReactNode; action?: ReactNode; className?: string; icon?: ReactNode; mood?: Mood }) {
+/**
+ * `patch` shows the mascot instead of a mood tile: use it for a page's main
+ * empty state only (Patch is the layout's one bold moment).
+ */
+export function EmptyState({ title, children, action, className, icon, mood, patch }: { title?: ReactNode; children?: ReactNode; action?: ReactNode; className?: string; icon?: ReactNode; mood?: Mood; patch?: PatchPose | true }) {
   return (
     <div className={cn("flex flex-col items-center gap-2 rounded-xl border border-line bg-panel px-6 py-7 text-center", className)}>
-      {mood ? <MoodTile mood={mood} size={48} className="yy-face mb-1" /> : null}
+      {patch ? <Patch pose={patch === true ? "idle" : patch} size={112} className="mb-2" /> : mood ? <MoodTile mood={mood} size={48} className="yy-face mb-1" /> : null}
       {icon ? <span aria-hidden className="text-ink-muted [&_svg]:size-7">{icon}</span> : null}
       {title ? <p className="text-label text-ink">{title}</p> : null}
       {children ? <div className="max-w-md text-body-ui text-ink-muted">{children}</div> : null}

@@ -170,27 +170,29 @@ enum BoardroomTurnRole {
 // ──────────────────────── Auth and instance ────────────────────────
 
 model User {
-  id                 String    @id @default(cuid())
+  personalNotes      PersonalNote[]
+  personalTodos      PersonalTodo[]
+  id                 String         @id @default(cuid())
   name               String?
-  email              String    @unique
+  email              String         @unique
   emailVerified      DateTime?
   /// Bcrypt hash for email + password sign-in. Null for Google-only users.
   passwordHash       String?
   image              String?
   bio                String?
   pronouns           String?
-  skills             String[]  @default([])
+  skills             String[]       @default([])
   timezone           String?
   /// AES-GCM encrypted TOTP seed (lib/mfa.ts). Never expose or log it.
   mfaSecretEncrypted String?
   mfaEnabledAt       DateTime?
   /// Incremented to invalidate every issued JWT session (password reset, sign out everywhere).
-  sessionVersion     Int       @default(0)
+  sessionVersion     Int            @default(0)
   lastSeenAt         DateTime?
   /// Set by a super-admin; disabled users cannot sign in.
   disabledAt         DateTime?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
 
   accounts                Account[]
   sessions                Session[]
@@ -427,31 +429,33 @@ model Notification {
 // ──────────────────────────── Tenancy ────────────────────────────
 
 model Workspace {
-  id                      String    @id @default(cuid())
-  slug                    String    @unique
+  id                      String         @id @default(cuid())
+  personalNotes           PersonalNote[]
+  personalTodos           PersonalTodo[]
+  slug                    String         @unique
   name                    String
   tagline                 String?
   description             String?
-  timezone                String    @default("Asia/Kolkata")
-  currency                String    @default("INR")
-  financeVisibleToMembers Boolean   @default(false)
-  blogEnabled             Boolean   @default(false)
+  timezone                String         @default("Asia/Kolkata")
+  currency                String         @default("INR")
+  financeVisibleToMembers Boolean        @default(false)
+  blogEnabled             Boolean        @default(false)
   /// Google Calendar mirrored into the community calendar (Integrations).
   googleCalendarId        String?
   /// Channel (id) that receives assistant digests by default.
   digestChannelId         String?
   /// Members may see Services costs (cloud spend, service costs).
-  costsVisibleToMembers   Boolean   @default(false)
+  costsVisibleToMembers   Boolean        @default(false)
   /// Members (not only admins) may acknowledge Services incidents.
-  membersCanAckIncidents  Boolean   @default(false)
+  membersCanAckIncidents  Boolean        @default(false)
   /// Pauses retention purges (legal hold).
-  legalHold               Boolean   @default(false)
-  defaultLocale           String    @default("en-IN")
+  legalHold               Boolean        @default(false)
+  defaultLocale           String         @default("en-IN")
   /// Raw monitor check retention in days (7–30).
-  monitorRetentionDays    Int       @default(14)
+  monitorRetentionDays    Int            @default(14)
   archivedAt              DateTime?
-  createdAt               DateTime  @default(now())
-  updatedAt               DateTime  @updatedAt
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt
 
   memberships       Membership[]
   invitations       Invitation[]
@@ -2002,6 +2006,11 @@ enum CloudProviderKind {
   RAILWAY
   GITHUB_ACTIONS
   PROMETHEUS
+  CONTABO
+  LINODE
+  VULTR
+  SCALEWAY
+  SUPABASE
 }
 
 enum CloudResourceStatus {
@@ -4744,4 +4753,65 @@ model AppReviewSlackMember {
 
   @@unique([workspaceId, slackUserId])
   @@index([workspaceId, userId])
+}
+
+// ---------------------------------------------------------------------------
+// Personal notepad: private notes and to-dos for one member in one workspace.
+// Nobody else can read them, admins included.
+// ---------------------------------------------------------------------------
+
+/// Brand pastel a note card is tinted with (status-free; decoration only).
+enum NoteTone {
+  PLAIN
+  CITRON
+  SKY
+  YELLOW
+  ORANGE
+  TEAL
+}
+
+model PersonalNote {
+  id          String    @id @default(cuid())
+  workspaceId String
+  userId      String
+  title       String    @default("")
+  /// Sanitised HTML from the editor (may contain checklists).
+  contentHtml String    @default("")
+  contentText String    @default("")
+  tone        NoteTone  @default(PLAIN)
+  pinned      Boolean   @default(false)
+  archivedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  workspace Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  todos     PersonalTodo[]
+
+  @@index([workspaceId, userId, archivedAt, pinned, updatedAt])
+}
+
+model PersonalTodo {
+  id          String    @id @default(cuid())
+  workspaceId String
+  userId      String
+  text        String
+  done        Boolean   @default(false)
+  doneAt      DateTime?
+  /// Calendar day in the workspace time zone.
+  dueOn       DateTime? @db.Date
+  starred     Boolean   @default(false)
+  position    Float
+  noteId      String?
+  /// Workspace task this to-do was sent to.
+  taskId      String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  workspace Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  note      PersonalNote? @relation(fields: [noteId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, userId, done, position])
+  @@index([noteId])
 }

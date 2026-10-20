@@ -47,6 +47,7 @@ export const NAV_GROUPS: readonly NavGroupConfig[] = [
     items: [
       { key: "projects", label: "Projects", path: "/projects", minRole: "GUEST" },
       { key: "my-tasks", label: "My tasks", path: "/my-tasks", minRole: "MEMBER" },
+      { key: "notepad", label: "Notepad", path: "/notepad", minRole: "GUEST" },
       { key: "cycles", label: "Cycles", path: "/cycles", minRole: "MEMBER" },
       { key: "meetings", label: "Meetings", path: "/meetings", minRole: "GUEST" },
       { key: "decisions", label: "Decisions", path: "/meetings/decisions", minRole: "GUEST" },
