@@ -155,6 +155,9 @@ export const canExportWorkspace = (m: RoleHolder) => atLeast(m, "OWNER");
 export const canViewAppReviews = (m: RoleHolder) => atLeast(m, "MEMBER");
 export const canManageAppReviews = (m: RoleHolder) => atLeast(m, "ADMIN");
 
+/** Internal team operations: guests excluded; admins manage queues and reviews. */
+export const canUseInternalOperations = (m: RoleHolder) => atLeast(m, "MEMBER");
+export const canManageInternalOperations = (m: RoleHolder) => atLeast(m, "ADMIN");
 /** Social: members read and answer; admins connect official accounts. */
 export const canViewSocial = (m: RoleHolder) => atLeast(m, "MEMBER");
 export const canManageSocial = (m: RoleHolder) => atLeast(m, "MEMBER");

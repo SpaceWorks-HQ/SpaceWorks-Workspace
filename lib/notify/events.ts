@@ -51,6 +51,14 @@ type GithubRef = { repoId: Id; number: number; url: string };
 
 /** Typed `data` payload per event type. */
 export interface EventPayloads {
+  "ops.people_changed": { recordId: Id };
+  "ops.reminder": { recordId: Id };
+  "ops.ticket_changed": { recordId: Id };
+  "ops.ticket_due": { recordId: Id };
+  "ops.safety_changed": { recordId: Id };
+  "ops.hours_submitted": { recordId: Id };
+  "ops.hours_reviewed": { recordId: Id };
+
   "social.comment.received": { accountId: string; commentId: string };
   "social.reply.failed": { accountId: string; commentId: string };
   "social.token.expiring": { accountId: string };
@@ -167,6 +175,14 @@ const s = (category: NotifyCategory, label: string, audience: EventAudience, sev
   minRole ? { category, label, audience, severity, minRole } : { category, label, audience, severity };
 
 export const EVENT_CATALOG = {
+  "ops.people_changed": s("operations", "People tool update", "personal", "info", "MEMBER"),
+  "ops.reminder": s("operations", "People and service reminder", "personal", "info", "MEMBER"),
+  "ops.ticket_changed": s("operations", "Help desk update", "personal", "info", "MEMBER"),
+  "ops.ticket_due": s("operations", "Help desk target overdue", "personal", "warning", "MEMBER"),
+  "ops.safety_changed": s("operations", "Confidential safety report update", "personal", "info", "MEMBER"),
+  "ops.hours_submitted": s("operations", "Volunteer hours to review", "personal", "info", "MEMBER"),
+  "ops.hours_reviewed": s("operations", "Volunteer hours reviewed", "personal", "info", "MEMBER"),
+
   "social.comment.received": s("operations", "Social comment received", "broadcast", "info", "MEMBER"),
   "social.reply.failed": s("operations", "Social reply failed", "broadcast", "warning", "MEMBER"),
   "social.token.expiring": s("operations", "Social connection expiring", "broadcast", "warning", "ADMIN"),
