@@ -4,6 +4,8 @@ import { actionError, NOT_ALLOWED, validationError, type ActionResult } from "@/
 import { recordAuditEvent } from "@/lib/audit";
 import { randomToken, sha256Hex } from "@/lib/crypto";
 import { prisma } from "@/lib/db";
+import { visibleTaskWhere } from "@/lib/tasks/access";
+import { taskUrl } from "@/lib/tasks/links";
 import { safeTimeZone } from "@/lib/timeZone";
 import { canSubscribeToCalendar } from "@/lib/community/access";
 import type { CommunityActor } from "@/lib/community/context";
@@ -151,7 +153,7 @@ export async function buildFeed(feed: NonNullable<Awaited<ReturnType<typeof reso
         select: { status: true, shift: { select: { id: true, startsAt: true, endsAt: true, location: true, notes: true, shiftType: { select: { name: true } } } } },
       }),
       prisma.task.findMany({
-        where: { workspaceId: feed.workspace.id, archivedAt: null, completedAt: null, dueAt: window, assignees: { some: { userId: feed.userId } } },
+        where: { AND: [await visibleTaskWhere({ user: { id: feed.userId, name: null }, workspace: feed.workspace, membership: { role: feed.role } }), { archivedAt: null, completedAt: null, dueAt: window, assignees: { some: { userId: feed.userId } }, OR: [{ projectId: null }, { project: { status: { not: "ARCHIVED" } } }] }] },
         take: 500,
         select: { id: true, number: true, title: true, dueAt: true, updatedAt: true, project: { select: { key: true } } },
       }),
@@ -186,7 +188,7 @@ export async function buildFeed(feed: NonNullable<Awaited<ReturnType<typeof reso
     }
     for (const task of tasks) {
       const ref = task.project ? `${task.project.key}-${task.number}` : `#${task.number}`;
-      const url = task.project ? `${base}/w/${feed.workspace.slug}/projects/${task.project.key}/tasks/${task.number}` : `${base}/w/${feed.workspace.slug}/my-tasks`;
+      const url = `${base}${taskUrl(feed.workspace.slug, task.project?.key, task.number)}`;
       entries.push({
         uid: `task-due-${task.id}@spaceworks-workspace`,
         summary: `Due: ${ref} ${task.title}`,
