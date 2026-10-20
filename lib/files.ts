@@ -1,4 +1,5 @@
 import "server-only";
+import { caseAccess } from "@/lib/govextras/cases";
 import { canDownloadOpsFile } from "@/lib/opsGaps/attachments";
 import { mayDownloadFinanceFile } from "@/lib/finance/tools/files";
 
@@ -40,6 +41,16 @@ export async function findDownloadableFile(fileId: string, userId: string) {
   if (!membership || membership.status !== "ACTIVE" || membership.user.disabledAt) return null;
   if (file.folder === "/governance" || file.folder.startsWith("/governance/") || file.governanceAttachments.length) {
     if (!hasRoleAtLeast(membership.role, "ADMIN")) return null;
+  }
+  const caseFiles = await prisma.safeguardingAttachment.findMany({where:{workspaceId:file.workspaceId,fileId:file.id},select:{caseId:true}});
+  if(file.folder === "/safeguarding" || file.folder.startsWith("/safeguarding/") || caseFiles.length) {
+    if(caseFiles.length !== 1) return null;
+    const workspace = await prisma.workspace.findUnique({where:{id:file.workspaceId},select:{id:true,slug:true,timezone:true}});
+    if(!workspace) return null;
+    try {await caseAccess({user:{id:userId},workspace,membership},caseFiles[0].caseId);}
+    catch {return null;}
+    const { recordAuditEvent } = await import("@/lib/audit");
+    await recordAuditEvent({workspaceId:file.workspaceId,actorId:userId,action:"safeguarding.file_viewed",targetType:"safeguarding",targetId:caseFiles[0].caseId});
   }
   if (!(await canDownloadOpsFile(file,userId,membership.role))) return null;
   if (!(await mayDownloadFinanceFile(file, userId))) return null;

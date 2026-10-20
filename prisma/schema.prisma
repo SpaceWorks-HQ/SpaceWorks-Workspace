@@ -575,6 +575,10 @@ model Workspace {
   payRuns                  FinancePayRun[]
   disbursements            FinanceDisbursement[]
   financeReviewRules       FinanceReviewRule[]
+  safeguardingHandlers     SafeguardingHandler[]
+  safeguardingCases        SafeguardingCase[]
+  safeguardingEvents       SafeguardingEvent[]
+  safeguardingAttachments  SafeguardingAttachment[]
 }
 
 model Membership {
@@ -1026,6 +1030,7 @@ model FileObject {
   opsAttachments        OpsAttachment[]
   governanceAttachments GovernanceAttachment[]
 
+  safeguardingAttachments SafeguardingAttachment[]
   financeAttachments FinanceAttachment[]
 
   @@unique([workspaceId, id])
@@ -4906,6 +4911,15 @@ enum GovernanceKind {
   AGM_ITEM
   VENDOR
   CONTRACT
+  INSURANCE
+  LICENCE
+  REGISTRATION
+  STATUTORY_REGISTER
+  RISK
+  EMERGENCY_PLAN
+  DRILL
+  SOP_REVIEW
+  BOARD_PACK
 }
 
 model GovernanceRecord {
@@ -5572,4 +5586,69 @@ model FinanceReviewRule {
   workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@unique([workspaceId, categoryId, currency])
+}
+
+// Governance and safety extras. Confidential case authority is explicit, never inherited from role.
+model SafeguardingHandler {
+  id          String    @id @default(cuid())
+  workspaceId String
+  userId      String
+  committeeId String
+  appointedById String
+  endsOn      DateTime @db.Date
+  revokedAt   DateTime?
+  createdAt   DateTime @default(now())
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  @@unique([workspaceId, userId])
+  @@index([workspaceId, committeeId, revokedAt])
+}
+
+model SafeguardingCase {
+  id          String    @id @default(cuid())
+  workspaceId String
+  number      Int
+  kind        String
+  status      String @default("OPEN")
+  handlerIds  String[] @default([])
+  receivedOn  DateTime @db.Date
+  dueOn       DateTime @db.Date
+  detailsEnc  String
+  createdById String
+  createdAt   DateTime @default(now())
+  closedAt    DateTime?
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  events SafeguardingEvent[]
+  attachments SafeguardingAttachment[]
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, number])
+  @@index([workspaceId, status, dueOn])
+}
+
+model SafeguardingEvent {
+  id          String @id @default(cuid())
+  workspaceId String
+  caseId      String
+  kind        String
+  bodyEnc     String
+  ownerId     String?
+  dueOn       DateTime? @db.Date
+  completedAt DateTime?
+  actorId     String
+  createdAt   DateTime @default(now())
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  case SafeguardingCase @relation(fields: [workspaceId, caseId], references: [workspaceId, id], onDelete: Cascade)
+  @@index([workspaceId, caseId, createdAt])
+}
+
+model SafeguardingAttachment {
+  id          String @id @default(cuid())
+  workspaceId String
+  caseId      String
+  fileId      String
+  createdAt   DateTime @default(now())
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  case SafeguardingCase @relation(fields: [workspaceId, caseId], references: [workspaceId, id], onDelete: Cascade)
+  file FileObject @relation(fields: [workspaceId, fileId], references: [workspaceId, id], onDelete: Cascade)
+  @@unique([workspaceId, fileId])
+  @@index([workspaceId, caseId])
 }

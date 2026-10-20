@@ -17,6 +17,8 @@ export async function run(now: Date) {
         archivedAt: null,
         workspace: { archivedAt: null },
         OR: [
+          { kind: {in:["INSURANCE","LICENCE","REGISTRATION"]}, status:"ACTIVE", endsOn:{not:null} },
+          { kind: {in:["RISK","EMERGENCY_PLAN","SOP_REVIEW","STATUTORY_REGISTER","DRILL"]}, status:{in:["OPEN","CONTROLLED","ACTIVE","NEEDS_REVIEW","DUE","CURRENT","PLANNED"]}, dueOn:{not:null} },
           { kind: "OBLIGATION", status: "TODO", dueOn: { not: null } },
           { kind: "CONTRACT", status: "ACTIVE", endsOn: { not: null } },
           { kind: "TERM", status: "ACTIVE", endsOn: { not: null } },
@@ -31,7 +33,7 @@ export async function run(now: Date) {
     if (!rows.length) break;
     for (const row of rows) {
       const due = new Date(
-        (row.kind === "CONTRACT" || row.kind === "TERM"
+        (["CONTRACT","TERM","INSURANCE","LICENCE","REGISTRATION"].includes(row.kind)
           ? row.endsOn
           : row.dueOn)!,
       );
@@ -79,7 +81,7 @@ export async function run(now: Date) {
         return dispatch(
           row.workspaceId,
           {
-            type: "governance.reminder",
+            type: ["RISK","EMERGENCY_PLAN","SOP_REVIEW","STATUTORY_REGISTER"].includes(row.kind) ? "governance.review_due" : "governance.reminder",
             title:
               row.kind === "CONTRACT"
                 ? `Contract notice ${phase}`

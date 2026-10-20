@@ -172,3 +172,7 @@ export const canManageCalendarDeadlines = (m: RoleHolder) => atLeast(m, "ADMIN")
 export type PayrollGrant = { manage: boolean } | null | undefined;
 export const canViewPayroll = (m: RoleHolder, grant: PayrollGrant) => atLeast(m, "MEMBER") && grant != null;
 export const canManagePayroll = (m: RoleHolder, grant: PayrollGrant) => canViewPayroll(m, grant) && grant?.manage === true;
+
+/** Appointments grant no access to case contents without explicit case assignment. */
+export const canManageSafeguardingHandlers = (m: RoleHolder) => atLeast(m, "OWNER");
+export const canHandleSafeguarding = (m: RoleHolder, appointed: boolean, assigned: boolean) => atLeast(m, "MEMBER") && appointed && assigned;

@@ -7,7 +7,7 @@ import {
   recordsWhere,
   type Filters,
 } from "@/lib/governance/service";
-import { csvCell, LABELS, type Section } from "@/lib/governance/schemas";
+import { csvCell, LABELS, SECTIONS, type Section } from "@/lib/governance/schemas";
 import { recordAuditEvent } from "@/lib/audit";
 export async function GET(
   request: Request,
@@ -21,7 +21,7 @@ export async function GET(
   await assertActor(actor);
   const url = new URL(request.url);
   const section = url.searchParams.get("section");
-  if (!["compliance", "board", "vendors"].includes(section ?? ""))
+  if (!Object.keys(SECTIONS).includes(section ?? ""))
     return new Response("Choose a governance tool.", { status: 400 });
   const filter: Filters = Object.fromEntries(url.searchParams);
   const where = recordsWhere(

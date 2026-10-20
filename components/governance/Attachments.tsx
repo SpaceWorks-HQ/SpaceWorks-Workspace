@@ -1,4 +1,5 @@
 "use client";
+import { uploadSafeguardingFile } from "@/app/actions/govextras";
 import Image from "next/image";
 import { useId, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -16,10 +17,12 @@ export function Attachments({
   recordId,
   locked,
   files,
+  confidential = false,
 }: {
   slug: string;
   recordId: string;
   locked: boolean;
+  confidential?: boolean;
   files: Array<{
     id: string;
     filename: string;
@@ -50,7 +53,7 @@ export function Attachments({
           const form = new FormData();
           form.set("recordId", recordId);
           form.set("file", file);
-          const result = await uploadGovernanceFile(slug, form);
+          const result = await (confidential ? uploadSafeguardingFile : uploadGovernanceFile)(slug, form);
           if (!result.ok) {
             setMessage(
               `${file.name}: ${result.error} Earlier files in this batch were kept.`,
@@ -89,7 +92,7 @@ export function Attachments({
           </label>
           <p id={`${id}-help`} className="text-caption text-ink-muted">
             Up to 20 files per record, 10 MB each. Files are private to
-            workspace admins.
+            {confidential ? "designated case handlers." : "workspace admins."}
           </p>
           <input
             id={`${id}-files`}
@@ -120,7 +123,7 @@ export function Attachments({
         </div>
       ) : (
         <p className="text-ink-muted">
-          Attachments are locked on approved minutes and archived records.
+          This record and its attachments are locked.
         </p>
       )}
       {!files.length ? (
@@ -139,13 +142,13 @@ export function Attachments({
                 <span className="text-caption text-ink-muted">
                   {formatBytes(f.size)}
                 </span>
-                <Button
+                {f.contentType === "application/pdf" || f.contentType.startsWith("image/") ? <Button
                   variant="quiet"
                   onClick={() => setPreview(preview === f.id ? null : f.id)}
                 >
                   {preview === f.id ? "Close preview" : "Preview"}
-                </Button>
-                {!locked ? (
+                </Button> : null}
+                {!locked && !confidential ? (
                   <Button
                     variant="quiet"
                     disabled={pending}

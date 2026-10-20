@@ -7,11 +7,24 @@ export type Choices = {
   vendors: Choice[];
   meetings: Choice[];
   contacts: Choice[];
+  docs: Choice[];
+  obligations: Choice[];
+  entities: Choice[];
+  plans: Choice[];
+  decisions: Choice[];
+  evidence: Choice[];
 };
 export type FieldSpec = {
   name: string;
   label: string;
-  type?: "textarea" | "select" | "number" | "date" | "email";
+  type?:
+    | "textarea"
+    | "select"
+    | "number"
+    | "date"
+    | "email"
+    | "multi"
+    | "checkbox";
   required?: boolean;
   options?: Choice[];
   value?: string | number;
@@ -45,7 +58,9 @@ export function recordFields(kind: Kind, choices: Choices): FieldSpec[] {
       label: "Status",
       type: "select",
       required: true,
-      options: opts(STATUSES[kind].filter((s) => s !== "APPROVED")),
+      options: opts(
+        STATUSES[kind].filter((s) => s !== "APPROVED" && s !== "FROZEN"),
+      ),
     },
   ];
   if (["TERM", "MINUTES", "RESOLUTION", "CONFLICT", "AGM_ITEM"].includes(kind))
@@ -65,19 +80,54 @@ export function recordFields(kind: Kind, choices: Choices): FieldSpec[] {
       required: kind === "MINUTES",
       help: "Schedule and manage attendees in Meetings. Governance keeps only this link.",
     });
-  if (["OBLIGATION", "AGM_ITEM", "CONFLICT"].includes(kind))
+  if (
+    [
+      "OBLIGATION",
+      "AGM_ITEM",
+      "CONFLICT",
+      "STATUTORY_REGISTER",
+      "RISK",
+      "EMERGENCY_PLAN",
+      "DRILL",
+      "SOP_REVIEW",
+    ].includes(kind)
+  )
     fields.push({
       name: "dueOn",
       label: kind === "CONFLICT" ? "Declaration date" : "Due date",
       type: "date",
       required: true,
     });
-  if (["TERM", "CONTRACT"].includes(kind))
+  if (
+    [
+      "TERM",
+      "CONTRACT",
+      "INSURANCE",
+      "LICENCE",
+      "REGISTRATION",
+      "BOARD_PACK",
+    ].includes(kind)
+  )
     fields.push(
       { name: "startsOn", label: "Start date", type: "date", required: true },
       { name: "endsOn", label: "End date", type: "date", required: true },
     );
-  if (["OBLIGATION", "TERM", "CONTRACT", "AGM_ITEM"].includes(kind))
+  if (
+    [
+      "OBLIGATION",
+      "TERM",
+      "CONTRACT",
+      "AGM_ITEM",
+      "INSURANCE",
+      "LICENCE",
+      "REGISTRATION",
+      "STATUTORY_REGISTER",
+      "RISK",
+      "EMERGENCY_PLAN",
+      "DRILL",
+      "SOP_REVIEW",
+    ].includes(kind)
+  )
     fields.push({
       name: "reminderDays",
       label: "Remind days before",
@@ -156,6 +206,13 @@ export function recordFields(kind: Kind, choices: Choices): FieldSpec[] {
     add("outcome", "Voting result / outcome", { type: "textarea" });
   }
   if (kind === "CONFLICT") {
+    add("partyOrgId", "Declared party / CRM organisation", {
+      type: "select",
+      options: optional(choices.organisations),
+    });
+    add("partyName", "Declared payee name", {
+      help: "Used for exact, case-insensitive payee warnings. Verify aliases manually.",
+    });
     add("person", "Declarant name", { required: true });
     add("declaration", "Declaration", {
       type: "textarea",
@@ -202,6 +259,97 @@ export function recordFields(kind: Kind, choices: Choices): FieldSpec[] {
       required: true,
     });
     add("reference", "Contract reference");
+  }
+  if (["INSURANCE", "LICENCE", "REGISTRATION"].includes(kind)) {
+    add("issuer", "Issuer", { required: true });
+    add("reference", "Policy / licence / registration number", {
+      required: true,
+    });
+    add("scope", "Coverage or scope", { type: "textarea" });
+    add("sumInsured", "Sum insured", {
+      value: "0",
+      help: "Full currency amount; leave zero when not applicable.",
+    });
+    add("premium", "Premium or fee", { value: "0" });
+    add("currency", "Currency", { value: "INR", required: true });
+    add("obligationId", "Compliance calendar item", {
+      type: "select",
+      options: optional(choices.obligations),
+    });
+  }
+  if (kind === "STATUTORY_REGISTER") {
+    add("entityId", "Legal entity", {
+      type: "select",
+      options: choices.entities,
+      required: true,
+    });
+    add("registerType", "Register", {
+      type: "select",
+      options: opts(["MEMBERS", "DIRECTORS", "MINUTES", "OTHER"]),
+    });
+    add("scope", "Scope / external register location", {
+      type: "textarea",
+      help: "Upload the reviewed register snapshot below. Review dates are manual.",
+    });
+  }
+  if (kind === "RISK") {
+    add("likelihood", "Likelihood (1–5)", {
+      type: "number",
+      value: 1,
+      max: 5,
+      required: true,
+    });
+    add("impact", "Impact (1–5)", {
+      type: "number",
+      value: 1,
+      max: 5,
+      required: true,
+    });
+    add("assessment", "Assessment / affected people", { type: "textarea" });
+    add("controls", "Controls and corrective work", {
+      type: "textarea",
+      required: true,
+    });
+  }
+  if (kind === "EMERGENCY_PLAN" || kind === "SOP_REVIEW") {
+    add("docId", "Existing document", {
+      type: "select",
+      options: choices.docs,
+      required: true,
+    });
+    add(
+      kind === "SOP_REVIEW" ? "reviewNote" : "scope",
+      kind === "SOP_REVIEW" ? "Review note" : "Scope",
+      { type: "textarea" },
+    );
+  }
+  if (kind === "DRILL") {
+    add("planId", "Emergency plan", {
+      type: "select",
+      options: choices.plans,
+      required: true,
+    });
+    add("findings", "Drill findings", { type: "textarea" });
+    add("actions", "Follow-up actions", { type: "textarea" });
+  }
+  if (kind === "BOARD_PACK") {
+    add("docIds", "Select reports / documents", {
+      type: "multi",
+      options: choices.docs,
+    });
+    add("decisionIds", "Select decisions", {
+      type: "multi",
+      options: choices.decisions,
+    });
+    add("recordIds", "Select governance evidence", {
+      type: "multi",
+      options: choices.evidence,
+    });
+    add("includeFinance", "Include period finance summary", {
+      type: "checkbox",
+      help: "Excludes individual payroll details. Currencies stay separate.",
+    });
+    add("currency", "Finance currency", { value: "INR" });
   }
   fields.push({ name: "notes", label: "Notes", type: "textarea" });
   return fields;

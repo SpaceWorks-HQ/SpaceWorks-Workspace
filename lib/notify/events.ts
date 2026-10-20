@@ -62,6 +62,9 @@ export interface EventPayloads {
   "social.comment.received": { accountId: string; commentId: string };
   "social.reply.failed": { accountId: string; commentId: string };
   "social.token.expiring": { accountId: string };
+  "governance.review_due": { recordId: Id; dueOn: Iso; kind: string };
+  "doc.review_due": { docId: Id; dueOn: Iso };
+  "safeguarding.review_due": { caseId: Id; dueOn: Iso };
   "governance.reminder": { recordId: Id; dueOn: Iso; kind: string };
   "app_review.received": AppReviewPayload;
   "app_review.replied": AppReviewPayload;
@@ -196,6 +199,9 @@ export const EVENT_CATALOG = {
   "social.comment.received": s("operations", "Social comment received", "broadcast", "info", "MEMBER"),
   "social.reply.failed": s("operations", "Social reply failed", "broadcast", "warning", "MEMBER"),
   "social.token.expiring": s("operations", "Social connection expiring", "broadcast", "warning", "ADMIN"),
+  "governance.review_due": s("operations", "Governance review", "personal", "warning", "ADMIN"),
+  "doc.review_due": s("operations", "Document review", "personal", "warning", "MEMBER"),
+  "safeguarding.review_due": s("operations", "Confidential case review", "personal", "warning", "MEMBER"),
   "governance.reminder": s("operations", "Governance deadline", "personal", "warning", "ADMIN"),
   "finance.bill.overdue": s("finance", "Supplier bill overdue", "personal", "warning", "ADMIN"),
   "finance.receipt.missing": s("finance", "Receipt needed", "personal", "warning", "ADMIN"),

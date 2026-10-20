@@ -1,4 +1,6 @@
 import "server-only";
+import { loadConflictLinks } from "@/lib/govextras/conflicts";
+import { validateExtraReferences } from "@/lib/govextras/references";
 import {
   Prisma,
   type GovernanceRecord,
@@ -17,6 +19,7 @@ import {
   sectionPath,
   dayInZone,
   type Section,
+  SECTIONS,
 } from "./schemas";
 import { recordAuditEvent } from "@/lib/audit";
 import { recordActivity } from "@/lib/activity";
@@ -127,7 +130,7 @@ export async function saveRecord(actor: Actor, raw: unknown) {
       "Approved minutes are locked. Add a new minutes record for a correction.",
     );
     ensure(
-      input.status !== "APPROVED",
+      input.status !== "APPROVED" && input.status !== "FROZEN",
       "Use Approve minutes after reviewing the saved draft.",
     );
     if (input.ownerId)
@@ -180,6 +183,7 @@ export async function saveRecord(actor: Actor, raw: unknown) {
     const details = detailSchemas[input.kind].parse(
       input.details,
     ) as Prisma.InputJsonObject;
+    await validateExtraReferences(tx, actor, input.kind, details);
     if (input.kind === "TERM" && details.contactId)
       ensure(
         await tx.contact.findFirst({
@@ -589,19 +593,7 @@ export function recordsWhere(
   timezone: string,
   filter: Filters,
 ): Prisma.GovernanceRecordWhereInput {
-  const kinds =
-    section === "compliance"
-      ? (["LEGAL_ENTITY", "OBLIGATION"] as const)
-      : section === "vendors"
-        ? (["VENDOR", "CONTRACT"] as const)
-        : ([
-            "COMMITTEE",
-            "TERM",
-            "MINUTES",
-            "RESOLUTION",
-            "CONFLICT",
-            "AGM_ITEM",
-          ] as const);
+  const kinds = SECTIONS[section];
   const kind = kinds.find((k) => k === filter.kind);
   return {
     workspaceId,
@@ -614,8 +606,7 @@ export function recordsWhere(
     ...(filter.owner ? { ownerId: filter.owner.slice(0, 64) } : {}),
     ...(filter.overdue === "1"
       ? {
-          kind: "OBLIGATION",
-          status: "TODO",
+          ...(section === "compliance" ? {kind: "OBLIGATION", status: "TODO"} : section === "reviews" ? {status:"DUE"} : {}),
           dueOn: { lt: new Date(dayInZone(new Date(), timezone)) },
         }
       : {}),
@@ -647,7 +638,7 @@ export async function loadGovernance(
     organisations,
     vendors,
     meetings,
-    contacts,
+    contacts, docs, obligations, entities, plans, decisions, evidence,
   ] = await Promise.all([
     prisma.governanceRecord.findMany({
       where,
@@ -732,6 +723,12 @@ export async function loadGovernance(
       select: { id: true, displayName: true },
       orderBy: { displayName: "asc" },
     }),
+    prisma.doc.findMany({where:{workspaceId:actor.workspace.id,archivedAt:null},select:{id:true,title:true},orderBy:{title:"asc"}}),
+    prisma.governanceRecord.findMany({where:{workspaceId:actor.workspace.id,kind:"OBLIGATION",archivedAt:null},select:{id:true,title:true}}),
+    prisma.governanceRecord.findMany({where:{workspaceId:actor.workspace.id,kind:"LEGAL_ENTITY",archivedAt:null},select:{id:true,title:true}}),
+    prisma.governanceRecord.findMany({where:{workspaceId:actor.workspace.id,kind:"EMERGENCY_PLAN",archivedAt:null},select:{id:true,title:true}}),
+    prisma.decision.findMany({where:{workspaceId:actor.workspace.id},select:{id:true,title:true},orderBy:{decidedAt:"desc"}}),
+    prisma.governanceRecord.findMany({where:{workspaceId:actor.workspace.id,archivedAt:null,kind:{not:"BOARD_PACK"}},select:{id:true,title:true},orderBy:{title:"asc"}}),
   ]);
   return {
     records,
@@ -744,6 +741,9 @@ export async function loadGovernance(
     organisations,
     vendors,
     meetings,
-    contacts,
+    contacts, docs, obligations, entities, plans, decisions, evidence,
+    conflict: await loadConflictLinks(actor, selected?.kind === "CONFLICT" ? selected.id : undefined),
   };
 }
+
+export type GovernanceData = Awaited<ReturnType<typeof loadGovernance>>;

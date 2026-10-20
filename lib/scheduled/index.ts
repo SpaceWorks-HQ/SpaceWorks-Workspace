@@ -1,4 +1,5 @@
 import "server-only";
+import { run as govextras } from "@/lib/scheduled/govextras";
 import { run as social } from "@/lib/scheduled/social";
 
 import { run as calendar } from "@/lib/scheduled/calendar";
@@ -28,6 +29,7 @@ export const SCHEDULED_JOBS: ReadonlyArray<{ area: string; run: (now: Date) => P
   { area: "social", run: social },
   { area: "team-calendar", run: calendar },
   { area: "app-reviews", run: appReviews },
+  { area: "govextras", run: govextras },
   { area: "governance-tools", run: governance },
   { area: "tasks", run: tasks },
   { area: "chat", run: chat },

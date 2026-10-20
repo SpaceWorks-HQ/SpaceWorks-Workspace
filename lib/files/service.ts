@@ -45,6 +45,7 @@ export function fileDetailUrl(slug: string, fileId: string) {
 
 const OTHER_AREA_RELATIONS: Prisma.FileObjectWhereInput = {
   governanceAttachments: { none: {} },
+  safeguardingAttachments: { none: {} },
   messageAttachments: { none: {} },
   ledgerReceipts: { none: {} },
   financeAttachments: { none: {} },
@@ -58,7 +59,7 @@ const OTHER_AREA_RELATIONS: Prisma.FileObjectWhereInput = {
 /** Chat uploads (message attachments, the /chat folder) belong to chat, not the library. */
 const NOT_CHAT: Prisma.FileObjectWhereInput = {
   messageAttachments: { none: {} },
-  NOT: { OR: [{ folder: "/people-service" }, { folder: { startsWith: "/people-service/" } }, { folder: CHAT_FOLDER }, { folder: { startsWith: `${CHAT_FOLDER}/` } }, { folder: "/governance" }, { folder: { startsWith: "/governance/" } }, { folder: "/calendar" }, { folder: { startsWith: "/calendar/" } }, { folder: { startsWith: "/finance-tools" } }] },
+  NOT: { OR: [{ folder: "/safeguarding" }, { folder: { startsWith: "/safeguarding/" } },{ folder: "/people-service" }, { folder: { startsWith: "/people-service/" } }, { folder: CHAT_FOLDER }, { folder: { startsWith: `${CHAT_FOLDER}/` } }, { folder: "/governance" }, { folder: { startsWith: "/governance/" } }, { folder: "/calendar" }, { folder: { startsWith: "/calendar/" } }, { folder: { startsWith: "/finance-tools" } }] },
 };
 
 const RESERVED_FOLDER = "That folder is managed by its tool. Choose another folder.";
@@ -127,6 +128,7 @@ async function checkTaskLink(actor: FilesActor, taskId: string) {
 
 export async function uploadLibraryFile(actor: FilesActor, input: { file: File; folder?: string; docId?: string | null; taskId?: string | null }): Promise<FileResult<{ id: string; filename: string; contentType: string }>> {
   if (!canContribute(actor.membership)) return fail(FILE_NOT_ALLOWED);
+  if (normalizeFolder(input.folder) === "/safeguarding" || normalizeFolder(input.folder).startsWith("/safeguarding/")) return fail("Case files are managed by designated handlers. Choose another folder.");
   if (normalizeFolder(input.folder) === "/governance" || normalizeFolder(input.folder).startsWith("/governance/")) return fail("Governance files are managed from their records. Choose another folder.");
   if (isReservedFolder(normalizeFolder(input.folder))) return fail(RESERVED_FOLDER);
   if (input.docId && !(await checkDocLink(actor, input.docId))) return fail("That page doesn't exist or you can't edit it.");

@@ -2,19 +2,15 @@ import { notFound } from "next/navigation";
 import { requireWorkspace } from "@/lib/permissions";
 import { canViewGovernance } from "@/lib/roles";
 import { GovernanceScreen } from "@/components/governance/Screen";
-export const metadata = { title: "Governance" };
-export default async function Page({
-  params,
-  searchParams,
-}: PageProps<"/w/[workspaceSlug]/governance/vendors">) {
-  const { workspaceSlug } = await params;
-  const actor = await requireWorkspace(workspaceSlug, "ADMIN");
-  if (!canViewGovernance(actor.membership)) notFound();
-  return (
-    <GovernanceScreen
-      actor={actor}
-      section="vendors"
-      params={await searchParams}
-    />
-  );
+import { loadGovernance } from "@/lib/governance/service";
+export const metadata = {title:"Governance"};
+export default async function Page({params,searchParams}: PageProps<"/w/[workspaceSlug]/governance/vendors">) {
+  const {workspaceSlug} = await params;
+  const actor = await requireWorkspace(workspaceSlug,"ADMIN");
+  if(!canViewGovernance(actor.membership)) notFound();
+  const query = await searchParams;
+  const filters = Object.fromEntries(Object.entries(query).map(([k,v]) => [k,typeof v === "string" ? v : undefined]));
+  const data = await loadGovernance(actor,"vendors",filters,typeof query.edit === "string" ? query.edit : undefined);
+  if(query.edit && !data.selected) notFound();
+  return <GovernanceScreen actor={actor} section="vendors" params={query} data={data}/>;
 }
