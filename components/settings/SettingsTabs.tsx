@@ -10,6 +10,7 @@ const TABS: { path: string; label: string; workspaceRoot?: boolean }[] = [
   { path: "/labels", label: "Labels" },
   { path: "/api-tokens", label: "API tokens" },
   { path: "/notifications", label: "Notifications" },
+  { path: "/social", label: "Social" },
   { path: "/integrations", label: "Integrations" },
   { path: "/notifications#webhooks", label: "Webhooks" },
   { path: "/messaging", label: "Messaging" },

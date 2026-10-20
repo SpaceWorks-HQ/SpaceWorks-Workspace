@@ -39,6 +39,10 @@ export function decodeAes256Key(raw: string | undefined, name: string): Buffer {
 
 /** Purposes for derived subkeys. Never reuse one purpose for another kind of data. */
 export type SecretPurpose =
+  | "social-access"
+  | "social-refresh"
+  | "social-oauth"
+  | "social-draft"
   | "instance-settings"
   | "integration-tokens"
   /** MessagingConnection.credentialsEnc, BridgedChannel.outboundWebhookEnc. */
@@ -63,6 +67,10 @@ export type SecretPurpose =
   | "app-review-slack-signing";
 
 const PURPOSE_INFO: Record<SecretPurpose, string> = {
+  "social-access": "sww-social-access-v1",
+  "social-refresh": "sww-social-refresh-v1",
+  "social-oauth": "sww-social-oauth-v1",
+  "social-draft": "sww-social-draft-v1",
   "app-review-issuer": "sww-app-review-issuer-v1",
   "app-review-key-id": "sww-app-review-key-id-v1",
   "app-review-private-key": "sww-app-review-private-key-v1",
@@ -86,7 +94,7 @@ const PURPOSE_INFO: Record<SecretPurpose, string> = {
 const INTEGRATION_PURPOSES = new Set<SecretPurpose>(["integration-tokens", "messaging-credentials", "notification-secrets", "cloud-credentials", "monitor-secrets", "sso-secrets"]);
 
 function rootKeyFor(purpose: SecretPurpose): Buffer {
-  if ((purpose.startsWith("app-review-") || INTEGRATION_PURPOSES.has(purpose)) && process.env.INTEGRATION_ENCRYPTION_KEY) {
+  if ((purpose.startsWith("social-") || purpose.startsWith("app-review-") || INTEGRATION_PURPOSES.has(purpose)) && process.env.INTEGRATION_ENCRYPTION_KEY) {
     return decodeAes256Key(process.env.INTEGRATION_ENCRYPTION_KEY, "INTEGRATION_ENCRYPTION_KEY");
   }
   return decodeAes256Key(process.env.MFA_ENCRYPTION_KEY, "MFA_ENCRYPTION_KEY");

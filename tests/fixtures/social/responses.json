@@ -1,0 +1,27 @@
+{
+  "youtube": {
+    "video": {"id":"video-1","snippet":{"title":"Build night recap","publishedAt":"2026-10-18T10:00:00Z"},"statistics":{"viewCount":"1200","likeCount":"85","commentCount":"4"}},
+    "comment": {"id":"yt-comment-1","snippet":{"authorDisplayName":"Maker","authorChannelId":{"value":"viewer-1"},"textOriginal":"When is the next session?","publishedAt":"2026-10-19T10:00:00Z","likeCount":3}},
+    "analytics": {"columnHeaders":[{"name":"day"},{"name":"views"},{"name":"estimatedMinutesWatched"},{"name":"averageViewDuration"},{"name":"likes"},{"name":"comments"},{"name":"shares"},{"name":"subscribersGained"},{"name":"subscribersLost"}],"rows":[["2026-10-18",1200,2400,120,85,4,12,8,1]]}
+  },
+  "facebook": {
+    "post":{"id":"page_1","message":"Open workshop this weekend","created_time":"2026-10-18T10:00:00Z","permalink_url":"https://www.facebook.com/page/posts/1","likes":{"summary":{"total_count":25}},"comments":{"summary":{"total_count":2}},"shares":{"count":3}},
+    "comment":{"id":"fb-comment-1","message":"Can beginners join?","from":{"id":"member-1","name":"Maker"},"created_time":"2026-10-19T10:00:00Z","like_count":2,"is_hidden":false},
+    "insights":{"data":[{"name":"page_media_view","period":"day","values":[{"value":530,"end_time":"2026-10-19T07:00:00Z"}]}]}
+  },
+  "instagram": {
+    "post":{"id":"ig-media-1","caption":"A good evening at the workbench","media_type":"IMAGE","timestamp":"2026-10-18T10:00:00Z","permalink":"https://www.instagram.com/p/sample/","like_count":42,"comments_count":5},
+    "comment":{"id":"ig-comment-1","text":"Love this project","username":"maker","timestamp":"2026-10-19T10:00:00Z","like_count":1,"hidden":false},
+    "insights":{"data":[{"name":"reach","period":"day","total_value":{"value":410}},{"name":"views","period":"day","total_value":{"value":600}}]}
+  },
+  "linkedin": {
+    "post":{"id":"urn:li:share:12345","commentary":"Meet the makers at our next workshop","publishedAt":1792317600000,"content":{"article":{}}},
+    "comment":{"id":"98765","commentUrn":"urn:li:comment:(urn:li:activity:12345,98765)","actor":"urn:li:person:maker","message":{"text":"Is there space for a team visit?"},"created":{"time":1792404000000},"likesSummary":{"aggregatedTotalLikes":3}},
+    "statistics":{"impressionCount":1200,"uniqueImpressionsCount":900,"clickCount":45,"likeCount":30,"commentCount":3,"shareCount":5,"engagement":0.0691667}
+  },
+  "x": {
+    "post":{"id":"10001","text":"The workbench is ready for build night","created_at":"2026-10-18T10:00:00Z","conversation_id":"10001","public_metrics":{"like_count":18,"reply_count":2,"retweet_count":4,"impression_count":700},"organic_metrics":{"impression_count":650,"url_link_clicks":10,"user_profile_clicks":2}},
+    "comment":{"id":"10002","text":"What time do doors open?","created_at":"2026-10-19T10:00:00Z","author_id":"viewer-1","referenced_tweets":[{"type":"replied_to","id":"10001"}],"public_metrics":{"like_count":1}},
+    "users":[{"id":"viewer-1","name":"Maker","username":"maker"}]
+  }
+}

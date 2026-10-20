@@ -4,6 +4,7 @@
  * membership allows (see lib/assistant/principal.ts).
  */
 export const API_SCOPES = [
+  { value: "read:social", label: "Read social", description: "Cached social analytics and comments. Never account tokens or replies." },
   { value: "read:app-reviews", label: "Read app reviews", description: "App review inbox and reply states. Never store credentials." },
   { value: "read:tasks", label: "Read tasks", description: "Projects, tasks and their comments." },
   { value: "write:tasks", label: "Write tasks", description: "Create tasks and update their title, status, priority and due date." },
