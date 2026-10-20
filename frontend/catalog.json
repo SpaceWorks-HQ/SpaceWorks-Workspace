@@ -451,6 +451,21 @@
       "id": "w-workspaceSlug-forms-page:loadFormsPage"
     },
     {
+      "module": "lib/views/generated/w-workspaceSlug-funding-section-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-funding-section-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-funding-impact-report-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-funding-impact-report-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-funding-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-funding-page:loadPage"
+    },
+    {
       "module": "lib/views/generated/w-workspaceSlug-goals-goalId-page-loadGoalPage",
       "name": "loadGoalPage",
       "id": "w-workspaceSlug-goals-goalId-page:loadGoalPage"
@@ -1651,6 +1666,26 @@
       "module": "app/actions/forms",
       "name": "responseToTask",
       "id": "forms:responseToTask"
+    },
+    {
+      "module": "app/actions/funding",
+      "name": "saveFunding",
+      "id": "funding:saveFunding"
+    },
+    {
+      "module": "app/actions/funding",
+      "name": "fundingOperation",
+      "id": "funding:fundingOperation"
+    },
+    {
+      "module": "app/actions/funding",
+      "name": "uploadFundingFile",
+      "id": "funding:uploadFundingFile"
+    },
+    {
+      "module": "app/actions/funding",
+      "name": "removeFundingFile",
+      "id": "funding:removeFundingFile"
     },
     {
       "module": "app/actions/goals",

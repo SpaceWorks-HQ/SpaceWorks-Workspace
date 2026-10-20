@@ -561,6 +561,9 @@ model Workspace {
   governanceRecords        GovernanceRecord[]
   governanceAttachments    GovernanceAttachment[]
   governanceBankChanges    GovernanceBankChange[]
+  fundingRecords           FundingRecord[]
+  fundingAttachments       FundingAttachment[]
+  fundingAnalytics         FundingAnalyticsSnapshot[]
   financeFunds             FinanceFund[]
   financeCostCentres       FinanceCostCentre[]
   financeAccounts          FinanceAccount[]
@@ -1025,6 +1028,7 @@ model FileObject {
   signedPdfs            SignatureRequest[]
   opsAttachments        OpsAttachment[]
   governanceAttachments GovernanceAttachment[]
+  fundingAttachments    FundingAttachment[]
 
   financeAttachments FinanceAttachment[]
 
@@ -5291,17 +5295,18 @@ model FacilityLease {
 // ─────────────────────── Manual finance tools ───────────────────────
 
 model FinanceFund {
-  id          String        @id @default(cuid())
-  workspaceId String
-  name        String
-  restricted  Boolean       @default(false)
-  currency    String        @default("INR")
-  funder      String?
-  notes       String?
-  archivedAt  DateTime?
-  createdAt   DateTime      @default(now())
-  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  entries     LedgerEntry[]
+  id             String          @id @default(cuid())
+  workspaceId    String
+  name           String
+  restricted     Boolean         @default(false)
+  currency       String          @default("INR")
+  funder         String?
+  notes          String?
+  archivedAt     DateTime?
+  createdAt      DateTime        @default(now())
+  workspace      Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  entries        LedgerEntry[]
+  fundingRecords FundingRecord[]
 
   @@unique([workspaceId, id])
   @@unique([workspaceId, name])
@@ -5572,4 +5577,99 @@ model FinanceReviewRule {
   workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@unique([workspaceId, categoryId, currency])
+}
+
+// Manual funding, impact and internal tool access. Kind-specific fields are validated in funding/schema.
+enum FundingKind {
+  OPPORTUNITY
+  FUNDER
+  GRANT
+  INSTALMENT
+  REPORT
+  DELIVERABLE
+  DONATION
+  CAMPAIGN
+  PLEDGE
+  DONOR
+  PROGRAMME
+  KPI
+  IMPACT_ENTRY
+  RUNWAY
+  TOOL_ACCOUNT
+  ACCESS_REVIEW
+  RECEIPT_SETTINGS
+}
+
+model FundingRecord {
+  id               String              @id @default(cuid())
+  workspaceId      String
+  kind             FundingKind
+  key              String?
+  title            String
+  status           String
+  ownerId          String?
+  parentId         String?
+  fundId           String?
+  fund             FinanceFund?        @relation(fields: [workspaceId, fundId], references: [workspaceId, id], onDelete: NoAction)
+  contactId        String?
+  organisationId   String?
+  dateOn           DateTime?           @db.Date
+  dueOn            DateTime?           @db.Date
+  endsOn           DateTime?           @db.Date
+  amountMinor      Int                 @default(0)
+  currency         String              @default("INR")
+  reminderDays     Int                 @default(7)
+  details          Json                @default("{}")
+  notes            String              @default("")
+  thankedAt        DateTime?
+  thankedById      String?
+  signedAt         DateTime?
+  signedById       String?
+  receiptNumber    String?
+  receiptFileId    String?
+  receiptEmailedAt DateTime?
+  createdById      String?
+  archivedAt       DateTime?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  workspace        Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parent           FundingRecord?      @relation("FundingParent", fields: [workspaceId, parentId], references: [workspaceId, id], onDelete: NoAction)
+  children         FundingRecord[]     @relation("FundingParent")
+  attachments      FundingAttachment[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, kind, key])
+  @@unique([workspaceId, receiptNumber])
+  @@index([workspaceId, kind, archivedAt, dueOn])
+  @@index([workspaceId, parentId])
+  @@index([workspaceId, ownerId])
+  @@index([workspaceId, fundId])
+  @@index([workspaceId, contactId])
+  @@index([workspaceId, organisationId])
+}
+
+model FundingAttachment {
+  id          String        @id @default(cuid())
+  workspaceId String
+  recordId    String
+  fileId      String
+  generated   Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  record      FundingRecord @relation(fields: [workspaceId, recordId], references: [workspaceId, id], onDelete: Cascade)
+  file        FileObject    @relation(fields: [workspaceId, fileId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, fileId])
+  @@index([workspaceId, recordId])
+}
+
+model FundingAnalyticsSnapshot {
+  id          String    @id @default(cuid())
+  workspaceId String
+  dateOn      DateTime  @db.Date
+  summary     Json
+  updatedAt   DateTime  @updatedAt
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, dateOn])
 }

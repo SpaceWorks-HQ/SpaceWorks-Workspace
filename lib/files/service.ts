@@ -44,6 +44,7 @@ export function fileDetailUrl(slug: string, fileId: string) {
 }
 
 const OTHER_AREA_RELATIONS: Prisma.FileObjectWhereInput = {
+  fundingAttachments: { none: {} },
   governanceAttachments: { none: {} },
   messageAttachments: { none: {} },
   ledgerReceipts: { none: {} },
@@ -58,7 +59,7 @@ const OTHER_AREA_RELATIONS: Prisma.FileObjectWhereInput = {
 /** Chat uploads (message attachments, the /chat folder) belong to chat, not the library. */
 const NOT_CHAT: Prisma.FileObjectWhereInput = {
   messageAttachments: { none: {} },
-  NOT: { OR: [{ folder: "/people-service" }, { folder: { startsWith: "/people-service/" } }, { folder: CHAT_FOLDER }, { folder: { startsWith: `${CHAT_FOLDER}/` } }, { folder: "/governance" }, { folder: { startsWith: "/governance/" } }, { folder: "/calendar" }, { folder: { startsWith: "/calendar/" } }, { folder: { startsWith: "/finance-tools" } }] },
+  NOT: { OR: [{ folder: "/funding" }, { folder: { startsWith: "/funding/" } },{ folder: "/people-service" }, { folder: { startsWith: "/people-service/" } }, { folder: CHAT_FOLDER }, { folder: { startsWith: `${CHAT_FOLDER}/` } }, { folder: "/governance" }, { folder: { startsWith: "/governance/" } }, { folder: "/calendar" }, { folder: { startsWith: "/calendar/" } }, { folder: { startsWith: "/finance-tools" } }] },
 };
 
 const RESERVED_FOLDER = "That folder is managed by its tool. Choose another folder.";
@@ -363,6 +364,8 @@ export async function purgeDeletedFiles(now: Date, batch = 50) {
     WHERE f."deletedAt" < ${cutoff} AND NOT w."legalHold"
       AND f.folder <> ${CHAT_FOLDER} AND f.folder NOT LIKE ${`${CHAT_FOLDER}/%`}
       AND NOT EXISTS (SELECT 1 FROM "MessageAttachment" a WHERE a."fileId"=f.id)
+      AND f.folder <> '/funding' AND f.folder NOT LIKE '/funding/%'
+      AND NOT EXISTS (SELECT 1 FROM "FundingAttachment" fa WHERE fa."workspaceId"=f."workspaceId" AND fa."fileId"=f.id)
       AND f.folder <> '/calendar'
       AND NOT EXISTS (SELECT 1 FROM "CalendarEntry" c WHERE c."workspaceId"=f."workspaceId" AND f.id=ANY(c."fileIds"))
       AND NOT EXISTS (SELECT 1 FROM "LedgerEntry" r WHERE r."receiptFileId"=f.id)

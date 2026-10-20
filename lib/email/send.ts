@@ -10,6 +10,6 @@ export async function sendRenderedEmail(to: string, email: RenderedEmail, messag
     console.log("[email] SMTP not configured; message dropped in development");
     return;
   }
-  const result = await transporter.sendMail({ messageId, from, to, subject: email.subject, text: email.text, html: email.html, ...(email.calendarInvite ? { icalEvent: { method: email.calendarInvite.method, content: email.calendarInvite.content, filename: "meeting.ics" } } : {}) });
+  const result = await transporter.sendMail({ messageId, from, to, subject: email.subject, text: email.text, html: email.html, attachments: email.attachments, ...(email.calendarInvite ? { icalEvent: { method: email.calendarInvite.method, content: email.calendarInvite.content, filename: "meeting.ics" } } : {}) });
   assertEmailAccepted(result);
 }
