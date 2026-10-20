@@ -10,7 +10,7 @@ import { join } from "node:path";
 const answers = {
   ANSWERS_CONFIRMED: "yes", WEBHOST: "work.example.org", HTTPS_MODE: "1", SHAPE: "1", SPLIT_ROLE: "backend",
   DATABASE: "bundled", REDIS: "bundled", STORAGE: "bundled", ADMINEMAIL: "owner@example.org",
-};
+} as unknown as NodeJS.ProcessEnv;
 describe("release configuration boundary", () => {
   it("keeps interpolation and shell syntax literal in private dotenv values", () => {
     expect(dotenv({ PASSWORD: "a'$value\\literal", EMPTY: "" })).toBe("PASSWORD='a\\'$value\\\\literal'\nEMPTY=''\n");
