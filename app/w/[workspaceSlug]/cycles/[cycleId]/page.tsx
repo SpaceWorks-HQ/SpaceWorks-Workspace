@@ -63,7 +63,7 @@ export default async function CyclePage({
       orderBy: { createdAt: "desc" },
     }),
   ]);
-  const snapshot = z
+  const parsedSnapshot = z
     .object({
       review: z.string(),
       tasks: z.array(
@@ -77,6 +77,7 @@ export default async function CyclePage({
       ),
     })
     .safeParse(review?.data);
+  const snapshot = parsedSnapshot.success ? { success: true as const, data: parsedSnapshot.data } : { success: false as const };
   const chartTasks = snapshot.success ? snapshot.data.tasks : cycle.tasks;
   const done = chartTasks.filter((t) => t.completedAt).length;
   return (

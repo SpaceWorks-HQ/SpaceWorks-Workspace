@@ -1,6 +1,6 @@
 "use server";
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
+import { revalidatePath } from "@/lib/frontend/cache";
 import { requireSuperAdminMfa } from "@/lib/permissions";
 import { isActionRateLimited } from "@/lib/actionRateLimit";
 import { prisma } from "@/lib/db";

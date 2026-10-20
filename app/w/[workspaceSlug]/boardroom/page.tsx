@@ -21,13 +21,15 @@ export default async function BoardroomPage({ params }: PageProps<"/w/[workspace
     }),
     getAssistantSettings(),
   ]);
+  const configured = Boolean(settings.apiKey);
   const now = new Date();
+  const superAdmin = isSuperAdminEmail(user.email);
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Boardroom" description="Put a question to a panel of AI advisors with different perspectives. They debate in rounds, then a moderator writes the recommendation and the dissent." />
-      {!settings.apiKey ? (
+      {!configured ? (
         <Callout tone="warning" title="The assistant isn't set up yet.">
-          {isSuperAdminEmail(user.email) ? <>Add an Anthropic API key in <Link className="font-semibold underline" href="/admin/settings">instance settings</Link> to convene the panel.</> : "Ask your instance admin to add an AI key in instance settings."}
+          {superAdmin ? <>Add an Anthropic API key in <Link className="font-semibold underline" href="/admin/settings">instance settings</Link> to convene the panel.</> : "Ask your instance admin to add an AI key in instance settings."}
         </Callout>
       ) : canContribute(membership) ? (
         <BoardroomNewSession slug={workspace.slug} />

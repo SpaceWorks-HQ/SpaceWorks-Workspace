@@ -1,6 +1,6 @@
 "use server";
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
+import { revalidatePath } from "@/lib/frontend/cache";
 import { prisma } from "@/lib/db";
 import { shellContext } from "@/lib/shell/context";
 import { canContribute } from "@/lib/roles";

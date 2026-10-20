@@ -24,6 +24,10 @@ const aes256Key = z.string().refine((value) => isBase64Key(value, [32]), {
 });
 
 export const envSchema = z.object({
+  DEPLOYMENT_MODE: optionalString(z.enum(["backend"])),
+  FRONTEND_GATEWAY_SECRET: optionalString(z.string().regex(/^[a-f0-9]{64}$/, "must contain 32 random bytes encoded as hex")),
+  BACKEND_ORIGIN: optionalString(z.string().url()),
+  NEXT_PUBLIC_BACKEND_ORIGIN: optionalString(z.string().url()),
   DATABASE_URL: z.string().url("must be a valid database connection URL"),
   DIRECT_URL: optionalString(z.string().url("must be a valid database connection URL")),
   AUTH_SECRET: secret,
@@ -112,6 +116,7 @@ export function productionEnvironmentProblems(source: Record<string, string | un
   for (const key of REQUIRED_IN_PRODUCTION) {
     if (!source[key]?.trim()) problems.push(`${key}: required in production`);
   }
+  if (source.DEPLOYMENT_MODE === "backend" && !source.FRONTEND_GATEWAY_SECRET) problems.push("FRONTEND_GATEWAY_SECRET: required for the backend deployment mode");
   if (Boolean(source.S3_ACCESS_KEY_ID) !== Boolean(source.S3_SECRET_ACCESS_KEY)) {
     problems.push("S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY: set both, or neither when using an IAM role");
   }

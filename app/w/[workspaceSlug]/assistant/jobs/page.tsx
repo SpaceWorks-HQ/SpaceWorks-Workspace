@@ -25,11 +25,12 @@ export default async function AssistantJobsPage({ params }: PageProps<"/w/[works
     getAssistantSettings(),
   ]);
   const sendTo = new Map(rules.map((rule) => [rule.scopeId, rule.destinations.map((d) => d.destinationId)]));
+  const configured = Boolean(settings.apiKey);
   const now = new Date();
   return (
     <JobsManager
       slug={workspace.slug}
-      configured={Boolean(settings.apiKey)}
+      configured={configured}
       defaultTimeZone={workspace.timezone}
       channels={channels.map((c) => ({ id: c.id, label: `${c.kind === "PRIVATE" ? "Private: " : "#"}${c.name}` }))}
       destinations={destinations.map((d) => ({ id: d.id, name: d.name, kind: d.kind }))}

@@ -15,6 +15,8 @@ export default async function AdminOverviewPage() {
     prisma.workspace.count({ where: { archivedAt: null } }),
     getOutboxHealth(),
   ]);
+  const redisConfigured = isRedisConfigured();
+  const filesConfigured = storageConfigured();
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Instance admin" description="Operations for this Space Works instance. Workspace content stays private to members." />
@@ -27,8 +29,8 @@ export default async function AdminOverviewPage() {
       <Card>
         <CardHeader title="Services" />
         <ul className="flex flex-col gap-2 text-body-ui text-ink">
-          <li>Redis: {isRedisConfigured() ? "configured" : "not configured (rate limits and realtime use this process only)"}</li>
-          <li>Object storage: {storageConfigured() ? "configured" : "not configured (development disk fallback)"}</li>
+          <li>Redis: {redisConfigured ? "configured" : "not configured (rate limits and realtime use this process only)"}</li>
+          <li>Object storage: {filesConfigured ? "configured" : "not configured (development disk fallback)"}</li>
           <li>
             Email, Google sign-in and the assistant key: <Link href="/admin/settings" className="font-semibold underline underline-offset-4">instance settings</Link>
           </li>

@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath } from "@/lib/frontend/cache";
 import { z } from "zod";
 import { getWorkspaceForAction, type WorkspaceContext } from "@/lib/permissions";
 import { canManageAppReviews, canViewAppReviews } from "@/lib/roles";
