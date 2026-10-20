@@ -155,3 +155,7 @@ export const canExportWorkspace = (m: RoleHolder) => atLeast(m, "OWNER");
 /** App reviews: members triage and reply; admins manage store credentials. */
 export const canViewAppReviews = (m: RoleHolder) => atLeast(m, "MEMBER");
 export const canManageAppReviews = (m: RoleHolder) => atLeast(m, "ADMIN");
+
+/** Legal, board and vendor banking records are restricted to workspace admins. */
+export const canManageGovernance = (m: RoleHolder) => atLeast(m, "ADMIN");
+export const canViewGovernance = canManageGovernance;

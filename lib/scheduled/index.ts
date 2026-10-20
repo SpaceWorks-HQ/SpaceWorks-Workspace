@@ -1,6 +1,7 @@
 import "server-only";
 
 import { run as appReviews } from "@/lib/scheduled/appReviews";
+import { run as governance } from "@/lib/scheduled/governance";
 import { run as tasks } from "@/lib/scheduled/tasks";
 import { run as chat } from "@/lib/scheduled/chat";
 import { run as docsFiles } from "@/lib/scheduled/docsFiles";
@@ -21,6 +22,7 @@ import { run as shell } from "@/lib/scheduled/shell";
  */
 export const SCHEDULED_JOBS: ReadonlyArray<{ area: string; run: (now: Date) => Promise<void> }> = [
   { area: "app-reviews", run: appReviews },
+  { area: "governance-tools", run: governance },
   { area: "tasks", run: tasks },
   { area: "chat", run: chat },
   { area: "docs-files", run: docsFiles },

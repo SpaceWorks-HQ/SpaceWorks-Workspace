@@ -52,6 +52,7 @@ type GithubRef = { repoId: Id; number: number; url: string };
 
 /** Typed `data` payload per event type. */
 export interface EventPayloads {
+  "governance.reminder": { recordId: Id; dueOn: Iso; kind: string };
   "app_review.received": AppReviewPayload;
   "app_review.replied": AppReviewPayload;
   "app_review.reply_failed": AppReviewPayload;
@@ -171,6 +172,7 @@ const s = (category: NotifyCategory, label: string, audience: EventAudience, sev
   minRole ? { category, label, audience, severity, minRole } : { category, label, audience, severity };
 
 export const EVENT_CATALOG = {
+  "governance.reminder": s("operations", "Governance deadline", "personal", "warning", "ADMIN"),
   "app_review.received": s("operations", "App review received", "broadcast", "info", "MEMBER"),
   "app_review.replied": s("operations", "App review reply published", "broadcast", "info", "MEMBER"),
   "app_review.reply_failed": s("operations", "App review reply failed", "broadcast", "warning", "MEMBER"),

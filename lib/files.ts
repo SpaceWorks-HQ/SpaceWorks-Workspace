@@ -21,7 +21,8 @@ export async function findDownloadableFile(fileId: string, userId: string) {
   const file = await prisma.fileObject.findUnique({
     where: { id: fileId },
     select: {
-      id: true, workspaceId: true, storageKey: true, filename: true, contentType: true, size: true, deletedAt: true,
+      id: true, workspaceId: true, storageKey: true, filename: true, contentType: true, size: true, deletedAt: true, folder: true,
+      governanceAttachments: { select: { record: { select: { archivedAt: true } } } },
       doc: { select: { visibility: true } },
       task: { select: { project: { select: { teamId: true } } } },
       _count: { select: { ledgerReceipts: true } },
@@ -32,9 +33,12 @@ export async function findDownloadableFile(fileId: string, userId: string) {
   if (!file || file.deletedAt || file.workspace.archivedAt) return null;
   const membership = await prisma.membership.findUnique({
     where: { userId_workspaceId: { userId, workspaceId: file.workspaceId } },
-    select: { role: true, status: true },
+    select: { role: true, status: true, user: { select: { disabledAt: true } } },
   });
-  if (!membership || membership.status !== "ACTIVE") return null;
+  if (!membership || membership.status !== "ACTIVE" || membership.user.disabledAt) return null;
+  if (file.folder === "/governance" || file.folder.startsWith("/governance/") || file.governanceAttachments.length) {
+    if (!hasRoleAtLeast(membership.role, "ADMIN")) return null;
+  }
   if (file.doc?.visibility === "ADMINS" && !hasRoleAtLeast(membership.role, "ADMIN")) return null;
   const taskTeamId = file.task?.project?.teamId;
   if (taskTeamId && (await hiddenTeamIds(file.workspaceId, { userId, role: membership.role })).includes(taskTeamId)) return null;
