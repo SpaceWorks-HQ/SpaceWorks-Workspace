@@ -25,7 +25,9 @@ test("renders shared UI, writes through thin actions and consumes direct stream 
   await page.getByLabel("Email", { exact: true }).fill(email);
   await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  const composer = page.getByRole("textbox", { name: "Message #general", exact: true });
+  await expect(page).toHaveURL(`/w/${slug}/chat/general`);
+  // Mention/channel autocomplete gives the textarea an explicit combobox role.
+  const composer = page.getByRole("combobox", { name: "Message #general", exact: true });
   await expect(composer).toBeVisible();
   const message = `A message through the gateway ${suffix}`;
   await composer.fill(message);
