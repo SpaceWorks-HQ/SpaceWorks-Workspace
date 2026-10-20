@@ -43,6 +43,8 @@ export type SecretPurpose =
   | "social-refresh"
   | "social-oauth"
   | "social-draft"
+  | "safeguarding-details"
+  | "safeguarding-event"
   | "governance-vendor-bank"
   | "finance-pay-pan"
   | "finance-pay-bank"
@@ -70,6 +72,8 @@ export type SecretPurpose =
   | "app-review-slack-signing";
 
 const PURPOSE_INFO: Record<SecretPurpose, string> = {
+  "safeguarding-details":"sww-safeguarding-details-v1",
+  "safeguarding-event":"sww-safeguarding-event-v1",
   "social-access": "sww-social-access-v1",
   "social-refresh": "sww-social-refresh-v1",
   "social-oauth": "sww-social-oauth-v1",

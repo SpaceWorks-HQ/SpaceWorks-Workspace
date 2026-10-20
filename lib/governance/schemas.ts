@@ -12,10 +12,30 @@ export const KINDS = [
   "AGM_ITEM",
   "VENDOR",
   "CONTRACT",
+  "INSURANCE",
+  "LICENCE",
+  "REGISTRATION",
+  "STATUTORY_REGISTER",
+  "RISK",
+  "EMERGENCY_PLAN",
+  "DRILL",
+  "SOP_REVIEW",
+  "BOARD_PACK",
 ] as const;
 export type Kind = (typeof KINDS)[number];
-export type Section = "compliance" | "board" | "vendors";
+export type Section =
+  | "compliance"
+  | "board"
+  | "vendors"
+  | "registers"
+  | "risk"
+  | "reviews"
+  | "packs";
 export const SECTIONS: Record<Section, Kind[]> = {
+  registers: ["INSURANCE", "LICENCE", "REGISTRATION", "STATUTORY_REGISTER"],
+  risk: ["RISK", "EMERGENCY_PLAN", "DRILL"],
+  reviews: ["SOP_REVIEW"],
+  packs: ["BOARD_PACK"],
   compliance: ["LEGAL_ENTITY", "OBLIGATION"],
   board: ["COMMITTEE", "TERM", "MINUTES", "RESOLUTION", "CONFLICT", "AGM_ITEM"],
   vendors: ["VENDOR", "CONTRACT"],
@@ -31,8 +51,26 @@ export const LABELS: Record<Kind, string> = {
   AGM_ITEM: "AGM checklist item",
   VENDOR: "Vendor",
   CONTRACT: "Contract",
+  INSURANCE: "Insurance policy",
+  LICENCE: "Licence",
+  REGISTRATION: "Registration",
+  STATUTORY_REGISTER: "Statutory register",
+  RISK: "Risk assessment",
+  EMERGENCY_PLAN: "Emergency plan",
+  DRILL: "Drill record",
+  SOP_REVIEW: "SOP or policy review",
+  BOARD_PACK: "Board or report pack",
 };
 export const STATUSES: Record<Kind, string[]> = {
+  INSURANCE: ["ACTIVE", "EXPIRED", "CANCELLED"],
+  LICENCE: ["ACTIVE", "EXPIRED", "CANCELLED"],
+  REGISTRATION: ["ACTIVE", "EXPIRED", "CANCELLED"],
+  STATUTORY_REGISTER: ["CURRENT", "NEEDS_REVIEW"],
+  RISK: ["OPEN", "CONTROLLED", "CLOSED"],
+  EMERGENCY_PLAN: ["ACTIVE", "NEEDS_REVIEW"],
+  DRILL: ["PLANNED", "DONE"],
+  SOP_REVIEW: ["DUE", "REVIEWED"],
+  BOARD_PACK: ["DRAFT", "FROZEN"],
   LEGAL_ENTITY: ["ACTIVE"],
   OBLIGATION: ["TODO", "FILED", "DONE"],
   COMMITTEE: ["ACTIVE", "CLOSED"],
@@ -51,11 +89,7 @@ export const label = (s: string) =>
     .replaceAll("_", " ")
     .replace(/^./, (c) => c.toUpperCase());
 export const sectionFor = (kind: Kind): Section =>
-  kind === "LEGAL_ENTITY" || kind === "OBLIGATION"
-    ? "compliance"
-    : kind === "VENDOR" || kind === "CONTRACT"
-      ? "vendors"
-      : "board";
+  (Object.keys(SECTIONS) as Section[]).find((s) => SECTIONS[s].includes(kind))!;
 export const sectionPath = (section: Section) =>
   section === "compliance" ? "" : `/${section}`;
 export const dateOnly = z
@@ -83,7 +117,50 @@ const gstin = text.refine(
   (s) => !s || /^\d{2}[A-Z]{5}\d{4}[A-Z][A-Z0-9]Z[A-Z0-9]$/.test(s),
   "Check the GSTIN or leave it blank.",
 );
+const permitDetails = z.object({
+  issuer: z.string().trim().min(1, "Enter the issuer.").max(300),
+  reference: z.string().trim().min(1, "Enter the number.").max(300),
+  scope: notes,
+  sumInsuredMinor: z.number().int().min(0).max(2147483647).default(0),
+  premiumMinor: z.number().int().min(0).max(2147483647).default(0),
+  currency: z.string().refine(isValidCurrency, "Choose a currency."),
+  obligationId: id,
+});
 export const detailSchemas = {
+  INSURANCE: permitDetails,
+  LICENCE: permitDetails,
+  REGISTRATION: permitDetails,
+  STATUTORY_REGISTER: z.object({
+    entityId: z.string().min(1).max(64),
+    registerType: z.enum(["MEMBERS", "DIRECTORS", "MINUTES", "OTHER"]),
+    scope: notes,
+  }),
+  RISK: z.object({
+    likelihood: z.number().int().min(1).max(5),
+    impact: z.number().int().min(1).max(5),
+    controls: z.string().trim().min(1, "Record the controls.").max(20000),
+    assessment: notes,
+  }),
+  EMERGENCY_PLAN: z.object({
+    docId: z.string().min(1, "Choose a document.").max(64),
+    scope: notes,
+  }),
+  DRILL: z.object({
+    planId: z.string().min(1, "Choose a plan.").max(64),
+    findings: notes,
+    actions: notes,
+  }),
+  SOP_REVIEW: z.object({
+    docId: z.string().min(1, "Choose a document.").max(64),
+    reviewNote: notes,
+  }),
+  BOARD_PACK: z.object({
+    docIds: z.array(z.string().min(1).max(64)).max(30).default([]),
+    decisionIds: z.array(z.string().min(1).max(64)).max(50).default([]),
+    recordIds: z.array(z.string().min(1).max(64)).max(50).default([]),
+    includeFinance: z.boolean().default(false),
+    currency: z.string().refine(isValidCurrency).default("INR"),
+  }),
   LEGAL_ENTITY: z.object({
     entityType: z.enum(["SECTION_8", "SOCIETY", "TRUST", "OTHER"]),
     registration: text,
@@ -123,6 +200,8 @@ export const detailSchemas = {
   }),
   CONFLICT: z.object({
     person: z.string().trim().min(1, "Enter the declarant's name.").max(300),
+    partyOrgId: id,
+    partyName: text,
     declaration: z
       .string()
       .trim()
@@ -176,6 +255,22 @@ export const recordSchema = z
     if (!parsed.success)
       for (const e of parsed.error.issues)
         ctx.addIssue({ ...e, path: ["details", ...e.path] });
+    if (
+      ["INSURANCE", "LICENCE", "REGISTRATION", "BOARD_PACK"].includes(v.kind) &&
+      (!v.startsOn || !v.endsOn)
+    )
+      issue("endsOn", "Enter start and end dates.");
+    if (
+      [
+        "STATUTORY_REGISTER",
+        "RISK",
+        "EMERGENCY_PLAN",
+        "DRILL",
+        "SOP_REVIEW",
+      ].includes(v.kind) &&
+      !v.dueOn
+    )
+      issue("dueOn", "Choose a review or drill date.");
     if (["OBLIGATION", "AGM_ITEM", "CONFLICT"].includes(v.kind) && !v.dueOn)
       issue("dueOn", "Choose a due date or declaration date.");
     if (["TERM", "CONTRACT"].includes(v.kind) && (!v.startsOn || !v.endsOn))

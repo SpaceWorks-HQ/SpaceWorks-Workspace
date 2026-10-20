@@ -5,6 +5,7 @@ import { purgeExpiredOperationalData } from "@/lib/retention";
 import { runDueChecks } from "@/lib/monitor/scheduler";
 import { run as funding } from "@/lib/scheduled/funding";
 import { run as moneyControls } from "@/lib/scheduled/moneyControls";
+import { run as govextras } from "@/lib/scheduled/govextras";
 import { run as social } from "@/lib/scheduled/social";
 
 import { run as calendar } from "@/lib/scheduled/calendar";
@@ -36,6 +37,7 @@ export const SCHEDULED_JOBS: ReadonlyArray<JobDefinition> = [
   { area: "social", queue: "sync", run: social },
   { area: "team-calendar", run: calendar },
   { area: "app-reviews", queue: "sync", run: appReviews },
+  { area: "govextras", run: govextras },
   { area: "governance-tools", run: governance },
   { area: "tasks", run: tasks },
   { area: "chat", run: chat },

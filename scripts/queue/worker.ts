@@ -7,4 +7,4 @@ void runProcess("worker", async () => {
     stop: workers.close,
     healthy: async () => (await Promise.all(workers.workers.map(async worker => worker.isRunning() && (await worker.client).status === "ready"))).every(Boolean),
   };
-}).catch(() => { console.error("[queue] Worker startup failed. Check Redis and database configuration."); process.exit(1); });
+}).catch((error: unknown) => { console.error(`[queue] Worker startup failed: ${error instanceof Error ? error.message : "unknown error"}. Check Redis and database configuration.`); process.exit(1); });

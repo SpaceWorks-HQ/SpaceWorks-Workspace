@@ -123,8 +123,9 @@ source_version() {
   local dir=$1 revision=$2 published
   published=$(cat "$dir/.release-version" 2>/dev/null || true)
   if [[ -z "$published" ]]; then release_version "$revision"; return 0; fi
-  is_published_version "$published" && [[ "${published: -12}" = "${revision:0:12}" ]] \
-    || die "$dir/.release-version does not match its commit."
+  if ! is_published_version "$published" || [[ "${published: -12}" != "${revision:0:12}" ]]; then
+    die "$dir/.release-version does not match its commit."
+  fi
   printf '%s' "$published"
 }
 

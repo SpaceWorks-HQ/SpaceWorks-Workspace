@@ -486,9 +486,29 @@
       "id": "w-workspaceSlug-governance-board-page:loadPage"
     },
     {
+      "module": "lib/views/generated/w-workspaceSlug-governance-packs-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-governance-packs-page:loadPage"
+    },
+    {
       "module": "lib/views/generated/w-workspaceSlug-governance-page-loadPage",
       "name": "loadPage",
       "id": "w-workspaceSlug-governance-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-governance-registers-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-governance-registers-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-governance-reviews-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-governance-reviews-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-governance-risk-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-governance-risk-page:loadPage"
     },
     {
       "module": "lib/views/generated/w-workspaceSlug-governance-vendors-page-loadPage",
@@ -719,6 +739,11 @@
       "module": "lib/views/generated/w-workspaceSlug-rota-page-loadRotaPage",
       "name": "loadRotaPage",
       "id": "w-workspaceSlug-rota-page:loadRotaPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-safeguarding-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-safeguarding-page:loadPage"
     },
     {
       "module": "lib/views/generated/w-workspaceSlug-safety-recordId-page-loadSafetyReportPage",
@@ -1736,6 +1761,46 @@
       "module": "app/actions/governance",
       "name": "removeGovernanceFile",
       "id": "governance:removeGovernanceFile"
+    },
+    {
+      "module": "app/actions/govextras",
+      "name": "saveHandlerAppointment",
+      "id": "govextras:saveHandlerAppointment"
+    },
+    {
+      "module": "app/actions/govextras",
+      "name": "saveSafeguardingCase",
+      "id": "govextras:saveSafeguardingCase"
+    },
+    {
+      "module": "app/actions/govextras",
+      "name": "saveSafeguardingEvent",
+      "id": "govextras:saveSafeguardingEvent"
+    },
+    {
+      "module": "app/actions/govextras",
+      "name": "changeSafeguardingCase",
+      "id": "govextras:changeSafeguardingCase"
+    },
+    {
+      "module": "app/actions/govextras",
+      "name": "finishSafeguardingAction",
+      "id": "govextras:finishSafeguardingAction"
+    },
+    {
+      "module": "app/actions/govextras",
+      "name": "uploadSafeguardingFile",
+      "id": "govextras:uploadSafeguardingFile"
+    },
+    {
+      "module": "app/actions/govextras",
+      "name": "saveConflictLink",
+      "id": "govextras:saveConflictLink"
+    },
+    {
+      "module": "app/actions/govextras",
+      "name": "freezeGovernancePack",
+      "id": "govextras:freezeGovernancePack"
     },
     {
       "module": "app/actions/ideas",

@@ -185,3 +185,6 @@ export function canReadMoneyControl(m: RoleHolder, userId: string, row: { kind: 
  const d = row.details && typeof row.details === "object" ? row.details as Record<string,unknown> : {};
  return ["HANDOVER","ASSIGNMENT"].includes(row.kind) && (row.ownerId === userId || d.outgoingId === userId);
 }
+/** Appointments grant no access to case contents without explicit case assignment. */
+export const canManageSafeguardingHandlers = (m: RoleHolder) => atLeast(m, "OWNER");
+export const canHandleSafeguarding = (m: RoleHolder, appointed: boolean, assigned: boolean) => atLeast(m, "MEMBER") && appointed && assigned;

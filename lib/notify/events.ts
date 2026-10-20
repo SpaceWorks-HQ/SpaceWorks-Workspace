@@ -66,6 +66,9 @@ export interface EventPayloads {
   "funding.reminder": { recordId: Id; dueOn: Iso; reason: string };
   "funding.pledge_due": { recordId: Id; dueOn: Iso; reason: string };
   "funding.thank_you_due": { recordId: Id; dueOn: Iso; reason: string };
+  "governance.review_due": { recordId: Id; dueOn: Iso; kind: string };
+  "doc.review_due": { docId: Id; dueOn: Iso };
+  "safeguarding.review_due": { caseId: Id; dueOn: Iso };
   "governance.reminder": { recordId: Id; dueOn: Iso; kind: string };
   "app_review.received": AppReviewPayload;
   "app_review.replied": AppReviewPayload;
@@ -204,6 +207,9 @@ export const EVENT_CATALOG = {
   "funding.reminder": s("finance", "Funding deadline", "personal", "warning", "ADMIN"),
   "funding.pledge_due": s("finance", "Pledge instalment due", "personal", "warning", "ADMIN"),
   "funding.thank_you_due": s("finance", "Donation thank-you due", "personal", "info", "ADMIN"),
+  "governance.review_due": s("operations", "Governance review", "personal", "warning", "ADMIN"),
+  "doc.review_due": s("operations", "Document review", "personal", "warning", "MEMBER"),
+  "safeguarding.review_due": s("operations", "Confidential case review", "personal", "warning", "MEMBER"),
   "governance.reminder": s("operations", "Governance deadline", "personal", "warning", "ADMIN"),
   "finance.bill.overdue": s("finance", "Supplier bill overdue", "personal", "warning", "ADMIN"),
   "finance.receipt.missing": s("finance", "Receipt needed", "personal", "warning", "ADMIN"),

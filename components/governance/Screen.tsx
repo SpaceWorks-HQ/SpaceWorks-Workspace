@@ -1,5 +1,10 @@
+import {
+  ConflictLinks,
+  FreezePack,
+} from "@/components/govextras/ConflictLinks";
+import { riskScore } from "@/lib/govextras/rules";
 import Link from "next/link";
-import type { Actor, Filters, GovernanceData } from "@/lib/governance/service";
+import type { GovernanceData, Actor, Filters } from "@/lib/governance/service";
 import {
   LABELS,
   STATUSES,
@@ -7,7 +12,6 @@ import {
   label,
   sectionPath,
   dayInZone,
-  governanceFilters,
   type Section,
 } from "@/lib/governance/schemas";
 import { type Choices, recordFields } from "@/lib/governance/fields";
@@ -28,11 +32,19 @@ const TITLES = {
   compliance: "Compliance calendar",
   board: "Board and committees",
   vendors: "Vendors and contracts",
+  registers: "Insurance and registers",
+  risk: "Risks and emergency plans",
+  reviews: "SOP reviews",
+  packs: "Board packs",
 };
 const DESCRIPTIONS = {
   compliance: "Keep legal details, filing dates and proof in one place.",
   board: "Keep terms, declarations, minutes and resolutions together.",
   vendors: "Keep vendor details, contracts and notice dates ready for review.",
+  registers: "Track cover, expiry and statutory register snapshots.",
+  risk: "Assess risks, record controls and practise emergency plans.",
+  reviews: "Keep policies current and review overdue documents.",
+  packs: "Review a period, then freeze its reports and evidence.",
 };
 export function GovernanceScreen({
   actor,
@@ -41,11 +53,16 @@ export function GovernanceScreen({
   data,
 }: {
   actor: Actor;
+  data: GovernanceData;
   section: Section;
   params: Record<string, string | string[] | undefined>;
-  data: GovernanceData;
 }) {
-  const filters: Filters = governanceFilters(params);
+  const filters: Filters = Object.fromEntries(
+    Object.entries(params).map(([k, v]) => [
+      k,
+      typeof v === "string" ? v : undefined,
+    ]),
+  );
   const slug = actor.workspace.slug,
     base = `/w/${slug}/governance${sectionPath(section)}`;
   const choices: Choices = {
@@ -60,6 +77,21 @@ export function GovernanceScreen({
     })),
     vendors: data.vendors.map((v) => ({ value: v.id, label: v.title })),
     meetings: data.meetings.map((m) => ({ value: m.id, label: m.title })),
+    ...(Object.fromEntries(
+      (
+        [
+          "docs",
+          "obligations",
+          "entities",
+          "plans",
+          "decisions",
+          "evidence",
+        ] as const
+      ).map((k) => [k, data[k].map((c) => ({ value: c.id, label: c.title }))]),
+    ) as Pick<
+      Choices,
+      "docs" | "obligations" | "entities" | "plans" | "decisions" | "evidence"
+    >),
     contacts: data.contacts.map((c) => ({ value: c.id, label: c.displayName })),
   };
   const r = data.selected;
@@ -97,7 +129,7 @@ export function GovernanceScreen({
         aria-label="Governance tools"
         className="flex flex-wrap gap-x-6 border-b border-line"
       >
-        {(["compliance", "board", "vendors"] as Section[]).map((s) => (
+        {(Object.keys(SECTIONS) as Section[]).map((s) => (
           <Link
             key={s}
             href={`/w/${slug}/governance${sectionPath(s)}`}
@@ -108,6 +140,12 @@ export function GovernanceScreen({
           </Link>
         ))}
       </nav>
+      <Link
+        href={`/w/${slug}/safeguarding`}
+        className="inline-flex min-h-11 items-center text-accent-text underline"
+      >
+        Confidential safeguarding
+      </Link>
       {section === "compliance" ? (
         <Callout title="Verify with your CA">
           These are manual planning tools. Confirm applicability, current forms
@@ -197,7 +235,7 @@ export function GovernanceScreen({
               <p className="text-ink-muted">
                 {r.approvedAt ? (
                   <>
-                    Approved{" "}
+                    {r.kind === "BOARD_PACK" ? "Frozen" : "Approved"}{" "}
                     {formatDayTime(r.approvedAt, actor.workspace.timezone)} by{" "}
                     {choices.owners.find((o) => o.value === r.approvedById)
                       ?.label ?? "Former member"}
@@ -239,6 +277,28 @@ export function GovernanceScreen({
               record={selected}
             />
           )}
+          {typeof details?.docId === "string" ? (
+            <Link
+              className="inline-flex min-h-11 items-center text-accent-text underline"
+              href={`/w/${slug}/docs/${details.docId}`}
+            >
+              Open document
+            </Link>
+          ) : null}
+          {typeof details?.obligationId === "string" && details.obligationId ? (
+            <Link
+              className="inline-flex min-h-11 items-center text-accent-text underline"
+              href={`/w/${slug}/governance?edit=${details.obligationId}`}
+            >
+              Open compliance calendar item
+            </Link>
+          ) : null}
+          {r.kind === "CONFLICT" && !r.archivedAt ? (
+            <ConflictLinks slug={slug} id={r.id} data={data.conflict} />
+          ) : null}
+          {r.kind === "BOARD_PACK" && !r.approvedAt && !r.archivedAt ? (
+            <FreezePack slug={slug} id={r.id} />
+          ) : null}
           <Attachments
             slug={slug}
             recordId={r.id}
@@ -351,7 +411,7 @@ export function GovernanceScreen({
             ))}
           </Dropdown>
         </Field>
-        {section === "compliance" ? (
+        {["compliance", "reviews", "risk", "registers"].includes(section) ? (
           <label className="flex min-h-11 items-center gap-2">
             <input
               type="checkbox"
@@ -360,7 +420,7 @@ export function GovernanceScreen({
               defaultChecked={filters.overdue === "1"}
               className="size-5"
             />
-            Overdue obligations only
+            Overdue for review / due date
           </label>
         ) : null}
         <label className="flex min-h-11 items-center gap-2">
@@ -403,8 +463,9 @@ export function GovernanceScreen({
           <ul className="space-y-3">
             {data.records.map((row) => {
               const overdue =
-                row.kind === "OBLIGATION" &&
-                row.status === "TODO" &&
+                !["DONE", "REVIEWED", "CLOSED", "FROZEN"].includes(
+                  row.status,
+                ) &&
                 row.dueOn &&
                 row.dueOn.toISOString().slice(0, 10) <
                   dayInZone(new Date(), actor.workspace.timezone);
@@ -455,6 +516,17 @@ export function GovernanceScreen({
                       <p>
                         {formatDate(row.startsOn, "UTC")} –{" "}
                         {formatDate(row.endsOn!, "UTC")}
+                      </p>
+                    ) : null}
+                    {row.kind === "RISK" ? (
+                      <p>
+                        {
+                          riskScore(Number(d.likelihood), Number(d.impact))
+                            .level
+                        }{" "}
+                        risk · Score {Number(d.likelihood) * Number(d.impact)} /
+                        25 · Likelihood {String(d.likelihood)} × impact{" "}
+                        {String(d.impact)}
                       </p>
                     ) : null}
                     {row.kind === "CONTRACT" ? (

@@ -14,7 +14,7 @@ cleanup() {
   if [[ $status != 0 && -f "$SWW_CONFIG_DIR/compose.env" ]]; then
     # Only this disposable deployment; never dump interpolated configuration.
     as_root sh scripts/vps-compose.sh ps || true
-    as_root sh scripts/vps-compose.sh logs --tail 30 app frontend || true
+    as_root sh scripts/vps-compose.sh logs --tail 40 app frontend worker beat || true
   fi
   [[ ! -f "$SWW_CONFIG_DIR/compose.env" ]] || as_root sh scripts/vps-compose.sh down --volumes --remove-orphans >/dev/null 2>&1 || true
   as_root rm -rf -- "$work"

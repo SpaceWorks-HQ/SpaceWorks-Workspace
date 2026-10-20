@@ -65,7 +65,38 @@ function Controls({
             error={errors?.[f.name]?.join(" ")}
             className={f.type === "textarea" ? "sm:col-span-2" : ""}
           >
-            {f.type === "select" ? (
+            {f.type === "multi" ? (
+              <div
+                role="group"
+                aria-label={f.label}
+                className="max-h-64 overflow-auto rounded-control border border-line p-3"
+              >
+                {f.options?.map((o) => (
+                  <label
+                    key={o.value}
+                    className="flex min-h-11 items-center gap-3"
+                  >
+                    <input
+                      type="checkbox"
+                      name={f.name}
+                      value={o.value}
+                      defaultChecked={
+                        Array.isArray(values?.[f.name]) &&
+                        (values[f.name] as string[]).includes(o.value)
+                      }
+                    />
+                    {o.label}
+                  </label>
+                ))}
+              </div>
+            ) : f.type === "checkbox" ? (
+              <input
+                type="checkbox"
+                name={f.name}
+                defaultChecked={values?.[f.name] === true}
+                className="size-5"
+              />
+            ) : f.type === "select" ? (
               <Dropdown
                 name={f.name}
                 defaultValue={value || f.options?.[0]?.value}
@@ -111,14 +142,7 @@ export function RecordForm({
   choices: Choices;
   record?: EditRecord;
 }) {
-  const [kind, setKind] = useState<Kind>(
-    record?.kind ??
-      (section === "compliance"
-        ? "OBLIGATION"
-        : section === "board"
-          ? "COMMITTEE"
-          : "VENDOR"),
-  );
+  const [kind, setKind] = useState<Kind>(record?.kind ?? SECTIONS[section][0]);
   const [template, setTemplate] = useState("");
   const [result, setResult] = useState<ActionResult<{ id: string }> | null>(
     null,
@@ -139,6 +163,12 @@ export function RecordForm({
       Number(record.details.amountMinor) /
       10 ** currencyMinorDigits(String(record.details.currency))
     ).toFixed(currencyMinorDigits(String(record.details.currency)));
+  if (record && ["INSURANCE", "LICENCE", "REGISTRATION"].includes(record.kind))
+    for (const k of ["sumInsured", "premium"])
+      defaults[`details.${k}`] = (
+        Number(record.details[k + "Minor"]) /
+        10 ** currencyMinorDigits(String(record.details.currency))
+      ).toFixed(currencyMinorDigits(String(record.details.currency)));
   const picked =
     template === "" ? null : COMPLIANCE_TEMPLATES[Number(template)];
   if (!record && picked)
@@ -193,8 +223,29 @@ export function RecordForm({
           const details: Record<string, unknown> = {};
           for (const [key, value] of fd.entries())
             if (key.startsWith("details."))
-              details[key.slice(8)] =
-                key === "details.noticeDays" ? Number(value) : String(value);
+              details[key.slice(8)] = [
+                "details.noticeDays",
+                "details.likelihood",
+                "details.impact",
+              ].includes(key)
+                ? Number(value)
+                : String(value);
+          if (kind === "BOARD_PACK") {
+            for (const k of ["docIds", "decisionIds", "recordIds"])
+              details[k] = fd.getAll(`details.${k}`).map(String);
+            details.includeFinance = fd.has("details.includeFinance");
+          }
+          if (["INSURANCE", "LICENCE", "REGISTRATION"].includes(kind)) {
+            const currency = String(details.currency).trim().toUpperCase();
+            details.currency = currency;
+            for (const k of ["sumInsured", "premium"]) {
+              details[k + "Minor"] = parseMoneyToMinor(
+                String(details[k]),
+                currency,
+              );
+              delete details[k];
+            }
+          }
           if (kind === "CONTRACT") {
             const amount = String(details.amount);
             const currency = String(details.currency).toUpperCase().trim();

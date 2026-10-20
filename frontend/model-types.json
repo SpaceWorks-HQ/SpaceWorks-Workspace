@@ -139,62 +139,74 @@
   },
   {
     "module": "lib/governance/service",
-    "name": "Actor",
+    "name": "GovernanceData",
     "id": "Shared23",
     "value": false
   },
   {
     "module": "lib/governance/service",
-    "name": "Filters",
+    "name": "Actor",
     "id": "Shared24",
     "value": false
   },
   {
     "module": "lib/governance/service",
-    "name": "GovernanceData",
+    "name": "Filters",
     "id": "Shared25",
     "value": false
   },
   {
-    "module": "lib/notepad/service",
-    "name": "NoteDTO",
+    "module": "lib/govextras/cases",
+    "name": "CaseData",
     "id": "Shared26",
     "value": false
   },
   {
-    "module": "lib/notepad/service",
-    "name": "NotepadData",
+    "module": "lib/govextras/conflicts",
+    "name": "ConflictData",
     "id": "Shared27",
     "value": false
   },
   {
     "module": "lib/notepad/service",
-    "name": "TodoDTO",
+    "name": "NoteDTO",
     "id": "Shared28",
+    "value": false
+  },
+  {
+    "module": "lib/notepad/service",
+    "name": "NotepadData",
+    "id": "Shared29",
+    "value": false
+  },
+  {
+    "module": "lib/notepad/service",
+    "name": "TodoDTO",
+    "id": "Shared30",
     "value": false
   },
   {
     "module": "lib/opsGaps/attachments",
     "name": "AttachmentKind",
-    "id": "Shared29",
+    "id": "Shared31",
     "value": false
   },
   {
     "module": "lib/people/profiles",
     "name": "EmergencyContact",
-    "id": "Shared30",
+    "id": "Shared32",
     "value": false
   },
   {
     "module": "lib/approvals/context",
     "name": "OpsActor",
-    "id": "Shared31",
+    "id": "Shared33",
     "value": false
   },
   {
     "module": "lib/auth",
     "name": "SsoMfaChallenge",
-    "id": "Shared32",
+    "id": "Shared34",
     "value": false
   }
 ]
