@@ -17,12 +17,11 @@ region: blr
 
 services:
   - name: web
-    github:
-      repo: SpaceWorks-HQ/SpaceWorks-Workspace
-      branch: main
-      deploy_on_push: true
-    dockerfile_path: Dockerfile
-    source_dir: /
+    image:
+      registry_type: GHCR
+      registry: spaceworks-hq
+      repository: spaceworks-workspace-backend
+      tag: REPLACE_WITH_IMMUTABLE_RELEASE
     http_port: 3000
     instance_size_slug: apps-s-1vcpu-2gb
     instance_count: 1
@@ -39,26 +38,24 @@ jobs:
   # Runs before every deployment; a failed migration stops the rollout.
   - name: migrate
     kind: PRE_DEPLOY
-    github:
-      repo: SpaceWorks-HQ/SpaceWorks-Workspace
-      branch: main
-      deploy_on_push: true
-    dockerfile_path: Dockerfile
-    source_dir: /
+    image:
+      registry_type: GHCR
+      registry: spaceworks-hq
+      repository: spaceworks-workspace-backend
+      tag: REPLACE_WITH_IMMUTABLE_RELEASE
     instance_size_slug: apps-s-1vcpu-1gb
     run_command: docker-entrypoint.sh migrate
 
 workers:
   - name: scheduler
-    github:
-      repo: SpaceWorks-HQ/SpaceWorks-Workspace
-      branch: main
-      deploy_on_push: true
-    dockerfile_path: Dockerfile
-    source_dir: /
+    image:
+      registry_type: GHCR
+      registry: spaceworks-hq
+      repository: spaceworks-workspace-backend
+      tag: REPLACE_WITH_IMMUTABLE_RELEASE
     instance_size_slug: apps-s-1vcpu-1gb
     instance_count: 1
-    run_command: docker-entrypoint.sh scheduler
+    run_command: node scripts/scheduler.mjs
     envs:
       - key: APP_URL
         value: ${web.PRIVATE_URL}

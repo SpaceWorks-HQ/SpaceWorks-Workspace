@@ -1,7 +1,6 @@
-name: Deployment checks
+name: Quality gate
 on:
   pull_request:
-    paths: ["Dockerfile*", ".dockerignore", "docker-compose*.yml", "install.sh", "setup.*", "scripts/**", "docker/**", "deploy/**", "charts/**", "render.yaml", ".do/**", ".github/workflows/**"]
   push:
     branches: [main, dev]
 permissions:
@@ -14,17 +13,18 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: 22, cache: npm}
       - run: npm ci
-      - name: Shell, Node, Python, YAML, installer and Compose checks
-        run: bash scripts/verify-release-local.sh
+      - run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - run: npm run deployment:check
       - uses: azure/setup-helm@v4
       - run: helm lint charts/spaceworks-workspace --set existingSecret=sww-runtime
-      - run: helm template sww charts/spaceworks-workspace --set existingSecret=sww-runtime --set frontend.enabled=true --set ingress.enabled=true --set autoscaling.enabled=true > /dev/null
+      - run: helm template sww charts/spaceworks-workspace --set existingSecret=sww-runtime --set ingress.enabled=true --set autoscaling.enabled=true > /dev/null
+  application:
+    uses: ./.github/workflows/ci.yml
   container:
-    name: Three-image installer smoke
+    name: Two-image installer smoke
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-      - name: Build backend once and derive matching frontend/all-in-one; install both shapes
-        run: bash scripts/test-release-local.sh
+      - uses: docker/setup-buildx-action@v4
+      - run: bash scripts/test-vps-install.sh

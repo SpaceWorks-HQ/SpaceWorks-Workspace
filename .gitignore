@@ -65,6 +65,7 @@ temp/
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
+!.env.staging.example
 
 
 # direnv
@@ -106,3 +107,12 @@ prisma/.env
 /bundle-files.txt
 
 /frontend-public/
+
+# Generated rendering workspace
+/frontend/app/
+/frontend/components/
+/frontend/lib/
+/frontend/public/
+/frontend/postcss.config.mjs
+/frontend/.next/
+/frontend/node_modules/

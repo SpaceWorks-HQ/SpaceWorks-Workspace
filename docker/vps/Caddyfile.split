@@ -1,0 +1,31 @@
+# split layout: SITE_HOST is the website (frontend container) and PUBLIC_HOST
+# the API (backend container), which browsers also reach for realtime updates.
+{
+  {$SWW_CADDY_OPTIONS}
+  log default {
+    format filter {
+      wrap json
+      fields {
+        request>uri delete
+        request>headers delete
+      }
+    }
+  }
+}
+
+{$SITE_HOST} {
+  # No access log: application URLs can contain bearer capabilities.
+  reverse_proxy frontend:3000 {
+    header_up X-Real-IP {remote_host}
+    header_up -CF-Connecting-IP
+    flush_interval -1
+  }
+}
+
+{$PUBLIC_HOST} {
+  reverse_proxy app:3000 {
+    header_up X-Real-IP {remote_host}
+    header_up -CF-Connecting-IP
+    flush_interval -1
+  }
+}

@@ -1,0 +1,36 @@
+# Added by scripts/vps-compose.sh when compose.env has SWW_CADDY_TLS='internal':
+# for LAN and test installs whose hostnames are not publicly reachable. Caddy
+# issues certificates from its own local CA, and the frontend, which calls the
+# backend by its HTTPS name, trusts that CA. Browsers will warn until the CA
+# (caddy_data: caddy/pki/authorities/local/root.crt) is trusted on each device.
+services:
+  proxy:
+    environment:
+      SWW_CADDY_OPTIONS: local_certs
+  # Hands the frontend only the local CA's public certificate, never its keys.
+  caddy-root:
+    image: caddy:2-alpine
+    profiles: [split]
+    restart: "no"
+    network_mode: none
+    entrypoint:
+      - /bin/sh
+      - -c
+      - >-
+        until [ -s /data/caddy/pki/authorities/local/root.crt ]; do sleep 1; done;
+        cp /data/caddy/pki/authorities/local/root.crt /export/root.crt && chmod 644 /export/root.crt
+    volumes:
+      - caddy_data:/data:ro
+      - caddy_root:/export
+  frontend:
+    # Node reads the CA once at start; `up --wait` also needs a dependent here
+    # to accept caddy-root's exit.
+    depends_on:
+      caddy-root: { condition: service_completed_successfully }
+    environment:
+      NODE_EXTRA_CA_CERTS: /caddy-root/root.crt
+    volumes:
+      - caddy_root:/caddy-root:ro
+
+volumes:
+  caddy_root:

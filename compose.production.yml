@@ -1,0 +1,223 @@
+# The VPS deployment. Use scripts/vps-compose.sh, not docker-compose.yml.
+# Layouts (SWW_LAYOUT in compose.env; vps-compose.sh turns on the profile):
+#   split    website (frontend) and API (backend) containers on this VPS, two hostnames
+#   single   one app container serves the website and the API, one hostname
+#   netlify  the website runs on Netlify; this VPS serves the API
+# Two images: the backend runs the API, migrations (migrator), the outbox
+# worker, the scheduler, realtime updates and the operator tools; the frontend runs
+# the website. PostgreSQL, Redis, Silo and Caddy use their own standard images.
+# Published releases set SWW_BACKEND_IMAGE / SWW_FRONTEND_IMAGE to
+# ghcr.io/<owner>/spaceworks-workspace-backend|frontend; otherwise the images are
+# built here under the local names below. Both carry placeholder public
+# origins that the entrypoint replaces, so a hostname change needs no rebuild.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+x-backend: &backend
+  image: ${SWW_BACKEND_IMAGE:-sww-backend}:${SWW_VERSION:?Set a release version}
+  env_file: ${SWW_CONFIG_DIR:?Set an external configuration directory}/app.env
+  volumes:
+    - ${SWW_CONFIG_DIR}/tls/ca.crt:/tls/ca.crt:ro
+  networks: [edge, data]
+  logging: *logging
+x-build: &build
+  context: .
+  args:
+    NEXT_PUBLIC_BASE_URL: https://spaceworks-workspace-origin.invalid
+    NEXT_PUBLIC_BACKEND_ORIGIN: https://spaceworks-workspace-backend.invalid
+  # A throwaway build key (see secrets below); containers get theirs at runtime.
+  secrets: [NEXT_SERVER_ACTIONS_ENCRYPTION_KEY]
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    env_file: ${SWW_CONFIG_DIR}/postgres.env
+    entrypoint: ["/bin/sh", "/bootstrap/postgres-start.sh"]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ${SWW_CONFIG_DIR}/tls/postgres:/run/server-tls:ro
+      - ./docker/vps/postgres-start.sh:/bootstrap/postgres-start.sh:ro
+      - ./docker/vps/init-database.sh:/docker-entrypoint-initdb.d/10-app-role.sh:ro
+      - ./docker/vps/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "postgres", "-U", "sww", "-d", "sww"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [data]
+    logging: *logging
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "/bootstrap/redis-start.sh"]
+    volumes:
+      - redis_data:/data
+      - ${SWW_CONFIG_DIR}/tls/redis:/run/server-tls:ro
+      - ${SWW_CONFIG_DIR}/tls/ca.crt:/tls/ca.crt:ro
+      - ${SWW_CONFIG_DIR}/redis.conf:/run/redis.conf:ro
+      - ./docker/vps/redis-start.sh:/bootstrap/redis-start.sh:ro
+    healthcheck:
+      # Prove TLS is available; application authentication is checked separately.
+      test: ["CMD-SHELL", "redis-cli --tls --cacert /tls/ca.crt -h redis ping 2>&1 | grep -q NOAUTH"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [data]
+    logging: *logging
+
+  # Bundled Silo object storage (profile silo); external S3 skips both services.
+  storage:
+    profiles: [silo]
+    image: pgsty/silo:RELEASE.2026-09-16T00-00-00Z
+    restart: unless-stopped
+    env_file: ${SWW_CONFIG_DIR}/storage.env
+    command: ["server", "/data", "--certs-dir", "/server-tls", "--console-address", ":9001"]
+    volumes:
+      - storage_data:/data
+      - ${SWW_CONFIG_DIR}/tls/storage:/server-tls:ro
+      - ${SWW_CONFIG_DIR}/tls/ca.crt:/tls/ca.crt:ro
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--cacert", "/tls/ca.crt", "https://storage:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [data]
+    logging: *logging
+
+  storage-init:
+    profiles: [silo]
+    image: pgsty/silo:RELEASE.2026-09-16T00-00-00Z
+    restart: "no"
+    env_file: ${SWW_CONFIG_DIR}/storage-init.env
+    entrypoint: ["/bin/sh", "/bootstrap/init-storage.sh"]
+    volumes:
+      - ./docker/vps/init-storage.sh:/bootstrap/init-storage.sh:ro
+      - ./docker/vps/storage-policy.json:/bootstrap/storage-policy.json:ro
+      - ${SWW_CONFIG_DIR}/tls/ca.crt:/tls/ca.crt:ro
+    depends_on:
+      storage: { condition: service_healthy }
+    networks: [data]
+    logging: *logging
+
+  # The backend image's migrate role: applies pending migrations once, then exits.
+  migrator:
+    image: ${SWW_BACKEND_IMAGE:-sww-backend}:${SWW_VERSION}
+    command: ["migrate"]
+    restart: "no"
+    env_file: ${SWW_CONFIG_DIR}/migrator.env
+    volumes:
+      - ${SWW_CONFIG_DIR}/tls/ca.crt:/tls/ca.crt:ro
+    depends_on:
+      postgres: { condition: service_healthy }
+    networks: [data]
+    logging: *logging
+
+  # The backend: the whole application in the single layout, the API otherwise.
+  # It also runs the outbox worker and realtime updates, and reads the installer's
+  # backup status (no secrets) for the super-admin Operations page.
+  app:
+    <<: *backend
+    restart: unless-stopped
+    environment:
+      SWW_STATUS_DIR: /status
+    volumes:
+      - ${SWW_CONFIG_DIR}/tls/ca.crt:/tls/ca.crt:ro
+      - ${SWW_CONFIG_DIR}/status:/status:ro
+    build:
+      <<: *build
+      target: runner
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      storage-init: { condition: service_completed_successfully }
+      migrator: { condition: service_completed_successfully }
+
+  # The website in the split layout. It holds no database, Redis, storage or
+  # mail credentials and reaches the backend through its HTTPS name, which the
+  # proxy answers on the internal network.
+  frontend:
+    image: ${SWW_FRONTEND_IMAGE:-sww-frontend}:${SWW_VERSION}
+    profiles: [split]
+    restart: unless-stopped
+    build:
+      <<: *build
+      target: frontend
+    env_file: ${SWW_CONFIG_DIR}/frontend.env
+    depends_on:
+      app: { condition: service_healthy }
+    networks: [edge]
+    logging: *logging
+
+  # Caddy HTTPS edge (profile caddy); an existing reverse proxy replaces it.
+  proxy:
+    profiles: [caddy]
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      PUBLIC_HOST: ${PUBLIC_HOST}
+      SITE_HOST: ${SITE_HOST:-}
+      SWW_CADDY_OPTIONS: ${SWW_CADDY_OPTIONS:-}
+    ports: ["80:80", "443:443", "443:443/udp"]
+    volumes:
+      - ./docker/vps/${SWW_CADDYFILE:-Caddyfile}:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      app: { condition: service_healthy }
+    networks:
+      edge:
+        aliases: ["${PUBLIC_HOST}"]
+    logging: *logging
+
+  # The backend image's scheduler role: it only calls the app's outbox endpoint
+  # every minute, with the scheduler secret and no other credentials.
+  scheduler:
+    image: ${SWW_BACKEND_IMAGE:-sww-backend}:${SWW_VERSION}
+    restart: unless-stopped
+    env_file: ${SWW_CONFIG_DIR}/scheduler.env
+    command: ["node", "docker/vps/scheduler.mjs"]
+    # The image's own health check probes a web server this role does not run;
+    # the scheduler is healthy when it can reach the app it calls.
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://app:3000/api/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      app: { condition: service_healthy }
+    networks: [edge]
+    logging: *logging
+
+  # The backend image's operator tools (setup, preflight, checks), run on demand.
+  ops:
+    <<: *backend
+    profiles: [tools]
+    user: "0:0"
+    command: ["node", "scripts/check-production-env.mjs"]
+    environment:
+      SWW_LAYOUT: ${SWW_LAYOUT:-single}
+    volumes:
+      - ${SWW_CONFIG_DIR}/tls/ca.crt:/tls/ca.crt:ro
+      - ${SWW_CONFIG_DIR}/backups:/app/backups
+
+networks:
+  edge:
+  data:
+    internal: true
+
+volumes:
+  postgres_data:
+  redis_data:
+  storage_data:
+  caddy_data:
+  caddy_config:
+
+secrets:
+  # A throwaway key that vps-compose.sh generates per run: builds never see an
+  # installation's real key, which containers receive at runtime instead.
+  NEXT_SERVER_ACTIONS_ENCRYPTION_KEY:
+    environment: SWW_BUILD_KEY
