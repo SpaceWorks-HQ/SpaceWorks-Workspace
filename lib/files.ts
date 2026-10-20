@@ -1,4 +1,5 @@
 import "server-only";
+import { mayDownloadFinanceFile } from "@/lib/finance/tools/files";
 
 import { prisma } from "@/lib/db";
 import { decideAccess } from "@/lib/chat/access";
@@ -21,7 +22,7 @@ export async function findDownloadableFile(fileId: string, userId: string) {
   const file = await prisma.fileObject.findUnique({
     where: { id: fileId },
     select: {
-      id: true, workspaceId: true, storageKey: true, filename: true, contentType: true, size: true, deletedAt: true,
+      id: true, workspaceId: true, storageKey: true, filename: true, contentType: true, size: true, deletedAt: true, folder: true,
       doc: { select: { visibility: true } },
       task: { select: { project: { select: { teamId: true } } } },
       _count: { select: { ledgerReceipts: true } },
@@ -35,6 +36,7 @@ export async function findDownloadableFile(fileId: string, userId: string) {
     select: { role: true, status: true },
   });
   if (!membership || membership.status !== "ACTIVE") return null;
+  if (!(await mayDownloadFinanceFile(file, userId))) return null;
   if (file.doc?.visibility === "ADMINS" && !hasRoleAtLeast(membership.role, "ADMIN")) return null;
   const taskTeamId = file.task?.project?.teamId;
   if (taskTeamId && (await hiddenTeamIds(file.workspaceId, { userId, role: membership.role })).includes(taskTeamId)) return null;

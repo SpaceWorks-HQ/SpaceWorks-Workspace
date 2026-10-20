@@ -6,7 +6,7 @@ import { canViewFinance, hasRoleAtLeast } from "@/lib/roles";
  * Every product area lives here once; pages still enforce their own access
  * with `requireWorkspace(slug, minRole)`. Hiding a link is not authorization.
  */
-export type NavRequirement = "finance" | "blog";
+export type NavRequirement = "finance" | "blog" | "payroll";
 
 export type NavItemConfig = {
   key: string;
@@ -81,6 +81,7 @@ export const NAV_GROUPS: readonly NavGroupConfig[] = [
       { key: "assets", label: "Assets", path: "/assets", minRole: "MEMBER" },
       { key: "requests", label: "Requests", path: "/requests", minRole: "MEMBER" },
       { key: "finance", label: "Finance", path: "/finance", minRole: "MEMBER", requires: "finance" },
+      { key: "payroll", label: "Payroll", path: "/finance/payroll", minRole: "MEMBER", requires: "payroll" },
       { key: "subscriptions", label: "Subscriptions", path: "/subscriptions", minRole: "MEMBER" },
       { key: "rota", label: "Rota", path: "/rota", minRole: "MEMBER" },
       { key: "blog", label: "Blog", path: "/blog", minRole: "ADMIN" },
@@ -118,6 +119,7 @@ export const NAV_GROUPS: readonly NavGroupConfig[] = [
 ];
 
 export type NavContext = {
+  payrollAccess?: boolean;
   role: WorkspaceRole;
   workspace: { financeVisibleToMembers: boolean; blogEnabled: boolean };
 };
@@ -131,6 +133,7 @@ export function workspaceBasePath(slug: string) {
 
 function allowed(item: NavItemConfig, context: NavContext) {
   if (!hasRoleAtLeast(context.role, item.minRole)) return false;
+  if (item.requires === "payroll") return context.role === "OWNER" || context.payrollAccess === true;
   if (item.requires === "finance") return canViewFinance({ role: context.role }, context.workspace);
   return true;
 }

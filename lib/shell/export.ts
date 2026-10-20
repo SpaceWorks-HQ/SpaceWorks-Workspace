@@ -318,7 +318,7 @@ export async function buildWorkspaceExport(
       fields.map((field) => Prisma.raw(`"${field}"`)),
     );
     const rows = await client.$queryRaw<Record<string, unknown>[]>(
-      Prisma.sql`SELECT ${selected} FROM ${Prisma.raw(`"${model}"`)} WHERE ${Prisma.raw(model === "Workspace" ? '"id"' : '"workspaceId"')}=${workspaceId} LIMIT 100001`,
+      Prisma.sql`SELECT ${selected} FROM ${Prisma.raw(`"${model}"`)} WHERE ${Prisma.raw(model === "Workspace" ? '"id"' : '"workspaceId"')}=${workspaceId} ${model === "LedgerEntry" ? Prisma.sql`AND "privatePayroll" = false` : model === "FileObject" ? Prisma.sql`AND "folder" NOT LIKE '/finance-tools%' AND NOT EXISTS (SELECT 1 FROM "FinanceAttachment" a WHERE a."workspaceId"=${workspaceId} AND a."fileId"="FileObject".id)` : Prisma.empty} LIMIT 100001`,
     );
     if (rows.length > 100000) throw new Error("Export exceeds supported size");
     entities[model] = rows.map((row) => redactExportRow(model, row));

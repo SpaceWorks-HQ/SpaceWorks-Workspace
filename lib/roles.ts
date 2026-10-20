@@ -155,3 +155,8 @@ export const canExportWorkspace = (m: RoleHolder) => atLeast(m, "OWNER");
 /** App reviews: members triage and reply; admins manage store credentials. */
 export const canViewAppReviews = (m: RoleHolder) => atLeast(m, "MEMBER");
 export const canManageAppReviews = (m: RoleHolder) => atLeast(m, "ADMIN");
+
+/** Payroll requires an explicit tenant grant; role alone never grants it. */
+export type PayrollGrant = { manage: boolean } | null | undefined;
+export const canViewPayroll = (m: RoleHolder, grant: PayrollGrant) => atLeast(m, "MEMBER") && grant != null;
+export const canManagePayroll = (m: RoleHolder, grant: PayrollGrant) => canViewPayroll(m, grant) && grant?.manage === true;

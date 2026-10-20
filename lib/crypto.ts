@@ -39,6 +39,8 @@ export function decodeAes256Key(raw: string | undefined, name: string): Buffer {
 
 /** Purposes for derived subkeys. Never reuse one purpose for another kind of data. */
 export type SecretPurpose =
+  | "finance-pay-pan"
+  | "finance-pay-bank"
   | "instance-settings"
   | "integration-tokens"
   /** MessagingConnection.credentialsEnc, BridgedChannel.outboundWebhookEnc. */
@@ -63,6 +65,8 @@ export type SecretPurpose =
   | "app-review-slack-signing";
 
 const PURPOSE_INFO: Record<SecretPurpose, string> = {
+  "finance-pay-pan": "sww-finance-pay-pan-v1",
+  "finance-pay-bank": "sww-finance-pay-bank-v1",
   "app-review-issuer": "sww-app-review-issuer-v1",
   "app-review-key-id": "sww-app-review-key-id-v1",
   "app-review-private-key": "sww-app-review-private-key-v1",

@@ -46,6 +46,7 @@ export function fileDetailUrl(slug: string, fileId: string) {
 const OTHER_AREA_RELATIONS: Prisma.FileObjectWhereInput = {
   messageAttachments: { none: {} },
   ledgerReceipts: { none: {} },
+  financeAttachments: { none: {} },
   blogCovers: { none: {} },
   subscriptionContracts: { none: {} },
   certificationEvidence: { none: {} },
@@ -56,7 +57,7 @@ const OTHER_AREA_RELATIONS: Prisma.FileObjectWhereInput = {
 /** Chat uploads (message attachments, the /chat folder) belong to chat, not the library. */
 const NOT_CHAT: Prisma.FileObjectWhereInput = {
   messageAttachments: { none: {} },
-  NOT: { OR: [{ folder: CHAT_FOLDER }, { folder: { startsWith: `${CHAT_FOLDER}/` } }] },
+  NOT: { OR: [{ folder: CHAT_FOLDER }, { folder: { startsWith: `${CHAT_FOLDER}/` } }, { folder: { startsWith: "/finance-tools" } }] },
 };
 
 const RESERVED_FOLDER = "The chat folder is managed by chat. Choose another folder.";
@@ -359,6 +360,7 @@ export async function purgeDeletedFiles(now: Date, batch = 50) {
       AND f.folder <> ${CHAT_FOLDER} AND f.folder NOT LIKE ${`${CHAT_FOLDER}/%`}
       AND NOT EXISTS (SELECT 1 FROM "MessageAttachment" a WHERE a."fileId"=f.id)
       AND NOT EXISTS (SELECT 1 FROM "LedgerEntry" r WHERE r."receiptFileId"=f.id)
+      AND NOT EXISTS (SELECT 1 FROM "FinanceAttachment" r WHERE r."workspaceId"=f."workspaceId" AND r."fileId"=f.id)
       AND NOT EXISTS (SELECT 1 FROM "BlogPost" r WHERE r."coverFileId"=f.id)
       AND NOT EXISTS (SELECT 1 FROM "Subscription" r WHERE r."contractFileId"=f.id)
       AND NOT EXISTS (SELECT 1 FROM "Certification" r WHERE r."evidenceFileId"=f.id)

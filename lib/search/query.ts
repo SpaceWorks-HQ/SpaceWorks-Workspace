@@ -128,6 +128,7 @@ export function accessSql(actor: SearchActor) {
       "Invoice",
       Prisma.sql`${member} AND (${admin} OR EXISTS (SELECT 1 FROM "Workspace" w WHERE w.id=${actor.workspaceId} AND w."financeVisibleToMembers"))`,
     ],
+    ...([ ["finance_fund", "FinanceFund"], ["finance_centre", "FinanceCostCentre"], ["finance_budget", "Budget"], ["finance_bill", "FinanceBill"], ["finance_disbursement", "FinanceDisbursement"], ["finance_entry", "LedgerEntry"] ] as const).map(([kind, table]): [string, string, Prisma.Sql] => [kind, table, Prisma.sql`${member} AND (${admin} OR EXISTS (SELECT 1 FROM "Workspace" w WHERE w.id=${actor.workspaceId} AND w."financeVisibleToMembers")) ${table === "LedgerEntry" ? Prisma.sql`AND r."privatePayroll"=false AND r."voidedAt" IS NULL` : Prisma.empty}`]),
     ["blog_post", "BlogPost", Prisma.sql`${admin}`],
     [
       "file",

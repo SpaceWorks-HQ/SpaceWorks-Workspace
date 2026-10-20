@@ -1,4 +1,5 @@
 import "server-only";
+import { run as financeTools } from "@/lib/scheduled/financeTools";
 
 import { recordAuditEvent } from "@/lib/audit";
 import { publishDuePosts } from "@/lib/blog/service";
@@ -58,4 +59,5 @@ export async function notifyOverdueInvoices(now: Date): Promise<number> {
 export async function run(now: Date): Promise<void> {
   await publishDuePosts(now);
   await notifyOverdueInvoices(now);
+  await financeTools(now);
 }

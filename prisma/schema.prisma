@@ -567,6 +567,20 @@ model Workspace {
   appReviewSlackConfig     AppReviewSlackConfig?
   appReviewSlackEvents     AppReviewSlackEvent[]
   appReviewSlackMembers    AppReviewSlackMember[]
+  financeFunds             FinanceFund[]
+  financeCostCentres       FinanceCostCentre[]
+  financeAccounts          FinanceAccount[]
+  financeBills             FinanceBill[]
+  financeBillPayments      FinanceBillPayment[]
+  financeMonths            FinanceMonth[]
+  financeMonthSteps        FinanceMonthStep[]
+  financeReconciliations   FinanceReconciliation[]
+  financeAttachments       FinanceAttachment[]
+  payrollGrants            FinancePayrollGrant[]
+  payProfiles              FinancePayProfile[]
+  payRuns                  FinancePayRun[]
+  disbursements            FinanceDisbursement[]
+  financeReviewRules       FinanceReviewRule[]
 }
 
 model Membership {
@@ -1017,6 +1031,9 @@ model FileObject {
   statusPageLogos       StatusPage[]
   signedPdfs            SignatureRequest[]
 
+  financeAttachments FinanceAttachment[]
+
+  @@unique([workspaceId, id])
   @@index([workspaceId, folder])
   @@index([docId])
   @@index([taskId])
@@ -1140,7 +1157,31 @@ model LedgerEntry {
   createdBy   User?            @relation(fields: [createdById], references: [id], onDelete: SetNull)
   budget      Budget?          @relation(fields: [budgetId], references: [id], onDelete: SetNull)
 
+  // Manual finance tools. Salary postings remain private to payroll grantees.
+  fundId         String?
+  costCentreId   String?
+  accountId      String?
+  incomeSource   String             @default("OTHER")
+  purpose        String?
+  invoiceNumber  String?
+  gstin          String?
+  taxableMinor   Int                @default(0)
+  cgstMinor      Int                @default(0)
+  sgstMinor      Int                @default(0)
+  igstMinor      Int                @default(0)
+  tdsMinor       Int                @default(0)
+  extractionUsed Boolean            @default(false)
+  privatePayroll Boolean            @default(false)
+  reconciledAt   DateTime?
+  fund           FinanceFund?       @relation(fields: [workspaceId, fundId], references: [workspaceId, id], onDelete: NoAction)
+  costCentre     FinanceCostCentre? @relation(fields: [workspaceId, costCentreId], references: [workspaceId, id], onDelete: NoAction)
+  account        FinanceAccount?    @relation(fields: [workspaceId, accountId], references: [workspaceId, id], onDelete: NoAction)
+
+  @@unique([workspaceId, id])
   @@unique([sourceType, sourceId])
+  @@index([workspaceId, fundId, occurredOn])
+  @@index([workspaceId, costCentreId, occurredOn])
+  @@index([workspaceId, accountId, occurredOn])
   @@index([workspaceId, occurredOn])
   @@index([categoryId])
   @@index([budgetId])
@@ -3135,6 +3176,11 @@ model Budget {
   purchaseRequests PurchaseRequest[]
   reimbursements   Reimbursement[]
 
+  // Category/centre lines share the existing budget and ledger.
+  costCentreId String?
+  varianceNote String?
+  costCentre   FinanceCostCentre? @relation(fields: [workspaceId, costCentreId], references: [workspaceId, id], onDelete: NoAction)
+
   @@index([workspaceId, periodStart])
 }
 
@@ -4814,4 +4860,290 @@ model PersonalTodo {
 
   @@index([workspaceId, userId, done, position])
   @@index([noteId])
+}
+
+// ─────────────────────── Manual finance tools ───────────────────────
+
+model FinanceFund {
+  id          String        @id @default(cuid())
+  workspaceId String
+  name        String
+  restricted  Boolean       @default(false)
+  currency    String        @default("INR")
+  funder      String?
+  notes       String?
+  archivedAt  DateTime?
+  createdAt   DateTime      @default(now())
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  entries     LedgerEntry[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, name])
+  @@index([workspaceId, archivedAt])
+}
+
+model FinanceCostCentre {
+  id                String        @id @default(cuid())
+  workspaceId       String
+  name              String
+  kind              String        @default("PROGRAMME")
+  projectId         String?
+  externalReference String?
+  externalUrl       String?
+  notes             String?
+  archivedAt        DateTime?
+  createdAt         DateTime      @default(now())
+  workspace         Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  entries           LedgerEntry[]
+  budgets           Budget[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, name])
+  @@index([workspaceId, archivedAt])
+}
+
+model FinanceAccount {
+  id              String                  @id @default(cuid())
+  workspaceId     String
+  name            String
+  currency        String                  @default("INR")
+  openingMinor    Int                     @default(0)
+  openingOn       DateTime                @db.Date
+  reconciledUpTo  DateTime?               @db.Date
+  workspace       Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  entries         LedgerEntry[]
+  reconciliations FinanceReconciliation[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, name])
+  @@index([workspaceId, reconciledUpTo])
+}
+
+model FinanceBill {
+  id           String               @id @default(cuid())
+  workspaceId  String
+  vendor       String
+  number       String
+  issuedOn     DateTime             @db.Date
+  dueOn        DateTime             @db.Date
+  amountMinor  Int
+  paidMinor    Int                  @default(0)
+  currency     String               @default("INR")
+  gstin        String?
+  taxableMinor Int                  @default(0)
+  cgstMinor    Int                  @default(0)
+  sgstMinor    Int                  @default(0)
+  igstMinor    Int                  @default(0)
+  tdsMinor     Int                  @default(0)
+  categoryId   String?
+  fundId       String?
+  costCentreId String?
+  accountId    String?
+  purpose      String?
+  notes        String?
+  ownerId      String?
+  createdById  String
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  workspace    Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  payments     FinanceBillPayment[]
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId, dueOn])
+  @@index([workspaceId, vendor, number])
+}
+
+model FinanceBillPayment {
+  id          String      @id @default(cuid())
+  workspaceId String
+  billId      String
+  paymentKey  String
+  amountMinor Int
+  paidOn      DateTime    @db.Date
+  reference   String
+  posted      Boolean     @default(true)
+  createdById String
+  createdAt   DateTime    @default(now())
+  workspace   Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  bill        FinanceBill @relation(fields: [workspaceId, billId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, paymentKey])
+  @@index([workspaceId, billId, paidOn])
+}
+
+model FinanceMonth {
+  id               String             @id @default(cuid())
+  workspaceId      String
+  month            String
+  signedOffAt      DateTime?
+  signedOffById    String?
+  reviewSignedAt   DateTime?
+  reviewSignedById String?
+  reviewNotes      String?
+  workspace        Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  steps            FinanceMonthStep[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, month])
+}
+
+model FinanceMonthStep {
+  id          String       @id @default(cuid())
+  workspaceId String
+  monthId     String
+  title       String
+  ownerId     String?
+  done        Boolean      @default(false)
+  notes       String?
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  month       FinanceMonth @relation(fields: [workspaceId, monthId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, monthId])
+}
+
+model FinanceReconciliation {
+  id             String         @id @default(cuid())
+  workspaceId    String
+  accountId      String
+  upTo           DateTime       @db.Date
+  statementMinor Int
+  ledgerMinor    BigInt
+  notes          String?
+  signedOffAt    DateTime?
+  signedOffById  String?
+  createdAt      DateTime       @default(now())
+  workspace      Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  account        FinanceAccount @relation(fields: [workspaceId, accountId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, accountId, upTo])
+}
+
+/// Private files stay with their record; staged files belong only to their uploader.
+model FinanceAttachment {
+  id             String     @id @default(cuid())
+  workspaceId    String
+  recordType     String
+  recordId       String
+  fileId         String     @unique
+  uploadedById   String
+  extractionUsed Boolean    @default(false)
+  createdAt      DateTime   @default(now())
+  workspace      Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  file           FileObject @relation(fields: [workspaceId, fileId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, recordType, recordId])
+}
+
+/// No implicit payroll access, including for administrators and owners.
+model FinancePayrollGrant {
+  id          String    @id @default(cuid())
+  workspaceId String
+  userId      String
+  manage      Boolean   @default(false)
+  grantedById String
+  createdAt   DateTime  @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+}
+
+model FinancePayProfile {
+  id            String          @id @default(cuid())
+  workspaceId   String
+  name          String
+  userId        String?
+  kind          String
+  currency      String          @default("INR")
+  rateMinor     Int
+  rateBasis     String          @default("MONTH")
+  panEnc        String?
+  bankEnc       String?
+  pfApplicable  Boolean         @default(false)
+  esiApplicable Boolean         @default(false)
+  ptApplicable  Boolean         @default(false)
+  tdsSection    String?
+  costCentreId  String?
+  archivedAt    DateTime?
+  createdAt     DateTime        @default(now())
+  workspace     Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  runs          FinancePayRun[]
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId, archivedAt])
+}
+
+model FinancePayRun {
+  id              String            @id @default(cuid())
+  workspaceId     String
+  profileId       String
+  month           String
+  currency        String
+  grossMinor      Int
+  allowancesMinor Int               @default(0)
+  pfMinor         Int               @default(0)
+  esiMinor        Int               @default(0)
+  ptMinor         Int               @default(0)
+  tdsMinor        Int               @default(0)
+  advancesMinor   Int               @default(0)
+  otherMinor      Int               @default(0)
+  netMinor        Int
+  costCentreId    String?
+  accountId       String?
+  categoryId      String?
+  fundId          String?
+  status          String            @default("DRAFT")
+  createdById     String
+  approvedById    String?
+  approvedAt      DateTime?
+  paidOn          DateTime?         @db.Date
+  reference       String?
+  ledgerEntryId   String?
+  notes           String?
+  createdAt       DateTime          @default(now())
+  workspace       Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  profile         FinancePayProfile @relation(fields: [workspaceId, profileId], references: [workspaceId, id], onDelete: Restrict)
+
+  @@unique([workspaceId, profileId, month])
+  @@index([workspaceId, month, status])
+}
+
+model FinanceDisbursement {
+  id            String    @id @default(cuid())
+  workspaceId   String
+  payee         String
+  purpose       String
+  kind          String
+  amountMinor   Int
+  tdsMinor      Int       @default(0)
+  currency      String    @default("INR")
+  costCentreId  String?
+  fundId        String?
+  accountId     String?
+  categoryId    String?
+  ownerId       String?
+  dueOn         DateTime? @db.Date
+  status        String    @default("DRAFT")
+  approvalId    String?
+  paidOn        DateTime? @db.Date
+  reference     String?
+  ledgerEntryId String?
+  settledMinor  Int       @default(0)
+  settledOn     DateTime? @db.Date
+  notes         String?
+  createdById   String
+  createdAt     DateTime  @default(now())
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, status, dueOn])
+}
+
+model FinanceReviewRule {
+  id             String    @id @default(cuid())
+  workspaceId    String
+  categoryId     String
+  currency       String
+  thresholdMinor Int
+  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, categoryId, currency])
 }
