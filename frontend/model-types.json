@@ -78,75 +78,105 @@
     "value": false
   },
   {
-    "module": "lib/finance/tools/queries",
-    "name": "ToolSection",
+    "module": "lib/finance/tools/views",
+    "name": "FinanceReportsView",
     "id": "Shared13",
     "value": false
   },
   {
     "module": "lib/finance/tools/queries",
-    "name": "FinancePickers",
+    "name": "ToolSection",
     "id": "Shared14",
+    "value": false
+  },
+  {
+    "module": "lib/finance/tools/views",
+    "name": "AttachedFileMap",
+    "id": "Shared15",
+    "value": false
+  },
+  {
+    "module": "lib/finance/tools/views",
+    "name": "FinanceToolView",
+    "id": "Shared16",
+    "value": false
+  },
+  {
+    "module": "lib/finance/tools/views",
+    "name": "PayrollView",
+    "id": "Shared17",
+    "value": false
+  },
+  {
+    "module": "lib/finance/tools/queries",
+    "name": "FinancePickers",
+    "id": "Shared18",
     "value": false
   },
   {
     "module": "lib/finance/tools/extract",
     "name": "ExtractedReceipt",
-    "id": "Shared15",
+    "id": "Shared19",
     "value": false
   },
   {
     "module": "lib/governance/service",
     "name": "Actor",
-    "id": "Shared16",
+    "id": "Shared20",
     "value": false
   },
   {
     "module": "lib/governance/service",
     "name": "Filters",
-    "id": "Shared17",
+    "id": "Shared21",
+    "value": false
+  },
+  {
+    "module": "lib/governance/service",
+    "name": "GovernanceData",
+    "id": "Shared22",
     "value": false
   },
   {
     "module": "lib/notepad/service",
     "name": "NoteDTO",
-    "id": "Shared18",
+    "id": "Shared23",
     "value": false
   },
   {
     "module": "lib/notepad/service",
     "name": "NotepadData",
-    "id": "Shared19",
+    "id": "Shared24",
     "value": false
   },
   {
     "module": "lib/notepad/service",
     "name": "TodoDTO",
-    "id": "Shared20",
+    "id": "Shared25",
     "value": false
   },
   {
     "module": "lib/opsGaps/attachments",
     "name": "AttachmentKind",
-    "id": "Shared21",
+    "id": "Shared26",
     "value": false
   },
   {
     "module": "lib/people/profiles",
     "name": "EmergencyContact",
-    "id": "Shared22",
+    "id": "Shared27",
     "value": false
   },
   {
     "module": "lib/approvals/context",
     "name": "OpsActor",
-    "id": "Shared23",
+    "id": "Shared28",
     "value": false
   },
   {
     "module": "lib/auth",
     "name": "SsoMfaChallenge",
-    "id": "Shared24",
+    "id": "Shared29",
     "value": false
   }
 ]

@@ -4,6 +4,7 @@ import { viewDto } from "@/lib/frontend/view";
 import { notFound } from "next/navigation";
 import { requireWorkspace, canViewFinance } from "@/lib/permissions";
 import type { FinanceQuery } from "@/lib/finance/tools/queries";
+import { financeToolView } from "@/lib/finance/tools/views";
 
 export async function loadPage({
   params,
@@ -16,5 +17,6 @@ const raw = await searchParams;
 const query = Object.fromEntries(
     Object.entries(raw).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v]),
   ) as FinanceQuery;
-return viewDto({ actor, query } as const);
+const view = await financeToolView(actor, "disbursements", query);
+return viewDto({ actor, query, view } as const);
 }

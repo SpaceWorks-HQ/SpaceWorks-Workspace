@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { requireWorkspace, canViewFinance } from "@/lib/permissions";
 import { FinanceReportsScreen } from "@/components/finance/FinanceReports";
 import type { FinanceQuery } from "@/lib/finance/tools/queries";
+import { financeReportsView } from "@/lib/finance/tools/views";
 import "../../tools-print.css";
 export default async function Page({
   params,
@@ -14,9 +15,10 @@ export default async function Page({
   const query = Object.fromEntries(
     Object.entries(raw).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v]),
   ) as FinanceQuery;
+  const view = await financeReportsView(actor, query);
   return (
     <div id="finance-print">
-      <FinanceReportsScreen actor={actor} query={query} print />
+      <FinanceReportsScreen actor={actor} query={query} view={view} print />
     </div>
   );
 }

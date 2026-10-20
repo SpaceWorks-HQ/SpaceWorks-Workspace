@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { requireWorkspace, canViewPayroll } from "@/lib/permissions";
 import { prisma } from "@/lib/db";
 import type { FinanceQuery } from "@/lib/finance/tools/queries";
+import { payrollView } from "@/lib/finance/tools/views";
 
 export async function loadPage({
   params,
@@ -29,5 +30,6 @@ const raw = await searchParams;
 const query = Object.fromEntries(
     Object.entries(raw).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v]),
   ) as FinanceQuery;
-return viewDto({ actor, query } as const);
+const view = await payrollView(actor, query);
+return viewDto({ actor, query, view } as const);
 }

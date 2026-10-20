@@ -1,4 +1,5 @@
 import "server-only";
+import { notFound } from "next/navigation";
 import {
   Prisma,
   type GovernanceRecord,
@@ -16,6 +17,7 @@ import {
   sectionFor,
   sectionPath,
   dayInZone,
+  governanceFilters,
   type Section,
 } from "./schemas";
 import { recordAuditEvent } from "@/lib/audit";
@@ -746,4 +748,21 @@ export async function loadGovernance(
     meetings,
     contacts,
   };
+}
+export type GovernanceData = Awaited<ReturnType<typeof loadGovernance>>;
+/** One section for its page; an edit id outside it is not found. */
+export async function loadGovernanceScreen(
+  actor: Actor,
+  section: Section,
+  params: Record<string, string | string[] | undefined>,
+) {
+  const edit = typeof params.edit === "string" ? params.edit : undefined;
+  const data = await loadGovernance(
+    actor,
+    section,
+    governanceFilters(params),
+    edit,
+  );
+  if (edit && !data.selected) notFound();
+  return data;
 }

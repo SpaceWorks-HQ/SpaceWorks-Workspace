@@ -4,6 +4,7 @@ import { viewDto } from "@/lib/frontend/view";
 import { notFound } from "next/navigation";
 import { requireWorkspace } from "@/lib/permissions";
 import { canViewGovernance } from "@/lib/roles";
+import { loadGovernanceScreen } from "@/lib/governance/service";
 
 export async function loadPage({
   params,
@@ -12,5 +13,7 @@ export async function loadPage({
 const { workspaceSlug } = await params;
 const actor = await requireWorkspace(workspaceSlug, "ADMIN");
 if (!canViewGovernance(actor.membership)) notFound();
-return viewDto({ actor } as const);
+const query = await searchParams;
+const data = await loadGovernanceScreen(actor, "vendors", query);
+return viewDto({ actor, data } as const);
 }

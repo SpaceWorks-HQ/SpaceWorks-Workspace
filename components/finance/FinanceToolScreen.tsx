@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
-import { prisma } from "@/lib/db";
 import { buttonClasses } from "@/components/ui/button";
 import { Card, CardHeader, Chip, EmptyState } from "@/components/ui/display";
 import { ToolForm, type FormField } from "./ToolForm";
@@ -24,12 +23,11 @@ import {
 import { formatDay, isoDay, localDate } from "@/lib/finance/dates";
 import { minorToDecimalString } from "@/lib/finance/money";
 import { formatMoney } from "@/lib/format/money";
-import {
-  financePickers,
-  toolLists,
-  type FinanceQuery,
-  type ToolSection,
-} from "@/lib/finance/tools/queries";
+import type { FinanceQuery, ToolSection } from "@/lib/finance/tools/queries";
+import type {
+  AttachedFileMap,
+  FinanceToolView,
+} from "@/lib/finance/tools/views";
 import type { FinanceActor } from "@/lib/finance/tools/access";
 import type { AttachmentType } from "@/lib/finance/tools-rules";
 
@@ -54,37 +52,27 @@ export function EditPanel({
     </details>
   );
 }
-export async function AttachedFiles({
-  actor,
+export function AttachedFiles({
+  slug,
   type,
   id,
+  files,
   editable,
 }: {
-  actor: FinanceActor;
+  slug: string;
   type: AttachmentType;
   id: string;
+  files: AttachedFileMap;
   editable: boolean;
 }) {
-  const rows = await prisma.financeAttachment.findMany({
-    where: {
-      workspaceId: actor.workspace.id,
-      recordType: type,
-      recordId: id,
-      file: { deletedAt: null },
-    },
-    select: {
-      id: true,
-      file: { select: { id: true, filename: true, contentType: true } },
-    },
-    orderBy: { createdAt: "asc" },
-  });
+  const rows = files[id] ?? [];
   return (
     <FinanceAttachments
-      key={`${id}:${rows.map((r) => r.id).join(":")}`}
-      slug={actor.workspace.slug}
+      key={`${id}:${rows.map((r) => r.attachmentId).join(":")}`}
+      slug={slug}
       type={type}
       recordId={id}
-      initial={rows.map((r) => ({ ...r.file, attachmentId: r.id }))}
+      initial={rows}
       editable={editable}
     />
   );
@@ -110,10 +98,11 @@ function Empty({
     />
   );
 }
-export async function FinanceToolScreen({
+export function FinanceToolScreen({
   actor,
   section,
   query,
+  view,
 }: {
   actor: FinanceActor;
   section: Extract<
@@ -121,11 +110,9 @@ export async function FinanceToolScreen({
     "funds" | "budgets" | "bills" | "close" | "disbursements"
   >;
   query: FinanceQuery;
+  view: FinanceToolView;
 }) {
-  const [data, p] = await Promise.all([
-    toolLists(actor, section, query),
-    financePickers(actor),
-  ]);
+  const { data, pickers: p, files } = view;
   const slug = actor.workspace.slug,
     base = `/w/${slug}/finance`,
     today = localDate(new Date(), actor.workspace.timezone),
@@ -360,7 +347,8 @@ export async function FinanceToolScreen({
               </p>
               <div className="mt-4">
                 <AttachedFiles
-                  actor={actor}
+                  slug={slug}
+                  files={files}
                   type="FUND"
                   id={f.id}
                   editable={manage}
@@ -645,7 +633,8 @@ export async function FinanceToolScreen({
               <p className="whitespace-pre-wrap text-ink-muted">{b.notes}</p>
               <div className="mt-4">
                 <AttachedFiles
-                  actor={actor}
+                  slug={slug}
+                  files={files}
                   type="BILL"
                   id={b.id}
                   editable={manage}
@@ -864,7 +853,8 @@ export async function FinanceToolScreen({
                   />
                 ) : null}
                 <AttachedFiles
-                  actor={actor}
+                  slug={slug}
+                  files={files}
                   type="MONTH"
                   id={data.month.id}
                   editable={manage}
@@ -1075,7 +1065,8 @@ export async function FinanceToolScreen({
               <p className="whitespace-pre-wrap text-ink-muted">{d.notes}</p>
               <div className="mt-4">
                 <AttachedFiles
-                  actor={actor}
+                  slug={slug}
+                  files={files}
                   type="DISBURSEMENT"
                   id={d.id}
                   editable={manage}

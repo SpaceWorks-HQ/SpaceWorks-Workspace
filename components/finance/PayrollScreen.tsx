@@ -1,13 +1,9 @@
 import Link from "next/link";
-import { prisma } from "@/lib/db";
 import { Card, CardHeader, Chip, EmptyState } from "@/components/ui/display";
 import { buttonClasses } from "@/components/ui/button";
-import { financeAccess, type FinanceActor } from "@/lib/finance/tools/access";
-import {
-  payrollData,
-  financePickers,
-  type FinanceQuery,
-} from "@/lib/finance/tools/queries";
+import type { FinanceActor } from "@/lib/finance/tools/access";
+import type { FinanceQuery } from "@/lib/finance/tools/queries";
+import type { PayrollView } from "@/lib/finance/tools/views";
 import { ToolForm, type FormField } from "./ToolForm";
 import { currencyField, hidden, money, options, tagFields } from "./ToolFields";
 import { EditPanel, AttachedFiles } from "./FinanceToolScreen";
@@ -19,42 +15,20 @@ import { FinanceFilters } from "./FinanceFilters";
 import { PayDetails, PayslipButton } from "./PayrollActions";
 import { GroupTable } from "./FinanceReports";
 
-export async function PayrollScreen({
+export function PayrollScreen({
   actor,
   query,
+  view,
 }: {
   actor: FinanceActor;
   query: FinanceQuery;
+  view: PayrollView;
 }) {
-  const grant = await prisma.financePayrollGrant.findUnique({
-    where: {
-      workspaceId_userId: {
-        workspaceId: actor.workspace.id,
-        userId: actor.user.id,
-      },
-    },
-  });
+  const { grants, members, payroll } = view;
   const isOwner = actor.membership.role === "OWNER";
-  if (!grant && !isOwner) await financeAccess(actor, "PAY_VIEW");
   const slug = actor.workspace.slug,
     base = `/w/${slug}/finance`,
     today = localDate(new Date(), actor.workspace.timezone);
-  const grants = isOwner
-    ? await prisma.financePayrollGrant.findMany({
-        where: { workspaceId: actor.workspace.id },
-        select: { userId: true, manage: true },
-      })
-    : [];
-  const members = isOwner
-    ? await prisma.membership.findMany({
-        where: {
-          workspaceId: actor.workspace.id,
-          status: "ACTIVE",
-          user: { disabledAt: null },
-        },
-        select: { userId: true, user: { select: { name: true } } },
-      })
-    : [];
   const accessPanel = isOwner ? (
     <Card>
       <CardHeader
@@ -100,7 +74,7 @@ export async function PayrollScreen({
       />
     </Card>
   ) : null;
-  if (!grant)
+  if (!payroll)
     return (
       <div className="flex flex-col gap-5">
         <h2 className="text-h2">Payroll</h2>
@@ -111,10 +85,7 @@ export async function PayrollScreen({
         />
       </div>
     );
-  const [data, p] = await Promise.all([
-    payrollData(actor, query),
-    financePickers(actor, true),
-  ]);
+  const { data, pickers: p, files } = payroll;
   const runs = data.runs.filter((r) => r.currency === data.period.currency);
   const profileFields = (v?: (typeof data.profiles)[number]): FormField[] => [
     ...(v ? [hidden("id", v.id)] : []),
@@ -377,7 +348,8 @@ export async function PayrollScreen({
           />
           <PayDetails slug={slug} profileId={profile.id} />
           <AttachedFiles
-            actor={actor}
+            slug={slug}
+            files={files}
             type="PAY_PROFILE"
             id={profile.id}
             editable={data.manage}
@@ -466,7 +438,8 @@ export async function PayrollScreen({
           </p>
           <div className="mt-4">
             <AttachedFiles
-              actor={actor}
+              slug={slug}
+              files={files}
               type="PAY_RUN"
               id={r.id}
               editable={data.manage}

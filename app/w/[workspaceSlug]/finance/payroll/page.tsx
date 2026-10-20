@@ -3,6 +3,7 @@ import { requireWorkspace, canViewPayroll } from "@/lib/permissions";
 import { prisma } from "@/lib/db";
 import { PayrollScreen } from "@/components/finance/PayrollScreen";
 import type { FinanceQuery } from "@/lib/finance/tools/queries";
+import { payrollView } from "@/lib/finance/tools/views";
 export default async function Page({
   params,
   searchParams,
@@ -26,5 +27,6 @@ export default async function Page({
   const query = Object.fromEntries(
     Object.entries(raw).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v]),
   ) as FinanceQuery;
-  return <PayrollScreen actor={actor} query={query} />;
+  const view = await payrollView(actor, query);
+  return <PayrollScreen actor={actor} query={query} view={view} />;
 }

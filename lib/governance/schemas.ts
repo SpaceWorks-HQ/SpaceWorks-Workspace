@@ -270,3 +270,14 @@ export function dayInZone(now: Date, timezone: string) {
     day: "2-digit",
   }).format(now);
 }
+/** Search parameters as list filters; repeated keys are ignored. */
+export function governanceFilters(
+  params: Record<string, string | string[] | undefined>,
+) {
+  return Object.fromEntries(
+    Object.entries(params).map(([k, v]) => [
+      k,
+      typeof v === "string" ? v : undefined,
+    ]),
+  );
+}

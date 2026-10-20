@@ -4,13 +4,9 @@ import { buttonClasses } from "@/components/ui/button";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { formatMoney } from "@/lib/format/money";
 import { formatDay } from "@/lib/finance/dates";
-import {
-  financePickers,
-  financeReports,
-  spendingReview,
-  type FinanceQuery,
-} from "@/lib/finance/tools/queries";
-import { financeAccess, type FinanceActor } from "@/lib/finance/tools/access";
+import type { FinanceQuery } from "@/lib/finance/tools/queries";
+import type { FinanceActor } from "@/lib/finance/tools/access";
+import type { FinanceReportsView } from "@/lib/finance/tools/views";
 import { INCOME_SOURCES, label } from "@/lib/finance/tools-rules";
 import { ToolForm } from "./ToolForm";
 import { hidden, currencyField, money, options, tagFields } from "./ToolFields";
@@ -110,25 +106,23 @@ const EXPORTS = [
   ["disbursement-purposes", "Disbursements by purpose"],
   ["disbursement-centres", "Disbursements by programme"],
 ] as const;
-export async function FinanceReportsScreen({
+export function FinanceReportsScreen({
   actor,
   query,
+  view,
   spending = false,
   print = false,
 }: {
   actor: FinanceActor;
   query: FinanceQuery;
+  view: FinanceReportsView;
   spending?: boolean;
   print?: boolean;
 }) {
-  const review = spending ? await spendingReview(actor, query) : null;
-  const [data, p, { member }] = await Promise.all([
-    review ?? financeReports(actor, query),
-    financePickers(actor),
-    financeAccess(actor),
-  ]);
-  const manage = member.role === "OWNER" || member.role === "ADMIN",
-    slug = actor.workspace.slug,
+  const { data, pickers: p, manage, files } = view;
+  // Only the spending review carries duplicate pairs.
+  const review = "duplicates" in data ? data : null;
+  const slug = actor.workspace.slug,
     base = `/w/${slug}/finance`,
     c = data.period.currency;
   const params = new URLSearchParams({
@@ -580,7 +574,8 @@ export async function FinanceReportsScreen({
                 <div className="mt-4">
                   <EditPanel title="Receipts and bookkeeping">
                     <AttachedFiles
-                      actor={actor}
+                      slug={slug}
+                      files={files}
                       type="LEDGER"
                       id={e.id}
                       editable

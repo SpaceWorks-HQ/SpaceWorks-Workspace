@@ -1,10 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import {
-  loadGovernance,
-  type Actor,
-  type Filters,
-} from "@/lib/governance/service";
+import type { Actor, Filters, GovernanceData } from "@/lib/governance/service";
 import {
   LABELS,
   STATUSES,
@@ -12,6 +7,7 @@ import {
   label,
   sectionPath,
   dayInZone,
+  governanceFilters,
   type Section,
 } from "@/lib/governance/schemas";
 import { type Choices, recordFields } from "@/lib/governance/fields";
@@ -38,24 +34,18 @@ const DESCRIPTIONS = {
   board: "Keep terms, declarations, minutes and resolutions together.",
   vendors: "Keep vendor details, contracts and notice dates ready for review.",
 };
-export async function GovernanceScreen({
+export function GovernanceScreen({
   actor,
   section,
   params,
+  data,
 }: {
   actor: Actor;
   section: Section;
   params: Record<string, string | string[] | undefined>;
+  data: GovernanceData;
 }) {
-  const filters: Filters = Object.fromEntries(
-    Object.entries(params).map(([k, v]) => [
-      k,
-      typeof v === "string" ? v : undefined,
-    ]),
-  );
-  const edit = typeof params.edit === "string" ? params.edit : undefined;
-  const data = await loadGovernance(actor, section, filters, edit);
-  if (edit && !data.selected) notFound();
+  const filters: Filters = governanceFilters(params);
   const slug = actor.workspace.slug,
     base = `/w/${slug}/governance${sectionPath(section)}`;
   const choices: Choices = {

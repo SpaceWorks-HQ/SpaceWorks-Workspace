@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { requireWorkspace, canViewFinance } from "@/lib/permissions";
 import { FinanceToolScreen } from "@/components/finance/FinanceToolScreen";
 import type { FinanceQuery } from "@/lib/finance/tools/queries";
+import { financeToolView } from "@/lib/finance/tools/views";
 export default async function Page({
   params,
   searchParams,
@@ -13,5 +14,13 @@ export default async function Page({
   const query = Object.fromEntries(
     Object.entries(raw).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v]),
   ) as FinanceQuery;
-  return <FinanceToolScreen actor={actor} section="funds" query={query} />;
+  const view = await financeToolView(actor, "funds", query);
+  return (
+    <FinanceToolScreen
+      actor={actor}
+      section="funds"
+      query={query}
+      view={view}
+    />
+  );
 }
