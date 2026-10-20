@@ -46,6 +46,7 @@ export function fileDetailUrl(slug: string, fileId: string) {
 const OTHER_AREA_RELATIONS: Prisma.FileObjectWhereInput = {
   documentFiles: { none: {} },
   marketingItAttachments: { none: { fromLibrary: false } },
+  productAttachments: { none: {} },
   fundingAttachments: { none: {} },
   governanceAttachments: { none: {} },
   safeguardingAttachments: { none: {} },
@@ -64,7 +65,7 @@ const OTHER_AREA_RELATIONS: Prisma.FileObjectWhereInput = {
 /** Chat uploads (message attachments, the /chat folder) belong to chat, not the library. */
 const NOT_CHAT: Prisma.FileObjectWhereInput = {
   messageAttachments: { none: {} },
-  NOT: { OR: [{ folder: { startsWith: "/documents" } }, { folder: "/safeguarding" }, { folder: { startsWith: "/safeguarding/" } }, { folder: { startsWith: "/money-controls" } }, { folder: "/funding" }, { folder: { startsWith: "/funding/" } }, { folder: "/people-service" }, { folder: { startsWith: "/people-service/" } }, { folder: CHAT_FOLDER }, { folder: { startsWith: `${CHAT_FOLDER}/` } }, { folder: "/governance" }, { folder: { startsWith: "/governance/" } }, { folder: "/calendar" }, { folder: { startsWith: "/calendar/" } }, { folder: { startsWith: "/finance-tools" } }, { folder: { startsWith: "/org-people" } }, { folder: { startsWith: "/marketing-it" } }, { folder: { startsWith: "/marketing-assets" } }] },
+  NOT: { OR: [{ folder: { startsWith: "/documents" } }, { folder: "/safeguarding" }, { folder: { startsWith: "/safeguarding/" } }, { folder: { startsWith: "/money-controls" } }, { folder: "/funding" }, { folder: { startsWith: "/funding/" } }, { folder: "/people-service" }, { folder: { startsWith: "/people-service/" } }, { folder: CHAT_FOLDER }, { folder: { startsWith: `${CHAT_FOLDER}/` } }, { folder: "/governance" }, { folder: { startsWith: "/governance/" } }, { folder: "/calendar" }, { folder: { startsWith: "/calendar/" } }, { folder: { startsWith: "/finance-tools" } }, { folder: { startsWith: "/org-people" } }, { folder: { startsWith: "/marketing-it" } }, { folder: { startsWith: "/marketing-assets" } }, { folder: "/product-ops" }, { folder: { startsWith: "/product-ops/" } }] },
 };
 
 const RESERVED_FOLDER = "That folder is managed by its tool. Choose another folder.";
@@ -374,6 +375,8 @@ export async function purgeDeletedFiles(now: Date, batch = 50) {
       AND NOT EXISTS (SELECT 1 FROM "MessageAttachment" a WHERE a."fileId"=f.id)
       AND f.folder NOT LIKE '/marketing-it%' AND f.folder NOT LIKE '/marketing-assets%'
       AND NOT EXISTS (SELECT 1 FROM "MarketingItAttachment" ma WHERE ma."workspaceId"=f."workspaceId" AND ma."fileId"=f.id AND ma."fromLibrary"=false)
+      AND f.folder <> '/product-ops' AND f.folder NOT LIKE '/product-ops/%'
+      AND NOT EXISTS (SELECT 1 FROM "ProductAttachment" pa WHERE pa."workspaceId"=f."workspaceId" AND pa."fileId"=f.id)
       AND f.folder <> '/funding' AND f.folder NOT LIKE '/funding/%'
       AND NOT EXISTS (SELECT 1 FROM "FundingAttachment" fa WHERE fa."workspaceId"=f."workspaceId" AND fa."fileId"=f.id)
       AND f.folder <> '/calendar'

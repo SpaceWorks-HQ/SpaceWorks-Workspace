@@ -1,5 +1,6 @@
 import "server-only";
 import { run as marketingIt } from "@/lib/scheduled/marketingIt";
+import { run as productOps } from "@/lib/scheduled/productOps";
 import type { JobDefinition } from "@/lib/queue/definitions";
 import { enqueueDueOutbox } from "@/lib/queue/enqueue";
 import { purgeExpiredOperationalData } from "@/lib/retention";
@@ -34,6 +35,7 @@ import { run as shell } from "@/lib/scheduled/shell";
  */
 export const SCHEDULED_JOBS: ReadonlyArray<JobDefinition> = [
   { area: "marketing-it", run: marketingIt },
+  { area: "product-ops", run: productOps },
   { area: "funding-tools", run: funding },
   { area: "money-controls", run: moneyControls },
   { area: "ops-gaps", run: opsGaps },

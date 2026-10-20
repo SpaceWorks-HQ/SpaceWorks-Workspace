@@ -721,6 +721,16 @@
       "id": "w-workspaceSlug-polls-page:loadPollsPage"
     },
     {
+      "module": "lib/views/generated/w-workspaceSlug-product-ops-section-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-product-ops-section-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-product-ops-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-product-ops-page:loadPage"
+    },
+    {
       "module": "lib/views/generated/w-workspaceSlug-projects-key-project-layout-loadProjectLayout",
       "name": "loadProjectLayout",
       "id": "w-workspaceSlug-projects-key-project-layout:loadProjectLayout"
@@ -2251,6 +2261,31 @@
       "module": "app/actions/polls",
       "name": "pollAction",
       "id": "polls:pollAction"
+    },
+    {
+      "module": "app/actions/productOps",
+      "name": "saveProductRecord",
+      "id": "productOps:saveProductRecord"
+    },
+    {
+      "module": "app/actions/productOps",
+      "name": "productOperation",
+      "id": "productOps:productOperation"
+    },
+    {
+      "module": "app/actions/productOps",
+      "name": "uploadProductFile",
+      "id": "productOps:uploadProductFile"
+    },
+    {
+      "module": "app/actions/productOps",
+      "name": "removeProductFile",
+      "id": "productOps:removeProductFile"
+    },
+    {
+      "module": "app/actions/productOps",
+      "name": "saveProductOwnership",
+      "id": "productOps:saveProductOwnership"
     },
     {
       "module": "app/actions/projects",

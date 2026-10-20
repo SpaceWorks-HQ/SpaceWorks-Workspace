@@ -208,3 +208,9 @@ export const canUseMarketingOperations = (m: RoleHolder) => atLeast(m, "MEMBER")
 export const canManageMarketingOperations = (m: RoleHolder) => atLeast(m, "ADMIN");
 /** Device assignments, incident details and access reviews are admin records. */
 export const canManageItAdministration = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** Internal product tools are for the operating team; funding estimates require finance management. */
+export const canManageProductOps = (m: RoleHolder) => atLeast(m, "MEMBER");
+export const canManageProductEstimates = (m: RoleHolder) => atLeast(m, "ADMIN");
+
+/** Publishing into the existing changelog retains its admin-only permission. */
+export const canPublishProductChangelog = (m: RoleHolder) => atLeast(m, "ADMIN");
