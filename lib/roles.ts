@@ -172,3 +172,7 @@ export const canManageCalendarDeadlines = (m: RoleHolder) => atLeast(m, "ADMIN")
 export type PayrollGrant = { manage: boolean } | null | undefined;
 export const canViewPayroll = (m: RoleHolder, grant: PayrollGrant) => atLeast(m, "MEMBER") && grant != null;
 export const canManagePayroll = (m: RoleHolder, grant: PayrollGrant) => canViewPayroll(m, grant) && grant?.manage === true;
+
+/** Funding includes donor identity and proof; only workspace admins read or edit. */
+export const canManageFunding = (m: RoleHolder) => atLeast(m, "ADMIN");
+export const canViewFunding = canManageFunding;

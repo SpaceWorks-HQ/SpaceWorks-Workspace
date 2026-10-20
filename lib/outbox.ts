@@ -26,7 +26,7 @@ import {
  *   tracks attempts, so this row only mirrors the outcome.
  */
 
-type EmailPayload = { workspaceId?: string; to: string; subject: string; html: string; text: string; calendarInvite?: { method: "REQUEST" | "CANCEL"; content: string } };
+type EmailPayload = { fundingReceipt?: { recordId: string; fileId: string; contactId: string }; workspaceId?: string; to: string; subject: string; html: string; text: string; calendarInvite?: { method: "REQUEST" | "CANCEL"; content: string } };
 type InvitePayload = { workspaceId?: string; to: string; workspaceName: string; inviterName?: string | null; role: string; inviteUrl: string; expiresAt: string };
 type ResetPayload = { to: string; resetUrl: string; expiresAt: string };
 type VerificationPayload = { to: string; verificationUrl: string; expiresAt: string };
@@ -193,7 +193,15 @@ export async function deliverOutboxBatch(limit = 20, scope: { ids?: string[] } =
         failed += 1;
         continue;
       }
-      await sendRenderedEmail(rendered.to, rendered.email, `<sww-${message.id}@outbox.invalid>`);
+      const receipt = record(message.payload)?.fundingReceipt;
+      let attachments: Awaited<ReturnType<typeof import("@/lib/funding/email").fundingReceiptAttachment>>[] = [];
+      if (receipt !== undefined) {
+        const workspaceId = record(message.payload)?.workspaceId;
+        if (message.kind !== "email" || typeof workspaceId !== "string") throw new PermanentOutboxError();
+        const { fundingReceiptAttachment } = await import("@/lib/funding/email");
+        attachments = [await fundingReceiptAttachment(workspaceId, receipt, rendered.to)];
+      }
+      await sendRenderedEmail(rendered.to, { ...rendered.email, attachments }, `<sww-${message.id}@outbox.invalid>`);
       if (isCapability) {
         await prisma.outboxMessage.deleteMany({ where: mine });
       } else {

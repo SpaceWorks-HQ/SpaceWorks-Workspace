@@ -51,7 +51,7 @@ export function filterSearchHits(
   const finance = canViewFinance(principal, principal.workspace);
   return hits.filter((hit) => {
     if (NEVER_TYPES(hit.entityType)) return false;
-    if (hit.entityType === "governance" && !admin) return false;
+    if (["funding", "governance"].includes(hit.entityType) && !admin) return false;
     if (hit.entityType === "calendar_entry" && (principal.kind !== "user" || (hit.visibility === "PRIVATE" && hit.ownerId !== principal.userId))) return false;
     if (hit.entityType === "note" && (principal.kind !== "user" || hit.ownerId !== principal.userId)) return false;
     if (principal.kind === "token") {
@@ -112,7 +112,7 @@ export const searchWorkspace = defineTool({
     // Index metadata can outlive a file's links or a note's source record.
     // Authorise the live source before returning any indexed title or body.
     const live = await Promise.all(filtered.map(async (hit) => {
-      if (hit.entityType === "governance") return principal.kind === "user" && await canAccessResource({ workspaceId: principal.workspace.id, userId: principal.userId, role: principal.role }, "governance", hit.entityId);
+      if (["funding", "governance"].includes(hit.entityType)) return principal.kind === "user" && await canAccessResource({ workspaceId: principal.workspace.id, userId: principal.userId, role: principal.role }, hit.entityType, hit.entityId);
       if (hit.entityType === "note") return Boolean(await prisma.personalNote.findFirst({ where: { id: hit.entityId, workspaceId: principal.workspace.id, userId: principal.userId, archivedAt: null }, select: { id: true } }));
       if (hit.entityType === "member") return Boolean(await prisma.memberProfile.findFirst({ where: { id: hit.entityId, workspaceId: principal.workspace.id, user: { disabledAt: null, memberships: { some: { workspaceId: principal.workspace.id, status: "ACTIVE" } } } }, select: { id: true } }));
       if (hit.entityType === "team") return Boolean(await prisma.team.findFirst({ where: { id: hit.entityId, workspaceId: principal.workspace.id, archivedAt: null, ...(principal.kind === "user" && hasRoleAtLeast(principal.role, "ADMIN") ? {} : { OR: [{ visibility: "PUBLIC" }, { members: { some: { userId: principal.userId } } }] }) }, select: { id: true } }));
