@@ -159,3 +159,6 @@ export const canManageAppReviews = (m: RoleHolder) => atLeast(m, "ADMIN");
 export const canViewSocial = (m: RoleHolder) => atLeast(m, "MEMBER");
 export const canManageSocial = (m: RoleHolder) => atLeast(m, "MEMBER");
 export const canConnectSocial = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** Legal, board and vendor banking records are restricted to workspace admins. */
+export const canManageGovernance = (m: RoleHolder) => atLeast(m, "ADMIN");
+export const canViewGovernance = canManageGovernance;

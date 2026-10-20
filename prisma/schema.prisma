@@ -547,6 +547,9 @@ model Workspace {
   appReviewSlackConfig     AppReviewSlackConfig?
   appReviewSlackEvents     AppReviewSlackEvent[]
   appReviewSlackMembers    AppReviewSlackMember[]
+  governanceRecords GovernanceRecord[]
+  governanceAttachments GovernanceAttachment[]
+  governanceBankChanges GovernanceBankChange[]
 }
 
 model Membership {
@@ -999,6 +1002,7 @@ model FileObject {
   @@index([workspaceId, folder])
   @@index([docId])
   @@index([taskId])
+  governanceAttachments GovernanceAttachment[]
 }
 
 // ─────────────────────────── Community ───────────────────────────
@@ -2840,6 +2844,7 @@ model Organisation {
 
   @@index([workspaceId, name])
   @@index([workspaceId, domain])
+  governanceVendor GovernanceRecord[]
 }
 
 model Contact {
@@ -3264,6 +3269,7 @@ model Meeting {
 
   @@index([workspaceId, startsAt])
   @@index([seriesId, startsAt])
+  governanceMinutes GovernanceRecord[]
 }
 
 /// A member (`userId`) or an external contact (`contactId`).
@@ -4803,4 +4809,88 @@ model SocialConnectionDraft {
   expiresAt DateTime
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   @@index([workspaceId, userId, expiresAt])
+// Manual governance tools. Kind-specific fields are validated by governance/schemas.
+enum GovernanceKind {
+  LEGAL_ENTITY
+  OBLIGATION
+  COMMITTEE
+  TERM
+  MINUTES
+  RESOLUTION
+  CONFLICT
+  AGM_ITEM
+  VENDOR
+  CONTRACT
+}
+
+model GovernanceRecord {
+  id             String                 @id @default(cuid())
+  workspaceId    String
+  kind           GovernanceKind
+  /// Optional stable key for singleton entity, checklist and recurrence retries.
+  key            String?
+  title          String
+  status         String                 @default("TODO")
+  ownerId        String?
+  parentId       String?
+  organisationId String?
+  meetingId      String?
+  number         Int?
+  dueOn          DateTime?              @db.Date
+  startsOn       DateTime?              @db.Date
+  endsOn         DateTime?              @db.Date
+  reminderDays   Int                    @default(7)
+  notes          String                 @default("")
+  /// Non-secret, kind-specific fields only. Banking is stored separately.
+  details        Json                   @default("{}")
+  approvedAt     DateTime?
+  approvedById   String?
+  createdById    String?
+  archivedAt     DateTime?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  workspace      Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parent         GovernanceRecord?      @relation("GovernanceParent", fields: [workspaceId, parentId], references: [workspaceId, id], onDelete: NoAction)
+  children       GovernanceRecord[]     @relation("GovernanceParent")
+  organisation   Organisation?          @relation(fields: [organisationId], references: [id], onDelete: Restrict)
+  meeting        Meeting?               @relation(fields: [meetingId], references: [id], onDelete: Restrict)
+  attachments    GovernanceAttachment[]
+  bankChanges    GovernanceBankChange[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, kind, key])
+  @@unique([workspaceId, kind, number])
+  @@unique([workspaceId, organisationId])
+  @@index([workspaceId, kind, archivedAt, dueOn])
+  @@index([workspaceId, parentId])
+  @@index([workspaceId, ownerId])
+}
+
+model GovernanceAttachment {
+  id          String           @id @default(cuid())
+  workspaceId String
+  recordId    String
+  fileId      String
+  createdAt   DateTime         @default(now())
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  record      GovernanceRecord @relation(fields: [workspaceId, recordId], references: [workspaceId, id], onDelete: Cascade)
+  file        FileObject       @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, fileId])
+  @@index([workspaceId, recordId])
+}
+
+/// Append-only banking revisions. Never index or export banking values.
+model GovernanceBankChange {
+  id          String           @id @default(cuid())
+  workspaceId String
+  vendorId    String
+  bankEnc     String
+  reason      String
+  actorId     String
+  createdAt   DateTime         @default(now())
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  vendor      GovernanceRecord @relation(fields: [workspaceId, vendorId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, vendorId, createdAt])
 }

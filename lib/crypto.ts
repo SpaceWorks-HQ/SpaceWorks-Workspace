@@ -43,6 +43,7 @@ export type SecretPurpose =
   | "social-refresh"
   | "social-oauth"
   | "social-draft"
+  | "governance-vendor-bank"
   | "instance-settings"
   | "integration-tokens"
   /** MessagingConnection.credentialsEnc, BridgedChannel.outboundWebhookEnc. */
@@ -71,6 +72,7 @@ const PURPOSE_INFO: Record<SecretPurpose, string> = {
   "social-refresh": "sww-social-refresh-v1",
   "social-oauth": "sww-social-oauth-v1",
   "social-draft": "sww-social-draft-v1",
+  "governance-vendor-bank": "sww-governance-vendor-bank-v1",
   "app-review-issuer": "sww-app-review-issuer-v1",
   "app-review-key-id": "sww-app-review-key-id-v1",
   "app-review-private-key": "sww-app-review-private-key-v1",

@@ -44,6 +44,7 @@ export function fileDetailUrl(slug: string, fileId: string) {
 }
 
 const OTHER_AREA_RELATIONS: Prisma.FileObjectWhereInput = {
+  governanceAttachments: { none: {} },
   messageAttachments: { none: {} },
   ledgerReceipts: { none: {} },
   subscriptionContracts: { none: {} },
@@ -55,7 +56,7 @@ const OTHER_AREA_RELATIONS: Prisma.FileObjectWhereInput = {
 /** Chat uploads (message attachments, the /chat folder) belong to chat, not the library. */
 const NOT_CHAT: Prisma.FileObjectWhereInput = {
   messageAttachments: { none: {} },
-  NOT: { OR: [{ folder: CHAT_FOLDER }, { folder: { startsWith: `${CHAT_FOLDER}/` } }] },
+  NOT: { OR: [{ folder: CHAT_FOLDER }, { folder: { startsWith: `${CHAT_FOLDER}/` } }, { folder: "/governance" }, { folder: { startsWith: "/governance/" } }] },
 };
 
 const RESERVED_FOLDER = "The chat folder is managed by chat. Choose another folder.";
@@ -123,6 +124,7 @@ async function checkTaskLink(actor: FilesActor, taskId: string) {
 
 export async function uploadLibraryFile(actor: FilesActor, input: { file: File; folder?: string; docId?: string | null; taskId?: string | null }): Promise<FileResult<{ id: string; filename: string; contentType: string }>> {
   if (!canContribute(actor.membership)) return fail(FILE_NOT_ALLOWED);
+  if (normalizeFolder(input.folder) === "/governance" || normalizeFolder(input.folder).startsWith("/governance/")) return fail("Governance files are managed from their records. Choose another folder.");
   if (isReservedFolder(normalizeFolder(input.folder))) return fail(RESERVED_FOLDER);
   if (input.docId && !(await checkDocLink(actor, input.docId))) return fail("That page doesn't exist or you can't edit it.");
   if (input.taskId && !(await checkTaskLink(actor, input.taskId))) return fail("That task doesn't exist or you can't open it.");
