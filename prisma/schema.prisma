@@ -409,6 +409,9 @@ model Notification {
 // ──────────────────────────── Tenancy ────────────────────────────
 
 model Workspace {
+  productRecords ProductRecord[]
+  productEstimateRevisions ProductEstimateRevision[]
+  productAttachments ProductAttachment[]
   socialAccounts          SocialAccount[]
   socialMetrics           SocialMetricDaily[]
   socialPosts             SocialPost[]
@@ -1007,6 +1010,7 @@ model DocRevision {
 /// A private object in S3-compatible storage (lib/storage). Always served
 /// through /api/files/[id] after a membership check.
 model FileObject {
+  productAttachments ProductAttachment[]
   id             String    @id @default(cuid())
   workspaceId    String
   storageKey     String    @unique
@@ -1494,6 +1498,8 @@ enum Visibility {
 }
 
 enum ApprovalSubjectType {
+  PRODUCT_RELEASE
+  PRODUCT_CHANGE
   PURCHASE_REQUEST
   REIMBURSEMENT
   FORM_SUBMISSION
@@ -5879,4 +5885,90 @@ model SafeguardingAttachment {
 
   @@unique([workspaceId, fileId])
   @@index([workspaceId, caseId])
+}
+
+// Manual product and engineering tools. Validated kind-specific facts live in productOps/schema.
+enum ProductKind {
+  ROADMAP
+  RELEASE
+  ISSUE
+  QA_RUN
+  ESTIMATE
+  PROTOTYPE
+  TEST
+  CHANGE
+}
+
+model ProductRecord {
+  id           String                    @id @default(cuid())
+  workspaceId  String
+  kind         ProductKind
+  title        String
+  status       String
+  ownerId      String?
+  projectId    String?
+  releaseId    String?
+  parentId     String?
+  fundingId    String?
+  budgetId     String?
+  fundId       String?
+  dueOn        DateTime?                 @db.Date
+  dateOn       DateTime?                 @db.Date
+  reminderDays Int                       @default(7)
+  currency     String                    @default("INR")
+  notes        String                    @default("")
+  details      Json                      @default("{}")
+  revision     Int                       @default(1)
+  approvalId   String?
+  shippedAt    DateTime?
+  changelogId  String?
+  archivedAt   DateTime?
+  createdById  String
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+  workspace    Workspace                 @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  release      ProductRecord?            @relation("ProductReleaseItems", fields: [workspaceId, releaseId], references: [workspaceId, id], onDelete: NoAction)
+  releaseItems ProductRecord[]           @relation("ProductReleaseItems")
+  parent       ProductRecord?            @relation("ProductPrototypeTests", fields: [workspaceId, parentId], references: [workspaceId, id], onDelete: NoAction)
+  children     ProductRecord[]           @relation("ProductPrototypeTests")
+  estimates    ProductEstimateRevision[]
+  attachments  ProductAttachment[]
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId, kind, archivedAt, dueOn])
+  @@index([workspaceId, projectId])
+  @@index([workspaceId, releaseId])
+  @@index([workspaceId, parentId])
+  @@index([workspaceId, ownerId])
+}
+
+// Immutable estimate snapshots, including the exact quote file references used at that revision.
+model ProductEstimateRevision {
+  id          String        @id @default(cuid())
+  workspaceId String
+  recordId    String
+  version     Int
+  snapshot    Json
+  createdById String
+  createdAt   DateTime      @default(now())
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  record      ProductRecord @relation(fields: [workspaceId, recordId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, recordId, version])
+}
+
+model ProductAttachment {
+  id          String        @id @default(cuid())
+  workspaceId String
+  recordId    String
+  fileId      String
+  generated   Boolean       @default(false)
+  version     Int?
+  createdAt   DateTime      @default(now())
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  record      ProductRecord @relation(fields: [workspaceId, recordId], references: [workspaceId, id], onDelete: Cascade)
+  file        FileObject    @relation(fields: [workspaceId, fileId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, fileId])
+  @@index([workspaceId, recordId])
 }

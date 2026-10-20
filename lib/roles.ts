@@ -188,3 +188,10 @@ export function canReadMoneyControl(m: RoleHolder, userId: string, row: { kind: 
 /** Appointments grant no access to case contents without explicit case assignment. */
 export const canManageSafeguardingHandlers = (m: RoleHolder) => atLeast(m, "OWNER");
 export const canHandleSafeguarding = (m: RoleHolder, appointed: boolean, assigned: boolean) => atLeast(m, "MEMBER") && appointed && assigned;
+
+/** Internal product tools are for the operating team; funding estimates require finance management. */
+export const canManageProductOps = (m: RoleHolder) => atLeast(m, "MEMBER");
+export const canManageProductEstimates = (m: RoleHolder) => atLeast(m, "ADMIN");
+
+/** Publishing into the existing changelog retains its admin-only permission. */
+export const canPublishProductChangelog = (m: RoleHolder) => atLeast(m, "ADMIN");
