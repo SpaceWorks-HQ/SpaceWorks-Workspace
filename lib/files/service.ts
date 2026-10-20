@@ -358,7 +358,6 @@ export async function purgeDeletedFiles(now: Date, batch = 50) {
       AND f.folder <> ${CHAT_FOLDER} AND f.folder NOT LIKE ${`${CHAT_FOLDER}/%`}
       AND NOT EXISTS (SELECT 1 FROM "MessageAttachment" a WHERE a."fileId"=f.id)
       AND NOT EXISTS (SELECT 1 FROM "LedgerEntry" r WHERE r."receiptFileId"=f.id)
-      AND NOT EXISTS (SELECT 1 FROM "BlogPost" r WHERE r."coverFileId"=f.id)
       AND NOT EXISTS (SELECT 1 FROM "Subscription" r WHERE r."contractFileId"=f.id)
       AND NOT EXISTS (SELECT 1 FROM "Certification" r WHERE r."evidenceFileId"=f.id)
       AND NOT EXISTS (SELECT 1 FROM "StatusPage" r WHERE r."logoFileId"=f.id)
