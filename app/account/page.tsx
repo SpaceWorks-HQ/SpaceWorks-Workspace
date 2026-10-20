@@ -45,7 +45,7 @@ export default async function AccountPage() {
           <SettingsRow title="Sessions" description="Lost a device? Sign out of every session at once.">
             <SessionsCard />
           </SettingsRow>
-          <SettingsRow title="Your data" description="A JSON copy of your profile, memberships, tasks, messages, docs and shoutouts.">
+          <SettingsRow title="Your data" description="A JSON copy of your profile, memberships, tasks, messages, docs.">
             <Button asChild variant="secondary">
               <a href="/api/account/export" download>Download my data</a>
             </Button>

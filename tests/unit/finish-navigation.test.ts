@@ -14,7 +14,7 @@ describe("completed area navigation", () => {
     }
   });
   it("covers the completed collaboration, relationship, personal and settings routes", () => {
-    const context = { role: "OWNER" as const, workspace: { financeVisibleToMembers: false, blogEnabled: true } };
+    const context = { role: "OWNER" as const, workspace: { financeVisibleToMembers: false } };
     const keys = navForMember("makers", context).flatMap(g => g.items.map(i => i.key));
     expect(keys).toEqual(expect.arrayContaining(["app-reviews", "organisations", "pipeline", "my-onboarding", "decisions", "templates", "changelog", "sign-offs", "links", "activity", "search", "notification-preferences", "retention", "webhooks", "app-reviews-settings"]));
     const guests = navForMember("makers", { ...context, role: "GUEST" }).flatMap(g => g.items.map(i => i.key));

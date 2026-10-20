@@ -60,7 +60,7 @@ async function checkBudget(client: DbClient, workspaceId: string, budgetId: stri
 export async function retireUnlinkedFile(client: DbClient, workspaceId: string, fileId: string | null) {
   if (!fileId) return;
   await client.fileObject.updateMany({
-    where: { id: fileId, workspaceId, deletedAt: null, ledgerReceipts: { none: {} }, blogCovers: { none: {} }, messageAttachments: { none: {} }, docId: null, taskId: null },
+    where: { id: fileId, workspaceId, deletedAt: null, ledgerReceipts: { none: {} }, messageAttachments: { none: {} }, docId: null, taskId: null },
     data: { deletedAt: new Date() },
   });
 }

@@ -135,7 +135,6 @@ export async function addInteraction(actor: PeopleActor, input: unknown): Promis
 async function targetVisible(actor: PeopleActor, type: string, id: string) {
   if (type === "contact") return Boolean(await prisma.contact.findFirst({ where: { ...await visibleWhere(actor), id }, select: { id: true } }));
   if (type === "organisation") return Boolean(await prisma.organisation.findFirst({ where: { ...await visibleWhere(actor), id }, select: { id: true } }));
-  if (type === "event") return Boolean(await prisma.communityEvent.findFirst({ where: { workspaceId: actor.workspace.id, id }, select: { id: true } }));
   if (type === "project") return Boolean(await prisma.project.findFirst({ where: { workspaceId: actor.workspace.id, id, ...teamScopeFilter(await hiddenTeamIds(actor.workspace.id, { userId: actor.user.id, role: actor.membership.role })) }, select: { id: true } }));
   return false;
 }
@@ -145,7 +144,7 @@ async function visibleLinks(actor: PeopleActor, fromType: string, fromId: string
   return visible.filter((r): r is NonNullable<typeof r> => r !== null);
 }
 export async function linkRecord(actor: PeopleActor, input: unknown): Promise<ActionResult> {
-  const p = z.object({ fromType: z.enum(["contact", "organisation"]), fromId: idSchema, toType: z.enum(["contact", "organisation", "project", "event"]), toId: idSchema, label: optionalText(100) }).safeParse(input); if (!p.success) return validationError(p.error);
+  const p = z.object({ fromType: z.enum(["contact", "organisation"]), fromId: idSchema, toType: z.enum(["contact", "organisation", "project"]), toId: idSchema, label: optionalText(100) }).safeParse(input); if (!p.success) return validationError(p.error);
   const from = p.data.fromType === "contact" ? await getContact(actor, p.data.fromId) : await getOrganisation(actor, p.data.fromId);
   if (!from?.editable || !await targetVisible(actor, p.data.toType, p.data.toId)) return actionError(NOT_ALLOWED);
   await prisma.$transaction(async tx => {

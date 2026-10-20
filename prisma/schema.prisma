@@ -106,20 +106,6 @@ enum DocVisibility {
   ADMINS
 }
 
-enum CommunityEventKind {
-  BUILD_NIGHT
-  MEETUP
-  WORKSHOP
-  OTHER
-}
-
-enum AttendanceStatus {
-  GOING
-  MAYBE
-  NOT_GOING
-  WAITLIST
-}
-
 enum LedgerKind {
   INCOME
   EXPENSE
@@ -130,11 +116,6 @@ enum InvoiceStatus {
   SENT
   PAID
   VOID
-}
-
-enum BlogPostStatus {
-  DRAFT
-  PUBLISHED
 }
 
 enum AssistantRole {
@@ -222,13 +203,8 @@ model User {
   docRevisions          DocRevision[]
   filesUploaded         FileObject[]
   announcements         Announcement[]
-  communityEvents       CommunityEvent[]
-  eventAttendance       EventAttendee[]
-  shoutoutsGiven        Shoutout[]              @relation("ShoutoutFrom")
-  shoutoutsReceived     Shoutout[]              @relation("ShoutoutTo")
   ledgerEntries         LedgerEntry[]
   invoices              Invoice[]
-  blogPosts             BlogPost[]
   assistantChats        AssistantConversation[]
   assistantMemories     AssistantMemory[]
   assistantSkills       AssistantSkill[]
@@ -439,9 +415,6 @@ model Workspace {
   timezone                String         @default("Asia/Kolkata")
   currency                String         @default("INR")
   financeVisibleToMembers Boolean        @default(false)
-  blogEnabled             Boolean        @default(false)
-  /// Google Calendar mirrored into the community calendar (Integrations).
-  googleCalendarId        String?
   /// Channel (id) that receives assistant digests by default.
   digestChannelId         String?
   /// Members may see Services costs (cloud spend, service costs).
@@ -471,12 +444,9 @@ model Workspace {
   docs              Doc[]
   files             FileObject[]
   announcements     Announcement[]
-  communityEvents   CommunityEvent[]
-  shoutouts         Shoutout[]
   financeCategories FinanceCategory[]
   ledgerEntries     LedgerEntry[]
   invoices          Invoice[]
-  blogPosts         BlogPost[]
   assistantChats    AssistantConversation[]
   assistantMemories AssistantMemory[]
   assistantSkills   AssistantSkill[]
@@ -1010,7 +980,6 @@ model FileObject {
   task                  Task?               @relation(fields: [taskId], references: [id], onDelete: SetNull)
   messageAttachments    MessageAttachment[]
   ledgerReceipts        LedgerEntry[]
-  blogCovers            BlogPost[]
   versions              FileVersion[]
   subscriptionContracts Subscription[]
   certificationEvidence Certification[]
@@ -1040,60 +1009,6 @@ model Announcement {
   author    User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
 
   @@index([workspaceId, publishedAt])
-}
-
-model CommunityEvent {
-  id          String             @id @default(cuid())
-  workspaceId String
-  title       String
-  description String?
-  location    String?
-  startsAt    DateTime
-  endsAt      DateTime?
-  kind        CommunityEventKind @default(OTHER)
-  /// RSVP cap; extra "going" responses become WAITLIST.
-  capacity    Int?
-  createdById String?
-  cancelledAt DateTime?
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-
-  workspace Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  createdBy User?           @relation(fields: [createdById], references: [id], onDelete: SetNull)
-  attendees EventAttendee[]
-  meetings  Meeting[]
-  shifts    Shift[]
-
-  @@index([workspaceId, startsAt])
-}
-
-model EventAttendee {
-  eventId     String
-  userId      String
-  status      AttendanceStatus @default(GOING)
-  respondedAt DateTime         @default(now())
-
-  event CommunityEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@id([eventId, userId])
-  @@index([userId])
-}
-
-model Shoutout {
-  id          String   @id @default(cuid())
-  workspaceId String
-  fromId      String
-  toId        String
-  message     String
-  createdAt   DateTime @default(now())
-
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  from      User      @relation("ShoutoutFrom", fields: [fromId], references: [id], onDelete: Cascade)
-  to        User      @relation("ShoutoutTo", fields: [toId], references: [id], onDelete: Cascade)
-
-  @@index([workspaceId, createdAt])
-  @@index([toId])
 }
 
 // ────────────────────────── Operations ──────────────────────────
@@ -1171,31 +1086,6 @@ model Invoice {
 
   @@unique([workspaceId, number])
   @@index([workspaceId, status])
-}
-
-model BlogPost {
-  id             String         @id @default(cuid())
-  workspaceId    String
-  slug           String
-  title          String
-  excerpt        String?
-  /// Sanitised HTML.
-  contentHtml    String         @default("")
-  status         BlogPostStatus @default(DRAFT)
-  publishedAt    DateTime?
-  authorId       String?
-  seoTitle       String?
-  seoDescription String?
-  coverFileId    String?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-
-  workspace Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  author    User?       @relation(fields: [authorId], references: [id], onDelete: SetNull)
-  coverFile FileObject? @relation(fields: [coverFileId], references: [id], onDelete: SetNull)
-
-  @@unique([workspaceId, slug])
-  @@index([workspaceId, status, publishedAt])
 }
 
 // ─────────────────────────── Assistant ───────────────────────────
@@ -1704,16 +1594,9 @@ enum PrincipalType {
 
 enum AssetStatus {
   AVAILABLE
-  CHECKED_OUT
   IN_MAINTENANCE
-  RESERVED
   LOST
   RETIRED
-}
-
-enum BookingStatus {
-  CONFIRMED
-  CANCELLED
 }
 
 enum MaintenanceLogType {
@@ -2106,7 +1989,6 @@ enum RuleScopeType {
   DIGEST
   ANNOUNCEMENT
   FORM
-  CALENDAR
   SUBSCRIPTION
   COST_BUDGET
   CLOUD_CONNECTION
@@ -2516,25 +2398,23 @@ model ShiftType {
 }
 
 model Shift {
-  id              String   @id @default(cuid())
-  workspaceId     String
-  shiftTypeId     String
-  startsAt        DateTime
-  endsAt          DateTime
-  capacity        Int
-  location        String?
-  calendarEventId String?
+  id          String   @id @default(cuid())
+  workspaceId String
+  shiftTypeId String
+  startsAt    DateTime
+  endsAt      DateTime
+  capacity    Int
+  location    String?
   /// Groups recurring instances; the series root carries `rrule`.
-  seriesId        String?
-  rrule           String?
-  notes           String?
-  createdById     String?
-  createdAt       DateTime @default(now())
+  seriesId    String?
+  rrule       String?
+  notes       String?
+  createdById String?
+  createdAt   DateTime @default(now())
 
-  workspace     Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  shiftType     ShiftType         @relation(fields: [shiftTypeId], references: [id], onDelete: Cascade)
-  calendarEvent CommunityEvent?   @relation(fields: [calendarEventId], references: [id], onDelete: SetNull)
-  assignments   ShiftAssignment[]
+  workspace   Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  shiftType   ShiftType         @relation(fields: [shiftTypeId], references: [id], onDelete: Cascade)
+  assignments ShiftAssignment[]
 
   @@unique([seriesId, startsAt])
   @@index([workspaceId, startsAt])
@@ -2572,7 +2452,7 @@ model ShiftSwapRequest {
   @@index([assignmentId, status])
 }
 
-/// Training sign-off type (laser cutter, CNC…); gates assets and shifts.
+/// Training sign-off type (laser cutter, CNC…); gates rota shifts.
 model CertType {
   id            String   @id @default(cuid())
   workspaceId   String
@@ -2585,7 +2465,6 @@ model CertType {
 
   workspace      Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   certifications Certification[]
-  gatedAssets    Asset[]
 
   @@unique([workspaceId, name])
 }
@@ -2859,7 +2738,7 @@ model Asset {
   location           String?
   status             AssetStatus @default(AVAILABLE)
   condition          String?
-  /// "ORG" or the lender's name.
+  /// Owning organisation or team.
   ownerLabel         String?
   ownerUserId        String?
   serialNumber       String?
@@ -2869,59 +2748,16 @@ model Asset {
   ledgerEntryId      String?
   photoFileIds       String[]    @default([])
   manualDocId        String?
-  requiresCertTypeId String?
-  checkoutable       Boolean     @default(true)
-  bookable           Boolean     @default(false)
-  maxCheckoutDays    Int?
   notes              String?
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt
 
-  workspace        Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  manualDoc        Doc?                  @relation(fields: [manualDocId], references: [id], onDelete: SetNull)
-  requiresCertType CertType?             @relation(fields: [requiresCertTypeId], references: [id], onDelete: SetNull)
-  checkouts        AssetCheckout[]
-  bookings         AssetBooking[]
-  maintenance      AssetMaintenanceLog[]
+  workspace   Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  manualDoc   Doc?                  @relation(fields: [manualDocId], references: [id], onDelete: SetNull)
+  maintenance AssetMaintenanceLog[]
 
   @@unique([workspaceId, tag])
   @@index([workspaceId, status])
-}
-
-model AssetCheckout {
-  id             String    @id @default(cuid())
-  assetId        String
-  userId         String
-  checkedOutAt   DateTime  @default(now())
-  dueAt          DateTime?
-  returnedAt     DateTime?
-  conditionOut   String?
-  conditionIn    String?
-  notes          String?
-  lastRemindedAt DateTime?
-
-  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
-
-  @@index([assetId, returnedAt])
-  @@index([userId, returnedAt])
-}
-
-/// Overlaps are prevented in the booking transaction (check-then-insert under
-/// a row lock on the asset).
-model AssetBooking {
-  id        String        @id @default(cuid())
-  assetId   String
-  userId    String
-  startsAt  DateTime
-  endsAt    DateTime
-  status    BookingStatus @default(CONFIRMED)
-  purpose   String?
-  createdAt DateTime      @default(now())
-
-  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
-
-  @@index([assetId, startsAt, endsAt])
-  @@index([userId, startsAt])
 }
 
 model AssetMaintenanceLog {
@@ -3093,8 +2929,6 @@ model Deal {
   probability     Int?
   expectedCloseAt DateTime?
   ownerId         String?
-  /// CommunityEvent id.
-  eventId         String?
   invoiceId       String?
   /// [{ title, done }]
   benefits        Json      @default("[]")
@@ -3116,8 +2950,6 @@ model Budget {
   name          String
   teamId        String?
   projectId     String?
-  /// CommunityEvent id.
-  eventId       String?
   periodStart   DateTime @db.Date
   periodEnd     DateTime @db.Date
   amountMinor   Int
@@ -3152,7 +2984,6 @@ model PurchaseRequest {
   budgetId      String?
   teamId        String?
   projectId     String?
-  eventId       String?
   neededBy      DateTime?      @db.Date
   paymentRoute  PaymentRoute   @default(ORG_CARD)
   status        PurchaseStatus @default(DRAFT)
@@ -3402,7 +3233,6 @@ model Meeting {
   endsAt             DateTime?
   location           String?
   teamId             String?
-  calendarEventId    String?
   notesDocId         String?
   facilitatorId      String?
   noteTakerId        String?
@@ -3413,15 +3243,14 @@ model Meeting {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
-  workspace     Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  calendarEvent CommunityEvent?     @relation(fields: [calendarEventId], references: [id], onDelete: SetNull)
-  notesDoc      Doc?                @relation(fields: [notesDocId], references: [id], onDelete: SetNull)
-  attendees     MeetingAttendee[]
-  agenda        AgendaItem[]
-  decisions     Decision[]
-  actionItems   MeetingActionItem[]
-  sourcedTasks  Task[]              @relation("TaskSourceMeeting")
-  polls         Poll[]
+  workspace    Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  notesDoc     Doc?                @relation(fields: [notesDocId], references: [id], onDelete: SetNull)
+  attendees    MeetingAttendee[]
+  agenda       AgendaItem[]
+  decisions    Decision[]
+  actionItems  MeetingActionItem[]
+  sourcedTasks Task[]              @relation("TaskSourceMeeting")
+  polls        Poll[]
 
   @@index([workspaceId, startsAt])
   @@index([seriesId, startsAt])
@@ -3656,7 +3485,6 @@ model ChangelogEntry {
   audience        ChangelogAudience @default(INTERNAL)
   serviceId       String?
   githubReleaseId String?           @unique
-  blogPostId      String?
   publishedAt     DateTime?
   createdById     String?
   createdAt       DateTime          @default(now())

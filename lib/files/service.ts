@@ -15,7 +15,7 @@ import { CHAT_FOLDER, fileKind, isReservedFolder, MAX_FILE_VERSIONS, nextVersion
 
 /**
  * Files library rules. The library shows workspace files that belong to no
- * other area (chat attachments, receipts, blog covers, contracts, evidence,
+ * other area (chat attachments, receipts, contracts, evidence,
  * logos and signed PDFs stay with their owners), hiding files of admin-only
  * docs from non-admins and files of tasks in private teams. Downloads still
  * go through /api/files/[id] (lib/files.ts) for the final check.
@@ -46,7 +46,6 @@ export function fileDetailUrl(slug: string, fileId: string) {
 const OTHER_AREA_RELATIONS: Prisma.FileObjectWhereInput = {
   messageAttachments: { none: {} },
   ledgerReceipts: { none: {} },
-  blogCovers: { none: {} },
   subscriptionContracts: { none: {} },
   certificationEvidence: { none: {} },
   statusPageLogos: { none: {} },
@@ -361,4 +360,3 @@ export async function purgeDeletedFiles(now: Date, batch = 50) {
   if (keys.length) await deleteObjects(keys).catch(() => console.warn("[files] purge could not remove some objects"));
   return keys.length;
 }
-

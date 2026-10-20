@@ -45,7 +45,6 @@ export async function getDashboardData(
     myOpenTasks,
     myTasks,
     memberCount,
-    upcomingEvents,
     announcements,
     activity,
     ledger,
@@ -75,16 +74,6 @@ export async function getDashboardData(
       : [],
     prisma.membership.count({
       where: { workspaceId: workspace.id, status: "ACTIVE" },
-    }),
-    prisma.communityEvent.findMany({
-      where: {
-        workspaceId: workspace.id,
-        cancelledAt: null,
-        startsAt: { gte: now },
-      },
-      orderBy: { startsAt: "asc" },
-      take: 4,
-      select: { id: true, title: true, startsAt: true },
     }),
     latestAnnouncements(workspace.id, { take: 3, now }),
     listActivity(actor),
@@ -186,7 +175,6 @@ export async function getDashboardData(
     myOpenTasks,
     myTasks,
     memberCount,
-    upcomingEvents,
     announcements,
     activity: activity.slice(0, 8),
     kittyMinor,

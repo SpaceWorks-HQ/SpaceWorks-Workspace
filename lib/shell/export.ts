@@ -68,18 +68,6 @@ export const EXPORT_FIELDS: Record<string, readonly string[]> = {
     "createdAt",
   ],
   Announcement: ["id", "title", "body", "authorId", "pinned", "publishedAt"],
-  CommunityEvent: [
-    "id",
-    "title",
-    "description",
-    "location",
-    "startsAt",
-    "endsAt",
-    "kind",
-    "capacity",
-    "cancelledAt",
-  ],
-  Shoutout: ["id", "fromId", "toId", "message", "createdAt"],
   FinanceCategory: ["id", "name", "kind"],
   LedgerEntry: [
     "id",
@@ -102,15 +90,6 @@ export const EXPORT_FIELDS: Record<string, readonly string[]> = {
     "items",
     "totalMinor",
     "paidAt",
-  ],
-  BlogPost: [
-    "id",
-    "slug",
-    "title",
-    "excerpt",
-    "contentHtml",
-    "status",
-    "publishedAt",
   ],
   LinkItem: [
     "id",
@@ -155,8 +134,6 @@ export const EXPORT_FIELDS: Record<string, readonly string[]> = {
     "location",
     "status",
     "ownerLabel",
-    "bookable",
-    "checkoutable",
   ],
   Subscription: [
     "id",
@@ -355,12 +332,6 @@ export async function buildWorkspaceExport(
       "FileObject",
       "fileId",
       ["id", "fileId", "version", "size", "contentType", "createdAt"],
-    ],
-    [
-      "EventAttendee",
-      "CommunityEvent",
-      "eventId",
-      ["eventId", "userId", "status", "respondedAt"],
     ],
     ["TeamMember", "Team", "teamId", ["teamId", "userId", "role", "joinedAt"]],
     [

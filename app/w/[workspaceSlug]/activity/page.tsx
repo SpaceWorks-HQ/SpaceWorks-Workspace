@@ -33,7 +33,6 @@ export default async function ActivityPage({
           "channel",
           "link",
           "announcement",
-          "community_event",
         ].map((t) => (
           <Link
             key={t}

@@ -16,8 +16,8 @@ Space Works Workspace is the self-hosted, **internal**, invite-only workspace
 of the Space Works maker community (it started inside TinkerSpace Kochi).
 Members coordinate projects on kanban boards, talk in channels and direct
 messages, keep shared docs and files, track the community kitty (finance),
-publish a public blog, celebrate each other with shoutouts, and ask the Space
-Works Assistant about everything. Integrations: Google (Calendar, Gmail,
+coordinate internal meetings and shifts, and ask the Space Works Assistant
+about their work. Integrations: Google (Calendar, Gmail,
 Drive, Search Console), a GitHub App and a Telegram bot. It is an original
 Space Works product, licensed AGPL-3.0-or-later.
 
@@ -29,7 +29,8 @@ in the cloud), Nodemailer through an outbox, Vitest and Playwright.
 
 "Internal" means: every route needs a session except `/login`, `/setup`
 (first run only), `/forgot-password`, `/reset-password/[token]`,
-`/invite/[token]`, the public blog (`/blog/...`) and health endpoints.
+`/invite/[token]`, opted-in status pages, public forms, personal feed and
+heartbeat capabilities, integration webhooks and health endpoints.
 Tenancy is strict: `Workspace` is the tenant boundary.
 
 ## Repository map
@@ -115,9 +116,9 @@ action, e.g. "No projects yet. Start one for the next build night."
   the same `notFound()`: a slug never reveals that a workspace exists.
 - Roles: OWNER > ADMIN > MEMBER > GUEST. GUEST reads and comments, chats only
   in channels they were added to, never sees finance or settings. MEMBER
-  creates tasks, docs, messages, files and shoutouts; sees the finance summary
+  creates tasks, docs, messages, files; sees the finance summary
   only when `financeVisibleToMembers`. ADMIN manages members, invites, labels,
-  channels, finance, blog, API tokens and integrations. OWNER can also delete
+  channels, finance, API tokens and integrations. OWNER can also delete
   the workspace and transfer ownership. Use the helpers in `lib/roles.ts`.
 - A workspace always keeps one ACTIVE owner (`lib/membership.ts` locks owner
   rows). Admins never act on other admins or owners.

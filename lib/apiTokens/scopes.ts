@@ -11,7 +11,7 @@ export const API_SCOPES = [
   { value: "write:chat", label: "Post in chat", description: "Post messages in channels." },
   { value: "read:docs", label: "Read docs", description: "Docs, workspace memory and assistant skills." },
   { value: "write:docs", label: "Write docs", description: "Create docs and save workspace memory." },
-  { value: "read:members", label: "Read members", description: "Member directory, community events and announcements." },
+  { value: "read:members", label: "Read members", description: "Member directory and announcements." },
   { value: "read:finance", label: "Read finance", description: "The kitty summary: income, expenses and balance." },
   { value: "mcp", label: "MCP", description: "Connect an AI client to /api/mcp. Tools follow the other scopes." },
 ] as const;

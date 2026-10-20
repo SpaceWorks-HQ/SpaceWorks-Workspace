@@ -24,7 +24,7 @@ Raw monitor results keep at least the services setting, or the longer explicit p
 
 ## Search and notification rules
 
-Search writers cover tasks/projects, docs/files, public chat, community records, owner-private CRM names/tags, catalogue, meetings/decisions, ideas and other collaboration records, app reviews, blog and monitor records. The live search registry gates app reviews and incidents to members, checks decision parent meetings, and refuses missing/deleted/foreign records. Vault values and private conversations are excluded.
+Search writers cover tasks/projects, docs/files, public chat, announcements, owner-private CRM names/tags, catalogue, meetings/decisions, ideas and other collaboration records, app reviews and monitor records. The live search registry gates app reviews and incidents to members, checks decision parent meetings, and refuses missing/deleted/foreign records. Vault values and private conversations are excluded.
 
 Workspace rules save rating selections (1–5) with minimum severity. Empty ratings mean any rating; a nonempty rating filter requires a matching event rating. Integration tests exercise the editor action, persisted rule and dispatch planner together.
 

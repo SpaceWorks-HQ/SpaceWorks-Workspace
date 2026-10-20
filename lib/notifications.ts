@@ -6,7 +6,7 @@ import { publishToUser } from "@/lib/realtime";
 export type NotificationInput = {
   userId: string;
   workspaceId?: string | null;
-  /** e.g. "task.assigned", "mention", "shoutout", "invite.accepted". */
+  /** e.g. "task.assigned", "mention", "invite.accepted". */
   kind: string;
   title: string;
   body?: string | null;

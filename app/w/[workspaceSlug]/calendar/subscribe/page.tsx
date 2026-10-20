@@ -13,14 +13,14 @@ export default async function SubscribePage({ params }: PageProps<"/w/[workspace
   const ctx = await requireWorkspace(workspaceSlug, "GUEST");
   const feeds = await listFeeds(ctx);
   const tz = ctx.workspace.timezone;
-  const since = (scope: "PERSONAL" | "CALENDAR") => {
+  const since = (scope: "PERSONAL") => {
     const at = feeds.get(scope);
     return at ? formatDate(at, tz) : null;
   };
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      <Link href={`/w/${ctx.workspace.slug}/calendar`} className="inline-flex min-h-11 items-center gap-1.5 self-start text-sm font-semibold text-ink-secondary hover:text-ink">
-        <ArrowLeft aria-hidden className="size-4" /> Calendar
+      <Link href={`/w/${ctx.workspace.slug}`} className="inline-flex min-h-11 items-center gap-1.5 self-start text-sm font-semibold text-ink-secondary hover:text-ink">
+        <ArrowLeft aria-hidden className="size-4" /> Workspace
       </Link>
       <PageHeader
         title="Subscribe in your calendar app"
@@ -29,8 +29,7 @@ export default async function SubscribePage({ params }: PageProps<"/w/[workspace
       <FeedManager
         slug={ctx.workspace.slug}
         feeds={[
-          { scope: "PERSONAL", title: "My calendar", description: "Events you replied to, your meetings, your rota shifts and the due dates of tasks assigned to you.", activeSince: since("PERSONAL") },
-          { scope: "CALENDAR", title: `${ctx.workspace.name} community`, description: "Every build night, meetup and workshop on the community calendar.", activeSince: since("CALENDAR") },
+          { scope: "PERSONAL", title: "My calendar", description: "Your meetings, your rota shifts and the due dates of tasks assigned to you.", activeSince: since("PERSONAL") },
         ]}
       />
     </div>

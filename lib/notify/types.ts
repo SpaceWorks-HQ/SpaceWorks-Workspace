@@ -19,7 +19,6 @@ export type NotifyScope = {
   digestId?: string;
   announcementId?: string;
   formId?: string;
-  calendarId?: string;
   subscriptionId?: string;
   costBudgetId?: string;
   cloudConnectionId?: string;
@@ -43,7 +42,6 @@ export const SCOPE_KEYS: Record<Exclude<RuleScopeType, "WORKSPACE">, ScopeIdKey>
   DIGEST: "digestId",
   ANNOUNCEMENT: "announcementId",
   FORM: "formId",
-  CALENDAR: "calendarId",
   SUBSCRIPTION: "subscriptionId",
   COST_BUDGET: "costBudgetId",
   CLOUD_CONNECTION: "cloudConnectionId",

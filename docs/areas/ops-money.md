@@ -146,14 +146,10 @@ hides revealed text after thirty seconds or when hidden. Clipboard contents
 remain under the user's control. Rotations preserve the last five encrypted
 versions; previous versions are not exposed by any endpoint.
 
-## Equipment and physical keys
+## Internal assets and physical keys
 
-Admins maintain categories, location, condition, availability and maintenance
-notes. Members book or borrow available equipment, with due dates and a
-return condition. Only the borrower or an admin returns equipment. The
-booking transaction locks its asset before checking half-open time intervals
-`existing.start < end && existing.end > start`; adjacent bookings are valid.
-Checkout also checks other people's bookings and required certifications.
+Admins maintain internal equipment records: tag, name, category, location,
+condition, status and maintenance notes. Members read the asset register.
 QR labels use `qrcode` and `/a/:tag`; scanning requires sign-in and active
 membership before revealing the inventory destination. Key/fob/card registers
 store holders and labels. Door codes belong in the vault.
@@ -184,7 +180,7 @@ This Task write is explicitly authorised by the ops-money feature task.
 ## Scheduled work and demo data
 
 `lib/scheduled/opsMoney.ts` exports `run(now)` for the shared scheduler. It
-emits renewal, rotation, booking, overdue checkout, maintenance, budget
+emits renewal, rotation, maintenance, budget
 threshold and catalogue-gap events. Advisory transaction locks and persisted
 event keys prevent duplicate events across replicas. Renewal dates and
 rotation anchors are part of the key; overdue equipment is reminded daily.
@@ -192,7 +188,7 @@ Vault reminders use generic text and never item values.
 
 `scripts/seed/ops-money.mjs` exports the async demo seed consumed automatically
 by `seed-demo.mjs`. It adds requests, policies, a budget, a service,
-subscription, equipment booking, maintenance note, key register and form
+subscription, equipment record, maintenance note, key register and form
 response. It adds an encrypted demonstration note only when the vault key is
 configured. It refuses production and does not seed real credentials.
 
@@ -214,8 +210,8 @@ provider. None of these are simulated.
 Run `npm run lint`, `npm run typecheck`, `npm run test:unit`, prepare the
 isolated test database, `npm run test:integration` and `npm run build` before
 release. Ops tests cover approval state transitions, cryptographic tampering,
-cost totals, booking intervals, field validation, grants, MFA expiry, reveal
-logs, ledger idempotency, concurrent bookings, public abuse limits and tenant
+cost totals, field validation, grants, MFA expiry, reveal
+logs, ledger idempotency, public abuse limits and tenant
 isolation. Inspect the workspace UI at 375px in both colour modes and by
 keyboard. Remove `.next` after the production build, as required by the build
 brief.

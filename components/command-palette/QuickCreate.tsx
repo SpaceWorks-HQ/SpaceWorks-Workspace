@@ -1,6 +1,5 @@
 "use client";
 import { useState, useTransition } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createTaskAction } from "@/app/actions/tasks";
 import { createDocAction } from "@/app/actions/docs";
@@ -119,12 +118,6 @@ export function QuickCreateButtons({
       <Button variant="secondary" onClick={() => setKind("doc")}>
         Create doc
       </Button>
-      <Link
-        className="inline-flex min-h-11 items-center px-3 underline"
-        href={`/w/${slug}/calendar/new`}
-      >
-        Create event
-      </Link>
       <QuickCreateDialog
         slug={slug}
         userId={userId}

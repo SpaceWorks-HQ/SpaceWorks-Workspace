@@ -34,7 +34,6 @@ export default async function MeetingPage({
         orderBy: { decidedAt: "asc" },
       },
       attendees: { include: { user: { select: { id: true, name: true } } } },
-      calendarEvent: { select: { title: true } },
     },
   });
   if (!meeting) notFound();
@@ -76,9 +75,6 @@ export default async function MeetingPage({
       <p className="break-words text-body-ui text-ink-muted">
         {meeting.location || "No location set"} · Facilitated by{" "}
         {name(meeting.facilitatorId)}
-        {meeting.calendarEvent
-          ? ` · Calendar: ${meeting.calendarEvent.title}`
-          : ""}
       </p>
       {manage ? (
         <Disclosure title="Edit meeting and link notes">

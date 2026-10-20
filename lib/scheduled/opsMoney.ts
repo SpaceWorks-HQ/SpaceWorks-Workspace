@@ -30,10 +30,6 @@ export async function run(now: Date) {
    if (due > now) continue;
    await once(ws.id, `rotation:${item.id}:${due.toISOString()}`, { type: "vault.rotation_due", title: "A vault item is due for rotation", recipients: [item.ownerId], url: `/w/${ws.slug}/vault`, data: { itemId: item.id, dueAt: due.toISOString() }, useWorkspaceRules: false });
   }
-  const checkouts = await prisma.assetCheckout.findMany({ where: { asset: { workspaceId: ws.id }, returnedAt: null, dueAt: { lte: now } } });
-  for (const c of checkouts) await once(ws.id, `overdue:${c.id}:${now.toISOString().slice(0,10)}`, { type: "asset.checkout_overdue", title: "Your borrowed equipment is overdue", recipients: [c.userId, ...admins], url: `/w/${ws.slug}/assets`, data: { assetId: c.assetId, checkoutId: c.id, dueAt: c.dueAt!.toISOString() } }, tx => tx.assetCheckout.updateMany({ where: { id: c.id, asset: { workspaceId: ws.id } }, data: { lastRemindedAt: now } }));
-  const bookings = await prisma.assetBooking.findMany({ where: { asset: { workspaceId: ws.id }, status: "CONFIRMED", startsAt: { gte: now, lte: new Date(now.getTime() + 3600000) } } });
-  for (const b of bookings) await once(ws.id, `booking:${b.id}`, { type: "asset.booking_reminder", title: "Your equipment booking starts soon", recipients: [b.userId], url: `/w/${ws.slug}/assets`, data: { assetId: b.assetId, bookingId: b.id, startsAt: b.startsAt.toISOString() } });
   const maintenance = await prisma.assetMaintenanceLog.findMany({ where: { asset: { workspaceId: ws.id }, nextDueAt: { lte: now } } });
   for (const m of maintenance) await once(ws.id, `maintenance:${m.id}`, { type: "asset.maintenance_due", title: "Equipment maintenance is due", recipients: admins, url: `/w/${ws.slug}/assets`, data: { assetId: m.assetId, dueAt: m.nextDueAt!.toISOString() } });
   const budgets = await prisma.budget.findMany({ where: { workspaceId: ws.id, periodStart: { lte: now }, periodEnd: { gte: now } } });

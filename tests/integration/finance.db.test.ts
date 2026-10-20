@@ -16,7 +16,7 @@ import { invoiceSchema } from "@/lib/finance/schemas";
 import * as service from "@/lib/finance/service";
 import { createCategoryAction, createInvoiceAction, createLedgerEntryAction, commitLedgerImportAction, markInvoicePaidAction, previewLedgerImportAction, updateLedgerEntryAction } from "@/app/actions/finance";
 import { GET as exportLedger } from "@/app/w/[workspaceSlug]/finance/ledger/export/route";
-import { notifyOverdueInvoices } from "@/lib/scheduled/financeBlog";
+import { notifyOverdueInvoices } from "@/lib/scheduled/finance";
 import { deleteObjects } from "@/lib/storage";
 import { addMember, cleanup, createUser, createWorkspace, uniqueSuffix } from "../helpers/fixtures";
 

@@ -16,12 +16,12 @@
 ## 1. What the design must do
 
 Space Works Workspace is the private operating tool of a maker community: projects, chat, docs, the
-kitty, the blog and an assistant. People open it many times a day, on laptops at the workbench and on
+kitty, meetings and an assistant. People open it many times a day, on laptops at the workbench and on
 phones on the bus.
 
 1. **Calm and useful.** It is an internal tool, not a marketing site. Quiet cream canvas, white panels,
    hairlines, one obvious primary action per view.
-2. **Community flavour in words, not decoration.** Members, crew, build nights, shoutouts, the kitty.
+2. **Community flavour in words, not decoration.** Members, crew, projects, shifts, the kitty.
    Warm, specific copy; no mascots, no emoji in chrome.
 3. **Dense where work happens.** Boards, tables and chat use the 4px grid tightly; forms and settings
    breathe.
@@ -130,7 +130,7 @@ faux bold or italic. Gilroy Bold also answers legacy 800/900 requests.
 
 - `font-sans` and `font-display` are Gilroy. Headings are **600, never 800**.
 - `font-accent` is Unbounded 500 with −0.01em tracking: **one short phrase per layout** (auth brand panel,
-  an empty-state hero, the public blog header). Never in app chrome.
+  an empty-state hero). Never in app chrome.
 - IDs, codes and counts use Gilroy 500 with `tabular-nums`, not a monospace face.
 
 Type scale (mobile → desktop from 640px):
@@ -139,7 +139,7 @@ Type scale (mobile → desktop from 640px):
 |---|---|---|---|---|
 | `text-display-xl` | 600 | 44/48 → 72/76 | −0.02em | Landing hero |
 | `text-display-l` | 600 | 40/43 → 64/68 | −0.02em | Auth and setup headings |
-| `text-display-m` | 600 | 34/38 → 48/52 | −0.015em | Public blog titles |
+| `text-display-m` | 600 | 34/38 → 48/52 | −0.015em | Large content titles |
 | `text-h1` | 600 | 26/32 → 32/38 | −0.01em | One page title per screen |
 | `text-h2` | 600 | 22/28 → 28/34 | −0.01em | Section headings |
 | `text-h3` | 600 | 20/26 → 24/30 | −0.005em | Card and dialog titles |
@@ -220,8 +220,7 @@ rotation, effects or re-typed wordmarks). Brand components live in `components/b
 - Clear space: ¼ of the symbol height on every side.
 - Minimum sizes: symbol ≥ 48px; primary lockup ≥ 180px wide. Favicon and app icon are the only
   exceptions (they use `app-icon.svg`, rasterised).
-- Placements: workspace sidebar "Space Works | Workspace" lockup; mobile top bar the same at 26px; public blog header
-  horizontal lockup ≥ 768px, symbol below; auth brand panel stacked lockup 240–320px; social card cream
+- Placements: workspace sidebar "Space Works | Workspace" lockup; mobile top bar the same at 26px; auth brand panel stacked lockup 240–320px; social card cream
   1200×630 with the stacked lockup 600px wide.
 - Copy: the product is **"Space Works Workspace"**, the community **"Space Works"**. "SpaceWorks"
   (no space) is for code identifiers, URLs and repo names only.
@@ -236,7 +235,7 @@ overflow, theme toggle, sign out.
 ### 3.3 Imagery
 
 - No emoji in UI.
-- Covers (blog posts, projects): 2:1, private files served through `/api/files/[id]`. With none, show
+- Project covers: 2:1, private files served through `/api/files/[id]`. With none, show
   a flat token fill. Never a broken image.
 - Avatars: photo, else 1–2 initials (Gilroy 600) on a tint. `AvatarImage` swaps to initials on error.
 - Workspace mark: square; fallback is initials on teal.
@@ -260,7 +259,7 @@ shadow; colour changes only. Focus uses the global 2px ring with a 2px offset.
 | `secondary` / `neutral` | `bg-panel border-line text-ink` | `bg-muted` | Second action: Cancel, Share |
 | `ghost` | `text-accent-text` | `bg-accent-soft` | Low-emphasis action in teal |
 | `quiet` | `text-ink-secondary`, underline on hover | | Tertiary: Back, Undo |
-| `highlight` | `bg-highlight text-on-highlight` | `bg-highlight-hover` | Public blog only. **Never in the app** |
+| `highlight` | `bg-highlight text-on-highlight` | `bg-highlight-hover` | Reserved for external public surfaces. **Never in app chrome** |
 | `danger` / `dangerOutline` | `bg-panel border-danger-fg text-danger-fg` | `bg-muted`, darker red | Opens a confirmation: Remove member… |
 | `dangerSolid` | `bg-danger-solid text-on-danger` | `bg-danger-hover` | The final destructive confirm (used by `ConfirmDialog`) |
 | `dangerQuiet` | `text-danger-fg` | underline | Revoke, Turn off station |
@@ -293,7 +292,7 @@ a dialog.
 ### 4.4 Tabs & navigation
 
 - Underline tabs: rest `text-ink-muted`, hover `text-ink`, active `text-ink` + **2px underline** (teal). Rows scroll sideways with faded arrow hints.
-- Workspace sidebar: Citron field (256px) (`bg-sidebar`), text-only items 40px tall in labelled groups (Community, Work, Chat, Operations, Assistant, Settings), hover `bg-sidebar-hover`,
+- Workspace sidebar: Citron field (256px) (`bg-sidebar`), text-only items 40px tall in labelled groups (People, Work, Chat, Operations, Assistant, Settings), hover `bg-sidebar-hover`,
   current item `bg-sidebar-active text-on-sidebar-active font-semibold` with `aria-current="page"`.
   Dark mode uses the Deep Ink sidebar.
 - Back link: `← Back to workspace`, quiet, 14px 600.
@@ -355,7 +354,7 @@ Instance admin pages (`SimpleShell` + underline tabs) stay restrained: panel car
 ## 5. Page patterns
 
 - **Workspace home:** greeting (`Hello, Meera.`) with the tagline, a 4-up stat row (my open tasks,
-  members, upcoming events, the kitty when visible), then two columns of panels: My tasks,
+  members, upcoming meetings and shifts, the kitty when visible), then two columns of panels: My tasks,
   Announcements, Upcoming, Recent activity. Each panel tolerates empty data with a one-line empty state.
 - **List → board → detail (projects):** list of cards, kanban board with columns from the project's
   `BoardColumn`s, task detail in a side panel or page with comments and activity.
@@ -377,7 +376,7 @@ Instance admin pages (`SimpleShell` + underline tabs) stay restrained: panel car
 - Name the action: "Send invitation", "Save changes", "Start a project" — not "Submit" or "OK".
 - Empty states name the next step. Errors say what happened and how to fix it, without blame:
   "Couldn't save. Try again." **Banned:** "Oops", "Something went wrong".
-- Community words: members, the crew, build nights, shoutouts, the kitty (shared funds). Keep it
+- Community words: members, the crew, projects, shifts, the kitty (shared funds). Keep it
   calm: this is a tool people use daily.
 - Never show raw internals: no cron strings without a plain-language reading, no secret URLs, no
   seconds, no `10/14/2026`.

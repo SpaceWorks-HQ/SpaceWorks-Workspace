@@ -7,10 +7,10 @@ import type { RealtimeEvent } from "@/lib/realtimeTypes";
 
 /**
  * Re-render the current server page when community data changes elsewhere
- * (another member RSVPs, an announcement goes out). Events carry ids only;
+ * (an announcement goes out). Events carry ids only;
  * the refresh re-reads through the page's own permission checks.
  */
-export function LiveRefresh({ slug, types, eventId }: { slug: string; types: string[]; eventId?: string }) {
+export function LiveRefresh({ slug, types }: { slug: string; types: string[] }) {
   const router = useRouter();
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const key = types.join(",");
@@ -18,11 +18,10 @@ export function LiveRefresh({ slug, types, eventId }: { slug: string; types: str
   const onEvent = useCallback(
     (event: RealtimeEvent) => {
       if (!key.split(",").includes(event.type)) return;
-      if (eventId && event.data?.eventId !== eventId) return;
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(() => router.refresh(), 400);
     },
-    [key, eventId, router],
+    [key, router],
   );
   useRealtime(slug, onEvent);
 

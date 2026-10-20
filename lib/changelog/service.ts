@@ -13,7 +13,6 @@ import {
   admin,
 } from "@/lib/meetings/core";
 import { pickDestinations } from "@/lib/meetings/destinations";
-import { escapeHtml } from "@/lib/docs/markdown";
 import { fromDateInputValue } from "@/lib/tasks/localDate";
 
 export const changelogCommand = z.discriminatedUnion("op", [
@@ -38,7 +37,6 @@ export const changelogCommand = z.discriminatedUnion("op", [
     entryId: id,
     publishedAt: date,
     destinationIds: z.array(id).max(50).default([]),
-    blogDraft: z.boolean().default(false),
   }),
 ]);
 
@@ -126,27 +124,9 @@ export async function mutateChangelog(actor: Actor, input: unknown) {
       data.destinationIds,
       tx,
     );
-    let blogPostId: string | null = null;
-    if (data.blogDraft) {
-      ensure(
-        entry.audience === "PUBLIC",
-        "Choose a public entry to prepare a blog draft.",
-      );
-      const blog = await tx.blogPost.create({
-        data: {
-          workspaceId: actor.workspace.id,
-          slug: `release-${entry.id}`,
-          title: entry.title,
-          contentHtml: `<p>${escapeHtml(entry.bodyMd).replaceAll("\n", "<br>")}</p>`,
-          status: "DRAFT",
-          authorId: actor.user.id,
-        },
-      });
-      blogPostId = blog.id;
-    }
     await tx.changelogEntry.updateMany({
       where: { workspaceId: actor.workspace.id, id: entry.id },
-      data: { publishedAt: data.publishedAt, blogPostId },
+      data: { publishedAt: data.publishedAt },
     });
     // The shared event catalogue has no release event. A changelog is a custom digest.
     const notification = destinationIds.length

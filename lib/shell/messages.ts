@@ -22,7 +22,6 @@ export const en = {
   searching: "Searching…",
   createTask: "Create task",
   createDoc: "Create doc",
-  createEvent: "Create event",
   theme: "Toggle theme",
   activity: "Activity",
   links: "Links",

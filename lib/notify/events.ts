@@ -30,7 +30,6 @@ export const NOTIFY_CATEGORIES = {
   digests: { label: "Digests", defaultChannels: ["IN_APP", "EMAIL"] },
   finance: { label: "Money and approvals", defaultChannels: ["IN_APP", "EMAIL"] },
   github: { label: "GitHub", defaultChannels: ["IN_APP"] },
-  calendar: { label: "Calendar", defaultChannels: ["IN_APP"] },
   people: { label: "People and rota", defaultChannels: ["IN_APP"] },
   operations: { label: "Operations", defaultChannels: ["IN_APP", "EMAIL"] },
   collaboration: { label: "Meetings, polls and goals", defaultChannels: ["IN_APP"] },
@@ -90,12 +89,7 @@ export interface EventPayloads {
   "thread.reply": { channelId: Id; messageId: Id; parentId: Id };
   // Community
   "announcement.published": { announcementId: Id };
-  "shoutout.received": { shoutoutId: Id; fromUserId: Id };
   "member.joined": { userId: Id };
-  "event.reminder": { eventId: Id; startsAt: Iso };
-  "event.created": { eventId: Id; startsAt: Iso };
-  "event.changed": { eventId: Id; startsAt: Iso };
-  "rsvp.changed": { eventId: Id; userId: Id; status: string };
   // Digests and assistant
   "digest.ready": { frequency: "hourly" | "daily" | "weekly" | "custom"; jobId: Id | null };
   "assistant.job.completed": { jobId: Id | null; conversationId: Id | null; status: "ok" | "failed" };
@@ -127,8 +121,6 @@ export interface EventPayloads {
   "shift.swap_accepted": { swapRequestId: Id; shiftId: Id };
   // Operations
   "renewal.due": { subscriptionId: Id; renewsAt: Iso; daysLeft: number };
-  "asset.checkout_overdue": { assetId: Id; checkoutId: Id; dueAt: Iso };
-  "asset.booking_reminder": { assetId: Id; bookingId: Id; startsAt: Iso };
   "asset.maintenance_due": { assetId: Id; dueAt: Iso };
   "form.submitted": { formId: Id; submissionId: Id };
   "vault.access.requested": { accessRequestId: Id; itemId: Id };
@@ -208,12 +200,7 @@ export const EVENT_CATALOG = {
   "thread.reply": s("mentions", "Reply in your thread", "personal"),
 
   "announcement.published": s("announcements", "Announcement published", "both"),
-  "shoutout.received": s("people", "Shoutout for you", "personal"),
   "member.joined": s("people", "Member joined", "both"),
-  "event.reminder": s("calendar", "Event reminder", "both"),
-  "event.created": s("calendar", "Event created", "both"),
-  "event.changed": s("calendar", "Event changed", "both"),
-  "rsvp.changed": s("calendar", "RSVP changed", "personal"),
 
   "digest.ready": s("digests", "Digest ready", "both"),
   "assistant.job.completed": s("assistant", "Assistant job finished", "both", "info", "MEMBER"),
@@ -245,8 +232,6 @@ export const EVENT_CATALOG = {
   "shift.swap_accepted": s("people", "Shift swap accepted", "personal", "info", "MEMBER"),
 
   "renewal.due": s("operations", "Renewal due", "both", "warning", "MEMBER"),
-  "asset.checkout_overdue": s("operations", "Equipment overdue", "both", "warning", "MEMBER"),
-  "asset.booking_reminder": s("operations", "Booking reminder", "personal", "info", "MEMBER"),
   "asset.maintenance_due": s("operations", "Maintenance due", "both", "info", "MEMBER"),
   "form.submitted": s("operations", "Form submitted", "both", "info", "MEMBER"),
   "vault.access.requested": s("security", "Vault access requested", "personal", "info", "MEMBER"),

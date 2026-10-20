@@ -1,5 +1,5 @@
 /**
- * iCalendar (RFC 5545) writer for event downloads and subscription feeds
+ * iCalendar (RFC 5545) writer for personal subscription feeds
  * (pure). Timed events are written as UTC instants (`...Z`), which every
  * calendar converts to the viewer's zone correctly; all-day entries (task
  * due dates) use the date in the workspace time zone. The workspace zone is
@@ -112,15 +112,4 @@ export function buildCalendar(calendar: IcsCalendar): string {
     "END:VCALENDAR",
   ];
   return lines.map(foldLine).join(CRLF) + CRLF;
-}
-
-/** A safe download name: "build-night.ics". */
-export function icsFilename(title: string): string {
-  const base = title
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60);
-  return `${base || "event"}.ics`;
 }

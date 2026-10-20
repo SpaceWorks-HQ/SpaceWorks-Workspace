@@ -6,7 +6,7 @@ import { canViewFinance, hasRoleAtLeast } from "@/lib/roles";
  * Every product area lives here once; pages still enforce their own access
  * with `requireWorkspace(slug, minRole)`. Hiding a link is not authorization.
  */
-export type NavRequirement = "finance" | "blog";
+export type NavRequirement = "finance";
 
 export type NavItemConfig = {
   key: string;
@@ -27,16 +27,14 @@ export const NAV_GROUPS: readonly NavGroupConfig[] = [
       { key: "activity", label: "Activity", path: "/activity", minRole: "GUEST" },
       { key: "links", label: "Links", path: "/links", minRole: "GUEST" }] },
   {
-    key: "community",
-    label: "Community",
+    key: "people",
+    label: "People",
     items: [
       { key: "announcements", label: "Announcements", path: "/announcements", minRole: "GUEST" },
       { key: "members", label: "Members", path: "/members", minRole: "GUEST" },
       { key: "teams", label: "Teams", path: "/teams", minRole: "GUEST" },
-      { key: "shoutouts", label: "Shoutouts", path: "/shoutouts", minRole: "GUEST" },
       { key: "my-onboarding", label: "Onboarding", path: "/onboarding", minRole: "GUEST" },
       { key: "changelog", label: "Changelog", path: "/changelog", minRole: "GUEST" },
-      { key: "calendar", label: "Calendar", path: "/calendar", minRole: "GUEST" },
       { key: "polls", label: "Polls", path: "/polls", minRole: "MEMBER" },
       { key: "ideas", label: "Ideas", path: "/ideas", minRole: "MEMBER" },
     ],
@@ -83,7 +81,6 @@ export const NAV_GROUPS: readonly NavGroupConfig[] = [
       { key: "finance", label: "Finance", path: "/finance", minRole: "MEMBER", requires: "finance" },
       { key: "subscriptions", label: "Subscriptions", path: "/subscriptions", minRole: "MEMBER" },
       { key: "rota", label: "Rota", path: "/rota", minRole: "MEMBER" },
-      { key: "blog", label: "Blog", path: "/blog", minRole: "ADMIN" },
       { key: "seo", label: "SEO", path: "/seo", minRole: "ADMIN" },
     ],
   },
@@ -96,6 +93,7 @@ export const NAV_GROUPS: readonly NavGroupConfig[] = [
     ],
   },
   { key: "personal", label: "Personal", items: [
+      { key: "calendar-subscribe", label: "Personal calendar feed", path: "/calendar/subscribe", minRole: "GUEST" },
       { key: "notifications", label: "Notifications", path: "/notifications", minRole: "GUEST" },
       { key: "notification-preferences", label: "Notification preferences", path: "/notifications/preferences", minRole: "GUEST" },
       { key: "notification-accounts", label: "Connected accounts", path: "/notifications/accounts", minRole: "MEMBER" },
@@ -119,7 +117,7 @@ export const NAV_GROUPS: readonly NavGroupConfig[] = [
 
 export type NavContext = {
   role: WorkspaceRole;
-  workspace: { financeVisibleToMembers: boolean; blogEnabled: boolean };
+  workspace: { financeVisibleToMembers: boolean };
 };
 
 export type ResolvedNavItem = { key: string; label: string; href: string; exact: boolean };

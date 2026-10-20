@@ -46,7 +46,6 @@ export async function workspaceToolsData(context: WorkspaceContext) {
     commands.unshift(
       { label: t("createTask"), create: "task" },
       { label: t("createDoc"), create: "doc" },
-      { label: t("createEvent"), href: `${base}/calendar/new` },
     );
   if (canManageWorkspace(membership))
     commands.push(

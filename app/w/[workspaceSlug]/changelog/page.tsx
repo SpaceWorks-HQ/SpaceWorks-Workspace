@@ -70,7 +70,7 @@ export default async function ChangelogPage({
                   { value: "INTERNAL", label: "Internal" },
                   {
                     value: "PUBLIC",
-                    label: "Public, with optional blog draft",
+                    label: "Public",
                   },
                 ],
               },
@@ -163,27 +163,10 @@ export default async function ChangelogPage({
                           label: d.name,
                         })),
                       },
-                      ...(entry.audience === "PUBLIC"
-                        ? [
-                            {
-                              name: "blogDraft",
-                              label: "Prepare a public blog draft for review",
-                              type: "checkbox" as const,
-                            },
-                          ]
-                        : []),
                     ]}
                   />
                 </details>
               </>
-            ) : null}
-            {entry.blogPostId && manage ? (
-              <a
-                className="inline-flex min-h-11 items-center text-accent-text underline"
-                href={`/w/${workspaceSlug}/blog`}
-              >
-                Review blog draft
-              </a>
             ) : null}
           </Section>
         ))

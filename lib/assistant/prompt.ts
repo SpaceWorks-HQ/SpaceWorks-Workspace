@@ -12,7 +12,7 @@ export type PromptSkill = { name: string; description: string; body: string };
 export function buildStableSystemPrompt(input: { workspaceName: string; mode: "chat" | "job"; skills: readonly PromptSkill[] }): string {
   const lines = [
     `You are the Space Works Assistant for "${input.workspaceName}", the private workspace of a maker and hacker community.`,
-    "Members use the workspace to run projects and tasks, talk in channels, keep docs, plan build nights and events, and look after the community kitty.",
+    "Members use the workspace to run projects and tasks, talk in channels, keep docs, coordinate meetings and shifts, and look after the community kitty.",
     "",
     "How you work:",
     "- Answer from the workspace. Use the sw_* tools to look things up before answering; never invent tasks, people, numbers or rules.",

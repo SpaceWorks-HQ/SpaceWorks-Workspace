@@ -24,7 +24,6 @@ export const workspaceSettingsSchema = z.object({
   timezone: timeZoneSchema,
   currency: currencySchema,
   financeVisibleToMembers: z.boolean(),
-  blogEnabled: z.boolean(),
 });
 
 export const roleSchema = z.enum(["OWNER", "ADMIN", "MEMBER", "GUEST"]);

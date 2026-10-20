@@ -16,7 +16,6 @@ type Values = {
   timezone: string;
   currency: string;
   financeVisibleToMembers: boolean;
-  blogEnabled: boolean;
 };
 
 export function GeneralSettingsForm({ slug, initial }: { slug: string; initial: Values }) {
@@ -45,7 +44,7 @@ export function GeneralSettingsForm({ slug, initial }: { slug: string; initial: 
       }}
     >
       <Card padding="lg">
-        <SettingsRow title="Details" description="Shown in the sidebar, invitations and the public blog.">
+        <SettingsRow title="Details" description="Shown in the sidebar and invitations.">
           <div className="flex flex-col gap-4">
             <Field label="Workspace name" required error={errors.name?.[0]}>
               <Input value={values.name} onChange={(e) => set("name", e.target.value)} maxLength={80} />
@@ -68,10 +67,9 @@ export function GeneralSettingsForm({ slug, initial }: { slug: string; initial: 
             </Field>
           </div>
         </SettingsRow>
-        <SettingsRow title="Features" description="Admins always see finance and manage the blog.">
+        <SettingsRow title="Features" description="Admins always see finance.">
           <div className="flex flex-col gap-4">
             <SwitchRow label="Members can see the kitty" description="Show the finance summary to members. Guests never see it." checked={values.financeVisibleToMembers} onCheckedChange={(checked) => set("financeVisibleToMembers", checked)} />
-            <SwitchRow label="Public blog" description="Publish posts at the workspace's public blog address." checked={values.blogEnabled} onCheckedChange={(checked) => set("blogEnabled", checked)} />
           </div>
         </SettingsRow>
         <div className="flex justify-end pt-6">

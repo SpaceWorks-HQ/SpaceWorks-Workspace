@@ -6,9 +6,6 @@ import { parseLedgerFilters } from "@/lib/finance/filters";
 import { canTransition, formatInvoiceNumber, isInvoiceOverdue } from "@/lib/finance/invoice";
 import { invoiceTotals, isNegativeMoney, ledgerTotals, lineSubtotalMinor, MAX_AMOUNT_MINOR, minorToDecimalString, parsePercentToBps, runningBalances } from "@/lib/finance/money";
 import { invoiceSchema } from "@/lib/finance/schemas";
-import { buildRssFeed, buildSitemap, buildSitemapIndex, escapeXml } from "@/lib/blog/feed";
-import { htmlToText, postSlugFromTitle, postSlugProblem, postState, uniquePostSlug } from "@/lib/blog/rules";
-import { sanitizeBlogHtml } from "@/lib/blog/sanitize";
 
 const categories = [{ id: "expense-cat", name: "Tools", kind: "EXPENSE" as const }];
 const header = ["date", "kind", "amount", "currency", "category", "description", "counterparty"];
@@ -96,47 +93,3 @@ describe("finance CSV", () => {
   });
 });
 
-describe("blog slugs and sanitisation", () => {
-  it("normalises titles and avoids reserved or occupied addresses", () => {
-    expect(postSlugFromTitle("A night at the workbench!")).toBe("a-night-at-the-workbench");
-    expect(postSlugProblem("Upper-Case")).not.toBeNull();
-    expect(postSlugProblem("rss")).not.toBeNull();
-    expect(uniquePostSlug("rss", new Set())).toBe("rss-post");
-    expect(uniquePostSlug("build", new Set(["build", "build-2"]))).toBe("build-3");
-    const base = "a".repeat(60);
-    const next = uniquePostSlug(base, new Set([base]));
-    expect(next).toHaveLength(60);
-    expect(postSlugProblem(next)).toBeNull();
-  });
-  it("distinguishes scheduled drafts from public posts", () => {
-    expect(postState({ status: "DRAFT", publishedAt: null })).toBe("Draft");
-    expect(postState({ status: "DRAFT", publishedAt: new Date(0) })).toBe("Scheduled");
-    expect(postState({ status: "PUBLISHED", publishedAt: new Date(0) })).toBe("Published");
-  });
-  it("removes executable markup and unsafe URLs", () => {
-    const clean = sanitizeBlogHtml('<h1>Build</h1><script>alert(1)</script><img src=x onerror=alert(1)><iframe>bad</iframe><p style="color:red" onclick="bad()">Safe <a href="javascript:alert(1)">link</a></p>');
-    expect(clean).toBe('<h2>Build</h2><p>Safe <a>link</a></p>');
-    expect(htmlToText(clean)).toBe("Build Safe link");
-  });
-  it("keeps safe formatting and protects outbound links", () => {
-    const clean = sanitizeBlogHtml('<p><strong>Parts</strong> <a href="https://example.test">read</a> <a href="/blog/makers">home</a></p>');
-    expect(clean).toContain('rel="noopener noreferrer nofollow ugc"');
-    expect(clean).toContain('<a href="/blog/makers">home</a>');
-    expect(sanitizeBlogHtml(clean)).toBe(clean);
-  });
-});
-
-describe("blog XML", () => {
-  it("escapes XML markup, attributes and forbidden control characters", () => {
-    expect(escapeXml('<x a="1">&\'\u0001')).toBe("&lt;x a=&quot;1&quot;&gt;&amp;&apos;");
-  });
-  it("does not allow titles, authors or descriptions to insert RSS elements", () => {
-    const xml = buildRssFeed({ title: "Makers & friends", url: "https://example.test/blog", feedUrl: "https://example.test/rss?a=1&b=2", description: "News" }, [{ title: "</title><script>bad</script>", url: "https://example.test/post", description: "<b>Parts</b>", author: "A & B", publishedAt: new Date("2026-10-19T00:00:00Z") }]);
-    expect(xml).not.toContain("<script>");
-    expect(xml).toContain("&lt;/title&gt;&lt;script&gt;bad&lt;/script&gt;");
-    expect(xml).toContain("<dc:creator>A &amp; B</dc:creator>");
-    expect(xml).toContain("Mon, 19 Oct 2026");
-    expect(buildSitemap([{ url: "https://example.test/?a=1&b=2", lastModified: new Date(0) }])).toContain("?a=1&amp;b=2</loc>");
-    expect(buildSitemapIndex(["https://example.test/sitemap.xml?page=1&a=2"])).toContain("<sitemap><loc>https://example.test/sitemap.xml?page=1&amp;a=2</loc></sitemap>");
-  });
-});

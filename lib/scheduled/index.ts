@@ -5,7 +5,7 @@ import { run as tasks } from "@/lib/scheduled/tasks";
 import { run as chat } from "@/lib/scheduled/chat";
 import { run as docsFiles } from "@/lib/scheduled/docsFiles";
 import { run as community } from "@/lib/scheduled/community";
-import { run as financeBlog } from "@/lib/scheduled/financeBlog";
+import { run as finance } from "@/lib/scheduled/finance";
 import { run as assistant } from "@/lib/scheduled/assistant";
 import { run as integrations } from "@/lib/scheduled/integrations";
 import { run as monitor } from "@/lib/scheduled/monitor";
@@ -25,7 +25,7 @@ export const SCHEDULED_JOBS: ReadonlyArray<{ area: string; run: (now: Date) => P
   { area: "chat", run: chat },
   { area: "docs-files", run: docsFiles },
   { area: "community", run: community },
-  { area: "finance-blog", run: financeBlog },
+  { area: "finance", run: finance },
   { area: "assistant", run: assistant },
   { area: "integrations-messaging", run: integrations },
   { area: "monitor", run: monitor },

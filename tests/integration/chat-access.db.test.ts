@@ -116,7 +116,7 @@ describe.sequential("chat access", () => {
     const duplicate = await createChannelAction(slugA, { name: "robot-arm", kind: "PRIVATE" });
     expect(duplicate).toMatchObject({ ok: false, fieldErrors: { name: expect.any(Array) } });
     as(admin);
-    expect(await createChannelAction(slugA, { name: "laser-cutter", kind: "PUBLIC", topic: "Bookings and settings" })).toMatchObject({ ok: true });
+    expect(await createChannelAction(slugA, { name: "laser-cutter", kind: "PUBLIC", topic: "Maintenance and settings" })).toMatchObject({ ok: true });
     expect(await createChannelAction(slugA, { name: "browse", kind: "PUBLIC" })).toMatchObject({ ok: false });
     const audit = await prisma.auditEvent.count({ where: { workspaceId: workspaceA, action: "chat.channel_created" } });
     expect(audit).toBe(2);
