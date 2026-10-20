@@ -1,0 +1,5 @@
+services:
+  postgres:
+    profiles: [database-disabled]
+  migrate:
+    depends_on: !reset {}

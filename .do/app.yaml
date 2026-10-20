@@ -46,7 +46,23 @@ jobs:
     dockerfile_path: Dockerfile
     source_dir: /
     instance_size_slug: apps-s-1vcpu-1gb
-    run_command: sh -c "MIGRATE_ON_START=1 docker-entrypoint.sh true"
+    run_command: docker-entrypoint.sh migrate
+
+workers:
+  - name: scheduler
+    github:
+      repo: SpaceWorks-HQ/SpaceWorks-Workspace
+      branch: main
+      deploy_on_push: true
+    dockerfile_path: Dockerfile
+    source_dir: /
+    instance_size_slug: apps-s-1vcpu-1gb
+    instance_count: 1
+    run_command: docker-entrypoint.sh scheduler
+    envs:
+      - key: APP_URL
+        value: ${web.PRIVATE_URL}
+        scope: RUN_TIME
 
 databases:
   - name: db
@@ -62,9 +78,12 @@ envs:
   - key: DATABASE_URL
     value: ${db.DATABASE_URL}
     scope: RUN_TIME
+  - key: DIRECT_URL
+    type: SECRET
+    scope: RUN_TIME
   - key: NEXT_PUBLIC_BASE_URL
     value: https://CHANGE_ME.example.org
-    scope: RUN_AND_BUILD_TIME
+    scope: RUN_TIME
   - key: AUTH_URL
     value: https://CHANGE_ME.example.org
     scope: RUN_TIME

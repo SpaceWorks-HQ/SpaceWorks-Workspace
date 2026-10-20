@@ -81,28 +81,17 @@ load automatically. Use a development database for demo data.
 | `npm run db:backup` / `db:restore` | Database backups |
 | `npm run production:check` | Production environment preflight |
 
-## Deploy
-
-The quickest production setup is one Linux server with the guided installer.
-It installs Docker if needed, generates every secret, and runs PostgreSQL,
-Redis, private Silo storage, Caddy HTTPS, migrations and a scheduler:
+## Install and deploy
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SpaceWorks-HQ/SpaceWorks-Workspace/main/install.sh -o install.sh
-sudo bash install.sh --ref main        # then open https://<your-host>/setup
+curl -fsSL https://raw.githubusercontent.com/SpaceWorks-HQ/SpaceWorks-Workspace/main/install.sh | bash
 ```
 
-| Guide | For |
-| --- | --- |
-| [VPS](docs/DEPLOYMENT_VPS.md) | The installer, upgrades with rollback, backups and restore, DigitalOcean Droplets, Hetzner |
-| [Cloud platforms](docs/DEPLOYMENT_CLOUD.md) | Render (`render.yaml`), DigitalOcean App Platform (`.do/app.yaml`), Fly.io |
-| [AWS](docs/DEPLOYMENT_AWS.md) | EC2 with the installer, or ECS Fargate with RDS, ElastiCache and S3 |
-| [Kubernetes](docs/DEPLOYMENT_KUBERNETES.md) | The Helm chart in `charts/spaceworks-workspace` |
-| [Docker image](docs/DEPLOYMENT_DOCKER.md) · [Container images](docs/CONTAINER_IMAGES.md) | Running and publishing the image yourself |
-| [Configuration](docs/CONFIGURATION.md) · [Operations](docs/production-operations.md) | Every variable; monitoring, restore drills, upgrades, secret rotation |
+The guide asks every deployment question before changing the host: hosting, HTTPS, separate containers or all-in-one, bundled/managed data services, email, owner identity and optional integrations/deploy runner. Production requires HTTPS. Open `/setup` after readiness to create the owner account.
 
-Local development helpers: `./local.sh start` (services, `.env`, migrations
-and the dev server) or `npm run docker:dev` for the services alone.
+Three matching GHCR images provide the Next.js backend, nginx frontend, and a supervised all-in-one app. Split hosting places nginx on a separate server and proxies all dynamic routes back to Next.js. No host builds are needed. Defaults install into `/opt/spaceworks-workspace`; forks use `--repo Owner/Repo`. Existing installs get backup-first updates and image rollback.
+
+See [the full installer walkthrough](docs/DEPLOYMENT_VPS.md), [Docker](docs/DEPLOYMENT_DOCKER.md), [cloud providers](docs/DEPLOYMENT_CLOUD.md), [AWS](docs/DEPLOYMENT_AWS.md), [Kubernetes](docs/DEPLOYMENT_KUBERNETES.md), [images/tags](docs/CONTAINER_IMAGES.md) and [operations](docs/production-operations.md).
 
 ## Operations
 

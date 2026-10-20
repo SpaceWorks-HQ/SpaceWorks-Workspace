@@ -1,67 +1,25 @@
-# Container images
+# Container images and releases
 
-[Docker](DEPLOYMENT_DOCKER.md) · [Kubernetes](DEPLOYMENT_KUBERNETES.md)
+All three GHCR packages support `linux/amd64` and `linux/arm64`:
 
-The **Publish container images** workflow (`.github/workflows/publish-images.yml`)
-builds two images for `linux/amd64` and `linux/arm64` and pushes them to the
-GitHub Container Registry:
+- `ghcr.io/spaceworks-hq/spaceworks-workspace-backend`
+- `ghcr.io/spaceworks-hq/spaceworks-workspace-frontend`
+- `ghcr.io/spaceworks-hq/spaceworks-workspace-allinone`
 
-```text
-ghcr.io/spaceworks-hq/spaceworks-workspace            Dockerfile target `runner`
-ghcr.io/spaceworks-hq/spaceworks-workspace-migrator   Dockerfile target `migrator`
-```
+`VERSION` starts at `0.1.0`. Continuous Release builds `X.Y.Z-main.<run>.<sha12>` for each push to main. That immutable tag and `sha-<sha12>` identify the build. Only a changed VERSION or manual main dispatch creates a GitHub Release with the runtime installer bundle. After publication, a run still at main HEAD promotes all three images to `X.Y`, `main` and `latest`. Superseded workflow runs cannot promote rolling tags. Use immutable versions for deployments; image-name overrides and forks keep this same tagging contract.
 
-It runs after **CI** succeeds for a push to `main`, for version tags
-(`v1.2.3`) and on manual dispatch. Pull requests and forks never publish. It
-uses the built-in `GITHUB_TOKEN` (`packages: write`); no other secret is needed.
+The workflow first builds the backend for both architectures, then publishes a three-image matrix using that backend as the source. Static assets cannot diverge by an independent Next.js rebuild. Metadata labels identify the source and version. Build caches are scoped per image; QEMU enables the second architecture. No build-time application secret is needed.
 
-## Tags
+The optional deployment job uses the `spaceworks-workspace-prod` self-hosted label, the `production` environment and repository variable `SWW_DEPLOY=true`. It never checks out source or runs third-party actions on the production runner. It invokes the installed updater with an exact version. See the runner instructions in [operations](production-operations.md).
 
-| Event | Tags (both images) |
-| --- | --- |
-| Push to `main` (after CI) | `sha-<first 12 characters of the commit>` |
-| Tag `v1.2.3` | `sha-<commit>` and `1.2.3` |
+## Retention
 
-There is no `latest`. Deploy an immutable tag, or better the digest shown in
-the workflow summary. The app and migrator of one release always share a tag.
+Release rows and Git tags are kept. GHCR retains the current build, its SHA tag, the release series, main/latest, and the previous published release. The retention helper discovers child manifests before deleting stale versions so architecture and attestation manifests belonging to retained indexes remain reachable. If discovery fails, it skips deletion for that package. A local deployment also retains its cached previous application images for image rollback. Do not prune those until the replacement is healthy and its backup verified.
 
-## The runner image is generic
+Old release rows may outlive their container images. To reinstall an older version whose images were pruned, republish that commit under a new immutable release. The installer follows the newest published release, which can lag continuous main image builds between VERSION changes.
 
-No hostname, key or credential is compiled in:
-
-- `NEXT_PUBLIC_BASE_URL` is only used on the server, so when the build
-  argument is absent the value is read from the runtime environment.
-- Next.js reads `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` at runtime, and a
-  production server refuses to start without it (`lib/env.ts`), so the random
-  key Next.js writes into the build manifest is never used.
-
-One image can therefore serve any number of instances. Keep packages private
-while the repository is private (the default for a private repository); a
-server pulls with a token that has only `read:packages`:
+Set GHCR packages to Public for unauthenticated installs. Private forks require `SWW_GITHUB_TOKEN` with repository/package read access. Maintainers can verify publication with:
 
 ```bash
-echo "$TOKEN" | docker login ghcr.io -u <github-user> --password-stdin
+GHCR_OWNER=spaceworks-hq bash scripts/verify-release-images.sh X.Y.Z-main.RUN.SHA12
 ```
-
-The VPS stack builds its own images from the release source and does not
-need the registry.
-
-## Manual build
-
-```bash
-docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/spaceworks-hq/spaceworks-workspace:sha-<commit> --push .
-docker buildx build --platform linux/amd64,linux/arm64 --target migrator -t ghcr.io/spaceworks-hq/spaceworks-workspace-migrator:sha-<commit> --push .
-```
-
-## Contents
-
-| | runner | migrator |
-| --- | --- | --- |
-| Base | `node:22-alpine` | `node:22-alpine` |
-| User | `nextjs` (1001) | `node` (1000) |
-| Includes | `.next/standalone`, static assets, `prisma/`, pinned Prisma CLI for `MIGRATE_ON_START`, `scripts/scheduler.mjs` | full `node_modules`, `prisma/`, `scripts/prisma.mjs` |
-| Entry | `docker-entrypoint.sh node server.js` | `node scripts/prisma.mjs migrate deploy` |
-| Health | `HEALTHCHECK` on `/api/health` | none |
-
-Changing anything under `.github/workflows/` needs a GitHub credential with
-the `workflow` scope (`gh auth refresh -s workflow`); pushing over SSH works too.

@@ -1,0 +1,3 @@
+services:
+  api-edge:
+    ports: !reset []

@@ -30,7 +30,14 @@ charts/
 .do/
 render.yaml
 compose.*.yml
+docker-compose*.yml
 docker-compose.yml
 install.sh
 local.sh
 .wrangler
+
+config/
+.sww-*
+.spaceworks-workspace-*
+
+frontend-public/

@@ -97,3 +97,12 @@ prisma/.env
 
 # Local docker-compose volumes
 /.data/
+
+# Private release-install state
+/config/
+/.sww-*
+/.spaceworks-workspace-*
+/.bundle-version
+/bundle-files.txt
+
+/frontend-public/

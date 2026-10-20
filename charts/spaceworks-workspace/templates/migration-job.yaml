@@ -23,8 +23,8 @@ spec:
       automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
+        runAsUser: 1001
+        runAsGroup: 1001
         seccompProfile:
           type: RuntimeDefault
       {{- with .Values.imagePullSecrets }}
@@ -33,16 +33,16 @@ spec:
       {{- end }}
       containers:
         - name: migrate
-          image: "{{ .Values.migration.image.repository }}:{{ default .Chart.AppVersion .Values.migration.image.tag }}"
+          image: "{{ .Values.migration.image.repository }}:{{ default (default .Chart.AppVersion .Values.image.tag) .Values.migration.image.tag }}"
           imagePullPolicy: {{ .Values.migration.image.pullPolicy }}
           # Uses DIRECT_URL when set (needed behind a transaction pooler), else DATABASE_URL.
-          command: ["node", "scripts/prisma.mjs", "migrate", "deploy"]
+          args: ["migrate"]
           env:
             - name: CHECKPOINT_DISABLE
               value: "1"
           envFrom:
             - secretRef:
-                name: {{ include "sww.secretName" . }}
+                name: {{ default (include "sww.secretName" .) .Values.migration.existingSecret }}
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

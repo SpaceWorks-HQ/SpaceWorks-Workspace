@@ -1,0 +1,9 @@
+services:
+  redis:
+    profiles: [redis-disabled]
+  backend:
+    depends_on:
+      redis: !reset null
+  app:
+    depends_on:
+      redis: !reset null

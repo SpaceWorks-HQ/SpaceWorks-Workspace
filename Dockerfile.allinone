@@ -1,0 +1,14 @@
+# syntax=docker/dockerfile:1.7
+ARG SWW_BACKEND_BUILD=ghcr.io/spaceworks-hq/spaceworks-workspace-backend:latest
+FROM ${SWW_BACKEND_BUILD}
+USER root
+RUN apk add --no-cache nginx gettext && mkdir -p /srv/www/_next/static /etc/nginx/templates \
+ && cp -a /app/.next/static/. /srv/www/_next/static/ && cp -a /app/frontend-public/. /srv/www/
+COPY docker/frontend/nginx.conf /etc/nginx/templates/workspace.conf.template
+COPY docker/allinone/nginx.conf /etc/nginx/nginx.conf
+COPY --chmod=755 docker/frontend/docker-entrypoint.d/30-configure-upstream.sh /docker-entrypoint.d/30-configure-upstream.sh
+COPY --chmod=755 docker/allinone/run.sh /app/allinone/run.sh
+USER 1001:1001
+ENV SWW_HEALTH_ORIGIN=http://127.0.0.1:8080
+EXPOSE 8080
+ENTRYPOINT ["/sbin/tini", "--", "/app/allinone/run.sh"]

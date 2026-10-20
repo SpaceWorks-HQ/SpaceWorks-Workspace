@@ -6,9 +6,9 @@
 replicaCount: 2
 
 image:
-  repository: ghcr.io/spaceworks-hq/spaceworks-workspace
+  repository: ghcr.io/spaceworks-hq/spaceworks-workspace-backend
   # Use an immutable tag (sha-<commit>) or a digest; defaults to the chart appVersion.
-  tag: ""
+  tag: "0.1"
   pullPolicy: IfNotPresent
 
 imagePullSecrets: []
@@ -75,11 +75,11 @@ podDisruptionBudget:
   minAvailable: 1
 
 # Pre-install/pre-upgrade Job running `prisma migrate deploy` with the
-# migrator image of the same release. A failed migration blocks the rollout.
+# backend image of the same release. A failed migration blocks the rollout.
 migration:
   enabled: true
   image:
-    repository: ghcr.io/spaceworks-hq/spaceworks-workspace-migrator
+    repository: ghcr.io/spaceworks-hq/spaceworks-workspace-backend
     tag: ""
     pullPolicy: IfNotPresent
   backoffLimit: 1
@@ -103,3 +103,12 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 topologySpreadConstraints: []
+
+# Optional matching-version nginx sidecar. Pages still render on the backend.
+frontend:
+  enabled: false
+  trustedProxyCidr: 127.0.0.1/32
+  image:
+    repository: ghcr.io/spaceworks-hq/spaceworks-workspace-frontend
+    tag: ""
+    pullPolicy: IfNotPresent

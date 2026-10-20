@@ -9,7 +9,7 @@ spec:
   ports:
     - name: http
       port: {{ .Values.service.port }}
-      targetPort: http
+      targetPort: {{ ternary "frontend" "http" .Values.frontend.enabled }}
       protocol: TCP
   selector:
     {{- include "sww.selectorLabels" . | nindent 4 }}

@@ -1,108 +1,58 @@
-# Run the container image
+# Docker deployment
 
-[VPS stack](DEPLOYMENT_VPS.md) · [Configuration](CONFIGURATION.md) · [Container images](CONTAINER_IMAGES.md)
+Space Works Workspace publishes three matching images:
 
-This page covers the application container on its own, with PostgreSQL,
-Redis, object storage and SMTP supplied separately (managed services or your
-own). For a complete single-server stack use the [VPS guide](DEPLOYMENT_VPS.md);
-for Kubernetes use the [Helm chart](DEPLOYMENT_KUBERNETES.md). The root
-`docker-compose.yml` starts development services only.
-
-## Images
-
-| Target | Published as | Purpose |
+| Image | Purpose | Container port |
 | --- | --- | --- |
-| `runner` (default) | `ghcr.io/spaceworks-hq/spaceworks-workspace` | Next.js standalone server on Node 22 Alpine, user `nextjs` (uid 1001), port 3000, `HEALTHCHECK` on `/api/health` |
-| `migrator` | `ghcr.io/spaceworks-hq/spaceworks-workspace-migrator` | `prisma migrate deploy`, then exits |
-| `ops` | never published | VPS setup, checks and backup tools |
+| `ghcr.io/spaceworks-hq/spaceworks-workspace-backend` | Next.js standalone server and operator roles | 3000 |
+| `ghcr.io/spaceworks-hq/spaceworks-workspace-frontend` | nginx, Next static files, reverse proxy | 8080 |
+| `ghcr.io/spaceworks-hq/spaceworks-workspace-allinone` | backend and nginx supervised together, optional scheduler | 8080 |
 
-The runner is generic: it holds no hostname or secret. Build it yourself with
+The backend is built once for each architecture. Both other images copy its exact assets. The frontend serves `/_next/static/` with immutable caching; unversioned public files revalidate. gzip is available, including precompressed assets when present. All pages, API, Server Actions, SSE, MCP, image optimisation and downloads are forwarded with buffering disabled. Upstream CSP/nonces and private caching remain intact. The nginx configs do not add a second CSP. Access logs are disabled to protect bearer URLs.
 
-```bash
-docker build --tag spaceworks-workspace:local .                        # or: npm run docker:build
-docker build --target migrator --tag spaceworks-workspace-migrator:local .
-```
+Every image runs without root. The all-in-one supervisor forwards shutdown and exits if any essential child exits. `SWW_SCHEDULER_ENABLED=0` disables its scheduler when a separate scheduler is configured. `BACKEND_UPSTREAM` defaults to `http://backend:3000`; the all-in-one uses `127.0.0.1:3000`.
 
-Optional build argument: `--build-arg NEXT_PUBLIC_BASE_URL=https://work.example.org`
-compiles the origin into the image (the VPS stack does this). Without it the
-value is read at runtime.
-
-## Configure
-
-Put the production variables from [Configuration](CONFIGURATION.md) in an
-owner-only file outside the repository (or your platform's secret store) and
-check it:
+## Backend roles
 
 ```bash
-umask 077 && $EDITOR /secure/sww.env
-node --env-file=/secure/sww.env scripts/check-production-env.mjs
+docker run --env-file runtime.env IMAGE:VERSION web
+docker run --rm --env-file maintenance.env IMAGE:VERSION migrate
+docker run --rm --env-file scheduler.env IMAGE:VERSION scheduler --once
+docker run --rm --env-file runtime.env IMAGE:VERSION ops node /app/scripts/check-production-env.mjs
 ```
 
-The server refuses to start in production unless `AUTH_URL` and
-`NEXT_PUBLIC_BASE_URL` are the same HTTPS origin, the database URL requires
-TLS, Redis uses `rediss://`, a custom S3 endpoint uses HTTPS, and all required
-secrets are present.
+`web` is the default. `migrate` uses the bundled Prisma CLI pinned to 6.19.3 and `DIRECT_URL` (fallback `DATABASE_URL`). Migrations never run inside `web`. `scheduler` triggers the two internal bearer-protected job endpoints. `ops` requires an explicit command and is intended for trusted operator use. Unknown roles fail. Image builds accept no application secrets or public origin. Set `NEXT_PUBLIC_BASE_URL` and `AUTH_URL` to the same HTTPS origin at runtime.
 
-## First start
+## Compose files
+
+| File | Use |
+| --- | --- |
+| `docker-compose.yml` | Development PostgreSQL, Redis, Silo and Mailpit |
+| `docker-compose.dev.yml` | Containerised Next.js development and tests |
+| `docker-compose.prod.yml` | Published images with bundled data services |
+| `docker-compose.cloud.yml` | Published app images with all managed data services |
+| `docker/compose.single.yml` | Supervised all-in-one application |
+| `docker/compose.tls.yml` | Caddy automatic HTTPS and HTTP/3 |
+| `docker/compose.api-only.yml` | Backend-host edge for split hosting |
+| `docker/compose.api-only-edge.yml` | Caddy is the only split-backend listener |
+| `docker/compose.frontend-only.yml` | Remote nginx host with no app credentials |
+| `docker/compose.external-{database,redis,storage}.yml` | Independently disable bundled dependencies |
+| `docker/compose.build.yml` | Build from a complete source checkout |
+
+Compose 2.24.4+ is required for merge replacement tags. The wrapper reads saved choices and applies the right overlays:
 
 ```bash
-docker run --rm --env-file /secure/sww.env ghcr.io/spaceworks-hq/spaceworks-workspace-migrator:sha-<commit>
-docker run -d --name sww --restart unless-stopped --env-file /secure/sww.env \
-  --read-only --tmpfs /tmp --tmpfs /app/.next/cache:uid=1001,gid=1001 \
-  --cap-drop ALL --security-opt no-new-privileges \
-  --publish 127.0.0.1:3000:3000 ghcr.io/spaceworks-hq/spaceworks-workspace:sha-<commit>
-curl --fail http://127.0.0.1:3000/api/health
+bash setup.sh
+bash scripts/spaceworks-workspace-compose.sh ps
+bash scripts/spaceworks-workspace-compose.sh logs --tail 100 backend
 ```
 
-Then open `https://<host>/setup` to create the owner account and first
-workspace. Expose port 3000 only to your reverse proxy. The proxy must:
+It rejects arbitrary Compose file/env overrides. Do not manually activate `*-disabled` profiles. Only edges publish ports. External managed services require egress from app/migration containers; the bundled data network stays internal. There is no SaaS overlay because tenancy is application-level `/w/<slug>` and has no deployment-specific subdomain mode.
 
-- terminate TLS and overwrite the client-IP header named in
-  `TRUSTED_PROXY_IP_HEADER` (`x-real-ip`, `x-forwarded-for` with
-  `TRUSTED_PROXY_HOPS`, or `cf-connecting-ip` behind Cloudflare);
-- stream `text/event-stream` responses (`/api/realtime/...`) without buffering
-  and allow idle reads of at least 60 seconds (nginx: `proxy_buffering off;
-  proxy_read_timeout 3600s;`);
-- accept request bodies up to 30 MB (uploads).
-
-### Single container without a release step
-
-Where nothing can run the migrator first (one container on a PaaS), set
-`MIGRATE_ON_START=1`: the entrypoint runs `prisma migrate deploy` (through
-`DIRECT_URL`, else `DATABASE_URL`) before `node server.js` and exits if it
-fails, so a bad release never becomes healthy. Do not use it with several
-replicas.
-
-## Scheduler
-
-Every app process runs the email outbox once a minute. Add an independent
-scheduler for recovery and for periodic jobs (`/api/internal/jobs`). The image
-contains one:
+## Local build and smoke
 
 ```bash
-docker run -d --name sww-scheduler --restart unless-stopped \
-  -e APP_URL=http://sww:3000 -e CRON_SECRET=... --network <app network> \
-  --entrypoint node ghcr.io/spaceworks-hq/spaceworks-workspace:sha-<commit> /app/scripts/scheduler.mjs
+bash scripts/test-release-local.sh
 ```
 
-`--once` makes one pass for cron-style runners. Any other scheduler works too:
-`POST /api/internal/outbox` and `POST /api/internal/jobs` with
-`Authorization: Bearer $CRON_SECRET`, about once a minute (204 or 200 is success).
-
-## Upgrade
-
-1. Back up the database (`npm run db:backup` or your provider's snapshot).
-2. Pull both new images (same `sha-<commit>` tag).
-3. Run the new migrator once.
-4. Replace the app container; keep the old one stopped until the new one is healthy.
-5. Verify `/api/health`, `GET /api/health/db` with `Authorization: Bearer $HEALTHCHECK_SECRET`, sign-in and email.
-
-Reverting the image does not revert migrations. Restore a backup if an older
-release cannot work with the newer schema.
-
-## Local production-like run
-
-`npm run docker:build` builds the image; to try it against the development
-services from `docker-compose.yml`, see the "Trying the stack locally" section
-of the [VPS guide](DEPLOYMENT_VPS.md#trying-the-stack-locally), which runs the
-complete production stack with Caddy's internal CA on high ports.
+This builds the backend once, derives the matching frontend/all-in-one, creates a throwaway runtime bundle, runs the real installer with file-driven answers, verifies both shapes over an internal test TLS edge, and tears down only its own Compose projects and volumes. It uses non-conflicting ports and unique network subnets. It does not modify an existing installation.
