@@ -3,6 +3,7 @@ import "server-only";
 import type { ColumnCategory, Prisma, TaskPriority } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { taskUrl } from "@/lib/tasks/links";
 import { nextWorkspaceSequence } from "@/lib/counters";
 import { recordActivity } from "@/lib/activity";
 import { indexSearchDocument } from "@/lib/search/documents";
@@ -44,10 +45,6 @@ const taskSelect = {
 
 type TaskRow = Prisma.TaskGetPayload<{ select: typeof taskSelect }>;
 
-function taskUrl(slug: string, task: { number: number; project: { key: string } | null }) {
-  return task.project ? `/w/${slug}/projects/${task.project.key}/tasks/${task.number}` : `/w/${slug}/my-tasks`;
-}
-
 function taskDto(slug: string, task: TaskRow) {
   return {
     ref: task.project ? `${task.project.key}-${task.number}` : `#${task.number}`,
@@ -59,7 +56,7 @@ function taskDto(slug: string, task: TaskRow) {
     dueAt: task.dueAt?.toISOString() ?? null,
     project: task.project ? { key: task.project.key, name: task.project.name } : null,
     assignees: task.assignees.map((a) => ({ id: a.user.id, name: a.user.name })),
-    url: taskUrl(slug, task),
+    url: taskUrl(slug, task.project?.key, task.number),
   };
 }
 
@@ -277,7 +274,7 @@ export const createTask = defineTool({
         select: taskSelect,
       });
       const ref = project ? `${project.key}-${number}` : `#${number}`;
-      const url = taskUrl(principal.workspace.slug, created);
+      const url = taskUrl(principal.workspace.slug, created.project?.key, created.number);
       await indexSearchDocument(
         { workspaceId, entityType: "task", entityId: created.id, title: `${ref} ${created.title}`, body: input.description ?? "", url, projectId: project?.id ?? null, teamId: project?.teamId ?? null },
         tx,

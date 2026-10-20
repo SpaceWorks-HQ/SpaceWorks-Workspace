@@ -117,6 +117,14 @@ describe("search hit filtering", () => {
     expect(ids).toEqual(["d1", "m2", "p2"]);
   });
 
+  it.each(["GUEST", "MEMBER", "ADMIN", "OWNER"] as const)("keeps personal notes owner-only for %s, regardless of index visibility", (role) => {
+    const principal = user(role);
+    const own = hit({ entityType: "note", entityId: "own", ownerId: principal.userId, visibility: "PRIVATE" });
+    const other = hit({ entityType: "note", entityId: "other", ownerId: "someone-else", visibility: "PRIVATE" });
+    const stale = hit({ ...other, entityId: "stale", visibility: "WORKSPACE" });
+    expect(filterSearchHits([own, other, stale], principal, access).map(h => h.entityId)).toEqual(["own"]);
+  });
+
   it("keeps guests to everyday types and tokens to their scopes", () => {
     expect(filterSearchHits(hits, user("GUEST"), access).map((h) => h.entityId)).toEqual(["d1", "m2"]);
     expect(filterSearchHits(hits, token(["read:chat"]), access).map((h) => h.entityId)).toEqual(["m2"]);

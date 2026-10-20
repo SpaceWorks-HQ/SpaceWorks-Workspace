@@ -2,6 +2,7 @@ import "server-only";
 
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { findDownloadableFile } from "@/lib/files";
 import { canViewFinance, canViewServices, hasRoleAtLeast } from "@/lib/roles";
 import { userTeamIds } from "@/lib/teamAccess";
 import { formatMoney } from "@/lib/format/money";
@@ -19,10 +20,11 @@ const TOKEN_SCOPE_BY_TYPE: Record<string, ApiScope> = {
   message: "read:chat",
   channel: "read:chat",
   member: "read:members",
+  team: "read:members",
   event: "read:members",
   announcement: "read:members",
 };
-const GUEST_TYPES = new Set(["task", "project", "doc", "message", "channel", "announcement", "event", "meeting", "member"]);
+const GUEST_TYPES = new Set(["task", "project", "doc", "message", "channel", "announcement", "event", "meeting", "member", "team", "note"]);
 const FINANCE_TYPES = new Set(["ledger", "ledger_entry", "invoice", "budget", "purchase_request", "reimbursement", "expense"]);
 const NEVER_TYPES = (type: string) => type.startsWith("vault") || type === "emergency_contact";
 
@@ -48,6 +50,7 @@ export function filterSearchHits(
   const finance = canViewFinance(principal, principal.workspace);
   return hits.filter((hit) => {
     if (NEVER_TYPES(hit.entityType)) return false;
+    if (hit.entityType === "note" && (principal.kind !== "user" || hit.ownerId !== principal.userId)) return false;
     if (principal.kind === "token") {
       const scope = TOKEN_SCOPE_BY_TYPE[hit.entityType];
       if (!scope || !hasScope(principal.scopes ?? [], scope)) return false;
@@ -97,12 +100,26 @@ export const searchWorkspace = defineTool({
         : Promise.resolve([]),
       docIds.length ? prisma.doc.findMany({ where: { workspaceId: principal.workspace.id, id: { in: docIds }, OR: [{ visibility: "ADMINS" }, { archivedAt: { not: null } }] }, select: { id: true } }) : Promise.resolve([]),
     ]);
-    const hits = filterSearchHits(typed, principal, {
+    const filtered = filterSearchHits(typed, principal, {
       hiddenTeams: new Set(hidden),
       myTeams: new Set(mine),
       readableChannels: new Set(readable.map((c) => c.id)),
       adminOnlyDocs: new Set(adminDocs.map((d) => d.id)),
-    }).slice(0, input.limit);
+    });
+    // Index metadata can outlive a file's links or a note's source record.
+    // Authorise the live source before returning any indexed title or body.
+    const live = await Promise.all(filtered.map(async (hit) => {
+      if (hit.entityType === "note") return Boolean(await prisma.personalNote.findFirst({ where: { id: hit.entityId, workspaceId: principal.workspace.id, userId: principal.userId, archivedAt: null }, select: { id: true } }));
+      if (hit.entityType === "member") return Boolean(await prisma.memberProfile.findFirst({ where: { id: hit.entityId, workspaceId: principal.workspace.id, user: { disabledAt: null, memberships: { some: { workspaceId: principal.workspace.id, status: "ACTIVE" } } } }, select: { id: true } }));
+      if (hit.entityType === "team") return Boolean(await prisma.team.findFirst({ where: { id: hit.entityId, workspaceId: principal.workspace.id, archivedAt: null, ...(principal.kind === "user" && hasRoleAtLeast(principal.role, "ADMIN") ? {} : { OR: [{ visibility: "PUBLIC" }, { members: { some: { userId: principal.userId } } }] }) }, select: { id: true } }));
+      if (hit.entityType !== "file") return true;
+      // Jobs post to shared destinations and must not recover private files
+      // using their creator's broader download rights.
+      if (principal.kind !== "user") return false;
+      const file = await findDownloadableFile(hit.entityId, principal.userId);
+      return file?.workspaceId === principal.workspace.id;
+    }));
+    const hits = filtered.filter((_, index) => live[index]).slice(0, input.limit);
     return {
       summary: `Found ${plural(hits.length, "result")} for “${clip(input.query, 40)}”`,
       data: { results: hits.map((h) => ({ type: h.entityType, id: h.entityId, title: h.title, snippet: clip(h.body, 300), url: h.url })) },
