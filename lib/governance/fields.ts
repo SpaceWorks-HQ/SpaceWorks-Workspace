@@ -271,6 +271,7 @@ export function recordFields(kind: Kind, choices: Choices): FieldSpec[] {
       help: "Full currency amount; leave zero when not applicable.",
     });
     add("premium", "Premium or fee", { value: "0" });
+    if(kind === "INSURANCE") add("premiumFrequency", "Premium frequency", {type:"select",options:["MONTHLY","QUARTERLY","YEARLY"].map(value=>({value,label:value.toLowerCase()}))});
     add("currency", "Currency", { value: "INR", required: true });
     add("obligationId", "Compliance calendar item", {
       type: "select",

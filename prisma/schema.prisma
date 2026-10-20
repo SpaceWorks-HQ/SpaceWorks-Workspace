@@ -563,6 +563,10 @@ model Workspace {
   hiringOpenings           HiringOpening[]
   hiringCandidates         HiringCandidate[]
   opsAttachments           OpsAttachment[]
+  recurringSchedules       RecurringCostSchedule[]
+  recurringDues            RecurringCostDue[]
+  staffAdvances            StaffAdvance[]
+  advanceRecoveries        StaffAdvanceRecovery[]
   facilityLeases           FacilityLease[]
   governanceRecords        GovernanceRecord[]
   governanceAttachments    GovernanceAttachment[]
@@ -5379,33 +5383,36 @@ model FinanceAccount {
 }
 
 model FinanceBill {
-  id           String               @id @default(cuid())
-  workspaceId  String
-  vendor       String
-  number       String
-  issuedOn     DateTime             @db.Date
-  dueOn        DateTime             @db.Date
-  amountMinor  Int
-  paidMinor    Int                  @default(0)
-  currency     String               @default("INR")
-  gstin        String?
-  taxableMinor Int                  @default(0)
-  cgstMinor    Int                  @default(0)
-  sgstMinor    Int                  @default(0)
-  igstMinor    Int                  @default(0)
-  tdsMinor     Int                  @default(0)
-  categoryId   String?
-  fundId       String?
-  costCentreId String?
-  accountId    String?
-  purpose      String?
-  notes        String?
-  ownerId      String?
-  createdById  String
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
-  workspace    Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  payments     FinanceBillPayment[]
+  privatePayroll Boolean              @default(false)
+  needsActual    Boolean              @default(false)
+  recurringDue   RecurringCostDue?
+  id             String               @id @default(cuid())
+  workspaceId    String
+  vendor         String
+  number         String
+  issuedOn       DateTime             @db.Date
+  dueOn          DateTime             @db.Date
+  amountMinor    Int
+  paidMinor      Int                  @default(0)
+  currency       String               @default("INR")
+  gstin          String?
+  taxableMinor   Int                  @default(0)
+  cgstMinor      Int                  @default(0)
+  sgstMinor      Int                  @default(0)
+  igstMinor      Int                  @default(0)
+  tdsMinor       Int                  @default(0)
+  categoryId     String?
+  fundId         String?
+  costCentreId   String?
+  accountId      String?
+  purpose        String?
+  notes          String?
+  ownerId        String?
+  createdById    String
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  workspace      Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  payments       FinanceBillPayment[]
 
   @@unique([workspaceId, id])
   @@index([workspaceId, dueOn])
@@ -6015,4 +6022,124 @@ model DocumentDelivery {
   document    BusinessDocument @relation(fields: [workspaceId, documentId], references: [workspaceId, id], onDelete: NoAction)
 
   @@index([workspaceId, documentId, createdAt])
+}
+
+// Manual recurring obligations create ordinary supplier bills, never a second payment store.
+model RecurringCostSchedule {
+  id                  String             @id @default(cuid())
+  workspaceId         String
+  requestKey          String
+  title               String
+  kind                String
+  payee               String
+  contactId           String?
+  organisationId      String?
+  amountMinor         Int
+  currency            String             @default("INR")
+  estimated           Boolean            @default(false)
+  frequency           String             @default("MONTHLY")
+  dueDay              Int                @default(1)
+  startsOn            DateTime           @db.Date
+  endsOn              DateTime?          @db.Date
+  nextDueOn           DateTime           @db.Date
+  leadDays            Int                @default(14)
+  reminderDays        Int                @default(7)
+  categoryId          String?
+  fundId              String?
+  costCentreId        String?
+  accountId           String?
+  ownerId             String?
+  gstPercent          Float              @default(0)
+  tdsSection          String             @default("")
+  tdsPercent          Float              @default(0)
+  leaseId             String?
+  subscriptionId      String?
+  insuranceId         String?
+  depositId           String?
+  escalationPercent   Float              @default(0)
+  renewalOn           DateTime?          @db.Date
+  renewalReminderDays Int                @default(30)
+  principalMinor      Int                @default(0)
+  annualRatePercent   Float              @default(0)
+  tenure              Int                @default(0)
+  status              String             @default("ACTIVE")
+  notes               String             @default("")
+  createdById         String
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  workspace           Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  dues                RecurringCostDue[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, requestKey])
+  @@unique([workspaceId, leaseId])
+  @@unique([workspaceId, insuranceId])
+  @@index([workspaceId, status, nextDueOn])
+  @@index([workspaceId, fundId, costCentreId])
+}
+
+model RecurringCostDue {
+  id             String                 @id @default(cuid())
+  workspaceId    String
+  scheduleId     String?
+  sourceKey      String
+  kind           String
+  dueOn          DateTime               @db.Date
+  billId         String
+  payRunId       String?
+  principalMinor Int                    @default(0)
+  interestMinor  Int                    @default(0)
+  splitConfirmed Boolean                @default(false)
+  workspace      Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  schedule       RecurringCostSchedule? @relation(fields: [workspaceId, scheduleId], references: [workspaceId, id], onDelete: NoAction)
+  bill           FinanceBill            @relation(fields: [workspaceId, billId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, sourceKey])
+  @@unique([workspaceId, billId])
+  @@index([workspaceId, dueOn, kind])
+  @@index([workspaceId, scheduleId])
+}
+
+// The existing deposit movements hold advance cash; these rows only schedule recovery.
+model StaffAdvance {
+  id           String                 @id @default(cuid())
+  workspaceId  String
+  requestKey   String
+  userId       String
+  profileId    String
+  reason       String
+  amountMinor  Int
+  currency     String
+  instalments  Int
+  startsOn     DateTime               @db.Date
+  accountId    String
+  costCentreId String?
+  fundId       String?
+  approvalId   String?
+  depositId    String?
+  paidOn       DateTime?              @db.Date
+  status       String                 @default("DRAFT")
+  createdById  String
+  createdAt    DateTime               @default(now())
+  workspace    Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  recoveries   StaffAdvanceRecovery[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, requestKey])
+  @@index([workspaceId, userId, status])
+}
+
+model StaffAdvanceRecovery {
+  id             String       @id @default(cuid())
+  workspaceId    String
+  advanceId      String
+  instalment     Int
+  dueOn          DateTime     @db.Date
+  amountMinor    Int
+  recoveredMinor Int          @default(0)
+  workspace      Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  advance        StaffAdvance @relation(fields: [workspaceId, advanceId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, advanceId, instalment])
+  @@index([workspaceId, dueOn])
 }

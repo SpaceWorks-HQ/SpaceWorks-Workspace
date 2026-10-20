@@ -100,6 +100,25 @@ export async function recordAccess(
     if (!write) await auditPayView(actor, type, recordId, client);
     return;
   }
+  if (type === "ADVANCE") {
+    const { readAdvance } = await import("@/lib/finance/recurring/advances");
+    await readAdvance(actor, recordId, write, client);
+    return;
+  }
+  const privateBill =
+    type === "BILL" &&
+    (await client.financeBill.findFirst({
+      where: {
+        workspaceId: actor.workspace.id,
+        id: recordId,
+        privatePayroll: true,
+      },
+    }));
+  if (privateBill) {
+    await financeAccess(actor, write ? "PAY_MANAGE" : "PAY_VIEW", client);
+    if (!write) await auditPayView(actor, "remittance", recordId, client);
+    return;
+  }
   await financeAccess(actor, write ? "MANAGE" : "VIEW", client);
   const where = { id: recordId, workspaceId: actor.workspace.id };
   let exists: unknown;
@@ -116,9 +135,19 @@ export async function recordAccess(
       exists = row;
       break;
     }
-    case "BILL":
-      exists = await client.financeBill.findFirst({ where });
+    case "RECURRING":
+      await financeAccess(actor, "MANAGE", client);
+      exists = await client.recurringCostSchedule.findFirst({ where });
       break;
+    case "BILL": {
+      const bill = await client.financeBill.findFirst({ where });
+      if (bill?.privatePayroll) {
+        await financeAccess(actor, write ? "PAY_MANAGE" : "PAY_VIEW", client);
+        if (!write) await auditPayView(actor, "remittance", recordId, client);
+      }
+      exists = bill;
+      break;
+    }
     case "FUND":
       exists = await client.financeFund.findFirst({ where });
       break;

@@ -25,7 +25,7 @@ export async function conflictTargets(actor: Actor, tx: Tx = prisma) {
         take: 1001,
       }),
       tx.financeBill.findMany({
-        where: { workspaceId },
+        where: { workspaceId, privatePayroll:false },
         select: { id: true, vendor: true, number: true },
         orderBy: { createdAt: "desc" },
         take: 1001,
@@ -130,7 +130,7 @@ export async function linkConflict(actor: Actor, raw: unknown) {
       input.targetType === "purchase"
         ? await tx.purchaseRequest.findFirst({ where })
         : input.targetType === "bill"
-          ? await tx.financeBill.findFirst({ where })
+          ? await tx.financeBill.findFirst({ where:{...where,privatePayroll:false} })
           : input.targetType === "decision"
             ? await tx.decision.findFirst({ where })
             : input.targetType === "disbursement"

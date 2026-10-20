@@ -14,7 +14,7 @@ export async function fundCharges(client: DbClient, workspaceId: string) {
  WHEN e."sourceType"='finance_disbursement' THEN 'disbursement:'||e."sourceId" ELSE 'entry:'||e.id END AS "duplicateKey"
  FROM "LedgerEntry" e WHERE e."workspaceId"=${workspaceId} AND e.kind='EXPENSE' AND e."voidedAt" IS NULL AND e."fundId" IS NOT NULL
  UNION ALL
- SELECT 'bill',b.id,b."fundId",b."amountMinor"-b."paidMinor",b.currency,b."categoryId",b."issuedOn",false,lower(trim(b.vendor || ':' || b.number))
+ SELECT 'bill',b.id,b."fundId",b."amountMinor"-b."paidMinor",b.currency,b."categoryId",b."issuedOn",b."privatePayroll",lower(trim(b.vendor || ':' || b.number))
  FROM "FinanceBill" b WHERE b."workspaceId"=${workspaceId} AND b."fundId" IS NOT NULL AND b."amountMinor">b."paidMinor"
  UNION ALL
  SELECT 'pay_run',p.id,p."fundId",p."netMinor",p.currency,p."categoryId",coalesce(p."paidOn",(p.month||'-01')::date),true,'payroll:'||p.id

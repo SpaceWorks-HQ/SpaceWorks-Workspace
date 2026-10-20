@@ -195,3 +195,7 @@ export function canReadMoneyControl(m: RoleHolder, userId: string, row: { kind: 
 /** Appointments grant no access to case contents without explicit case assignment. */
 export const canManageSafeguardingHandlers = (m: RoleHolder) => atLeast(m, "OWNER");
 export const canHandleSafeguarding = (m: RoleHolder, appointed: boolean, assigned: boolean) => atLeast(m, "MEMBER") && appointed && assigned;
+/** Fixed costs are finance-manager tools; staff recovery also permits the person. */
+export const canManageRecurringCosts = canManageFinance;
+export const canReadStaffAdvance = (m: RoleHolder, grant: PayrollGrant, userId: string, personId: string) =>
+  atLeast(m, "MEMBER") && (canManagePayroll(m, grant) || userId === personId);

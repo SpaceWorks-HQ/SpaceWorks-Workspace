@@ -1,3 +1,4 @@
+import { RecurringForm } from "@/components/finance/recurring/Forms";
 import {
   ConflictLinks,
   FreezePack,
@@ -293,6 +294,7 @@ export function GovernanceScreen({
               Open compliance calendar item
             </Link>
           ) : null}
+          {r.kind === "INSURANCE" && !r.archivedAt ? <RecurringForm slug={slug} operation="source" fields={[{name:"source",label:"Source",type:"hidden",value:"INSURANCE"},{name:"sourceId",label:"Source id",type:"hidden",value:r.id}]} button="Create premium schedule"/> : null}
           {r.kind === "CONFLICT" && !r.archivedAt ? (
             <ConflictLinks slug={slug} id={r.id} data={data.conflict} />
           ) : null}

@@ -1,4 +1,5 @@
 import "server-only";
+import { recurringPaymentGate, recurringPaymentAccounting } from "@/lib/finance/recurring/payments";
 import { checkFundRecord } from "@/lib/moneyControls/funds";
 import { prisma, type DbClient } from "@/lib/db";
 import { recordAuditEvent } from "@/lib/audit";
@@ -312,6 +313,8 @@ export async function saveBill(actor: FinanceActor, input: unknown) {
         where: { id, workspaceId: actor.workspace.id },
       });
       if (!row) throw new FinanceError(unavailable);
+      if (row.privatePayroll) throw new FinanceError("Edit remittances in Payroll dues.");
+      if (await tx.recurringCostDue.findFirst({where:{workspaceId:actor.workspace.id,billId:row.id}})) throw new FinanceError("Confirm recurring bill amounts in Upcoming dues.");
       if (row.paidMinor > 0)
         throw new FinanceError(
           "This bill has payments. Keep its recorded details.",
@@ -347,7 +350,6 @@ export async function saveBill(actor: FinanceActor, input: unknown) {
 }
 
 export async function payBill(actor: FinanceActor, input: unknown) {
-  await financeAccess(actor, "MANAGE");
   const v = toolSchemas.billPayment.parse(input);
   return prisma.$transaction(async (tx) => {
     await lockFinance(tx, actor.workspace.id);
@@ -359,6 +361,9 @@ export async function payBill(actor: FinanceActor, input: unknown) {
         },
       },
     });
+    const paymentBill = await tx.financeBill.findFirst({where:{workspaceId:actor.workspace.id,id:v.billId}});
+    if(!paymentBill) throw new FinanceError(unavailable);
+    await recurringPaymentGate(tx,actor,paymentBill);
     if (existing) {
       if (
         existing.billId !== v.billId ||
@@ -402,12 +407,14 @@ export async function payBill(actor: FinanceActor, input: unknown) {
       where: { id: bill.id, workspaceId: actor.workspace.id },
       data: { paidMinor: { increment: v.amountMinor } },
     });
-    if (v.post)
+    const expense = await recurringPaymentAccounting(tx,actor,bill,v.amountMinor,dateOnly(v.paidOn),v.reference,payment.id,v.post);
+    if (v.post && expense > 0)
       await tx.ledgerEntry.create({
         data: {
           workspaceId: actor.workspace.id,
+          privatePayroll: bill.privatePayroll,
           kind: "EXPENSE",
-          amountMinor: v.amountMinor,
+          amountMinor: expense,
           currency: bill.currency,
           description: `Bill ${bill.number}`,
           counterparty: bill.vendor,

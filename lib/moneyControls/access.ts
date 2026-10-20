@@ -60,6 +60,7 @@ export async function controlRecord(
     throw new FinanceError(
       "That control record is unavailable. Refresh and try again.",
     );
+  if(write && /^(staff-advance:|emi:)/.test(row.recordKey??"")) throw new FinanceError("Manage this cash movement from Recurring costs or Payroll advances.");
   return row;
 }
 export function details(row: Pick<MoneyControlRecord, "details">) {
