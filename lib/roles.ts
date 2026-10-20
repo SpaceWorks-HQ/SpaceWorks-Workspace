@@ -195,3 +195,11 @@ export function canReadMoneyControl(m: RoleHolder, userId: string, row: { kind: 
 /** Appointments grant no access to case contents without explicit case assignment. */
 export const canManageSafeguardingHandlers = (m: RoleHolder) => atLeast(m, "OWNER");
 export const canHandleSafeguarding = (m: RoleHolder, appointed: boolean, assigned: boolean) => atLeast(m, "MEMBER") && appointed && assigned;
+
+/** Organisation tools are internal; structure and registers are maintained by admins. */
+export const canViewOrgPeople = (m: RoleHolder) => atLeast(m, "MEMBER");
+export const canManageOrgPeople = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** Attendance is personal, with direct-manager access. Admins cannot act on peers or owners. */
+export function canRecordAttendance(m: RoleHolder, isSelf: boolean, isDirectManager: boolean, targetRole: WorkspaceRole) {
+  return canViewOrgPeople(m) && (isSelf || (isDirectManager && targetRole === "MEMBER") || canActOnMember(m, targetRole));
+}

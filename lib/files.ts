@@ -1,4 +1,5 @@
 import "server-only";
+import { canDownloadOrgFile } from "@/lib/orgPeople/files";
 import { mayDownloadControlFile } from "@/lib/moneyControls/files";
 import { caseAccess } from "@/lib/govextras/cases";
 import { mayDownloadDocumentFile } from "@/lib/documents/files";
@@ -58,6 +59,7 @@ export async function findDownloadableFile(fileId: string, userId: string) {
     const { recordAuditEvent } = await import("@/lib/audit");
     await recordAuditEvent({workspaceId:file.workspaceId,actorId:userId,action:"safeguarding.file_viewed",targetType:"safeguarding",targetId:caseFiles[0].caseId});
   }
+  if (!(await canDownloadOrgFile(file, userId, membership.role))) return null;
   if (!(await canDownloadOpsFile(file,userId,membership.role))) return null;
   if (!(await mayDownloadFinanceFile(file, userId))) return null;
   if (!(await mayDownloadControlFile(file, userId))) return null;

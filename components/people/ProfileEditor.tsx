@@ -8,6 +8,7 @@ import { Dropdown, Field, Input, Textarea } from "@/components/ui/field";
 import { useToast } from "@/components/feedback/ToastProvider";
 
 type Profile = {
+  contactPhone?: string | null; contactHandle?: string | null; contactVisibility?: string;
   bio: string | null; pronouns: string | null; timezone: string | null;
   location: string | null; interests: string[]; skills: { skill: string; level: number }[];
 };
@@ -24,6 +25,7 @@ export function ProfileEditor({ slug, timezone, profile }: { slug: string; timez
       setError("");
       try {
         const result = await mutatePeople(slug, "profile", {
+          contactPhone: data.get("contactPhone"), contactHandle: data.get("contactHandle"), contactVisibility: data.get("contactVisibility"),
           bio: data.get("bio"), pronouns: data.get("pronouns"), timezone: data.get("timezone"), location: data.get("location"),
           interests: String(data.get("interests") ?? "").split(",").map(v => v.trim()).filter(Boolean),
           skills: skills.map(s => ({ skill: s.skill, level: s.level })),
@@ -33,6 +35,9 @@ export function ProfileEditor({ slug, timezone, profile }: { slug: string; timez
       } catch { setError("Couldn't save. Try again."); }
     });
   }}>
+    <Field label="Contact phone" optional><Input name="contactPhone" type="tel" maxLength={60} defaultValue={profile.contactPhone ?? ""} disabled={pending} /></Field>
+    <Field label="Messaging handle" optional helperText="Include the service, for example Signal or Telegram."><Input name="contactHandle" maxLength={120} defaultValue={profile.contactHandle ?? ""} disabled={pending} /></Field>
+    <Field label="Contact visibility" helperText="Shared contacts appear in internal escalation paths. Emergency contacts stay separate."><Dropdown name="contactVisibility" defaultValue={profile.contactVisibility ?? "PRIVATE"} disabled={pending}><option value="PRIVATE">Only me and admins</option><option value="WORKSPACE">Workspace members</option></Dropdown></Field>
     <Field label="Bio"><Textarea name="bio" defaultValue={profile.bio ?? ""} maxLength={2000} disabled={pending} /></Field>
     <Field label="Pronouns" optional><Input name="pronouns" defaultValue={profile.pronouns ?? ""} maxLength={60} disabled={pending} /></Field>
     <Field label="Time zone" helperText="For example, Asia/Kolkata."><Input name="timezone" defaultValue={profile.timezone || timezone} maxLength={80} disabled={pending} /></Field>

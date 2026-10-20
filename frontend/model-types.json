@@ -192,27 +192,33 @@
     "value": false
   },
   {
+    "module": "lib/orgPeople/files",
+    "name": "OrgFileKind",
+    "id": "Shared32",
+    "value": false
+  },
+  {
     "module": "lib/people/profiles",
     "name": "EmergencyContact",
-    "id": "Shared32",
+    "id": "Shared33",
     "value": false
   },
   {
     "module": "lib/approvals/context",
     "name": "OpsActor",
-    "id": "Shared33",
+    "id": "Shared34",
     "value": false
   },
   {
     "module": "lib/auth",
     "name": "SsoMfaChallenge",
-    "id": "Shared34",
+    "id": "Shared35",
     "value": false
   },
   {
     "module": "lib/documents/service",
     "name": "DocumentSnapshot",
-    "id": "Shared35",
+    "id": "Shared36",
     "value": false
   }
 ]

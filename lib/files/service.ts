@@ -48,6 +48,7 @@ const OTHER_AREA_RELATIONS: Prisma.FileObjectWhereInput = {
   fundingAttachments: { none: {} },
   governanceAttachments: { none: {} },
   safeguardingAttachments: { none: {} },
+  orgPeopleAttachments: { none: {} },
   messageAttachments: { none: {} },
   ledgerReceipts: { none: {} },
   financeAttachments: { none: {} },
@@ -62,7 +63,7 @@ const OTHER_AREA_RELATIONS: Prisma.FileObjectWhereInput = {
 /** Chat uploads (message attachments, the /chat folder) belong to chat, not the library. */
 const NOT_CHAT: Prisma.FileObjectWhereInput = {
   messageAttachments: { none: {} },
-  NOT: { OR: [{ folder: { startsWith: "/documents" } },{ folder: "/safeguarding" }, { folder: { startsWith: "/safeguarding/" } },{ folder: { startsWith: "/money-controls" } },{ folder: "/funding" }, { folder: { startsWith: "/funding/" } },{ folder: "/people-service" }, { folder: { startsWith: "/people-service/" } }, { folder: CHAT_FOLDER }, { folder: { startsWith: `${CHAT_FOLDER}/` } }, { folder: "/governance" }, { folder: { startsWith: "/governance/" } }, { folder: "/calendar" }, { folder: { startsWith: "/calendar/" } }, { folder: { startsWith: "/finance-tools" } }] },
+  NOT: { OR: [{ folder: { startsWith: "/documents" } }, { folder: "/safeguarding" }, { folder: { startsWith: "/safeguarding/" } }, { folder: { startsWith: "/money-controls" } }, { folder: "/funding" }, { folder: { startsWith: "/funding/" } }, { folder: "/people-service" }, { folder: { startsWith: "/people-service/" } }, { folder: CHAT_FOLDER }, { folder: { startsWith: `${CHAT_FOLDER}/` } }, { folder: "/governance" }, { folder: { startsWith: "/governance/" } }, { folder: "/calendar" }, { folder: { startsWith: "/calendar/" } }, { folder: { startsWith: "/finance-tools" } }, { folder: { startsWith: "/org-people" } }] },
 };
 
 const RESERVED_FOLDER = "That folder is managed by its tool. Choose another folder.";
@@ -131,6 +132,7 @@ async function checkTaskLink(actor: FilesActor, taskId: string) {
 
 export async function uploadLibraryFile(actor: FilesActor, input: { file: File; folder?: string; docId?: string | null; taskId?: string | null }): Promise<FileResult<{ id: string; filename: string; contentType: string }>> {
   if (!canContribute(actor.membership)) return fail(FILE_NOT_ALLOWED);
+  if (normalizeFolder(input.folder).startsWith("/org-people")) return fail("People register files are uploaded from their record. Choose another folder.");
   if (normalizeFolder(input.folder) === "/safeguarding" || normalizeFolder(input.folder).startsWith("/safeguarding/")) return fail("Case files are managed by designated handlers. Choose another folder.");
   if (normalizeFolder(input.folder) === "/governance" || normalizeFolder(input.folder).startsWith("/governance/")) return fail("Governance files are managed from their records. Choose another folder.");
   if (isReservedFolder(normalizeFolder(input.folder))) return fail(RESERVED_FOLDER);
@@ -329,6 +331,7 @@ export async function usageSummary(workspaceId: string): Promise<UsageSummary> {
     prisma.$queryRaw<{ bytes: bigint | null }[]>`
       SELECT SUM(v."size")::bigint AS bytes FROM "FileVersion" v JOIN "FileObject" f ON f."id" = v."fileId"
       WHERE f."workspaceId" = ${workspaceId} AND v."version" <> f."currentVersion"
+        AND f."folder" NOT LIKE '/org-people%'
         AND f."folder" <> '/people-service' AND f."folder" NOT LIKE '/people-service/%'
         AND f."folder" <> ${CHAT_FOLDER} AND f."folder" NOT LIKE ${`${CHAT_FOLDER}/%`}
         AND NOT EXISTS (SELECT 1 FROM "MessageAttachment" a WHERE a."fileId" = f."id")`,

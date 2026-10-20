@@ -1,4 +1,5 @@
 import "server-only";
+import { run as orgPeople } from "@/lib/scheduled/orgPeople";
 import { prisma } from "@/lib/db";
 import { dispatch } from "@/lib/notify/dispatch";
 import type { AnyNotificationEvent } from "@/lib/notify/types";
@@ -24,6 +25,7 @@ async function* pages<T extends { id: string }>(fetch: (cursor?: string) => Prom
 }
 /** Persistent event markers and advisory locks make repeated replica ticks safe. */
 export async function run(now: Date): Promise<void> {
+  await orgPeople(now);
   const horizon = new Date(now.getTime() + 86400000);
   for await (const shift of pages(cursor => prisma.shift.findMany({ where: { startsAt: { gt: now, lte: horizon }, workspace: { archivedAt: null } }, include: { workspace: { select: { slug: true } }, shiftType: { select: { name: true, teamId: true } }, assignments: { select: { userId: true, status: true } } }, take: 300, orderBy: { id: "asc" }, ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}) }))) {
     const c = coverage(shift.capacity, shift.assignments);

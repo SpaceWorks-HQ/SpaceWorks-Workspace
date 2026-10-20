@@ -181,6 +181,11 @@
       "id": "w-workspaceSlug-assistant-skills-page:loadAssistantSkillsPage"
     },
     {
+      "module": "lib/views/generated/w-workspaceSlug-attendance-page-loadAttendancePage",
+      "name": "loadAttendancePage",
+      "id": "w-workspaceSlug-attendance-page:loadAttendancePage"
+    },
+    {
       "module": "lib/views/generated/w-workspaceSlug-boardroom-sessionId-page-loadBoardroomSessionPage",
       "name": "loadBoardroomSessionPage",
       "id": "w-workspaceSlug-boardroom-sessionId-page:loadBoardroomSessionPage"
@@ -339,6 +344,11 @@
       "module": "lib/views/generated/w-workspaceSlug-documents-settings-page-loadPage",
       "name": "loadPage",
       "id": "w-workspaceSlug-documents-settings-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-escalation-page-loadEscalationPage",
+      "name": "loadEscalationPage",
+      "id": "w-workspaceSlug-escalation-page:loadEscalationPage"
     },
     {
       "module": "lib/views/generated/w-workspaceSlug-files-fileId-page-loadgenerateMetadata",
@@ -671,6 +681,11 @@
       "id": "w-workspaceSlug-onboarding-page:loadOnboardingPage"
     },
     {
+      "module": "lib/views/generated/w-workspaceSlug-organisation-page-loadOrganisationPage",
+      "name": "loadOrganisationPage",
+      "id": "w-workspaceSlug-organisation-page:loadOrganisationPage"
+    },
+    {
       "module": "lib/views/generated/w-workspaceSlug-organisations-page-loadPage",
       "name": "loadPage",
       "id": "w-workspaceSlug-organisations-page:loadPage"
@@ -749,6 +764,11 @@
       "module": "lib/views/generated/w-workspaceSlug-requests-page-loadRequestsPage",
       "name": "loadRequestsPage",
       "id": "w-workspaceSlug-requests-page:loadRequestsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-responsibilities-page-loadResponsibilitiesPage",
+      "name": "loadResponsibilitiesPage",
+      "id": "w-workspaceSlug-responsibilities-page:loadResponsibilitiesPage"
     },
     {
       "module": "lib/views/generated/w-workspaceSlug-rota-certifications-page-loadCertificationsPage",
@@ -2136,6 +2156,36 @@
       "module": "app/actions/opsGaps",
       "name": "uploadPeopleServiceFiles",
       "id": "opsGaps:uploadPeopleServiceFiles"
+    },
+    {
+      "module": "app/actions/orgPeople",
+      "name": "saveDepartmentAction",
+      "id": "orgPeople:saveDepartmentAction"
+    },
+    {
+      "module": "app/actions/orgPeople",
+      "name": "saveReportingAction",
+      "id": "orgPeople:saveReportingAction"
+    },
+    {
+      "module": "app/actions/orgPeople",
+      "name": "saveResponsibilityAction",
+      "id": "orgPeople:saveResponsibilityAction"
+    },
+    {
+      "module": "app/actions/orgPeople",
+      "name": "saveAttendanceAction",
+      "id": "orgPeople:saveAttendanceAction"
+    },
+    {
+      "module": "app/actions/orgPeople",
+      "name": "saveEscalationAction",
+      "id": "orgPeople:saveEscalationAction"
+    },
+    {
+      "module": "app/actions/orgPeople",
+      "name": "uploadOrgFiles",
+      "id": "orgPeople:uploadOrgFiles"
     },
     {
       "module": "app/actions/people",
