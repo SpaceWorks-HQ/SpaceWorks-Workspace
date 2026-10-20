@@ -2,8 +2,8 @@
 
 Use [the Helm chart](../charts/spaceworks-workspace/README.md). It runs the
 backend image as the whole application, with a one-shot `migrate` Job and a
-CronJob calling both outbox and jobs endpoints. Supply external TLS PostgreSQL,
-TLS Redis, private S3 and authenticated SMTP. Runtime secrets stay outside Helm.
+worker Deployment and single-replica beat Deployment. Supply external TLS PostgreSQL,
+persistent no-eviction TLS Redis, private S3 and authenticated SMTP. Runtime secrets stay outside Helm.
 
 ```bash
 helm upgrade --install sww charts/spaceworks-workspace \
@@ -26,3 +26,10 @@ The default image tag is the rolling `0.1` series for evaluation. Pin a release
 for production. The non-root runtime needs a writable image overlay to replace
 its public-origin placeholders before serving; capabilities remain dropped and
 privilege escalation is disabled.
+
+The worker and beat use the runtime Secret and the same release as web. Their
+private `/health` probes on port 3460 never get a Service or Ingress. Set
+`worker.replicas` for capacity and `QUEUE_*_CONCURRENCY` in the runtime Secret.
+Termination allows 600 seconds to drain. Disable both flags only if equivalent
+processes run elsewhere; external HTTP cron replaces beat only, never worker.
+See [background jobs](areas/jobs-queue.md) for failure recovery and Redis sizing.

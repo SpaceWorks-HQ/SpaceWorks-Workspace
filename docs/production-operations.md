@@ -32,10 +32,26 @@ in support tickets or shell history.
 
 ## Background work and trust
 
-The in-process outbox worker has an independent recovery tick. Call both
-`/api/internal/outbox` and `/api/internal/jobs` every minute with the scheduler
-bearer in an Authorization header. The VPS scheduler, Kubernetes CronJob and
-Cloudflare Worker provide this. Never use bearer secrets in monitoring URLs.
+Run worker and beat from the same backend release and runtime configuration.
+The web server never starts production timers. Beat reconciles the registry's
+repeat schedules at startup; BullMQ generates them through Redis. Monitor
+`http://worker:3460/health`, `http://beat:3460/health` internally and
+`/admin/jobs` with fresh super-admin MFA. Failed jobs remain in their queue's
+bounded dead-letter set; inspect service configuration, then retry or remove
+from Jobs. Pause/resume affects new claims; active handlers finish.
+
+The VPS status check probes both roles and support bundles include their logs.
+Stop worker and beat with the app during database restore. Grant up to ten
+minutes for SIGTERM draining on Compose/Helm (Render caps this at five minutes).
+A forced kill may replay work. SMTP acceptance and the final database write are
+not atomic; a crash between them may send mail twice even with a stable Message-ID.
+
+For hosts without beat, call both `/api/internal/outbox` and
+`/api/internal/jobs` every minute with `CRON_SECRET` in Authorization.
+Cloudflare cron or `node scripts/scheduler.mjs --once` can provide that trigger.
+Both endpoints only enqueue and return 503 when Redis is unavailable. A live
+worker is still required. Never put bearer secrets in monitoring URLs.
+See [jobs operations](areas/jobs-queue.md) for Redis loss and bounded retention.
 
 Only trust IP headers overwritten by your edge. For Render's appending proxy,
 use `x-forwarded-for` with `TRUSTED_PROXY_HOPS=1`. Caddy overwrites `X-Real-IP`.

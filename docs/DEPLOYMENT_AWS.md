@@ -8,7 +8,14 @@ Launch an x86_64 or arm64 Linux instance with at least 30 GiB disk. Allow inboun
 
 Use `ghcr.io/spaceworks-hq/spaceworks-workspace-backend:<immutable-version>` for the web task on port 3000. An ALB terminates HTTPS and routes the website and all API routes to it. A separate rendering frontend uses its own deployment and the gateway settings in [Split hosting](DEPLOYMENT_SPLIT.md). Enable ALB idle timeouts long enough for SSE and avoid a proxy/CDN that buffers streams. Do not cache authenticated pages, Server Actions or private downloads.
 
-Run a one-off task from the same backend image with command `["migrate"]` and the maintenance DIRECT_URL before rolling the web service. A failed task blocks rollout. Runtime web tasks use a restricted DB identity. Use a separate scheduler task with command `["node", "scripts/scheduler.mjs"]`, APP_URL pointing at the internal web service and CRON_SECRET only. EventBridge can instead launch `["node", "scripts/scheduler.mjs", "--once"]` every minute. Ensure just one configured periodic mechanism and monitor its success.
+Run a one-off task from the same backend image with command `["migrate"]` and the maintenance DIRECT_URL before rolling the web service. A failed task blocks rollout. Runtime web tasks use a restricted DB identity. Run separate private worker and beat ECS services from the same backend image
+with commands `["node", "dist/worker.js"]` and `["node", "dist/beat.js"]`.
+Use one beat replica, the same runtime secrets and private database/Redis/storage
+access, and outbound SMTP/API egress. Health probes use `/health` on port 3460;
+never attach that port to the public ALB. Set the maximum supported ECS stop
+timeout and allow handlers to drain. EventBridge may invoke
+`node scripts/scheduler.mjs --once` with APP_URL and CRON_SECRET instead of beat,
+but a running worker is still required. See [jobs](areas/jobs-queue.md).
 
 Use RDS PostgreSQL 16 in private subnets, require TLS in DATABASE_URL and DIRECT_URL, and provision runtime grants after migrations. Use ElastiCache Redis/Valkey with TLS enabled and a native `rediss://` URL. S3 buckets remain private with versioning; the backend can use task-role credentials by omitting the access-key pair. Set S3_REGION, S3_BUCKET and HTTPS endpoint as appropriate; virtual-host style normally uses S3_FORCE_PATH_STYLE=0. Grant only bucket list/location and the needed object get/put/delete actions. Block public access.
 

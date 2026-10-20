@@ -98,6 +98,44 @@ services:
       silo-init:
         condition: service_completed_successfully
 
+  worker:
+    build:
+      context: .
+      target: runner
+      args:
+        NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL}
+      secrets: [NEXT_SERVER_ACTIONS_ENCRYPTION_KEY]
+    command: ["node", "dist/worker.js"]
+    restart: unless-stopped
+    stop_grace_period: 10m
+    env_file: .env.staging
+    depends_on:
+      app: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3460/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  beat:
+    build:
+      context: .
+      target: runner
+      args:
+        NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL}
+      secrets: [NEXT_SERVER_ACTIONS_ENCRYPTION_KEY]
+    command: ["node", "dist/beat.js"]
+    restart: unless-stopped
+    stop_grace_period: 10m
+    env_file: .env.staging
+    depends_on:
+      app: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3460/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
 volumes:
   postgres_data:
   redis_data:

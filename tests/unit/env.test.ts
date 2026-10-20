@@ -27,6 +27,12 @@ describe("environment schema", () => {
     expect(productionEnvironmentProblems(productionEnv())).toEqual([]);
   });
 
+  it("rejects production in-process jobs and invalid queue settings", () => {
+    expect(productionEnvironmentProblems({ ...productionEnv(), JOBS_INPROCESS: "true" }).some(p => p.startsWith("JOBS_INPROCESS"))).toBe(true);
+    expect(productionEnvironmentProblems({ ...productionEnv(), QUEUE_MONITOR_CONCURRENCY: "0" }).some(p => p.startsWith("QUEUE_MONITOR_CONCURRENCY"))).toBe(true);
+    expect(productionEnvironmentProblems({ ...productionEnv(), JOBS_HEALTH_PORT: "70000" }).some(p => p.startsWith("JOBS_HEALTH_PORT"))).toBe(true);
+  });
+
   it("treats empty strings as unset", () => {
     const parsed = envSchema.safeParse({ DATABASE_URL: "postgresql://localhost/db", AUTH_SECRET: "x".repeat(32), REDIS_URL: "", S3_ENDPOINT: "" });
     expect(parsed.success).toBe(true);

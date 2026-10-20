@@ -66,7 +66,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV SWW_DISABLE_BUILD_CACHE=1
 ENV NODE_OPTIONS=--max-old-space-size=4096
 
-RUN npx prisma generate
+RUN npx prisma generate && npm run build:jobs
 # The key is consumed by Next.js while compiling Server Actions. Every image
 # replica must be built with one stable key and receive that same key at runtime.
 # A BuildKit secret (`--secret id=NEXT_SERVER_ACTIONS_ENCRYPTION_KEY,...`, or a
@@ -158,6 +158,7 @@ RUN chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nextjs:nodejs /app/dist ./dist
 
 # Prisma CLI for the optional MIGRATE_ON_START=1 path (root-owned, read-only).
 COPY --from=prisma-cli /opt/prisma-cli/node_modules /opt/prisma-cli/node_modules

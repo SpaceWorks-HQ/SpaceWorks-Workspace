@@ -60,7 +60,7 @@ apply_origin() {
 }
 
 case "${1:-}:${2:-}" in
-  node:docker/vps/*|node:scripts/*|node:/app/docker/vps/*|node:/app/scripts/*)
+  node:dist/worker.js|node:dist/beat.js|node:/app/dist/worker.js|node:/app/dist/beat.js|node:docker/vps/*|node:scripts/*|node:/app/docker/vps/*|node:/app/scripts/*)
     # Operator tools never serve requests and need no web settings.
     ;;
   *)

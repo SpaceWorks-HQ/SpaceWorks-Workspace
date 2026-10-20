@@ -4,7 +4,7 @@
 #   single   one app container serves the website and the API, one hostname
 #   netlify  the website runs on Netlify; this VPS serves the API
 # Two images: the backend runs the API, migrations (migrator), the outbox
-# worker, the scheduler, realtime updates and the operator tools; the frontend runs
+# worker, beat, realtime updates and the operator tools; the frontend runs
 # the website. PostgreSQL, Redis, Silo and Caddy use their own standard images.
 # Published releases set SWW_BACKEND_IMAGE / SWW_FRONTEND_IMAGE to
 # ghcr.io/<owner>/spaceworks-workspace-backend|frontend; otherwise the images are
@@ -117,7 +117,7 @@ services:
     logging: *logging
 
   # The backend: the whole application in the single layout, the API otherwise.
-  # It also runs the outbox worker and realtime updates, and reads the installer's
+  # It runs realtime updates and reads the installer's
   # backup status (no secrets) for the super-admin Operations page.
   app:
     <<: *backend
@@ -173,24 +173,47 @@ services:
         aliases: ["${PUBLIC_HOST}"]
     logging: *logging
 
-  # The backend image's scheduler role: it only calls the app's outbox endpoint
-  # every minute, with the scheduler secret and no other credentials.
-  scheduler:
-    image: ${SWW_BACKEND_IMAGE:-sww-backend}:${SWW_VERSION}
+  worker:
+    <<: *backend
     restart: unless-stopped
-    env_file: ${SWW_CONFIG_DIR}/scheduler.env
-    command: ["node", "docker/vps/scheduler.mjs"]
-    # The image's own health check probes a web server this role does not run;
-    # the scheduler is healthy when it can reach the app it calls.
+    stop_grace_period: 10m
+    environment:
+      MIGRATE_ON_START: "0"
+      JOBS_HEALTH_PORT: "3460"
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://app:3000/api/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3460/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 10s
       timeout: 5s
+      start_period: 30s
       retries: 3
     depends_on:
-      app: { condition: service_healthy }
-    networks: [edge]
-    logging: *logging
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      migrator: { condition: service_completed_successfully }
+    # No published ports; edge supplies outbound SMTP/API access, data is private.
+    networks: [edge, data]
+    command: ["node", "dist/worker.js"]
+
+  beat:
+    <<: *backend
+    restart: unless-stopped
+    stop_grace_period: 10m
+    environment:
+      MIGRATE_ON_START: "0"
+      JOBS_HEALTH_PORT: "3460"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3460/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      migrator: { condition: service_completed_successfully }
+    # No published ports; edge supplies outbound SMTP/API access, data is private.
+    networks: [edge, data]
+    command: ["node", "dist/beat.js"]
 
   # The backend image's operator tools (setup, preflight, checks), run on demand.
   ops:

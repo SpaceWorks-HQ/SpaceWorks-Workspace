@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { runOutboxScheduler } from "@/lib/outboxWorker";
+import { enqueueDueOutbox } from "@/lib/queue/enqueue";
 import { bearerSecretMatches } from "@/lib/bearerSecret";
 
 export const dynamic = "force-dynamic";
@@ -11,9 +11,9 @@ export async function POST(request: Request) {
     return new NextResponse("Not found", { status: 404, headers: privateHeaders });
   }
   try {
-    const result = await runOutboxScheduler();
+    const result = await enqueueDueOutbox();
     return NextResponse.json({ ok: true, ...result }, { headers: privateHeaders });
   } catch {
-    return NextResponse.json({ ok: false, error: "Scheduler run failed." }, { status: 500, headers: privateHeaders });
+    return NextResponse.json({ ok: false, error: "Jobs could not be queued. Try again." }, { status: 503, headers: privateHeaders });
   }
 }

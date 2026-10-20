@@ -96,6 +96,8 @@ install -d -m 0755 "$(status_dir)"
 compose config --quiet
 fetch_images "$version" "$(conf_get "$compose_env" SWW_LAYOUT)"
 compose run --rm --no-deps ops node docker/vps/check.mjs preflight
+# Stop consumers before schema changes; Compose drains active work using its grace period.
+compose stop worker beat
 compose run --rm migrator
 compose run --rm --no-deps ops node scripts/verify-production-schema.mjs
 compose up -d --wait --wait-timeout 300 --remove-orphans

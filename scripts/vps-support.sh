@@ -48,7 +48,7 @@ say 'Collecting the support bundle.'
   section 'Services'; compose ps 2>&1
   section 'Checks'; compose run --rm --no-deps ops node docker/vps/check.mjs 2>&1 || true
 } 2>&1 | redact > "$out/report.txt"
-for service in app frontend proxy scheduler migrator postgres redis storage storage-init; do
+for service in app frontend proxy worker beat migrator postgres redis storage storage-init; do
   compose logs --no-color --tail 500 "$service" 2>&1 | redact > "$out/logs/$service.log" || true
   [[ -s "$out/logs/$service.log" ]] || rm -f "$out/logs/$service.log"
 done

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Restore the database, and the uploaded objects when the backup has them, from
 # a backup made by vps-backup.sh. This replaces live data: the app, Caddy and
-# the scheduler stop until the restore finishes, and a fresh database backup is
+# worker and beat stop until the restore finishes, and a fresh database backup is
 # taken first. The configuration archive in the backup is not applied here; on a
 # new server restore it before setup (see docs/DEPLOYMENT_VPS.md).
 #   vps-restore.sh BACKUP [--identity FILE] [--yes]
@@ -95,7 +95,7 @@ has_objects=0
 # Files are put back only into the bundled Silo; an external bucket is the provider's.
 [[ "$(conf_get "$SWW_CONFIG_DIR/compose.env" SWW_STORAGE)" != external ]] || has_objects=0
 # The services that serve requests, as this installation runs them.
-serving=(app scheduler)
+serving=(app worker beat)
 [[ "$(conf_get "$SWW_CONFIG_DIR/compose.env" SWW_CADDY_TLS)" = proxy ]] || serving+=(proxy)
 [[ "$(conf_get "$SWW_CONFIG_DIR/compose.env" SWW_LAYOUT)" != split ]] || serving+=(frontend)
 if [[ $assume_yes = 0 ]]; then

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-vi.mock("@/lib/scheduled", () => ({ runScheduledJobs: vi.fn(async () => ({ ran: 12, failed: [] })) }));
+vi.mock("@/lib/queue/enqueue", () => ({ enqueueScheduledTick: vi.fn(async () => undefined) }));
 import { POST } from "@/app/api/internal/jobs/route";
 
 const secret = "j".repeat(48);

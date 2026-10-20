@@ -136,8 +136,8 @@ database migrations and operator tools) and a **frontend** image (the website).
 The production Docker Compose stack runs them with **PostgreSQL 16**,
 **Redis 7**, private **[Silo](https://github.com/pgsty/silo)** object storage (the
 maintained, S3-compatible fork of the archived MinIO) for private documents and files,
-automatic public HTTPS with Caddy, database migrations and an outbox/jobs
-scheduler. Only a domain and an authenticated SMTP relay are external; Render,
+automatic public HTTPS with Caddy, database migrations, a BullMQ worker and
+beat for scheduled jobs. Only a domain and an authenticated SMTP relay are external; Render,
 Supabase, Upstash and Cloudflare are optional hosting choices.
 
 ### Install in one line
@@ -226,35 +226,31 @@ Follow [Netlify + VPS](docs/DEPLOYMENT_SPLIT.md).
 Private repositories and packages can use `SWW_GITHUB_TOKEN`; public installs
 need nothing. See [private installs](docs/DEPLOYMENT_VPS.md#private-repositories-and-packages).
 
-## Run it for free
+## Cloud hosting
 
-You can start on provider free plans: Render for the app, Supabase for PostgreSQL,
-Upstash for Redis, Cloudflare R2 for private objects and a verified SMTP relay
-such as Brevo. A Cloudflare Worker calls both recovery endpoints every minute.
-Check current quotas before choosing a plan; upgrade when the community needs
-more memory, storage, availability or recovery guarantees.
+The [Render Blueprint](render.yaml) runs web, worker and beat on paid compute,
+with managed PostgreSQL, persistent native Redis and private object storage.
+A free web plan needs an independently hosted worker; Cloudflare cron can
+replace beat by calling the two enqueue endpoints every minute. Worker handles
+email, notifications, scheduled jobs, syncs and monitor checks.
 
 ```mermaid
 flowchart LR
-  browser([Browser]) --> dns[Cloudflare DNS]
-  dns --> app["Render · Next.js 16"]
-  app --> db[(Supabase PostgreSQL)]
-  app --> redis[(Upstash Redis)]
-  app --> storage[(Cloudflare R2)]
-  app --> mail[Brevo SMTP]
-  cron[Cloudflare Worker] -->|"outbox + jobs"| app
-  classDef core fill:#006E63,stroke:#142C2A,color:#FFF4E8
-  classDef service fill:#FFF4E8,stroke:#006E63,color:#142C2A
-  classDef edge fill:#DFFF8F,stroke:#142C2A,color:#142C2A
-  class app core
-  class db,redis,storage,mail service
-  class browser,dns,cron edge
+  browser([Browser]) --> app["Render · Next.js 16"]
+  app --> db[(PostgreSQL)]
+  app --> redis[(Redis)]
+  beat[Beat] --> redis
+  redis --> worker[Worker]
+  worker --> db
+  worker --> storage[Private objects]
+  worker --> mail[SMTP]
 ```
 
 [Deploy to Render](https://render.com/deploy?repo=https://github.com/SpaceWorks-HQ/SpaceWorks-Workspace).
-The [cloud guide](docs/DEPLOYMENT_CLOUD.md) covers secrets, TLS, SMTP, scheduler,
-first-run setup and the limits of free hosting. Docker, AWS, DigitalOcean and
-Kubernetes remain supported alternatives.
+The [cloud guide](docs/DEPLOYMENT_CLOUD.md) covers secrets, TLS, SMTP, workers,
+first-run setup and free-plan limits. [Jobs operations](docs/areas/jobs-queue.md)
+covers retries, health and recovery. Docker, AWS, DigitalOcean and Kubernetes
+remain supported alternatives.
 
 ## Quick start (local)
 

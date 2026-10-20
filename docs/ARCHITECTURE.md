@@ -13,7 +13,9 @@ feature should build on.
    for Server Actions, `auth()` + `findWorkspaceForUser()` for route handlers.
 3. Business rules live in `lib/`; Prisma is the only data access path.
 4. `instrumentation.ts` validates the production environment at boot and
-   starts the in-process outbox worker (disable with `OUTBOX_WORKER=0`).
+   starts timers only for Redis-free local development with `JOBS_INPROCESS=true`.
+   Production worker and beat run separately through BullMQ; see
+   [background jobs](areas/jobs-queue.md).
 
 ## Data model
 
