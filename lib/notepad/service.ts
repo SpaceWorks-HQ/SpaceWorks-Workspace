@@ -2,13 +2,14 @@ import "server-only";
 import type { NoteTone, PersonalNote, PersonalTodo, WorkspaceRole } from "@prisma/client";
 import { z } from "zod";
 import { actionError, NOT_ALLOWED, validationError, type ActionResult } from "@/lib/actionResult";
-import { prisma } from "@/lib/db";
+import { prisma, type DbClient } from "@/lib/db";
 import { htmlToText, sanitizeDocHtml } from "@/lib/docs/sanitize";
 import { publishToUser } from "@/lib/realtime";
 import { canContribute } from "@/lib/roles";
 import { indexSearchDocument, removeSearchDocument } from "@/lib/search/documents";
 import { createTask } from "@/lib/tasks/service";
 import { isDay, positionBetween, todayIn } from "./dates";
+import { NOTE_CONFLICT } from "./saving";
 
 /**
  * The personal notepad: private notes and to-dos for one member in one
@@ -83,9 +84,9 @@ function changed(actor: NotepadActor) {
   void publishToUser(actor.workspace.id, actor.user.id, { type: "notepad.changed" });
 }
 
-async function indexNote(actor: NotepadActor, note: PersonalNote) {
+async function indexNote(actor: NotepadActor, note: PersonalNote, client: DbClient = prisma) {
   if (note.archivedAt || (!note.title.trim() && !note.contentText.trim())) {
-    await removeSearchDocument("note", note.id);
+    await removeSearchDocument("note", note.id, client);
     return;
   }
   await indexSearchDocument({
@@ -97,7 +98,7 @@ async function indexNote(actor: NotepadActor, note: PersonalNote) {
     visibility: "PRIVATE",
     ownerId: actor.user.id,
     url: `/w/${actor.workspace.slug}/notepad?note=${note.id}`,
-  });
+  }, client);
 }
 
 /* ---------- Reads ---------- */
@@ -163,15 +164,19 @@ export async function updateNote(actor: NotepadActor, input: unknown): Promise<A
   const { id: noteId, expectedUpdatedAt, contentHtml, ...rest } = parsed.data;
   const existing = await prisma.personalNote.findFirst({ where: { id: noteId, ...mine(actor) } });
   if (!existing) return actionError("That note isn't available.");
-  if (expectedUpdatedAt && existing.updatedAt.toISOString() !== expectedUpdatedAt) {
-    return actionError("This note changed in another tab. Reload it to keep both versions safe.");
-  }
   const html = contentHtml === undefined ? undefined : sanitizeDocHtml(contentHtml);
-  const note = await prisma.personalNote.update({
-    where: { id: existing.id },
-    data: { ...rest, ...(html === undefined ? {} : { contentHtml: html, contentText: htmlToText(html) }) },
+  const note = await prisma.$transaction(async (tx) => {
+    const updated = await tx.personalNote.updateMany({
+      where: { id: existing.id, ...mine(actor), updatedAt: expectedUpdatedAt ? new Date(expectedUpdatedAt) : existing.updatedAt },
+      // Always advance the version, including two writes in the same millisecond.
+      data: { ...rest, ...(html === undefined ? {} : { contentHtml: html, contentText: htmlToText(html) }), updatedAt: new Date(Math.max(Date.now(), existing.updatedAt.getTime() + 1)) },
+    });
+    if (updated.count === 0) return null;
+    const fresh = await tx.personalNote.findUniqueOrThrow({ where: { id: existing.id } });
+    await indexNote(actor, fresh, tx);
+    return fresh;
   });
-  await indexNote(actor, note);
+  if (!note) return actionError(NOTE_CONFLICT);
   changed(actor);
   return { ok: true, data: noteDTO(note) };
 }

@@ -11,11 +11,11 @@ import { useToast } from "@/components/feedback/ToastProvider";
 import { Button, IconButton } from "@/components/ui/button";
 import { ConfirmDialog, Dialog, DialogContent } from "@/components/ui/dialog";
 import { cn } from "@/lib/cn";
+import { createNoteSaveSession, type NoteChanges, type NoteSaveState } from "@/lib/notepad/saving";
 import type { NoteDTO } from "@/lib/notepad/service";
 import { NOTE_TONE_OPTIONS, toneClasses } from "./tones";
 
-type SaveState = "saved" | "saving" | "unsaved" | "error";
-const SAVE_LABEL: Record<SaveState, string> = { saved: "Saved", saving: "Saving…", unsaved: "Unsaved changes", error: "Couldn't save" };
+const SAVE_LABEL: Record<NoteSaveState, string> = { saved: "Saved", saving: "Saving…", unsaved: "Unsaved changes", error: "Couldn't save", conflict: "Not saved" };
 
 /**
  * One note, edited in a dialog. Title and body autosave after a short pause;
@@ -27,11 +27,17 @@ export function NoteEditor({ slug, note, onClose, onSaved, onRemoved }: { slug: 
   const [title, setTitle] = useState(note.title);
   const [tone, setTone] = useState(note.tone);
   const [pinned, setPinned] = useState(note.pinned);
-  const [state, setState] = useState<SaveState>("saved");
+  const [state, setState] = useState<NoteSaveState>("saved");
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const version = useRef(note.updatedAt);
+  const [error, setError] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pending = useRef<{ title?: string; contentHtml?: string; tone?: NoteDTO["tone"]; pinned?: boolean }>({});
+  const [session] = useState(() => createNoteSaveSession({
+    version: note.updatedAt,
+    save: (changes, version) => updateNoteAction(slug, { id: note.id, ...changes, expectedUpdatedAt: version }),
+    onSaved,
+    onState: setState,
+    onError: setError,
+  }));
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -44,29 +50,11 @@ export function NoteEditor({ slug, note, onClose, onSaved, onRemoved }: { slug: 
   async function flush() {
     if (timer.current) clearTimeout(timer.current);
     timer.current = null;
-    const changes = pending.current;
-    if (Object.keys(changes).length === 0) return;
-    pending.current = {};
-    setState("saving");
-    try {
-      const result = await updateNoteAction(slug, { id: note.id, ...changes, expectedUpdatedAt: version.current });
-      if (!result.ok) {
-        setState("error");
-        showToast(result.error, "error");
-        return;
-      }
-      version.current = result.data!.updatedAt;
-      onSaved(result.data!);
-      setState(Object.keys(pending.current).length ? "unsaved" : "saved");
-    } catch {
-      pending.current = { ...changes, ...pending.current };
-      setState("error");
-    }
+    return session.flush();
   }
 
-  function queue(changes: typeof pending.current, now = false) {
-    pending.current = { ...pending.current, ...changes };
-    setState("unsaved");
+  function queue(changes: NoteChanges, now = false) {
+    session.queue(changes);
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => void flush(), now ? 0 : 700);
   }
@@ -76,12 +64,11 @@ export function NoteEditor({ slug, note, onClose, onSaved, onRemoved }: { slug: 
   }, []);
 
   async function close() {
-    await flush();
-    onClose();
+    if (await flush()) onClose();
   }
 
   async function archive() {
-    await flush();
+    if (!(await flush())) return;
     const result = await setNoteArchivedAction(slug, { id: note.id, archived: !note.archived }).catch(() => null);
     if (!result?.ok) return showToast(result?.error ?? "Couldn't archive it. Try again.", "error");
     onSaved(result.data!);
@@ -90,11 +77,21 @@ export function NoteEditor({ slug, note, onClose, onSaved, onRemoved }: { slug: 
   }
 
   async function remove() {
+    if (!(await flush())) return;
     const result = await deleteNoteAction(slug, { id: note.id }).catch(() => null);
     if (!result?.ok) return showToast(result?.error ?? "Couldn't delete it. Try again.", "error");
     onRemoved(note.id);
     showToast("Note deleted.", "success");
     onClose();
+  }
+
+  async function copyMyVersion() {
+    try {
+      await navigator.clipboard.writeText(`${title}\n\n${editor?.getText() ?? ""}`);
+      showToast("Your version is on the clipboard.", "success");
+    } catch {
+      showToast("Couldn't copy. Select the text and copy it yourself.", "error");
+    }
   }
 
   const active = (name: string, attrs?: Record<string, unknown>) => Boolean(editor?.isActive(name, attrs));
@@ -104,13 +101,23 @@ export function NoteEditor({ slug, note, onClose, onSaved, onRemoved }: { slug: 
     <Dialog open onOpenChange={(open) => (open ? undefined : void close())}>
       <DialogContent size="lg" className={cn("transition-colors duration-[120ms]", toneClasses(tone))} aria-describedby={undefined}>
         <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-3">
-          <span className={cn("text-caption", state === "error" ? "text-danger-fg" : "text-ink-muted")} aria-live="polite">{SAVE_LABEL[state]}</span>
+          <span className={cn("text-caption", state === "error" || state === "conflict" ? "text-danger-fg" : "text-ink-muted")} aria-live="polite">{SAVE_LABEL[state]}</span>
           <div className="flex items-center gap-1 pr-8">
             <IconButton label={pinned ? "Unpin note" : "Pin note"} variant="quiet" size="sm" aria-pressed={pinned} onClick={() => { setPinned(!pinned); queue({ pinned: !pinned }, true); }}>
               {pinned ? <PinOff aria-hidden className="size-4" /> : <Pin aria-hidden className="size-4" />}
             </IconButton>
           </div>
         </div>
+        {state === "error" || state === "conflict" ? (
+          <div role="alert" className="flex flex-col gap-2 border-b border-line px-5 py-3 text-body-ui text-danger-fg">
+            <p>{error}</p>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="neutral" size="sm" onClick={() => void copyMyVersion()}>Copy my version</Button>
+              <Button variant="neutral" size="sm" onClick={() => window.location.reload()}>Reload</Button>
+              {state === "error" ? <Button variant="primary" size="sm" onClick={() => void flush()}>Try again</Button> : null}
+            </div>
+          </div>
+        ) : null}
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-5 py-4">
           <label htmlFor="note-title" className="sr-only">Title</label>
           <input
