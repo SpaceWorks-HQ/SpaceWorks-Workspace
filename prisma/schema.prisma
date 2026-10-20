@@ -144,6 +144,10 @@ enum AssistantRole {
 }
 
 enum IntegrationProvider {
+  SOCIAL_YOUTUBE
+  SOCIAL_META
+  SOCIAL_LINKEDIN
+  SOCIAL_X
   GOOGLE
   GITHUB
   TELEGRAM
@@ -429,6 +433,12 @@ model Notification {
 // ──────────────────────────── Tenancy ────────────────────────────
 
 model Workspace {
+  socialAccounts SocialAccount[]
+  socialMetrics SocialMetricDaily[]
+  socialPosts SocialPost[]
+  socialComments SocialComment[]
+  socialSyncLogs SocialSyncLog[]
+  socialDrafts SocialConnectionDraft[]
   id                      String         @id @default(cuid())
   personalNotes           PersonalNote[]
   personalTodos           PersonalTodo[]
@@ -4814,4 +4824,155 @@ model PersonalTodo {
 
   @@index([workspaceId, userId, done, position])
   @@index([noteId])
+}
+
+// Social: composite relations enforce the workspace boundary in the database.
+enum SocialPlatform {
+  YOUTUBE
+  FACEBOOK
+  INSTAGRAM
+  LINKEDIN
+  X
+}
+enum SocialAccountStatus {
+  ACTIVE
+  DEGRADED
+  RECONNECT
+  DISCONNECTED
+  DEMO
+}
+enum SocialCommentStatus {
+  NEW
+  SEEN
+  REPLIED
+  HIDDEN
+  DELETED
+}
+model SocialAccount {
+  id String @id @default(cuid())
+  workspaceId String
+  platform SocialPlatform
+  externalId String
+  parentExternalId String?
+  displayName String
+  handle String?
+  avatarUrl String?
+  accessTokenEnc String?
+  refreshTokenEnc String?
+  expiresAt DateTime?
+  scopes String[] @default([])
+  status SocialAccountStatus @default(ACTIVE)
+  connectedById String?
+  lastSyncedAt DateTime?
+  lastMetricsAt DateTime?
+  lastError String?
+  warnings String[] @default([])
+  cursor Json @default("{}")
+  nextSyncAt DateTime @default(now())
+  leaseUntil DateTime?
+  leaseToken String?
+  failures Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  metrics SocialMetricDaily[]
+  posts SocialPost[]
+  comments SocialComment[]
+  logs SocialSyncLog[]
+  @@unique([workspaceId, platform, externalId])
+  @@unique([workspaceId, id])
+  @@index([workspaceId, status, nextSyncAt])
+}
+model SocialMetricDaily {
+  id String @id @default(cuid())
+  workspaceId String
+  accountId String
+  date DateTime @db.Date
+  metric String
+  value Float
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  account SocialAccount @relation(fields: [workspaceId, accountId], references: [workspaceId, id], onDelete: Cascade)
+  @@unique([workspaceId, accountId, date, metric])
+  @@index([workspaceId, date, metric])
+}
+model SocialPost {
+  id String @id @default(cuid())
+  workspaceId String
+  accountId String
+  externalId String
+  url String?
+  text String
+  mediaType String
+  publishedAt DateTime
+  latestMetrics Json @default("{}")
+  likes Float?
+  comments Float?
+  shares Float?
+  views Float?
+  impressions Float?
+  reach Float?
+  updatedAt DateTime @updatedAt
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  account SocialAccount @relation(fields: [workspaceId, accountId], references: [workspaceId, id], onDelete: Cascade)
+  thread SocialComment[]
+  @@unique([workspaceId, accountId, externalId])
+  @@unique([workspaceId, accountId, id])
+  @@index([workspaceId, publishedAt])
+}
+model SocialComment {
+  id String @id @default(cuid())
+  workspaceId String
+  accountId String
+  postId String
+  externalId String
+  parentExternalId String?
+  authorName String
+  authorHandle String?
+  authorAvatarUrl String?
+  text String
+  publishedAt DateTime
+  likeCount Int @default(0)
+  status SocialCommentStatus @default(NEW)
+  assigneeId String?
+  replyText String?
+  replyExternalId String?
+  repliedById String?
+  repliedAt DateTime?
+  // SENDING/UNKNOWN prevent automatic duplicate sends after an uncertain response.
+  replyState String @default("NONE")
+  operationToken String?
+  operationAt DateTime?
+  lastReplyError String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  account SocialAccount @relation(fields: [workspaceId, accountId], references: [workspaceId, id], onDelete: Cascade)
+  post SocialPost @relation(fields: [workspaceId, accountId, postId], references: [workspaceId, accountId, id], onDelete: Cascade)
+  @@unique([workspaceId, accountId, externalId])
+  @@index([workspaceId, status, publishedAt])
+  @@index([workspaceId, assigneeId, publishedAt])
+}
+model SocialSyncLog {
+  id String @id @default(cuid())
+  workspaceId String
+  accountId String
+  startedAt DateTime @default(now())
+  finishedAt DateTime?
+  status String
+  posts Int @default(0)
+  comments Int @default(0)
+  error String?
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  account SocialAccount @relation(fields: [workspaceId, accountId], references: [workspaceId, id], onDelete: Cascade)
+  @@index([workspaceId, accountId, startedAt])
+}
+// Ten-minute OAuth selection, bound to the initiating admin. Tokens stay encrypted.
+model SocialConnectionDraft {
+  id String @id @default(cuid())
+  workspaceId String
+  userId String
+  candidatesEnc String
+  expiresAt DateTime
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  @@index([workspaceId, userId, expiresAt])
 }

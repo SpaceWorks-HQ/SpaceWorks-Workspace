@@ -71,6 +71,7 @@ export const NAV_GROUPS: readonly NavGroupConfig[] = [
     key: "operations",
     label: "Operations",
     items: [
+      { key: "social", label: "Social", path: "/social", minRole: "MEMBER" },
       { key: "app-reviews", label: "App reviews", path: "/app-reviews", minRole: "MEMBER" },
       { key: "services", label: "Services", path: "/services", minRole: "MEMBER" },
       { key: "catalogue", label: "Service catalogue", path: "/catalogue", minRole: "MEMBER" },

@@ -52,6 +52,9 @@ type GithubRef = { repoId: Id; number: number; url: string };
 
 /** Typed `data` payload per event type. */
 export interface EventPayloads {
+  "social.comment.received": { accountId: string; commentId: string };
+  "social.reply.failed": { accountId: string; commentId: string };
+  "social.token.expiring": { accountId: string };
   "app_review.received": AppReviewPayload;
   "app_review.replied": AppReviewPayload;
   "app_review.reply_failed": AppReviewPayload;
@@ -171,6 +174,9 @@ const s = (category: NotifyCategory, label: string, audience: EventAudience, sev
   minRole ? { category, label, audience, severity, minRole } : { category, label, audience, severity };
 
 export const EVENT_CATALOG = {
+  "social.comment.received": s("operations", "Social comment received", "broadcast", "info", "MEMBER"),
+  "social.reply.failed": s("operations", "Social reply failed", "broadcast", "warning", "MEMBER"),
+  "social.token.expiring": s("operations", "Social connection expiring", "broadcast", "warning", "ADMIN"),
   "app_review.received": s("operations", "App review received", "broadcast", "info", "MEMBER"),
   "app_review.replied": s("operations", "App review reply published", "broadcast", "info", "MEMBER"),
   "app_review.reply_failed": s("operations", "App review reply failed", "broadcast", "warning", "MEMBER"),
