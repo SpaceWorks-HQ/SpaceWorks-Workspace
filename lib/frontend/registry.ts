@@ -80,316 +80,325 @@ import { loadFormPage as endpoint76 } from "@/lib/views/generated/w-workspaceSlu
 import { loadFormsPage as endpoint77 } from "@/lib/views/generated/w-workspaceSlug-forms-page-loadFormsPage";
 import { loadGoalPage as endpoint78 } from "@/lib/views/generated/w-workspaceSlug-goals-goalId-page-loadGoalPage";
 import { loadGoalsPage as endpoint79 } from "@/lib/views/generated/w-workspaceSlug-goals-page-loadGoalsPage";
-import { loadIdeaPage as endpoint80 } from "@/lib/views/generated/w-workspaceSlug-ideas-ideaId-page-loadIdeaPage";
-import { loadIdeasPage as endpoint81 } from "@/lib/views/generated/w-workspaceSlug-ideas-page-loadIdeasPage";
-import { loadgenerateMetadata as endpoint82 } from "@/lib/views/generated/w-workspaceSlug-layout-loadgenerateMetadata";
-import { loadWorkspaceLayout as endpoint83 } from "@/lib/views/generated/w-workspaceSlug-layout-loadWorkspaceLayout";
-import { loadLinksPage as endpoint84 } from "@/lib/views/generated/w-workspaceSlug-links-page-loadLinksPage";
-import { loadMeetingPage as endpoint85 } from "@/lib/views/generated/w-workspaceSlug-meetings-meetingId-page-loadMeetingPage";
-import { loadDecisionsPage as endpoint86 } from "@/lib/views/generated/w-workspaceSlug-meetings-decisions-page-loadDecisionsPage";
-import { loadMeetingsPage as endpoint87 } from "@/lib/views/generated/w-workspaceSlug-meetings-page-loadMeetingsPage";
-import { loadEditProfilePage as endpoint88 } from "@/lib/views/generated/w-workspaceSlug-members-userId-edit-page-loadEditProfilePage";
-import { loadMemberPage as endpoint89 } from "@/lib/views/generated/w-workspaceSlug-members-userId-page-loadMemberPage";
-import { loadAvailabilityPage as endpoint90 } from "@/lib/views/generated/w-workspaceSlug-members-availability-page-loadAvailabilityPage";
-import { loadMembersPage as endpoint91 } from "@/lib/views/generated/w-workspaceSlug-members-page-loadMembersPage";
-import { loadMyTasksPage as endpoint92 } from "@/lib/views/generated/w-workspaceSlug-my-tasks-page-loadMyTasksPage";
-import { loadNotepadPage as endpoint93 } from "@/lib/views/generated/w-workspaceSlug-notepad-page-loadNotepadPage";
-import { loadNotificationAccountsPage as endpoint94 } from "@/lib/views/generated/w-workspaceSlug-notifications-accounts-page-loadNotificationAccountsPage";
-import { loadNotificationsPage as endpoint95 } from "@/lib/views/generated/w-workspaceSlug-notifications-page-loadNotificationsPage";
-import { loadPreferencesPage as endpoint96 } from "@/lib/views/generated/w-workspaceSlug-notifications-preferences-page-loadPreferencesPage";
-import { loadOnboardingPage as endpoint97 } from "@/lib/views/generated/w-workspaceSlug-onboarding-page-loadOnboardingPage";
-import { loadPage as endpoint98 } from "@/lib/views/generated/w-workspaceSlug-organisations-page-loadPage";
-import { loadWorkspaceHome as endpoint99 } from "@/lib/views/generated/w-workspaceSlug-page-loadWorkspaceHome";
-import { loadPage as endpoint100 } from "@/lib/views/generated/w-workspaceSlug-pipeline-page-loadPage";
-import { loadPollPage as endpoint101 } from "@/lib/views/generated/w-workspaceSlug-polls-pollId-page-loadPollPage";
-import { loadPollsPage as endpoint102 } from "@/lib/views/generated/w-workspaceSlug-polls-page-loadPollsPage";
-import { loadProjectLayout as endpoint103 } from "@/lib/views/generated/w-workspaceSlug-projects-key-project-layout-loadProjectLayout";
-import { loadProjectOverviewPage as endpoint104 } from "@/lib/views/generated/w-workspaceSlug-projects-key-project-overview-page-loadProjectOverviewPage";
-import { loadgenerateMetadata as endpoint105 } from "@/lib/views/generated/w-workspaceSlug-projects-key-project-page-loadgenerateMetadata";
-import { loadProjectBoardPage as endpoint106 } from "@/lib/views/generated/w-workspaceSlug-projects-key-project-page-loadProjectBoardPage";
-import { loadProjectSettingsPage as endpoint107 } from "@/lib/views/generated/w-workspaceSlug-projects-key-project-settings-page-loadProjectSettingsPage";
-import { loadgenerateMetadata as endpoint108 } from "@/lib/views/generated/w-workspaceSlug-projects-key-number-page-loadgenerateMetadata";
-import { loadTaskPage as endpoint109 } from "@/lib/views/generated/w-workspaceSlug-projects-key-number-page-loadTaskPage";
-import { loadTaskAliasPage as endpoint110 } from "@/lib/views/generated/w-workspaceSlug-projects-key-tasks-number-page-loadTaskAliasPage";
-import { loadProjectsPage as endpoint111 } from "@/lib/views/generated/w-workspaceSlug-projects-page-loadProjectsPage";
-import { loadApprovalsPage as endpoint112 } from "@/lib/views/generated/w-workspaceSlug-requests-approvals-page-loadApprovalsPage";
-import { loadRequestsPage as endpoint113 } from "@/lib/views/generated/w-workspaceSlug-requests-page-loadRequestsPage";
-import { loadCertificationsPage as endpoint114 } from "@/lib/views/generated/w-workspaceSlug-rota-certifications-page-loadCertificationsPage";
-import { loadRotaPage as endpoint115 } from "@/lib/views/generated/w-workspaceSlug-rota-page-loadRotaPage";
-import { loadSearchPage as endpoint116 } from "@/lib/views/generated/w-workspaceSlug-search-page-loadSearchPage";
-import { loadSeoPage as endpoint117 } from "@/lib/views/generated/w-workspaceSlug-seo-page-loadSeoPage";
-import { loadPage as endpoint118 } from "@/lib/views/generated/w-workspaceSlug-services-cloud-page-loadPage";
-import { loadPage as endpoint119 } from "@/lib/views/generated/w-workspaceSlug-services-costs-page-loadPage";
-import { loadPage as endpoint120 } from "@/lib/views/generated/w-workspaceSlug-services-incidents-number-page-loadPage";
-import { loadPage as endpoint121 } from "@/lib/views/generated/w-workspaceSlug-services-incidents-page-loadPage";
-import { loadPage as endpoint122 } from "@/lib/views/generated/w-workspaceSlug-services-maintenance-page-loadPage";
-import { loadPage as endpoint123 } from "@/lib/views/generated/w-workspaceSlug-services-monitors-id-edit-page-loadPage";
-import { loadPage as endpoint124 } from "@/lib/views/generated/w-workspaceSlug-services-monitors-id-page-loadPage";
-import { loadPage as endpoint125 } from "@/lib/views/generated/w-workspaceSlug-services-monitors-new-page-loadPage";
-import { loadPage as endpoint126 } from "@/lib/views/generated/w-workspaceSlug-services-on-call-page-loadPage";
-import { loadPage as endpoint127 } from "@/lib/views/generated/w-workspaceSlug-services-page-loadPage";
-import { loadPage as endpoint128 } from "@/lib/views/generated/w-workspaceSlug-services-settings-page-loadPage";
-import { loadPage as endpoint129 } from "@/lib/views/generated/w-workspaceSlug-services-status-page-page-loadPage";
-import { loadApiTokensPage as endpoint130 } from "@/lib/views/generated/w-workspaceSlug-settings-api-tokens-page-loadApiTokensPage";
-import { loadAuditLogPage as endpoint131 } from "@/lib/views/generated/w-workspaceSlug-settings-audit-page-loadAuditLogPage";
-import { loadPage as endpoint132 } from "@/lib/views/generated/w-workspaceSlug-settings-cloud-accounts-page-loadPage";
-import { loadExportPage as endpoint133 } from "@/lib/views/generated/w-workspaceSlug-settings-export-page-loadExportPage";
-import { loadImportPage as endpoint134 } from "@/lib/views/generated/w-workspaceSlug-settings-import-page-loadImportPage";
-import { loadIntegrationsPage as endpoint135 } from "@/lib/views/generated/w-workspaceSlug-settings-integrations-page-loadIntegrationsPage";
-import { loadInvitationsPage as endpoint136 } from "@/lib/views/generated/w-workspaceSlug-settings-invitations-page-loadInvitationsPage";
-import { loadLabelsPage as endpoint137 } from "@/lib/views/generated/w-workspaceSlug-settings-labels-page-loadLabelsPage";
-import { loadSettingsLayout as endpoint138 } from "@/lib/views/generated/w-workspaceSlug-settings-layout-loadSettingsLayout";
-import { loadMembersSettingsPage as endpoint139 } from "@/lib/views/generated/w-workspaceSlug-settings-members-page-loadMembersSettingsPage";
-import { loadMessagingSettingsPage as endpoint140 } from "@/lib/views/generated/w-workspaceSlug-settings-messaging-page-loadMessagingSettingsPage";
-import { loadNotificationsSettingsPage as endpoint141 } from "@/lib/views/generated/w-workspaceSlug-settings-notifications-page-loadNotificationsSettingsPage";
-import { loadTemplatesPage as endpoint142 } from "@/lib/views/generated/w-workspaceSlug-settings-onboarding-page-loadTemplatesPage";
-import { loadGeneralSettingsPage as endpoint143 } from "@/lib/views/generated/w-workspaceSlug-settings-page-loadGeneralSettingsPage";
-import { loadRetentionPage as endpoint144 } from "@/lib/views/generated/w-workspaceSlug-settings-retention-page-loadRetentionPage";
-import { loadSocialSettingsPage as endpoint145 } from "@/lib/views/generated/w-workspaceSlug-settings-social-page-loadSocialSettingsPage";
-import { loadSignaturePage as endpoint146 } from "@/lib/views/generated/w-workspaceSlug-sign-requestId-page-loadSignaturePage";
-import { loadSignaturesPage as endpoint147 } from "@/lib/views/generated/w-workspaceSlug-sign-page-loadSignaturesPage";
-import { loadSocialAccountPage as endpoint148 } from "@/lib/views/generated/w-workspaceSlug-social-accounts-accountId-page-loadSocialAccountPage";
-import { loadSocialCommentPage as endpoint149 } from "@/lib/views/generated/w-workspaceSlug-social-comments-commentId-page-loadSocialCommentPage";
-import { loadSocialCommentsPage as endpoint150 } from "@/lib/views/generated/w-workspaceSlug-social-comments-page-loadSocialCommentsPage";
-import { loadSocialPage as endpoint151 } from "@/lib/views/generated/w-workspaceSlug-social-page-loadSocialPage";
-import { loadSubscriptionsPage as endpoint152 } from "@/lib/views/generated/w-workspaceSlug-subscriptions-page-loadSubscriptionsPage";
-import { loadgenerateMetadata as endpoint153 } from "@/lib/views/generated/w-workspaceSlug-t-ref-page-loadgenerateMetadata";
-import { loadShortTaskPage as endpoint154 } from "@/lib/views/generated/w-workspaceSlug-t-ref-page-loadShortTaskPage";
-import { loadTeamPage as endpoint155 } from "@/lib/views/generated/w-workspaceSlug-teams-teamSlug-page-loadTeamPage";
-import { loadTeamsPage as endpoint156 } from "@/lib/views/generated/w-workspaceSlug-teams-page-loadTeamsPage";
-import { loadTemplatesPage as endpoint157 } from "@/lib/views/generated/w-workspaceSlug-templates-page-loadTemplatesPage";
-import { loadVaultPage as endpoint158 } from "@/lib/views/generated/w-workspaceSlug-vault-page-loadVaultPage";
-import { loadApprovalInbox as endpoint159 } from "@/lib/views/components";
-import { loadGithubPullRequests as endpoint160 } from "@/lib/views/components";
-import { updateProfile as endpoint161 } from "@/app/actions/account";
-import { changePassword as endpoint162 } from "@/app/actions/account";
-import { beginMfaEnrollment as endpoint163 } from "@/app/actions/account";
-import { confirmMfaEnrollment as endpoint164 } from "@/app/actions/account";
-import { disableMfa as endpoint165 } from "@/app/actions/account";
-import { signOutEverywhere as endpoint166 } from "@/app/actions/account";
-import { verifyAdminMfa as endpoint167 } from "@/app/actions/admin";
-import { updateInstanceSettingsAction as endpoint168 } from "@/app/actions/admin";
-import { adminCreateWorkspace as endpoint169 } from "@/app/actions/admin";
-import { adminSetUserDisabled as endpoint170 } from "@/app/actions/admin";
-import { adminSetWorkspaceArchived as endpoint171 } from "@/app/actions/admin";
-import { createApiTokenAction as endpoint172 } from "@/app/actions/apiTokens";
-import { revokeApiTokenAction as endpoint173 } from "@/app/actions/apiTokens";
-import { saveAppReviewAccountAction as endpoint174 } from "@/app/actions/appReviews";
-import { saveReviewedAppAction as endpoint175 } from "@/app/actions/appReviews";
-import { saveAppReviewSlackAction as endpoint176 } from "@/app/actions/appReviews";
-import { saveAppReviewSlackMemberAction as endpoint177 } from "@/app/actions/appReviews";
-import { testAppReviewConnectionAction as endpoint178 } from "@/app/actions/appReviews";
-import { triageAppReviewAction as endpoint179 } from "@/app/actions/appReviews";
-import { createAppReviewTaskAction as endpoint180 } from "@/app/actions/appReviews";
-import { draftAppReviewReplyAction as endpoint181 } from "@/app/actions/appReviews";
-import { sendAppReviewReplyAction as endpoint182 } from "@/app/actions/appReviews";
-import { saveInventory as endpoint183 } from "@/app/actions/assets";
-import { addMaintenance as endpoint184 } from "@/app/actions/assets";
-import { savePhysicalKey as endpoint185 } from "@/app/actions/assets";
-import { createConversationAction as endpoint186 } from "@/app/actions/assistant";
-import { renameConversationAction as endpoint187 } from "@/app/actions/assistant";
-import { deleteConversationAction as endpoint188 } from "@/app/actions/assistant";
-import { createMemoryAction as endpoint189 } from "@/app/actions/assistant";
-import { updateMemoryAction as endpoint190 } from "@/app/actions/assistant";
-import { deleteMemoryAction as endpoint191 } from "@/app/actions/assistant";
-import { createSkillAction as endpoint192 } from "@/app/actions/assistant";
-import { updateSkillAction as endpoint193 } from "@/app/actions/assistant";
-import { deleteSkillAction as endpoint194 } from "@/app/actions/assistant";
-import { installBuiltinSkillsAction as endpoint195 } from "@/app/actions/assistant";
-import { createJobAction as endpoint196 } from "@/app/actions/assistant";
-import { updateJobAction as endpoint197 } from "@/app/actions/assistant";
-import { deleteJobAction as endpoint198 } from "@/app/actions/assistant";
-import { runJobNowAction as endpoint199 } from "@/app/actions/assistant";
-import { completeSetup as endpoint200 } from "@/app/actions/auth";
-import { requestPasswordReset as endpoint201 } from "@/app/actions/auth";
-import { resetPassword as endpoint202 } from "@/app/actions/auth";
-import { acceptInviteWithNewAccount as endpoint203 } from "@/app/actions/auth";
-import { acceptInviteAsCurrentUser as endpoint204 } from "@/app/actions/auth";
-import { createBoardroomSessionAction as endpoint205 } from "@/app/actions/boardroom";
-import { deleteBoardroomSessionAction as endpoint206 } from "@/app/actions/boardroom";
-import { saveCatalogueService as endpoint207 } from "@/app/actions/catalogue";
-import { changelogAction as endpoint208 } from "@/app/actions/changelog";
-import { loadSidebarAction as endpoint209 } from "@/app/actions/chat";
-import { loadMessagesAction as endpoint210 } from "@/app/actions/chat";
-import { loadMessagesByIdsAction as endpoint211 } from "@/app/actions/chat";
-import { loadThreadAction as endpoint212 } from "@/app/actions/chat";
-import { loadPinnedAction as endpoint213 } from "@/app/actions/chat";
-import { loadChannelMembersAction as endpoint214 } from "@/app/actions/chat";
-import { browseChannelsAction as endpoint215 } from "@/app/actions/chat";
-import { searchMessagesAction as endpoint216 } from "@/app/actions/chat";
-import { createChannelAction as endpoint217 } from "@/app/actions/chat";
-import { joinChannelAction as endpoint218 } from "@/app/actions/chat";
-import { leaveChannelAction as endpoint219 } from "@/app/actions/chat";
-import { updateChannelAction as endpoint220 } from "@/app/actions/chat";
-import { setChannelArchivedAction as endpoint221 } from "@/app/actions/chat";
-import { addChannelMembersAction as endpoint222 } from "@/app/actions/chat";
-import { removeChannelMemberAction as endpoint223 } from "@/app/actions/chat";
-import { setNotifyLevelAction as endpoint224 } from "@/app/actions/chat";
-import { openDirectMessageAction as endpoint225 } from "@/app/actions/chat";
-import { postMessageAction as endpoint226 } from "@/app/actions/chat";
-import { editMessageAction as endpoint227 } from "@/app/actions/chat";
-import { deleteMessageAction as endpoint228 } from "@/app/actions/chat";
-import { toggleReactionAction as endpoint229 } from "@/app/actions/chat";
-import { setPinnedAction as endpoint230 } from "@/app/actions/chat";
-import { markReadAction as endpoint231 } from "@/app/actions/chat";
-import { sendTypingAction as endpoint232 } from "@/app/actions/chat";
-import { uploadChatAttachmentAction as endpoint233 } from "@/app/actions/chat";
-import { saveAnnouncementAction as endpoint234 } from "@/app/actions/community";
-import { pinAnnouncementAction as endpoint235 } from "@/app/actions/community";
-import { deleteAnnouncementAction as endpoint236 } from "@/app/actions/community";
-import { createFeedAction as endpoint237 } from "@/app/actions/community";
-import { revokeFeedAction as endpoint238 } from "@/app/actions/community";
-import { mutateContacts as endpoint239 } from "@/app/actions/contacts";
-import { exportContactsAction as endpoint240 } from "@/app/actions/contacts";
-import { exportOrganisationsAction as endpoint241 } from "@/app/actions/contacts";
-import { cycleAction as endpoint242 } from "@/app/actions/cycles";
-import { createDocAction as endpoint243 } from "@/app/actions/docs";
-import { saveDocAction as endpoint244 } from "@/app/actions/docs";
-import { moveDocAction as endpoint245 } from "@/app/actions/docs";
-import { setDocVisibilityAction as endpoint246 } from "@/app/actions/docs";
-import { archiveDocAction as endpoint247 } from "@/app/actions/docs";
-import { restoreDocAction as endpoint248 } from "@/app/actions/docs";
-import { duplicateDocAction as endpoint249 } from "@/app/actions/docs";
-import { restoreRevisionAction as endpoint250 } from "@/app/actions/docs";
-import { verifyDocAction as endpoint251 } from "@/app/actions/docs";
-import { requestWorkspaceExport as endpoint252 } from "@/app/actions/exports";
-import { saveRetentionPolicy as endpoint253 } from "@/app/actions/exports";
-import { saveWorkspaceShellSettings as endpoint254 } from "@/app/actions/exports";
-import { queueCsvImport as endpoint255 } from "@/app/actions/exports";
-import { renameFileAction as endpoint256 } from "@/app/actions/files";
-import { moveFilesAction as endpoint257 } from "@/app/actions/files";
-import { linkFileAction as endpoint258 } from "@/app/actions/files";
-import { deleteFileAction as endpoint259 } from "@/app/actions/files";
-import { restoreFileAction as endpoint260 } from "@/app/actions/files";
-import { restoreFileVersionAction as endpoint261 } from "@/app/actions/files";
-import { searchLinkTargetsAction as endpoint262 } from "@/app/actions/files";
-import { createLedgerEntryAction as endpoint263 } from "@/app/actions/finance";
-import { updateLedgerEntryAction as endpoint264 } from "@/app/actions/finance";
-import { setLedgerEntryVoidedAction as endpoint265 } from "@/app/actions/finance";
-import { previewLedgerImportAction as endpoint266 } from "@/app/actions/finance";
-import { commitLedgerImportAction as endpoint267 } from "@/app/actions/finance";
-import { createCategoryAction as endpoint268 } from "@/app/actions/finance";
-import { renameCategoryAction as endpoint269 } from "@/app/actions/finance";
-import { setCategoryArchivedAction as endpoint270 } from "@/app/actions/finance";
-import { createInvoiceAction as endpoint271 } from "@/app/actions/finance";
-import { updateInvoiceAction as endpoint272 } from "@/app/actions/finance";
-import { sendInvoiceAction as endpoint273 } from "@/app/actions/finance";
-import { markInvoicePaidAction as endpoint274 } from "@/app/actions/finance";
-import { voidInvoiceAction as endpoint275 } from "@/app/actions/finance";
-import { deleteInvoiceAction as endpoint276 } from "@/app/actions/finance";
-import { createIntakeForm as endpoint277 } from "@/app/actions/forms";
-import { sendInternalResponse as endpoint278 } from "@/app/actions/forms";
-import { sendPublicResponse as endpoint279 } from "@/app/actions/forms";
-import { closeIntakeForm as endpoint280 } from "@/app/actions/forms";
-import { newPublicFormLink as endpoint281 } from "@/app/actions/forms";
-import { responseToTask as endpoint282 } from "@/app/actions/forms";
-import { goalAction as endpoint283 } from "@/app/actions/goals";
-import { ideaAction as endpoint284 } from "@/app/actions/ideas";
-import { updateIntegrations as endpoint285 } from "@/app/actions/integrations";
-import { saveLink as endpoint286 } from "@/app/actions/links";
-import { linkState as endpoint287 } from "@/app/actions/links";
-import { meetingAction as endpoint288 } from "@/app/actions/meetings";
-import { signatureAction as endpoint289 } from "@/app/actions/meetings";
-import { updateMessaging as endpoint290 } from "@/app/actions/messaging";
-import { loadNotepadAction as endpoint291 } from "@/app/actions/notepad";
-import { createNoteAction as endpoint292 } from "@/app/actions/notepad";
-import { updateNoteAction as endpoint293 } from "@/app/actions/notepad";
-import { setNoteArchivedAction as endpoint294 } from "@/app/actions/notepad";
-import { deleteNoteAction as endpoint295 } from "@/app/actions/notepad";
-import { createTodoAction as endpoint296 } from "@/app/actions/notepad";
-import { updateTodoAction as endpoint297 } from "@/app/actions/notepad";
-import { moveTodoAction as endpoint298 } from "@/app/actions/notepad";
-import { deleteTodoAction as endpoint299 } from "@/app/actions/notepad";
-import { clearDoneTodosAction as endpoint300 } from "@/app/actions/notepad";
-import { sendTodoToTasksAction as endpoint301 } from "@/app/actions/notepad";
-import { notificationStateAction as endpoint302 } from "@/app/actions/notificationPreferences";
-import { notificationSummaryAction as endpoint303 } from "@/app/actions/notificationPreferences";
-import { saveNotificationPreference as endpoint304 } from "@/app/actions/notificationPreferences";
-import { saveNotificationSettings as endpoint305 } from "@/app/actions/notificationPreferences";
-import { removeNotificationMute as endpoint306 } from "@/app/actions/notificationPreferences";
-import { muteNotificationResource as endpoint307 } from "@/app/actions/notificationPreferences";
-import { updateRouting as endpoint308 } from "@/app/actions/notificationRouting";
-import { markNotificationsReadAction as endpoint309 } from "@/app/actions/notifications";
-import { mutatePeople as endpoint310 } from "@/app/actions/people";
-import { revealEmergencyAction as endpoint311 } from "@/app/actions/people";
-import { saveOidcProvider as endpoint312 } from "@/app/actions/platformShell";
-import { pollAction as endpoint313 } from "@/app/actions/polls";
-import { createProjectAction as endpoint314 } from "@/app/actions/projects";
-import { updateProjectAction as endpoint315 } from "@/app/actions/projects";
-import { archiveProjectAction as endpoint316 } from "@/app/actions/projects";
-import { restoreProjectAction as endpoint317 } from "@/app/actions/projects";
-import { addColumnAction as endpoint318 } from "@/app/actions/projects";
-import { updateColumnAction as endpoint319 } from "@/app/actions/projects";
-import { reorderColumnsAction as endpoint320 } from "@/app/actions/projects";
-import { deleteColumnAction as endpoint321 } from "@/app/actions/projects";
-import { submitMoneyRequest as endpoint322 } from "@/app/actions/requests";
-import { decideRequest as endpoint323 } from "@/app/actions/requests";
-import { finishMoneyRequest as endpoint324 } from "@/app/actions/requests";
-import { saveBudget as endpoint325 } from "@/app/actions/requests";
-import { saveApprovalPolicy as endpoint326 } from "@/app/actions/requests";
-import { changeMoneyRequest as endpoint327 } from "@/app/actions/requests";
-import { reviseMoneyRequest as endpoint328 } from "@/app/actions/requests";
-import { submitGenericRequest as endpoint329 } from "@/app/actions/requests";
-import { addApprovalComment as endpoint330 } from "@/app/actions/requests";
-import { mutateRota as endpoint331 } from "@/app/actions/rota";
-import { searchAction as endpoint332 } from "@/app/actions/search";
-import { loadWorkspaceTools as endpoint333 } from "@/app/actions/search";
-import { updateSeo as endpoint334 } from "@/app/actions/seo";
-import { saveMonitorAction as endpoint335 } from "@/app/actions/services";
-import { serviceAction as endpoint336 } from "@/app/actions/services";
-import { commentAction as endpoint337 } from "@/app/actions/social";
-import { connectAction as endpoint338 } from "@/app/actions/social";
-import { selectAccountsAction as endpoint339 } from "@/app/actions/social";
-import { accountAction as endpoint340 } from "@/app/actions/social";
-import { reconcileCommentAction as endpoint341 } from "@/app/actions/social";
-import { saveSubscriptionRecord as endpoint342 } from "@/app/actions/subscriptions";
-import { loadBoardAction as endpoint343 } from "@/app/actions/tasks";
-import { loadTaskAction as endpoint344 } from "@/app/actions/tasks";
-import { loadMyTasksAction as endpoint345 } from "@/app/actions/tasks";
-import { createTaskAction as endpoint346 } from "@/app/actions/tasks";
-import { updateTaskAction as endpoint347 } from "@/app/actions/tasks";
-import { moveTaskAction as endpoint348 } from "@/app/actions/tasks";
-import { setTaskCompletedAction as endpoint349 } from "@/app/actions/tasks";
-import { setAssigneesAction as endpoint350 } from "@/app/actions/tasks";
-import { setLabelsAction as endpoint351 } from "@/app/actions/tasks";
-import { setTaskArchivedAction as endpoint352 } from "@/app/actions/tasks";
-import { addCommentAction as endpoint353 } from "@/app/actions/tasks";
-import { editCommentAction as endpoint354 } from "@/app/actions/tasks";
-import { deleteCommentAction as endpoint355 } from "@/app/actions/tasks";
-import { addDependencyAction as endpoint356 } from "@/app/actions/tasks";
-import { removeDependencyAction as endpoint357 } from "@/app/actions/tasks";
-import { setRecurrenceAction as endpoint358 } from "@/app/actions/tasks";
-import { stopRecurrenceAction as endpoint359 } from "@/app/actions/tasks";
-import { skipNextOccurrenceAction as endpoint360 } from "@/app/actions/tasks";
-import { uploadTaskAttachmentAction as endpoint361 } from "@/app/actions/tasks";
-import { removeTaskAttachmentAction as endpoint362 } from "@/app/actions/tasks";
-import { saveTeamAction as endpoint363 } from "@/app/actions/teams";
-import { archiveTeamAction as endpoint364 } from "@/app/actions/teams";
-import { addTeamMemberAction as endpoint365 } from "@/app/actions/teams";
-import { removeTeamMemberAction as endpoint366 } from "@/app/actions/teams";
-import { setTeamMemberRoleAction as endpoint367 } from "@/app/actions/teams";
-import { joinTeamAction as endpoint368 } from "@/app/actions/teams";
-import { templateAction as endpoint369 } from "@/app/actions/templates";
-import { saveVaultItem as endpoint370 } from "@/app/actions/vault";
-import { saveVaultCollection as endpoint371 } from "@/app/actions/vault";
-import { saveVaultGrant as endpoint372 } from "@/app/actions/vault";
-import { removeVaultGrant as endpoint373 } from "@/app/actions/vault";
-import { askVaultAccess as endpoint374 } from "@/app/actions/vault";
-import { stepUpVault as endpoint375 } from "@/app/actions/vault";
-import { archiveVaultItem as endpoint376 } from "@/app/actions/vault";
-import { saveView as endpoint377 } from "@/app/actions/views";
-import { deleteView as endpoint378 } from "@/app/actions/views";
-import { updateWorkspaceSettings as endpoint379 } from "@/app/actions/workspace-settings";
-import { createInvitationAction as endpoint380 } from "@/app/actions/workspace-settings";
-import { resendInvitationAction as endpoint381 } from "@/app/actions/workspace-settings";
-import { revokeInvitationAction as endpoint382 } from "@/app/actions/workspace-settings";
-import { changeMemberRoleAction as endpoint383 } from "@/app/actions/workspace-settings";
-import { setMemberStatusAction as endpoint384 } from "@/app/actions/workspace-settings";
-import { removeMemberAction as endpoint385 } from "@/app/actions/workspace-settings";
-import { leaveWorkspaceAction as endpoint386 } from "@/app/actions/workspace-settings";
-import { createLabelAction as endpoint387 } from "@/app/actions/workspace-settings";
-import { updateLabelAction as endpoint388 } from "@/app/actions/workspace-settings";
-import { deleteLabelAction as endpoint389 } from "@/app/actions/workspace-settings";
+import { loadPage as endpoint80 } from "@/lib/views/generated/w-workspaceSlug-governance-board-page-loadPage";
+import { loadPage as endpoint81 } from "@/lib/views/generated/w-workspaceSlug-governance-page-loadPage";
+import { loadPage as endpoint82 } from "@/lib/views/generated/w-workspaceSlug-governance-vendors-page-loadPage";
+import { loadIdeaPage as endpoint83 } from "@/lib/views/generated/w-workspaceSlug-ideas-ideaId-page-loadIdeaPage";
+import { loadIdeasPage as endpoint84 } from "@/lib/views/generated/w-workspaceSlug-ideas-page-loadIdeasPage";
+import { loadgenerateMetadata as endpoint85 } from "@/lib/views/generated/w-workspaceSlug-layout-loadgenerateMetadata";
+import { loadWorkspaceLayout as endpoint86 } from "@/lib/views/generated/w-workspaceSlug-layout-loadWorkspaceLayout";
+import { loadLinksPage as endpoint87 } from "@/lib/views/generated/w-workspaceSlug-links-page-loadLinksPage";
+import { loadMeetingPage as endpoint88 } from "@/lib/views/generated/w-workspaceSlug-meetings-meetingId-page-loadMeetingPage";
+import { loadDecisionsPage as endpoint89 } from "@/lib/views/generated/w-workspaceSlug-meetings-decisions-page-loadDecisionsPage";
+import { loadMeetingsPage as endpoint90 } from "@/lib/views/generated/w-workspaceSlug-meetings-page-loadMeetingsPage";
+import { loadEditProfilePage as endpoint91 } from "@/lib/views/generated/w-workspaceSlug-members-userId-edit-page-loadEditProfilePage";
+import { loadMemberPage as endpoint92 } from "@/lib/views/generated/w-workspaceSlug-members-userId-page-loadMemberPage";
+import { loadAvailabilityPage as endpoint93 } from "@/lib/views/generated/w-workspaceSlug-members-availability-page-loadAvailabilityPage";
+import { loadMembersPage as endpoint94 } from "@/lib/views/generated/w-workspaceSlug-members-page-loadMembersPage";
+import { loadMyTasksPage as endpoint95 } from "@/lib/views/generated/w-workspaceSlug-my-tasks-page-loadMyTasksPage";
+import { loadNotepadPage as endpoint96 } from "@/lib/views/generated/w-workspaceSlug-notepad-page-loadNotepadPage";
+import { loadNotificationAccountsPage as endpoint97 } from "@/lib/views/generated/w-workspaceSlug-notifications-accounts-page-loadNotificationAccountsPage";
+import { loadNotificationsPage as endpoint98 } from "@/lib/views/generated/w-workspaceSlug-notifications-page-loadNotificationsPage";
+import { loadPreferencesPage as endpoint99 } from "@/lib/views/generated/w-workspaceSlug-notifications-preferences-page-loadPreferencesPage";
+import { loadOnboardingPage as endpoint100 } from "@/lib/views/generated/w-workspaceSlug-onboarding-page-loadOnboardingPage";
+import { loadPage as endpoint101 } from "@/lib/views/generated/w-workspaceSlug-organisations-page-loadPage";
+import { loadWorkspaceHome as endpoint102 } from "@/lib/views/generated/w-workspaceSlug-page-loadWorkspaceHome";
+import { loadPage as endpoint103 } from "@/lib/views/generated/w-workspaceSlug-pipeline-page-loadPage";
+import { loadPollPage as endpoint104 } from "@/lib/views/generated/w-workspaceSlug-polls-pollId-page-loadPollPage";
+import { loadPollsPage as endpoint105 } from "@/lib/views/generated/w-workspaceSlug-polls-page-loadPollsPage";
+import { loadProjectLayout as endpoint106 } from "@/lib/views/generated/w-workspaceSlug-projects-key-project-layout-loadProjectLayout";
+import { loadProjectOverviewPage as endpoint107 } from "@/lib/views/generated/w-workspaceSlug-projects-key-project-overview-page-loadProjectOverviewPage";
+import { loadgenerateMetadata as endpoint108 } from "@/lib/views/generated/w-workspaceSlug-projects-key-project-page-loadgenerateMetadata";
+import { loadProjectBoardPage as endpoint109 } from "@/lib/views/generated/w-workspaceSlug-projects-key-project-page-loadProjectBoardPage";
+import { loadProjectSettingsPage as endpoint110 } from "@/lib/views/generated/w-workspaceSlug-projects-key-project-settings-page-loadProjectSettingsPage";
+import { loadgenerateMetadata as endpoint111 } from "@/lib/views/generated/w-workspaceSlug-projects-key-number-page-loadgenerateMetadata";
+import { loadTaskPage as endpoint112 } from "@/lib/views/generated/w-workspaceSlug-projects-key-number-page-loadTaskPage";
+import { loadTaskAliasPage as endpoint113 } from "@/lib/views/generated/w-workspaceSlug-projects-key-tasks-number-page-loadTaskAliasPage";
+import { loadProjectsPage as endpoint114 } from "@/lib/views/generated/w-workspaceSlug-projects-page-loadProjectsPage";
+import { loadApprovalsPage as endpoint115 } from "@/lib/views/generated/w-workspaceSlug-requests-approvals-page-loadApprovalsPage";
+import { loadRequestsPage as endpoint116 } from "@/lib/views/generated/w-workspaceSlug-requests-page-loadRequestsPage";
+import { loadCertificationsPage as endpoint117 } from "@/lib/views/generated/w-workspaceSlug-rota-certifications-page-loadCertificationsPage";
+import { loadRotaPage as endpoint118 } from "@/lib/views/generated/w-workspaceSlug-rota-page-loadRotaPage";
+import { loadSearchPage as endpoint119 } from "@/lib/views/generated/w-workspaceSlug-search-page-loadSearchPage";
+import { loadSeoPage as endpoint120 } from "@/lib/views/generated/w-workspaceSlug-seo-page-loadSeoPage";
+import { loadPage as endpoint121 } from "@/lib/views/generated/w-workspaceSlug-services-cloud-page-loadPage";
+import { loadPage as endpoint122 } from "@/lib/views/generated/w-workspaceSlug-services-costs-page-loadPage";
+import { loadPage as endpoint123 } from "@/lib/views/generated/w-workspaceSlug-services-incidents-number-page-loadPage";
+import { loadPage as endpoint124 } from "@/lib/views/generated/w-workspaceSlug-services-incidents-page-loadPage";
+import { loadPage as endpoint125 } from "@/lib/views/generated/w-workspaceSlug-services-maintenance-page-loadPage";
+import { loadPage as endpoint126 } from "@/lib/views/generated/w-workspaceSlug-services-monitors-id-edit-page-loadPage";
+import { loadPage as endpoint127 } from "@/lib/views/generated/w-workspaceSlug-services-monitors-id-page-loadPage";
+import { loadPage as endpoint128 } from "@/lib/views/generated/w-workspaceSlug-services-monitors-new-page-loadPage";
+import { loadPage as endpoint129 } from "@/lib/views/generated/w-workspaceSlug-services-on-call-page-loadPage";
+import { loadPage as endpoint130 } from "@/lib/views/generated/w-workspaceSlug-services-page-loadPage";
+import { loadPage as endpoint131 } from "@/lib/views/generated/w-workspaceSlug-services-settings-page-loadPage";
+import { loadPage as endpoint132 } from "@/lib/views/generated/w-workspaceSlug-services-status-page-page-loadPage";
+import { loadApiTokensPage as endpoint133 } from "@/lib/views/generated/w-workspaceSlug-settings-api-tokens-page-loadApiTokensPage";
+import { loadAuditLogPage as endpoint134 } from "@/lib/views/generated/w-workspaceSlug-settings-audit-page-loadAuditLogPage";
+import { loadPage as endpoint135 } from "@/lib/views/generated/w-workspaceSlug-settings-cloud-accounts-page-loadPage";
+import { loadExportPage as endpoint136 } from "@/lib/views/generated/w-workspaceSlug-settings-export-page-loadExportPage";
+import { loadImportPage as endpoint137 } from "@/lib/views/generated/w-workspaceSlug-settings-import-page-loadImportPage";
+import { loadIntegrationsPage as endpoint138 } from "@/lib/views/generated/w-workspaceSlug-settings-integrations-page-loadIntegrationsPage";
+import { loadInvitationsPage as endpoint139 } from "@/lib/views/generated/w-workspaceSlug-settings-invitations-page-loadInvitationsPage";
+import { loadLabelsPage as endpoint140 } from "@/lib/views/generated/w-workspaceSlug-settings-labels-page-loadLabelsPage";
+import { loadSettingsLayout as endpoint141 } from "@/lib/views/generated/w-workspaceSlug-settings-layout-loadSettingsLayout";
+import { loadMembersSettingsPage as endpoint142 } from "@/lib/views/generated/w-workspaceSlug-settings-members-page-loadMembersSettingsPage";
+import { loadMessagingSettingsPage as endpoint143 } from "@/lib/views/generated/w-workspaceSlug-settings-messaging-page-loadMessagingSettingsPage";
+import { loadNotificationsSettingsPage as endpoint144 } from "@/lib/views/generated/w-workspaceSlug-settings-notifications-page-loadNotificationsSettingsPage";
+import { loadTemplatesPage as endpoint145 } from "@/lib/views/generated/w-workspaceSlug-settings-onboarding-page-loadTemplatesPage";
+import { loadGeneralSettingsPage as endpoint146 } from "@/lib/views/generated/w-workspaceSlug-settings-page-loadGeneralSettingsPage";
+import { loadRetentionPage as endpoint147 } from "@/lib/views/generated/w-workspaceSlug-settings-retention-page-loadRetentionPage";
+import { loadSocialSettingsPage as endpoint148 } from "@/lib/views/generated/w-workspaceSlug-settings-social-page-loadSocialSettingsPage";
+import { loadSignaturePage as endpoint149 } from "@/lib/views/generated/w-workspaceSlug-sign-requestId-page-loadSignaturePage";
+import { loadSignaturesPage as endpoint150 } from "@/lib/views/generated/w-workspaceSlug-sign-page-loadSignaturesPage";
+import { loadSocialAccountPage as endpoint151 } from "@/lib/views/generated/w-workspaceSlug-social-accounts-accountId-page-loadSocialAccountPage";
+import { loadSocialCommentPage as endpoint152 } from "@/lib/views/generated/w-workspaceSlug-social-comments-commentId-page-loadSocialCommentPage";
+import { loadSocialCommentsPage as endpoint153 } from "@/lib/views/generated/w-workspaceSlug-social-comments-page-loadSocialCommentsPage";
+import { loadSocialPage as endpoint154 } from "@/lib/views/generated/w-workspaceSlug-social-page-loadSocialPage";
+import { loadSubscriptionsPage as endpoint155 } from "@/lib/views/generated/w-workspaceSlug-subscriptions-page-loadSubscriptionsPage";
+import { loadgenerateMetadata as endpoint156 } from "@/lib/views/generated/w-workspaceSlug-t-ref-page-loadgenerateMetadata";
+import { loadShortTaskPage as endpoint157 } from "@/lib/views/generated/w-workspaceSlug-t-ref-page-loadShortTaskPage";
+import { loadTeamPage as endpoint158 } from "@/lib/views/generated/w-workspaceSlug-teams-teamSlug-page-loadTeamPage";
+import { loadTeamsPage as endpoint159 } from "@/lib/views/generated/w-workspaceSlug-teams-page-loadTeamsPage";
+import { loadTemplatesPage as endpoint160 } from "@/lib/views/generated/w-workspaceSlug-templates-page-loadTemplatesPage";
+import { loadVaultPage as endpoint161 } from "@/lib/views/generated/w-workspaceSlug-vault-page-loadVaultPage";
+import { loadApprovalInbox as endpoint162 } from "@/lib/views/components";
+import { loadGithubPullRequests as endpoint163 } from "@/lib/views/components";
+import { updateProfile as endpoint164 } from "@/app/actions/account";
+import { changePassword as endpoint165 } from "@/app/actions/account";
+import { beginMfaEnrollment as endpoint166 } from "@/app/actions/account";
+import { confirmMfaEnrollment as endpoint167 } from "@/app/actions/account";
+import { disableMfa as endpoint168 } from "@/app/actions/account";
+import { signOutEverywhere as endpoint169 } from "@/app/actions/account";
+import { verifyAdminMfa as endpoint170 } from "@/app/actions/admin";
+import { updateInstanceSettingsAction as endpoint171 } from "@/app/actions/admin";
+import { adminCreateWorkspace as endpoint172 } from "@/app/actions/admin";
+import { adminSetUserDisabled as endpoint173 } from "@/app/actions/admin";
+import { adminSetWorkspaceArchived as endpoint174 } from "@/app/actions/admin";
+import { createApiTokenAction as endpoint175 } from "@/app/actions/apiTokens";
+import { revokeApiTokenAction as endpoint176 } from "@/app/actions/apiTokens";
+import { saveAppReviewAccountAction as endpoint177 } from "@/app/actions/appReviews";
+import { saveReviewedAppAction as endpoint178 } from "@/app/actions/appReviews";
+import { saveAppReviewSlackAction as endpoint179 } from "@/app/actions/appReviews";
+import { saveAppReviewSlackMemberAction as endpoint180 } from "@/app/actions/appReviews";
+import { testAppReviewConnectionAction as endpoint181 } from "@/app/actions/appReviews";
+import { triageAppReviewAction as endpoint182 } from "@/app/actions/appReviews";
+import { createAppReviewTaskAction as endpoint183 } from "@/app/actions/appReviews";
+import { draftAppReviewReplyAction as endpoint184 } from "@/app/actions/appReviews";
+import { sendAppReviewReplyAction as endpoint185 } from "@/app/actions/appReviews";
+import { saveInventory as endpoint186 } from "@/app/actions/assets";
+import { addMaintenance as endpoint187 } from "@/app/actions/assets";
+import { savePhysicalKey as endpoint188 } from "@/app/actions/assets";
+import { createConversationAction as endpoint189 } from "@/app/actions/assistant";
+import { renameConversationAction as endpoint190 } from "@/app/actions/assistant";
+import { deleteConversationAction as endpoint191 } from "@/app/actions/assistant";
+import { createMemoryAction as endpoint192 } from "@/app/actions/assistant";
+import { updateMemoryAction as endpoint193 } from "@/app/actions/assistant";
+import { deleteMemoryAction as endpoint194 } from "@/app/actions/assistant";
+import { createSkillAction as endpoint195 } from "@/app/actions/assistant";
+import { updateSkillAction as endpoint196 } from "@/app/actions/assistant";
+import { deleteSkillAction as endpoint197 } from "@/app/actions/assistant";
+import { installBuiltinSkillsAction as endpoint198 } from "@/app/actions/assistant";
+import { createJobAction as endpoint199 } from "@/app/actions/assistant";
+import { updateJobAction as endpoint200 } from "@/app/actions/assistant";
+import { deleteJobAction as endpoint201 } from "@/app/actions/assistant";
+import { runJobNowAction as endpoint202 } from "@/app/actions/assistant";
+import { completeSetup as endpoint203 } from "@/app/actions/auth";
+import { requestPasswordReset as endpoint204 } from "@/app/actions/auth";
+import { resetPassword as endpoint205 } from "@/app/actions/auth";
+import { acceptInviteWithNewAccount as endpoint206 } from "@/app/actions/auth";
+import { acceptInviteAsCurrentUser as endpoint207 } from "@/app/actions/auth";
+import { createBoardroomSessionAction as endpoint208 } from "@/app/actions/boardroom";
+import { deleteBoardroomSessionAction as endpoint209 } from "@/app/actions/boardroom";
+import { saveCatalogueService as endpoint210 } from "@/app/actions/catalogue";
+import { changelogAction as endpoint211 } from "@/app/actions/changelog";
+import { loadSidebarAction as endpoint212 } from "@/app/actions/chat";
+import { loadMessagesAction as endpoint213 } from "@/app/actions/chat";
+import { loadMessagesByIdsAction as endpoint214 } from "@/app/actions/chat";
+import { loadThreadAction as endpoint215 } from "@/app/actions/chat";
+import { loadPinnedAction as endpoint216 } from "@/app/actions/chat";
+import { loadChannelMembersAction as endpoint217 } from "@/app/actions/chat";
+import { browseChannelsAction as endpoint218 } from "@/app/actions/chat";
+import { searchMessagesAction as endpoint219 } from "@/app/actions/chat";
+import { createChannelAction as endpoint220 } from "@/app/actions/chat";
+import { joinChannelAction as endpoint221 } from "@/app/actions/chat";
+import { leaveChannelAction as endpoint222 } from "@/app/actions/chat";
+import { updateChannelAction as endpoint223 } from "@/app/actions/chat";
+import { setChannelArchivedAction as endpoint224 } from "@/app/actions/chat";
+import { addChannelMembersAction as endpoint225 } from "@/app/actions/chat";
+import { removeChannelMemberAction as endpoint226 } from "@/app/actions/chat";
+import { setNotifyLevelAction as endpoint227 } from "@/app/actions/chat";
+import { openDirectMessageAction as endpoint228 } from "@/app/actions/chat";
+import { postMessageAction as endpoint229 } from "@/app/actions/chat";
+import { editMessageAction as endpoint230 } from "@/app/actions/chat";
+import { deleteMessageAction as endpoint231 } from "@/app/actions/chat";
+import { toggleReactionAction as endpoint232 } from "@/app/actions/chat";
+import { setPinnedAction as endpoint233 } from "@/app/actions/chat";
+import { markReadAction as endpoint234 } from "@/app/actions/chat";
+import { sendTypingAction as endpoint235 } from "@/app/actions/chat";
+import { uploadChatAttachmentAction as endpoint236 } from "@/app/actions/chat";
+import { saveAnnouncementAction as endpoint237 } from "@/app/actions/community";
+import { pinAnnouncementAction as endpoint238 } from "@/app/actions/community";
+import { deleteAnnouncementAction as endpoint239 } from "@/app/actions/community";
+import { createFeedAction as endpoint240 } from "@/app/actions/community";
+import { revokeFeedAction as endpoint241 } from "@/app/actions/community";
+import { mutateContacts as endpoint242 } from "@/app/actions/contacts";
+import { exportContactsAction as endpoint243 } from "@/app/actions/contacts";
+import { exportOrganisationsAction as endpoint244 } from "@/app/actions/contacts";
+import { cycleAction as endpoint245 } from "@/app/actions/cycles";
+import { createDocAction as endpoint246 } from "@/app/actions/docs";
+import { saveDocAction as endpoint247 } from "@/app/actions/docs";
+import { moveDocAction as endpoint248 } from "@/app/actions/docs";
+import { setDocVisibilityAction as endpoint249 } from "@/app/actions/docs";
+import { archiveDocAction as endpoint250 } from "@/app/actions/docs";
+import { restoreDocAction as endpoint251 } from "@/app/actions/docs";
+import { duplicateDocAction as endpoint252 } from "@/app/actions/docs";
+import { restoreRevisionAction as endpoint253 } from "@/app/actions/docs";
+import { verifyDocAction as endpoint254 } from "@/app/actions/docs";
+import { requestWorkspaceExport as endpoint255 } from "@/app/actions/exports";
+import { saveRetentionPolicy as endpoint256 } from "@/app/actions/exports";
+import { saveWorkspaceShellSettings as endpoint257 } from "@/app/actions/exports";
+import { queueCsvImport as endpoint258 } from "@/app/actions/exports";
+import { renameFileAction as endpoint259 } from "@/app/actions/files";
+import { moveFilesAction as endpoint260 } from "@/app/actions/files";
+import { linkFileAction as endpoint261 } from "@/app/actions/files";
+import { deleteFileAction as endpoint262 } from "@/app/actions/files";
+import { restoreFileAction as endpoint263 } from "@/app/actions/files";
+import { restoreFileVersionAction as endpoint264 } from "@/app/actions/files";
+import { searchLinkTargetsAction as endpoint265 } from "@/app/actions/files";
+import { createLedgerEntryAction as endpoint266 } from "@/app/actions/finance";
+import { updateLedgerEntryAction as endpoint267 } from "@/app/actions/finance";
+import { setLedgerEntryVoidedAction as endpoint268 } from "@/app/actions/finance";
+import { previewLedgerImportAction as endpoint269 } from "@/app/actions/finance";
+import { commitLedgerImportAction as endpoint270 } from "@/app/actions/finance";
+import { createCategoryAction as endpoint271 } from "@/app/actions/finance";
+import { renameCategoryAction as endpoint272 } from "@/app/actions/finance";
+import { setCategoryArchivedAction as endpoint273 } from "@/app/actions/finance";
+import { createInvoiceAction as endpoint274 } from "@/app/actions/finance";
+import { updateInvoiceAction as endpoint275 } from "@/app/actions/finance";
+import { sendInvoiceAction as endpoint276 } from "@/app/actions/finance";
+import { markInvoicePaidAction as endpoint277 } from "@/app/actions/finance";
+import { voidInvoiceAction as endpoint278 } from "@/app/actions/finance";
+import { deleteInvoiceAction as endpoint279 } from "@/app/actions/finance";
+import { createIntakeForm as endpoint280 } from "@/app/actions/forms";
+import { sendInternalResponse as endpoint281 } from "@/app/actions/forms";
+import { sendPublicResponse as endpoint282 } from "@/app/actions/forms";
+import { closeIntakeForm as endpoint283 } from "@/app/actions/forms";
+import { newPublicFormLink as endpoint284 } from "@/app/actions/forms";
+import { responseToTask as endpoint285 } from "@/app/actions/forms";
+import { goalAction as endpoint286 } from "@/app/actions/goals";
+import { saveGovernance as endpoint287 } from "@/app/actions/governance";
+import { governanceOperation as endpoint288 } from "@/app/actions/governance";
+import { saveVendorBank as endpoint289 } from "@/app/actions/governance";
+import { revealVendorBank as endpoint290 } from "@/app/actions/governance";
+import { uploadGovernanceFile as endpoint291 } from "@/app/actions/governance";
+import { removeGovernanceFile as endpoint292 } from "@/app/actions/governance";
+import { ideaAction as endpoint293 } from "@/app/actions/ideas";
+import { updateIntegrations as endpoint294 } from "@/app/actions/integrations";
+import { saveLink as endpoint295 } from "@/app/actions/links";
+import { linkState as endpoint296 } from "@/app/actions/links";
+import { meetingAction as endpoint297 } from "@/app/actions/meetings";
+import { signatureAction as endpoint298 } from "@/app/actions/meetings";
+import { updateMessaging as endpoint299 } from "@/app/actions/messaging";
+import { loadNotepadAction as endpoint300 } from "@/app/actions/notepad";
+import { createNoteAction as endpoint301 } from "@/app/actions/notepad";
+import { updateNoteAction as endpoint302 } from "@/app/actions/notepad";
+import { setNoteArchivedAction as endpoint303 } from "@/app/actions/notepad";
+import { deleteNoteAction as endpoint304 } from "@/app/actions/notepad";
+import { createTodoAction as endpoint305 } from "@/app/actions/notepad";
+import { updateTodoAction as endpoint306 } from "@/app/actions/notepad";
+import { moveTodoAction as endpoint307 } from "@/app/actions/notepad";
+import { deleteTodoAction as endpoint308 } from "@/app/actions/notepad";
+import { clearDoneTodosAction as endpoint309 } from "@/app/actions/notepad";
+import { sendTodoToTasksAction as endpoint310 } from "@/app/actions/notepad";
+import { notificationStateAction as endpoint311 } from "@/app/actions/notificationPreferences";
+import { notificationSummaryAction as endpoint312 } from "@/app/actions/notificationPreferences";
+import { saveNotificationPreference as endpoint313 } from "@/app/actions/notificationPreferences";
+import { saveNotificationSettings as endpoint314 } from "@/app/actions/notificationPreferences";
+import { removeNotificationMute as endpoint315 } from "@/app/actions/notificationPreferences";
+import { muteNotificationResource as endpoint316 } from "@/app/actions/notificationPreferences";
+import { updateRouting as endpoint317 } from "@/app/actions/notificationRouting";
+import { markNotificationsReadAction as endpoint318 } from "@/app/actions/notifications";
+import { mutatePeople as endpoint319 } from "@/app/actions/people";
+import { revealEmergencyAction as endpoint320 } from "@/app/actions/people";
+import { saveOidcProvider as endpoint321 } from "@/app/actions/platformShell";
+import { pollAction as endpoint322 } from "@/app/actions/polls";
+import { createProjectAction as endpoint323 } from "@/app/actions/projects";
+import { updateProjectAction as endpoint324 } from "@/app/actions/projects";
+import { archiveProjectAction as endpoint325 } from "@/app/actions/projects";
+import { restoreProjectAction as endpoint326 } from "@/app/actions/projects";
+import { addColumnAction as endpoint327 } from "@/app/actions/projects";
+import { updateColumnAction as endpoint328 } from "@/app/actions/projects";
+import { reorderColumnsAction as endpoint329 } from "@/app/actions/projects";
+import { deleteColumnAction as endpoint330 } from "@/app/actions/projects";
+import { submitMoneyRequest as endpoint331 } from "@/app/actions/requests";
+import { decideRequest as endpoint332 } from "@/app/actions/requests";
+import { finishMoneyRequest as endpoint333 } from "@/app/actions/requests";
+import { saveBudget as endpoint334 } from "@/app/actions/requests";
+import { saveApprovalPolicy as endpoint335 } from "@/app/actions/requests";
+import { changeMoneyRequest as endpoint336 } from "@/app/actions/requests";
+import { reviseMoneyRequest as endpoint337 } from "@/app/actions/requests";
+import { submitGenericRequest as endpoint338 } from "@/app/actions/requests";
+import { addApprovalComment as endpoint339 } from "@/app/actions/requests";
+import { mutateRota as endpoint340 } from "@/app/actions/rota";
+import { searchAction as endpoint341 } from "@/app/actions/search";
+import { loadWorkspaceTools as endpoint342 } from "@/app/actions/search";
+import { updateSeo as endpoint343 } from "@/app/actions/seo";
+import { saveMonitorAction as endpoint344 } from "@/app/actions/services";
+import { serviceAction as endpoint345 } from "@/app/actions/services";
+import { commentAction as endpoint346 } from "@/app/actions/social";
+import { connectAction as endpoint347 } from "@/app/actions/social";
+import { selectAccountsAction as endpoint348 } from "@/app/actions/social";
+import { accountAction as endpoint349 } from "@/app/actions/social";
+import { reconcileCommentAction as endpoint350 } from "@/app/actions/social";
+import { saveSubscriptionRecord as endpoint351 } from "@/app/actions/subscriptions";
+import { loadBoardAction as endpoint352 } from "@/app/actions/tasks";
+import { loadTaskAction as endpoint353 } from "@/app/actions/tasks";
+import { loadMyTasksAction as endpoint354 } from "@/app/actions/tasks";
+import { createTaskAction as endpoint355 } from "@/app/actions/tasks";
+import { updateTaskAction as endpoint356 } from "@/app/actions/tasks";
+import { moveTaskAction as endpoint357 } from "@/app/actions/tasks";
+import { setTaskCompletedAction as endpoint358 } from "@/app/actions/tasks";
+import { setAssigneesAction as endpoint359 } from "@/app/actions/tasks";
+import { setLabelsAction as endpoint360 } from "@/app/actions/tasks";
+import { setTaskArchivedAction as endpoint361 } from "@/app/actions/tasks";
+import { addCommentAction as endpoint362 } from "@/app/actions/tasks";
+import { editCommentAction as endpoint363 } from "@/app/actions/tasks";
+import { deleteCommentAction as endpoint364 } from "@/app/actions/tasks";
+import { addDependencyAction as endpoint365 } from "@/app/actions/tasks";
+import { removeDependencyAction as endpoint366 } from "@/app/actions/tasks";
+import { setRecurrenceAction as endpoint367 } from "@/app/actions/tasks";
+import { stopRecurrenceAction as endpoint368 } from "@/app/actions/tasks";
+import { skipNextOccurrenceAction as endpoint369 } from "@/app/actions/tasks";
+import { uploadTaskAttachmentAction as endpoint370 } from "@/app/actions/tasks";
+import { removeTaskAttachmentAction as endpoint371 } from "@/app/actions/tasks";
+import { saveTeamAction as endpoint372 } from "@/app/actions/teams";
+import { archiveTeamAction as endpoint373 } from "@/app/actions/teams";
+import { addTeamMemberAction as endpoint374 } from "@/app/actions/teams";
+import { removeTeamMemberAction as endpoint375 } from "@/app/actions/teams";
+import { setTeamMemberRoleAction as endpoint376 } from "@/app/actions/teams";
+import { joinTeamAction as endpoint377 } from "@/app/actions/teams";
+import { templateAction as endpoint378 } from "@/app/actions/templates";
+import { saveVaultItem as endpoint379 } from "@/app/actions/vault";
+import { saveVaultCollection as endpoint380 } from "@/app/actions/vault";
+import { saveVaultGrant as endpoint381 } from "@/app/actions/vault";
+import { removeVaultGrant as endpoint382 } from "@/app/actions/vault";
+import { askVaultAccess as endpoint383 } from "@/app/actions/vault";
+import { stepUpVault as endpoint384 } from "@/app/actions/vault";
+import { archiveVaultItem as endpoint385 } from "@/app/actions/vault";
+import { saveView as endpoint386 } from "@/app/actions/views";
+import { deleteView as endpoint387 } from "@/app/actions/views";
+import { updateWorkspaceSettings as endpoint388 } from "@/app/actions/workspace-settings";
+import { createInvitationAction as endpoint389 } from "@/app/actions/workspace-settings";
+import { resendInvitationAction as endpoint390 } from "@/app/actions/workspace-settings";
+import { revokeInvitationAction as endpoint391 } from "@/app/actions/workspace-settings";
+import { changeMemberRoleAction as endpoint392 } from "@/app/actions/workspace-settings";
+import { setMemberStatusAction as endpoint393 } from "@/app/actions/workspace-settings";
+import { removeMemberAction as endpoint394 } from "@/app/actions/workspace-settings";
+import { leaveWorkspaceAction as endpoint395 } from "@/app/actions/workspace-settings";
+import { createLabelAction as endpoint396 } from "@/app/actions/workspace-settings";
+import { updateLabelAction as endpoint397 } from "@/app/actions/workspace-settings";
+import { deleteLabelAction as endpoint398 } from "@/app/actions/workspace-settings";
 export const viewReaders = Object.freeze({
 "a-tag-page:loadAssetLabel": endpoint0,
 "account-page:loadAccountPage": endpoint1,
@@ -471,316 +480,325 @@ export const viewReaders = Object.freeze({
 "w-workspaceSlug-forms-page:loadFormsPage": endpoint77,
 "w-workspaceSlug-goals-goalId-page:loadGoalPage": endpoint78,
 "w-workspaceSlug-goals-page:loadGoalsPage": endpoint79,
-"w-workspaceSlug-ideas-ideaId-page:loadIdeaPage": endpoint80,
-"w-workspaceSlug-ideas-page:loadIdeasPage": endpoint81,
-"w-workspaceSlug-layout:loadgenerateMetadata": endpoint82,
-"w-workspaceSlug-layout:loadWorkspaceLayout": endpoint83,
-"w-workspaceSlug-links-page:loadLinksPage": endpoint84,
-"w-workspaceSlug-meetings-meetingId-page:loadMeetingPage": endpoint85,
-"w-workspaceSlug-meetings-decisions-page:loadDecisionsPage": endpoint86,
-"w-workspaceSlug-meetings-page:loadMeetingsPage": endpoint87,
-"w-workspaceSlug-members-userId-edit-page:loadEditProfilePage": endpoint88,
-"w-workspaceSlug-members-userId-page:loadMemberPage": endpoint89,
-"w-workspaceSlug-members-availability-page:loadAvailabilityPage": endpoint90,
-"w-workspaceSlug-members-page:loadMembersPage": endpoint91,
-"w-workspaceSlug-my-tasks-page:loadMyTasksPage": endpoint92,
-"w-workspaceSlug-notepad-page:loadNotepadPage": endpoint93,
-"w-workspaceSlug-notifications-accounts-page:loadNotificationAccountsPage": endpoint94,
-"w-workspaceSlug-notifications-page:loadNotificationsPage": endpoint95,
-"w-workspaceSlug-notifications-preferences-page:loadPreferencesPage": endpoint96,
-"w-workspaceSlug-onboarding-page:loadOnboardingPage": endpoint97,
-"w-workspaceSlug-organisations-page:loadPage": endpoint98,
-"w-workspaceSlug-page:loadWorkspaceHome": endpoint99,
-"w-workspaceSlug-pipeline-page:loadPage": endpoint100,
-"w-workspaceSlug-polls-pollId-page:loadPollPage": endpoint101,
-"w-workspaceSlug-polls-page:loadPollsPage": endpoint102,
-"w-workspaceSlug-projects-key-project-layout:loadProjectLayout": endpoint103,
-"w-workspaceSlug-projects-key-project-overview-page:loadProjectOverviewPage": endpoint104,
-"w-workspaceSlug-projects-key-project-page:loadgenerateMetadata": endpoint105,
-"w-workspaceSlug-projects-key-project-page:loadProjectBoardPage": endpoint106,
-"w-workspaceSlug-projects-key-project-settings-page:loadProjectSettingsPage": endpoint107,
-"w-workspaceSlug-projects-key-number-page:loadgenerateMetadata": endpoint108,
-"w-workspaceSlug-projects-key-number-page:loadTaskPage": endpoint109,
-"w-workspaceSlug-projects-key-tasks-number-page:loadTaskAliasPage": endpoint110,
-"w-workspaceSlug-projects-page:loadProjectsPage": endpoint111,
-"w-workspaceSlug-requests-approvals-page:loadApprovalsPage": endpoint112,
-"w-workspaceSlug-requests-page:loadRequestsPage": endpoint113,
-"w-workspaceSlug-rota-certifications-page:loadCertificationsPage": endpoint114,
-"w-workspaceSlug-rota-page:loadRotaPage": endpoint115,
-"w-workspaceSlug-search-page:loadSearchPage": endpoint116,
-"w-workspaceSlug-seo-page:loadSeoPage": endpoint117,
-"w-workspaceSlug-services-cloud-page:loadPage": endpoint118,
-"w-workspaceSlug-services-costs-page:loadPage": endpoint119,
-"w-workspaceSlug-services-incidents-number-page:loadPage": endpoint120,
-"w-workspaceSlug-services-incidents-page:loadPage": endpoint121,
-"w-workspaceSlug-services-maintenance-page:loadPage": endpoint122,
-"w-workspaceSlug-services-monitors-id-edit-page:loadPage": endpoint123,
-"w-workspaceSlug-services-monitors-id-page:loadPage": endpoint124,
-"w-workspaceSlug-services-monitors-new-page:loadPage": endpoint125,
-"w-workspaceSlug-services-on-call-page:loadPage": endpoint126,
-"w-workspaceSlug-services-page:loadPage": endpoint127,
-"w-workspaceSlug-services-settings-page:loadPage": endpoint128,
-"w-workspaceSlug-services-status-page-page:loadPage": endpoint129,
-"w-workspaceSlug-settings-api-tokens-page:loadApiTokensPage": endpoint130,
-"w-workspaceSlug-settings-audit-page:loadAuditLogPage": endpoint131,
-"w-workspaceSlug-settings-cloud-accounts-page:loadPage": endpoint132,
-"w-workspaceSlug-settings-export-page:loadExportPage": endpoint133,
-"w-workspaceSlug-settings-import-page:loadImportPage": endpoint134,
-"w-workspaceSlug-settings-integrations-page:loadIntegrationsPage": endpoint135,
-"w-workspaceSlug-settings-invitations-page:loadInvitationsPage": endpoint136,
-"w-workspaceSlug-settings-labels-page:loadLabelsPage": endpoint137,
-"w-workspaceSlug-settings-layout:loadSettingsLayout": endpoint138,
-"w-workspaceSlug-settings-members-page:loadMembersSettingsPage": endpoint139,
-"w-workspaceSlug-settings-messaging-page:loadMessagingSettingsPage": endpoint140,
-"w-workspaceSlug-settings-notifications-page:loadNotificationsSettingsPage": endpoint141,
-"w-workspaceSlug-settings-onboarding-page:loadTemplatesPage": endpoint142,
-"w-workspaceSlug-settings-page:loadGeneralSettingsPage": endpoint143,
-"w-workspaceSlug-settings-retention-page:loadRetentionPage": endpoint144,
-"w-workspaceSlug-settings-social-page:loadSocialSettingsPage": endpoint145,
-"w-workspaceSlug-sign-requestId-page:loadSignaturePage": endpoint146,
-"w-workspaceSlug-sign-page:loadSignaturesPage": endpoint147,
-"w-workspaceSlug-social-accounts-accountId-page:loadSocialAccountPage": endpoint148,
-"w-workspaceSlug-social-comments-commentId-page:loadSocialCommentPage": endpoint149,
-"w-workspaceSlug-social-comments-page:loadSocialCommentsPage": endpoint150,
-"w-workspaceSlug-social-page:loadSocialPage": endpoint151,
-"w-workspaceSlug-subscriptions-page:loadSubscriptionsPage": endpoint152,
-"w-workspaceSlug-t-ref-page:loadgenerateMetadata": endpoint153,
-"w-workspaceSlug-t-ref-page:loadShortTaskPage": endpoint154,
-"w-workspaceSlug-teams-teamSlug-page:loadTeamPage": endpoint155,
-"w-workspaceSlug-teams-page:loadTeamsPage": endpoint156,
-"w-workspaceSlug-templates-page:loadTemplatesPage": endpoint157,
-"w-workspaceSlug-vault-page:loadVaultPage": endpoint158,
-"components:loadApprovalInbox": endpoint159,
-"components:loadGithubPullRequests": endpoint160,
+"w-workspaceSlug-governance-board-page:loadPage": endpoint80,
+"w-workspaceSlug-governance-page:loadPage": endpoint81,
+"w-workspaceSlug-governance-vendors-page:loadPage": endpoint82,
+"w-workspaceSlug-ideas-ideaId-page:loadIdeaPage": endpoint83,
+"w-workspaceSlug-ideas-page:loadIdeasPage": endpoint84,
+"w-workspaceSlug-layout:loadgenerateMetadata": endpoint85,
+"w-workspaceSlug-layout:loadWorkspaceLayout": endpoint86,
+"w-workspaceSlug-links-page:loadLinksPage": endpoint87,
+"w-workspaceSlug-meetings-meetingId-page:loadMeetingPage": endpoint88,
+"w-workspaceSlug-meetings-decisions-page:loadDecisionsPage": endpoint89,
+"w-workspaceSlug-meetings-page:loadMeetingsPage": endpoint90,
+"w-workspaceSlug-members-userId-edit-page:loadEditProfilePage": endpoint91,
+"w-workspaceSlug-members-userId-page:loadMemberPage": endpoint92,
+"w-workspaceSlug-members-availability-page:loadAvailabilityPage": endpoint93,
+"w-workspaceSlug-members-page:loadMembersPage": endpoint94,
+"w-workspaceSlug-my-tasks-page:loadMyTasksPage": endpoint95,
+"w-workspaceSlug-notepad-page:loadNotepadPage": endpoint96,
+"w-workspaceSlug-notifications-accounts-page:loadNotificationAccountsPage": endpoint97,
+"w-workspaceSlug-notifications-page:loadNotificationsPage": endpoint98,
+"w-workspaceSlug-notifications-preferences-page:loadPreferencesPage": endpoint99,
+"w-workspaceSlug-onboarding-page:loadOnboardingPage": endpoint100,
+"w-workspaceSlug-organisations-page:loadPage": endpoint101,
+"w-workspaceSlug-page:loadWorkspaceHome": endpoint102,
+"w-workspaceSlug-pipeline-page:loadPage": endpoint103,
+"w-workspaceSlug-polls-pollId-page:loadPollPage": endpoint104,
+"w-workspaceSlug-polls-page:loadPollsPage": endpoint105,
+"w-workspaceSlug-projects-key-project-layout:loadProjectLayout": endpoint106,
+"w-workspaceSlug-projects-key-project-overview-page:loadProjectOverviewPage": endpoint107,
+"w-workspaceSlug-projects-key-project-page:loadgenerateMetadata": endpoint108,
+"w-workspaceSlug-projects-key-project-page:loadProjectBoardPage": endpoint109,
+"w-workspaceSlug-projects-key-project-settings-page:loadProjectSettingsPage": endpoint110,
+"w-workspaceSlug-projects-key-number-page:loadgenerateMetadata": endpoint111,
+"w-workspaceSlug-projects-key-number-page:loadTaskPage": endpoint112,
+"w-workspaceSlug-projects-key-tasks-number-page:loadTaskAliasPage": endpoint113,
+"w-workspaceSlug-projects-page:loadProjectsPage": endpoint114,
+"w-workspaceSlug-requests-approvals-page:loadApprovalsPage": endpoint115,
+"w-workspaceSlug-requests-page:loadRequestsPage": endpoint116,
+"w-workspaceSlug-rota-certifications-page:loadCertificationsPage": endpoint117,
+"w-workspaceSlug-rota-page:loadRotaPage": endpoint118,
+"w-workspaceSlug-search-page:loadSearchPage": endpoint119,
+"w-workspaceSlug-seo-page:loadSeoPage": endpoint120,
+"w-workspaceSlug-services-cloud-page:loadPage": endpoint121,
+"w-workspaceSlug-services-costs-page:loadPage": endpoint122,
+"w-workspaceSlug-services-incidents-number-page:loadPage": endpoint123,
+"w-workspaceSlug-services-incidents-page:loadPage": endpoint124,
+"w-workspaceSlug-services-maintenance-page:loadPage": endpoint125,
+"w-workspaceSlug-services-monitors-id-edit-page:loadPage": endpoint126,
+"w-workspaceSlug-services-monitors-id-page:loadPage": endpoint127,
+"w-workspaceSlug-services-monitors-new-page:loadPage": endpoint128,
+"w-workspaceSlug-services-on-call-page:loadPage": endpoint129,
+"w-workspaceSlug-services-page:loadPage": endpoint130,
+"w-workspaceSlug-services-settings-page:loadPage": endpoint131,
+"w-workspaceSlug-services-status-page-page:loadPage": endpoint132,
+"w-workspaceSlug-settings-api-tokens-page:loadApiTokensPage": endpoint133,
+"w-workspaceSlug-settings-audit-page:loadAuditLogPage": endpoint134,
+"w-workspaceSlug-settings-cloud-accounts-page:loadPage": endpoint135,
+"w-workspaceSlug-settings-export-page:loadExportPage": endpoint136,
+"w-workspaceSlug-settings-import-page:loadImportPage": endpoint137,
+"w-workspaceSlug-settings-integrations-page:loadIntegrationsPage": endpoint138,
+"w-workspaceSlug-settings-invitations-page:loadInvitationsPage": endpoint139,
+"w-workspaceSlug-settings-labels-page:loadLabelsPage": endpoint140,
+"w-workspaceSlug-settings-layout:loadSettingsLayout": endpoint141,
+"w-workspaceSlug-settings-members-page:loadMembersSettingsPage": endpoint142,
+"w-workspaceSlug-settings-messaging-page:loadMessagingSettingsPage": endpoint143,
+"w-workspaceSlug-settings-notifications-page:loadNotificationsSettingsPage": endpoint144,
+"w-workspaceSlug-settings-onboarding-page:loadTemplatesPage": endpoint145,
+"w-workspaceSlug-settings-page:loadGeneralSettingsPage": endpoint146,
+"w-workspaceSlug-settings-retention-page:loadRetentionPage": endpoint147,
+"w-workspaceSlug-settings-social-page:loadSocialSettingsPage": endpoint148,
+"w-workspaceSlug-sign-requestId-page:loadSignaturePage": endpoint149,
+"w-workspaceSlug-sign-page:loadSignaturesPage": endpoint150,
+"w-workspaceSlug-social-accounts-accountId-page:loadSocialAccountPage": endpoint151,
+"w-workspaceSlug-social-comments-commentId-page:loadSocialCommentPage": endpoint152,
+"w-workspaceSlug-social-comments-page:loadSocialCommentsPage": endpoint153,
+"w-workspaceSlug-social-page:loadSocialPage": endpoint154,
+"w-workspaceSlug-subscriptions-page:loadSubscriptionsPage": endpoint155,
+"w-workspaceSlug-t-ref-page:loadgenerateMetadata": endpoint156,
+"w-workspaceSlug-t-ref-page:loadShortTaskPage": endpoint157,
+"w-workspaceSlug-teams-teamSlug-page:loadTeamPage": endpoint158,
+"w-workspaceSlug-teams-page:loadTeamsPage": endpoint159,
+"w-workspaceSlug-templates-page:loadTemplatesPage": endpoint160,
+"w-workspaceSlug-vault-page:loadVaultPage": endpoint161,
+"components:loadApprovalInbox": endpoint162,
+"components:loadGithubPullRequests": endpoint163,
 });
 export const backendActions = Object.freeze({
-"account:updateProfile": endpoint161,
-"account:changePassword": endpoint162,
-"account:beginMfaEnrollment": endpoint163,
-"account:confirmMfaEnrollment": endpoint164,
-"account:disableMfa": endpoint165,
-"account:signOutEverywhere": endpoint166,
-"admin:verifyAdminMfa": endpoint167,
-"admin:updateInstanceSettingsAction": endpoint168,
-"admin:adminCreateWorkspace": endpoint169,
-"admin:adminSetUserDisabled": endpoint170,
-"admin:adminSetWorkspaceArchived": endpoint171,
-"apiTokens:createApiTokenAction": endpoint172,
-"apiTokens:revokeApiTokenAction": endpoint173,
-"appReviews:saveAppReviewAccountAction": endpoint174,
-"appReviews:saveReviewedAppAction": endpoint175,
-"appReviews:saveAppReviewSlackAction": endpoint176,
-"appReviews:saveAppReviewSlackMemberAction": endpoint177,
-"appReviews:testAppReviewConnectionAction": endpoint178,
-"appReviews:triageAppReviewAction": endpoint179,
-"appReviews:createAppReviewTaskAction": endpoint180,
-"appReviews:draftAppReviewReplyAction": endpoint181,
-"appReviews:sendAppReviewReplyAction": endpoint182,
-"assets:saveInventory": endpoint183,
-"assets:addMaintenance": endpoint184,
-"assets:savePhysicalKey": endpoint185,
-"assistant:createConversationAction": endpoint186,
-"assistant:renameConversationAction": endpoint187,
-"assistant:deleteConversationAction": endpoint188,
-"assistant:createMemoryAction": endpoint189,
-"assistant:updateMemoryAction": endpoint190,
-"assistant:deleteMemoryAction": endpoint191,
-"assistant:createSkillAction": endpoint192,
-"assistant:updateSkillAction": endpoint193,
-"assistant:deleteSkillAction": endpoint194,
-"assistant:installBuiltinSkillsAction": endpoint195,
-"assistant:createJobAction": endpoint196,
-"assistant:updateJobAction": endpoint197,
-"assistant:deleteJobAction": endpoint198,
-"assistant:runJobNowAction": endpoint199,
-"auth:completeSetup": endpoint200,
-"auth:requestPasswordReset": endpoint201,
-"auth:resetPassword": endpoint202,
-"auth:acceptInviteWithNewAccount": endpoint203,
-"auth:acceptInviteAsCurrentUser": endpoint204,
-"boardroom:createBoardroomSessionAction": endpoint205,
-"boardroom:deleteBoardroomSessionAction": endpoint206,
-"catalogue:saveCatalogueService": endpoint207,
-"changelog:changelogAction": endpoint208,
-"chat:loadSidebarAction": endpoint209,
-"chat:loadMessagesAction": endpoint210,
-"chat:loadMessagesByIdsAction": endpoint211,
-"chat:loadThreadAction": endpoint212,
-"chat:loadPinnedAction": endpoint213,
-"chat:loadChannelMembersAction": endpoint214,
-"chat:browseChannelsAction": endpoint215,
-"chat:searchMessagesAction": endpoint216,
-"chat:createChannelAction": endpoint217,
-"chat:joinChannelAction": endpoint218,
-"chat:leaveChannelAction": endpoint219,
-"chat:updateChannelAction": endpoint220,
-"chat:setChannelArchivedAction": endpoint221,
-"chat:addChannelMembersAction": endpoint222,
-"chat:removeChannelMemberAction": endpoint223,
-"chat:setNotifyLevelAction": endpoint224,
-"chat:openDirectMessageAction": endpoint225,
-"chat:postMessageAction": endpoint226,
-"chat:editMessageAction": endpoint227,
-"chat:deleteMessageAction": endpoint228,
-"chat:toggleReactionAction": endpoint229,
-"chat:setPinnedAction": endpoint230,
-"chat:markReadAction": endpoint231,
-"chat:sendTypingAction": endpoint232,
-"chat:uploadChatAttachmentAction": endpoint233,
-"community:saveAnnouncementAction": endpoint234,
-"community:pinAnnouncementAction": endpoint235,
-"community:deleteAnnouncementAction": endpoint236,
-"community:createFeedAction": endpoint237,
-"community:revokeFeedAction": endpoint238,
-"contacts:mutateContacts": endpoint239,
-"contacts:exportContactsAction": endpoint240,
-"contacts:exportOrganisationsAction": endpoint241,
-"cycles:cycleAction": endpoint242,
-"docs:createDocAction": endpoint243,
-"docs:saveDocAction": endpoint244,
-"docs:moveDocAction": endpoint245,
-"docs:setDocVisibilityAction": endpoint246,
-"docs:archiveDocAction": endpoint247,
-"docs:restoreDocAction": endpoint248,
-"docs:duplicateDocAction": endpoint249,
-"docs:restoreRevisionAction": endpoint250,
-"docs:verifyDocAction": endpoint251,
-"exports:requestWorkspaceExport": endpoint252,
-"exports:saveRetentionPolicy": endpoint253,
-"exports:saveWorkspaceShellSettings": endpoint254,
-"exports:queueCsvImport": endpoint255,
-"files:renameFileAction": endpoint256,
-"files:moveFilesAction": endpoint257,
-"files:linkFileAction": endpoint258,
-"files:deleteFileAction": endpoint259,
-"files:restoreFileAction": endpoint260,
-"files:restoreFileVersionAction": endpoint261,
-"files:searchLinkTargetsAction": endpoint262,
-"finance:createLedgerEntryAction": endpoint263,
-"finance:updateLedgerEntryAction": endpoint264,
-"finance:setLedgerEntryVoidedAction": endpoint265,
-"finance:previewLedgerImportAction": endpoint266,
-"finance:commitLedgerImportAction": endpoint267,
-"finance:createCategoryAction": endpoint268,
-"finance:renameCategoryAction": endpoint269,
-"finance:setCategoryArchivedAction": endpoint270,
-"finance:createInvoiceAction": endpoint271,
-"finance:updateInvoiceAction": endpoint272,
-"finance:sendInvoiceAction": endpoint273,
-"finance:markInvoicePaidAction": endpoint274,
-"finance:voidInvoiceAction": endpoint275,
-"finance:deleteInvoiceAction": endpoint276,
-"forms:createIntakeForm": endpoint277,
-"forms:sendInternalResponse": endpoint278,
-"forms:sendPublicResponse": endpoint279,
-"forms:closeIntakeForm": endpoint280,
-"forms:newPublicFormLink": endpoint281,
-"forms:responseToTask": endpoint282,
-"goals:goalAction": endpoint283,
-"ideas:ideaAction": endpoint284,
-"integrations:updateIntegrations": endpoint285,
-"links:saveLink": endpoint286,
-"links:linkState": endpoint287,
-"meetings:meetingAction": endpoint288,
-"meetings:signatureAction": endpoint289,
-"messaging:updateMessaging": endpoint290,
-"notepad:loadNotepadAction": endpoint291,
-"notepad:createNoteAction": endpoint292,
-"notepad:updateNoteAction": endpoint293,
-"notepad:setNoteArchivedAction": endpoint294,
-"notepad:deleteNoteAction": endpoint295,
-"notepad:createTodoAction": endpoint296,
-"notepad:updateTodoAction": endpoint297,
-"notepad:moveTodoAction": endpoint298,
-"notepad:deleteTodoAction": endpoint299,
-"notepad:clearDoneTodosAction": endpoint300,
-"notepad:sendTodoToTasksAction": endpoint301,
-"notificationPreferences:notificationStateAction": endpoint302,
-"notificationPreferences:notificationSummaryAction": endpoint303,
-"notificationPreferences:saveNotificationPreference": endpoint304,
-"notificationPreferences:saveNotificationSettings": endpoint305,
-"notificationPreferences:removeNotificationMute": endpoint306,
-"notificationPreferences:muteNotificationResource": endpoint307,
-"notificationRouting:updateRouting": endpoint308,
-"notifications:markNotificationsReadAction": endpoint309,
-"people:mutatePeople": endpoint310,
-"people:revealEmergencyAction": endpoint311,
-"platformShell:saveOidcProvider": endpoint312,
-"polls:pollAction": endpoint313,
-"projects:createProjectAction": endpoint314,
-"projects:updateProjectAction": endpoint315,
-"projects:archiveProjectAction": endpoint316,
-"projects:restoreProjectAction": endpoint317,
-"projects:addColumnAction": endpoint318,
-"projects:updateColumnAction": endpoint319,
-"projects:reorderColumnsAction": endpoint320,
-"projects:deleteColumnAction": endpoint321,
-"requests:submitMoneyRequest": endpoint322,
-"requests:decideRequest": endpoint323,
-"requests:finishMoneyRequest": endpoint324,
-"requests:saveBudget": endpoint325,
-"requests:saveApprovalPolicy": endpoint326,
-"requests:changeMoneyRequest": endpoint327,
-"requests:reviseMoneyRequest": endpoint328,
-"requests:submitGenericRequest": endpoint329,
-"requests:addApprovalComment": endpoint330,
-"rota:mutateRota": endpoint331,
-"search:searchAction": endpoint332,
-"search:loadWorkspaceTools": endpoint333,
-"seo:updateSeo": endpoint334,
-"services:saveMonitorAction": endpoint335,
-"services:serviceAction": endpoint336,
-"social:commentAction": endpoint337,
-"social:connectAction": endpoint338,
-"social:selectAccountsAction": endpoint339,
-"social:accountAction": endpoint340,
-"social:reconcileCommentAction": endpoint341,
-"subscriptions:saveSubscriptionRecord": endpoint342,
-"tasks:loadBoardAction": endpoint343,
-"tasks:loadTaskAction": endpoint344,
-"tasks:loadMyTasksAction": endpoint345,
-"tasks:createTaskAction": endpoint346,
-"tasks:updateTaskAction": endpoint347,
-"tasks:moveTaskAction": endpoint348,
-"tasks:setTaskCompletedAction": endpoint349,
-"tasks:setAssigneesAction": endpoint350,
-"tasks:setLabelsAction": endpoint351,
-"tasks:setTaskArchivedAction": endpoint352,
-"tasks:addCommentAction": endpoint353,
-"tasks:editCommentAction": endpoint354,
-"tasks:deleteCommentAction": endpoint355,
-"tasks:addDependencyAction": endpoint356,
-"tasks:removeDependencyAction": endpoint357,
-"tasks:setRecurrenceAction": endpoint358,
-"tasks:stopRecurrenceAction": endpoint359,
-"tasks:skipNextOccurrenceAction": endpoint360,
-"tasks:uploadTaskAttachmentAction": endpoint361,
-"tasks:removeTaskAttachmentAction": endpoint362,
-"teams:saveTeamAction": endpoint363,
-"teams:archiveTeamAction": endpoint364,
-"teams:addTeamMemberAction": endpoint365,
-"teams:removeTeamMemberAction": endpoint366,
-"teams:setTeamMemberRoleAction": endpoint367,
-"teams:joinTeamAction": endpoint368,
-"templates:templateAction": endpoint369,
-"vault:saveVaultItem": endpoint370,
-"vault:saveVaultCollection": endpoint371,
-"vault:saveVaultGrant": endpoint372,
-"vault:removeVaultGrant": endpoint373,
-"vault:askVaultAccess": endpoint374,
-"vault:stepUpVault": endpoint375,
-"vault:archiveVaultItem": endpoint376,
-"views:saveView": endpoint377,
-"views:deleteView": endpoint378,
-"workspace-settings:updateWorkspaceSettings": endpoint379,
-"workspace-settings:createInvitationAction": endpoint380,
-"workspace-settings:resendInvitationAction": endpoint381,
-"workspace-settings:revokeInvitationAction": endpoint382,
-"workspace-settings:changeMemberRoleAction": endpoint383,
-"workspace-settings:setMemberStatusAction": endpoint384,
-"workspace-settings:removeMemberAction": endpoint385,
-"workspace-settings:leaveWorkspaceAction": endpoint386,
-"workspace-settings:createLabelAction": endpoint387,
-"workspace-settings:updateLabelAction": endpoint388,
-"workspace-settings:deleteLabelAction": endpoint389,
+"account:updateProfile": endpoint164,
+"account:changePassword": endpoint165,
+"account:beginMfaEnrollment": endpoint166,
+"account:confirmMfaEnrollment": endpoint167,
+"account:disableMfa": endpoint168,
+"account:signOutEverywhere": endpoint169,
+"admin:verifyAdminMfa": endpoint170,
+"admin:updateInstanceSettingsAction": endpoint171,
+"admin:adminCreateWorkspace": endpoint172,
+"admin:adminSetUserDisabled": endpoint173,
+"admin:adminSetWorkspaceArchived": endpoint174,
+"apiTokens:createApiTokenAction": endpoint175,
+"apiTokens:revokeApiTokenAction": endpoint176,
+"appReviews:saveAppReviewAccountAction": endpoint177,
+"appReviews:saveReviewedAppAction": endpoint178,
+"appReviews:saveAppReviewSlackAction": endpoint179,
+"appReviews:saveAppReviewSlackMemberAction": endpoint180,
+"appReviews:testAppReviewConnectionAction": endpoint181,
+"appReviews:triageAppReviewAction": endpoint182,
+"appReviews:createAppReviewTaskAction": endpoint183,
+"appReviews:draftAppReviewReplyAction": endpoint184,
+"appReviews:sendAppReviewReplyAction": endpoint185,
+"assets:saveInventory": endpoint186,
+"assets:addMaintenance": endpoint187,
+"assets:savePhysicalKey": endpoint188,
+"assistant:createConversationAction": endpoint189,
+"assistant:renameConversationAction": endpoint190,
+"assistant:deleteConversationAction": endpoint191,
+"assistant:createMemoryAction": endpoint192,
+"assistant:updateMemoryAction": endpoint193,
+"assistant:deleteMemoryAction": endpoint194,
+"assistant:createSkillAction": endpoint195,
+"assistant:updateSkillAction": endpoint196,
+"assistant:deleteSkillAction": endpoint197,
+"assistant:installBuiltinSkillsAction": endpoint198,
+"assistant:createJobAction": endpoint199,
+"assistant:updateJobAction": endpoint200,
+"assistant:deleteJobAction": endpoint201,
+"assistant:runJobNowAction": endpoint202,
+"auth:completeSetup": endpoint203,
+"auth:requestPasswordReset": endpoint204,
+"auth:resetPassword": endpoint205,
+"auth:acceptInviteWithNewAccount": endpoint206,
+"auth:acceptInviteAsCurrentUser": endpoint207,
+"boardroom:createBoardroomSessionAction": endpoint208,
+"boardroom:deleteBoardroomSessionAction": endpoint209,
+"catalogue:saveCatalogueService": endpoint210,
+"changelog:changelogAction": endpoint211,
+"chat:loadSidebarAction": endpoint212,
+"chat:loadMessagesAction": endpoint213,
+"chat:loadMessagesByIdsAction": endpoint214,
+"chat:loadThreadAction": endpoint215,
+"chat:loadPinnedAction": endpoint216,
+"chat:loadChannelMembersAction": endpoint217,
+"chat:browseChannelsAction": endpoint218,
+"chat:searchMessagesAction": endpoint219,
+"chat:createChannelAction": endpoint220,
+"chat:joinChannelAction": endpoint221,
+"chat:leaveChannelAction": endpoint222,
+"chat:updateChannelAction": endpoint223,
+"chat:setChannelArchivedAction": endpoint224,
+"chat:addChannelMembersAction": endpoint225,
+"chat:removeChannelMemberAction": endpoint226,
+"chat:setNotifyLevelAction": endpoint227,
+"chat:openDirectMessageAction": endpoint228,
+"chat:postMessageAction": endpoint229,
+"chat:editMessageAction": endpoint230,
+"chat:deleteMessageAction": endpoint231,
+"chat:toggleReactionAction": endpoint232,
+"chat:setPinnedAction": endpoint233,
+"chat:markReadAction": endpoint234,
+"chat:sendTypingAction": endpoint235,
+"chat:uploadChatAttachmentAction": endpoint236,
+"community:saveAnnouncementAction": endpoint237,
+"community:pinAnnouncementAction": endpoint238,
+"community:deleteAnnouncementAction": endpoint239,
+"community:createFeedAction": endpoint240,
+"community:revokeFeedAction": endpoint241,
+"contacts:mutateContacts": endpoint242,
+"contacts:exportContactsAction": endpoint243,
+"contacts:exportOrganisationsAction": endpoint244,
+"cycles:cycleAction": endpoint245,
+"docs:createDocAction": endpoint246,
+"docs:saveDocAction": endpoint247,
+"docs:moveDocAction": endpoint248,
+"docs:setDocVisibilityAction": endpoint249,
+"docs:archiveDocAction": endpoint250,
+"docs:restoreDocAction": endpoint251,
+"docs:duplicateDocAction": endpoint252,
+"docs:restoreRevisionAction": endpoint253,
+"docs:verifyDocAction": endpoint254,
+"exports:requestWorkspaceExport": endpoint255,
+"exports:saveRetentionPolicy": endpoint256,
+"exports:saveWorkspaceShellSettings": endpoint257,
+"exports:queueCsvImport": endpoint258,
+"files:renameFileAction": endpoint259,
+"files:moveFilesAction": endpoint260,
+"files:linkFileAction": endpoint261,
+"files:deleteFileAction": endpoint262,
+"files:restoreFileAction": endpoint263,
+"files:restoreFileVersionAction": endpoint264,
+"files:searchLinkTargetsAction": endpoint265,
+"finance:createLedgerEntryAction": endpoint266,
+"finance:updateLedgerEntryAction": endpoint267,
+"finance:setLedgerEntryVoidedAction": endpoint268,
+"finance:previewLedgerImportAction": endpoint269,
+"finance:commitLedgerImportAction": endpoint270,
+"finance:createCategoryAction": endpoint271,
+"finance:renameCategoryAction": endpoint272,
+"finance:setCategoryArchivedAction": endpoint273,
+"finance:createInvoiceAction": endpoint274,
+"finance:updateInvoiceAction": endpoint275,
+"finance:sendInvoiceAction": endpoint276,
+"finance:markInvoicePaidAction": endpoint277,
+"finance:voidInvoiceAction": endpoint278,
+"finance:deleteInvoiceAction": endpoint279,
+"forms:createIntakeForm": endpoint280,
+"forms:sendInternalResponse": endpoint281,
+"forms:sendPublicResponse": endpoint282,
+"forms:closeIntakeForm": endpoint283,
+"forms:newPublicFormLink": endpoint284,
+"forms:responseToTask": endpoint285,
+"goals:goalAction": endpoint286,
+"governance:saveGovernance": endpoint287,
+"governance:governanceOperation": endpoint288,
+"governance:saveVendorBank": endpoint289,
+"governance:revealVendorBank": endpoint290,
+"governance:uploadGovernanceFile": endpoint291,
+"governance:removeGovernanceFile": endpoint292,
+"ideas:ideaAction": endpoint293,
+"integrations:updateIntegrations": endpoint294,
+"links:saveLink": endpoint295,
+"links:linkState": endpoint296,
+"meetings:meetingAction": endpoint297,
+"meetings:signatureAction": endpoint298,
+"messaging:updateMessaging": endpoint299,
+"notepad:loadNotepadAction": endpoint300,
+"notepad:createNoteAction": endpoint301,
+"notepad:updateNoteAction": endpoint302,
+"notepad:setNoteArchivedAction": endpoint303,
+"notepad:deleteNoteAction": endpoint304,
+"notepad:createTodoAction": endpoint305,
+"notepad:updateTodoAction": endpoint306,
+"notepad:moveTodoAction": endpoint307,
+"notepad:deleteTodoAction": endpoint308,
+"notepad:clearDoneTodosAction": endpoint309,
+"notepad:sendTodoToTasksAction": endpoint310,
+"notificationPreferences:notificationStateAction": endpoint311,
+"notificationPreferences:notificationSummaryAction": endpoint312,
+"notificationPreferences:saveNotificationPreference": endpoint313,
+"notificationPreferences:saveNotificationSettings": endpoint314,
+"notificationPreferences:removeNotificationMute": endpoint315,
+"notificationPreferences:muteNotificationResource": endpoint316,
+"notificationRouting:updateRouting": endpoint317,
+"notifications:markNotificationsReadAction": endpoint318,
+"people:mutatePeople": endpoint319,
+"people:revealEmergencyAction": endpoint320,
+"platformShell:saveOidcProvider": endpoint321,
+"polls:pollAction": endpoint322,
+"projects:createProjectAction": endpoint323,
+"projects:updateProjectAction": endpoint324,
+"projects:archiveProjectAction": endpoint325,
+"projects:restoreProjectAction": endpoint326,
+"projects:addColumnAction": endpoint327,
+"projects:updateColumnAction": endpoint328,
+"projects:reorderColumnsAction": endpoint329,
+"projects:deleteColumnAction": endpoint330,
+"requests:submitMoneyRequest": endpoint331,
+"requests:decideRequest": endpoint332,
+"requests:finishMoneyRequest": endpoint333,
+"requests:saveBudget": endpoint334,
+"requests:saveApprovalPolicy": endpoint335,
+"requests:changeMoneyRequest": endpoint336,
+"requests:reviseMoneyRequest": endpoint337,
+"requests:submitGenericRequest": endpoint338,
+"requests:addApprovalComment": endpoint339,
+"rota:mutateRota": endpoint340,
+"search:searchAction": endpoint341,
+"search:loadWorkspaceTools": endpoint342,
+"seo:updateSeo": endpoint343,
+"services:saveMonitorAction": endpoint344,
+"services:serviceAction": endpoint345,
+"social:commentAction": endpoint346,
+"social:connectAction": endpoint347,
+"social:selectAccountsAction": endpoint348,
+"social:accountAction": endpoint349,
+"social:reconcileCommentAction": endpoint350,
+"subscriptions:saveSubscriptionRecord": endpoint351,
+"tasks:loadBoardAction": endpoint352,
+"tasks:loadTaskAction": endpoint353,
+"tasks:loadMyTasksAction": endpoint354,
+"tasks:createTaskAction": endpoint355,
+"tasks:updateTaskAction": endpoint356,
+"tasks:moveTaskAction": endpoint357,
+"tasks:setTaskCompletedAction": endpoint358,
+"tasks:setAssigneesAction": endpoint359,
+"tasks:setLabelsAction": endpoint360,
+"tasks:setTaskArchivedAction": endpoint361,
+"tasks:addCommentAction": endpoint362,
+"tasks:editCommentAction": endpoint363,
+"tasks:deleteCommentAction": endpoint364,
+"tasks:addDependencyAction": endpoint365,
+"tasks:removeDependencyAction": endpoint366,
+"tasks:setRecurrenceAction": endpoint367,
+"tasks:stopRecurrenceAction": endpoint368,
+"tasks:skipNextOccurrenceAction": endpoint369,
+"tasks:uploadTaskAttachmentAction": endpoint370,
+"tasks:removeTaskAttachmentAction": endpoint371,
+"teams:saveTeamAction": endpoint372,
+"teams:archiveTeamAction": endpoint373,
+"teams:addTeamMemberAction": endpoint374,
+"teams:removeTeamMemberAction": endpoint375,
+"teams:setTeamMemberRoleAction": endpoint376,
+"teams:joinTeamAction": endpoint377,
+"templates:templateAction": endpoint378,
+"vault:saveVaultItem": endpoint379,
+"vault:saveVaultCollection": endpoint380,
+"vault:saveVaultGrant": endpoint381,
+"vault:removeVaultGrant": endpoint382,
+"vault:askVaultAccess": endpoint383,
+"vault:stepUpVault": endpoint384,
+"vault:archiveVaultItem": endpoint385,
+"views:saveView": endpoint386,
+"views:deleteView": endpoint387,
+"workspace-settings:updateWorkspaceSettings": endpoint388,
+"workspace-settings:createInvitationAction": endpoint389,
+"workspace-settings:resendInvitationAction": endpoint390,
+"workspace-settings:revokeInvitationAction": endpoint391,
+"workspace-settings:changeMemberRoleAction": endpoint392,
+"workspace-settings:setMemberStatusAction": endpoint393,
+"workspace-settings:removeMemberAction": endpoint394,
+"workspace-settings:leaveWorkspaceAction": endpoint395,
+"workspace-settings:createLabelAction": endpoint396,
+"workspace-settings:updateLabelAction": endpoint397,
+"workspace-settings:deleteLabelAction": endpoint398,
 });

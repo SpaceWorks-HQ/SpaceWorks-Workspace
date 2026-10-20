@@ -401,6 +401,21 @@
       "id": "w-workspaceSlug-goals-page:loadGoalsPage"
     },
     {
+      "module": "lib/views/generated/w-workspaceSlug-governance-board-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-governance-board-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-governance-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-governance-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-governance-vendors-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-governance-vendors-page:loadPage"
+    },
+    {
       "module": "lib/views/generated/w-workspaceSlug-ideas-ideaId-page-loadIdeaPage",
       "name": "loadIdeaPage",
       "id": "w-workspaceSlug-ideas-ideaId-page:loadIdeaPage"
@@ -1421,6 +1436,36 @@
       "module": "app/actions/goals",
       "name": "goalAction",
       "id": "goals:goalAction"
+    },
+    {
+      "module": "app/actions/governance",
+      "name": "saveGovernance",
+      "id": "governance:saveGovernance"
+    },
+    {
+      "module": "app/actions/governance",
+      "name": "governanceOperation",
+      "id": "governance:governanceOperation"
+    },
+    {
+      "module": "app/actions/governance",
+      "name": "saveVendorBank",
+      "id": "governance:saveVendorBank"
+    },
+    {
+      "module": "app/actions/governance",
+      "name": "revealVendorBank",
+      "id": "governance:revealVendorBank"
+    },
+    {
+      "module": "app/actions/governance",
+      "name": "uploadGovernanceFile",
+      "id": "governance:uploadGovernanceFile"
+    },
+    {
+      "module": "app/actions/governance",
+      "name": "removeGovernanceFile",
+      "id": "governance:removeGovernanceFile"
     },
     {
       "module": "app/actions/ideas",

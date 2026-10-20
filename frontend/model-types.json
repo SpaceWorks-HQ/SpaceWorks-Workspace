@@ -48,39 +48,51 @@
     "value": false
   },
   {
-    "module": "lib/notepad/service",
-    "name": "NoteDTO",
+    "module": "lib/governance/service",
+    "name": "Actor",
     "id": "Shared8",
     "value": false
   },
   {
-    "module": "lib/notepad/service",
-    "name": "NotepadData",
+    "module": "lib/governance/service",
+    "name": "Filters",
     "id": "Shared9",
     "value": false
   },
   {
     "module": "lib/notepad/service",
-    "name": "TodoDTO",
+    "name": "NoteDTO",
     "id": "Shared10",
+    "value": false
+  },
+  {
+    "module": "lib/notepad/service",
+    "name": "NotepadData",
+    "id": "Shared11",
+    "value": false
+  },
+  {
+    "module": "lib/notepad/service",
+    "name": "TodoDTO",
+    "id": "Shared12",
     "value": false
   },
   {
     "module": "lib/people/profiles",
     "name": "EmergencyContact",
-    "id": "Shared11",
+    "id": "Shared13",
     "value": false
   },
   {
     "module": "lib/approvals/context",
     "name": "OpsActor",
-    "id": "Shared12",
+    "id": "Shared14",
     "value": false
   },
   {
     "module": "lib/auth",
     "name": "SsoMfaChallenge",
-    "id": "Shared13",
+    "id": "Shared15",
     "value": false
   }
 ]
