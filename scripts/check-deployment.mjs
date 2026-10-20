@@ -1,40 +1,21 @@
-// Live deployment checks. Provider errors can contain secrets, so only name the failed check.
-import { PrismaClient } from "@prisma/client";
-import Redis from "ioredis";
-import { S3Client, HeadBucketCommand } from "@aws-sdk/client-s3";
-const prisma = new PrismaClient();
-const redis = new Redis(process.env.REDIS_URL, { lazyConnect: true, connectTimeout: 5000, maxRetriesPerRequest: 1 });
-redis.on("error", () => {});
-const s3 = new S3Client({ region: process.env.S3_REGION, endpoint: process.env.S3_ENDPOINT, forcePathStyle: process.env.S3_FORCE_PATH_STYLE === "1", credentials: process.env.S3_ACCESS_KEY_ID ? { accessKeyId: process.env.S3_ACCESS_KEY_ID, secretAccessKey: process.env.S3_SECRET_ACCESS_KEY } : undefined });
-let check = "database TLS";
-try {
-  const [{ ssl }] = await prisma.$queryRaw`SELECT ssl FROM pg_stat_ssl WHERE pid = pg_backend_pid()`;
-  if (!ssl) throw new Error();
-  check = "restricted runtime database role";
-  const [role] = await prisma.$queryRaw`SELECT rolsuper, rolcreatedb, rolcreaterole FROM pg_roles WHERE rolname = current_user`;
-  if (role.rolsuper || role.rolcreatedb || role.rolcreaterole) throw new Error();
-  const [{ owns }] = await prisma.$queryRaw`SELECT EXISTS(SELECT 1 FROM pg_namespace WHERE nspname='public' AND nspowner=(SELECT oid FROM pg_roles WHERE rolname=current_user)) AS owns`;
-  if (owns) throw new Error();
-  check = "Redis TLS and authentication";
-  if (!process.env.REDIS_URL?.startsWith("rediss://")) throw new Error();
-  await redis.connect();
-  if (await redis.ping() !== "PONG") throw new Error();
-  check = "private object storage credentials";
-  await s3.send(new HeadBucketCommand({ Bucket: process.env.S3_BUCKET }));
-  if (process.env.S3_ENDPOINT) {
-    const endpoint = new URL(process.env.S3_ENDPOINT);
-    if (endpoint.protocol !== "https:") throw new Error();
-  }
-  check = "authenticated database readiness";
-  const result = await fetch("http://127.0.0.1:3000/api/health/db", { headers: { Authorization: `Bearer ${process.env.HEALTHCHECK_SECRET}` }, signal: AbortSignal.timeout(5000) });
-  await result.body?.cancel();
-  if (!result.ok) throw new Error();
-  console.log("Deployment passed: database TLS, restricted app role, Redis TLS/auth, storage access and authenticated readiness.");
-} catch {
-  console.error(`Deployment failed at ${check}. Check private service configuration and logs.`);
-  process.exitCode = 1;
-} finally {
-  redis.disconnect();
-  s3.destroy();
-  await prisma.$disconnect();
+import { spawnSync } from 'node:child_process';
+import { readdirSync, readFileSync } from 'node:fs';
+import path from 'node:path';
+import yaml from 'yaml';
+const root=path.resolve(import.meta.dirname,'..');process.chdir(root);
+const walk=d=>readdirSync(d,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(`${d}/${e.name}`):[`${d}/${e.name}`]);
+const scripts=['install.sh','local.sh',...walk('scripts'),...walk('docker')];
+let checks=0;
+for(const file of scripts) {
+ let command,args;
+ if(file.endsWith('.sh')){command='bash';args=['-n',file];}
+ else if(file.endsWith('.mjs')){command=process.execPath;args=['--check',file];}
+ else continue;
+ const result=spawnSync(command,args,{encoding:'utf8'});
+ if(result.status!==0)throw new Error(`${file}: ${result.stderr}`);
+ if(file.endsWith('.sh')){const lint=spawnSync('shellcheck',['-x',file],{encoding:'utf8'});if(lint.error?.code==='ENOENT')throw new Error('Install shellcheck before deployment verification.');if(lint.status!==0)throw new Error(`${file}: ${lint.stdout}${lint.stderr}`);}
+ checks++;
 }
+const files=[...walk('.github/workflows'),...walk('deploy').filter(f=>/\.ya?ml$/.test(f)),...readdirSync('.').filter(f=>/\.ya?ml$/.test(f)),'.do/app.yaml','charts/spaceworks-workspace/Chart.yaml','charts/spaceworks-workspace/values.yaml'];
+for(const file of files){const docs=yaml.parseAllDocuments(readFileSync(file,'utf8'),{customTags:[{tag:'!override',collection:'map',resolve:map=>map},{tag:'!override',collection:'seq',resolve:seq=>seq}]});if(docs.some(doc=>doc.errors.length))throw new Error(`Invalid YAML: ${file}`);checks++;}
+console.log(`Deployment syntax verified: ${checks} scripts/manifests.`);

@@ -2,7 +2,7 @@
 
 import bcrypt from "bcryptjs";
 import QRCode from "qrcode";
-import { revalidatePath } from "next/cache";
+import { revalidatePath } from "@/lib/frontend/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { isActionRateLimited } from "@/lib/actionRateLimit";

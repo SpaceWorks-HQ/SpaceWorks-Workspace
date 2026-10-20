@@ -1,7 +1,0 @@
-services:
-  frontend:
-    build:
-      context: .
-      dockerfile: docker/frontend/Dockerfile
-      args:
-        SWW_BACKEND_BUILD: ${SWW_BACKEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-workspace-backend}:${SWW_IMAGE_TAG:-latest}

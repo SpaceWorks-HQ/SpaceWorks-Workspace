@@ -1,3 +1,5 @@
+import { isIP } from "node:net";
+import { isFrontendPeer, CLIENT_IP_HEADER } from "@/lib/frontend/peer";
 import type { NextRequest } from "next/server";
 import Redis from "ioredis";
 
@@ -8,6 +10,7 @@ import Redis from "ioredis";
 
 export type Bucket =
   | "global"
+  | "frontendAction"
   | "action"
   | "auth"
   | "setup"
@@ -26,6 +29,7 @@ export type Bucket =
 
 const limits: Record<Bucket, { max: number; windowMs: number; }> = {
   global: { max: 600, windowMs: 60_000 },
+  frontendAction: { max: 240, windowMs: 60_000 },
   action: { max: 240, windowMs: 60_000 },
   auth: { max: 10, windowMs: 60_000 },
   setup: { max: 5, windowMs: 60 * 60_000 },
@@ -93,12 +97,14 @@ function keyFor(bucket: Bucket, id: string) {
 }
 
 export function getClientIp(request: NextRequest): string {
+  if (isFrontendPeer(request.headers)) { const ip = request.headers.get(CLIENT_IP_HEADER)?.trim(); return ip && isIP(ip) ? ip : "unknown"; }
   const configuredHeader = process.env.TRUSTED_PROXY_IP_HEADER;
   if (isTrustedProxyHeader(configuredHeader)) return readConfiguredIp(request.headers, configuredHeader);
   return "unknown";
 }
 
 export function getClientIpFromHeaders(headers: Headers): string {
+  if (isFrontendPeer(headers)) { const ip = headers.get(CLIENT_IP_HEADER)?.trim(); return ip && isIP(ip) ? ip : "unknown"; }
   const configuredHeader = process.env.TRUSTED_PROXY_IP_HEADER;
   return isTrustedProxyHeader(configuredHeader) ? readConfiguredIp(headers, configuredHeader) : "unknown";
 }

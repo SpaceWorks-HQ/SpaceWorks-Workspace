@@ -1,5 +1,5 @@
 "use server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath } from "@/lib/frontend/cache";
 import { getWorkspaceForAction } from "@/lib/permissions";
 import { canViewServices, canManageServices, canAckIncidents } from "@/lib/roles";
 import { isActionRateLimited } from "@/lib/actionRateLimit";

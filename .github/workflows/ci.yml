@@ -1,15 +1,13 @@
 name: CI
 
 on:
-  pull_request:
-  push:
-    branches: [main, dev]
+  workflow_call:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: application-ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
@@ -19,7 +17,7 @@ env:
   DIRECT_URL: postgresql://build:build@localhost:5432/sww_build
   NEXT_TELEMETRY_DISABLED: "1"
   # Type-checking the full schema needs more than Node's default 2 GB heap.
-  NODE_OPTIONS: --max-old-space-size=6144
+  NODE_OPTIONS: --max-old-space-size=4096
 
 jobs:
   quality:
@@ -39,6 +37,8 @@ jobs:
       - run: npm run typecheck
       - run: npm run test:unit
       - run: npm run build
+      - run: npm run typecheck:frontend
+      - run: npm run build:frontend
 
   integration:
     name: PostgreSQL integration tests
@@ -90,3 +90,19 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm audit --omit=dev --audit-level=high
+
+  hosting:
+    name: Production hosting smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        deployment: [split, vps]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22, cache: npm}
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e:${{ matrix.deployment }}

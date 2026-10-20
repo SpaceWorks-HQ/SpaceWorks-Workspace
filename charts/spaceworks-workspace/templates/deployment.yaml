@@ -42,7 +42,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: web
-          args: ["web"]
+          args: ["node", "server.js"]
           image: {{ include "sww.image" . | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
@@ -91,31 +91,8 @@ spec:
             periodSeconds: 15
             timeoutSeconds: 5
             failureThreshold: 3
-        {{- if .Values.frontend.enabled }}
-        - name: frontend
-          image: "{{ .Values.frontend.image.repository }}:{{ default (default .Chart.AppVersion .Values.image.tag) .Values.frontend.image.tag }}"
-          imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
-          ports:
-            - {name: frontend, containerPort: 8080}
-          env:
-            - {name: BACKEND_UPSTREAM, value: "http://127.0.0.1:3000"}
-            - {name: SWW_TRUST_FORWARDED_PROTO, value: "1"}
-            - name: SWW_TRUSTED_PROXY_CIDR
-              value: {{ .Values.frontend.trustedProxyCidr | quote }}
-          securityContext:
-            runAsUser: 101
-            runAsGroup: 101
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            capabilities: {drop: ["ALL"]}
-          volumeMounts:
-            - {name: nginx-tmp, mountPath: /tmp}
-          readinessProbe:
-            httpGet: {path: /api/health, port: frontend}
-        {{- end }}
+
       volumes:
-        - name: nginx-tmp
-          emptyDir: {}
         - name: tmp
           emptyDir: {}
         - name: next-cache

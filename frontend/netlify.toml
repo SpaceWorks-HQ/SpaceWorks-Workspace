@@ -1,0 +1,10 @@
+# Set Package directory = frontend and leave Base directory = repository root.
+# The frontend renders the shared UI and calls the VPS; no database secrets here.
+[build]
+  command = "npm run build:frontend"
+  publish = "frontend/.next"
+
+[build.environment]
+  NODE_VERSION = "22"
+  FRONTEND_TRUSTED_IP_HEADER = "x-nf-client-connection-ip"
+  NETLIFY_NEXT_SKEW_PROTECTION = "true"

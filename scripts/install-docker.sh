@@ -1,46 +1,55 @@
 #!/usr/bin/env bash
-# Dependency setup invoked only after the installer's confirmation boundary.
+# Invoked by the confirmed VPS setup only: install and start Docker Engine with
+# the Compose v2 plugin from the distribution family's supported source.
 set -euo pipefail
-[[ "$(id -u)" == 0 && "$(uname -s)" == Linux ]] || { echo 'Linux dependency installation requires root.' >&2; exit 1; }
+[[ $(id -u) = 0 ]] || { echo 'Installing Docker requires root.' >&2; exit 1; }
+[[ $(uname -s) = Linux && -r /etc/os-release ]] || { echo 'Automatic Docker installation needs Linux with /etc/os-release.' >&2; exit 1; }
 # shellcheck disable=SC1091
-source /etc/os-release
-missing_docker=0; missing_compose=0
-command -v docker >/dev/null 2>&1 || missing_docker=1
-docker compose version >/dev/null 2>&1 || missing_compose=1
-case " ${ID:-} ${ID_LIKE:-} " in
-  *' debian '*|*' ubuntu '*|*' linuxmint '*)
+. /etc/os-release
+family=" ${ID:-} ${ID_LIKE:-} "
+case "$family" in
+  *" ubuntu "*|*" debian "*)
+    # Docker publishes repositories for Debian and Ubuntu; derivatives use their base.
+    repo_id=debian codename=${VERSION_CODENAME:-}
+    if [[ "$family" = *" ubuntu "* ]]; then repo_id=ubuntu codename=${UBUNTU_CODENAME:-$codename}; fi
+    [[ -n "$codename" ]] || { echo 'Cannot determine the release codename for the Docker repository.' >&2; exit 1; }
+    export DEBIAN_FRONTEND=noninteractive
     apt-get update
-    DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl tar python3 openssl
-    if [[ "$missing_docker" == 1 ]]; then DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io; fi
-    if [[ "$missing_compose" == 1 ]]; then
-      DEBIAN_FRONTEND=noninteractive apt-get install -y docker-compose-v2 \
-        || DEBIAN_FRONTEND=noninteractive apt-get install -y docker-compose-plugin || true
-    fi ;;
-  *' fedora '*|*' rhel '*|*' centos '*|*' rocky '*|*' almalinux '*)
-    manager=dnf; command -v dnf >/dev/null 2>&1 || manager=yum
-    "$manager" install -y ca-certificates curl tar python3 openssl
-    if [[ "$missing_docker" == 1 ]]; then
-      repo_os=centos; [[ "${ID:-}" != fedora ]] || repo_os=fedora; [[ "${ID:-}" != rhel ]] || repo_os=rhel
-      "$manager" install -y dnf-plugins-core
-      dnf config-manager --add-repo "https://download.docker.com/linux/$repo_os/docker-ce.repo" \
-        || dnf config-manager addrepo --from-repofile="https://download.docker.com/linux/$repo_os/docker-ce.repo"
-      "$manager" install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-    elif [[ "$missing_compose" == 1 ]]; then "$manager" install -y docker-compose-plugin || true; fi ;;
-  *' arch '*|*' manjaro '*) pacman -S --noconfirm --needed curl tar docker docker-compose python openssl ;;
-  *' suse '*|*' opensuse '*|*' sles '*) zypper --non-interactive install curl tar docker docker-compose python3 openssl ;;
-  *) echo 'Unsupported Linux distribution.' >&2; exit 1 ;;
+    apt-get install -y ca-certificates curl
+    install -m 0755 -d /etc/apt/keyrings
+    curl --fail --show-error --silent --location --proto '=https' "https://download.docker.com/linux/$repo_id/gpg" -o /etc/apt/keyrings/docker.asc
+    chmod a+r /etc/apt/keyrings/docker.asc
+    printf 'deb [arch=%s signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/%s %s stable\n' \
+      "$(dpkg --print-architecture)" "$repo_id" "$codename" > /etc/apt/sources.list.d/docker.list
+    apt-get update
+    apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    ;;
+  *" fedora "*|*" rhel "*|*" centos "*|*" rocky "*|*" almalinux "*)
+    repo_os=centos
+    [[ "${ID:-}" = fedora ]] && repo_os=fedora
+    [[ "${ID:-}" = rhel ]] && repo_os=rhel
+    repo_url="https://download.docker.com/linux/$repo_os/docker-ce.repo"
+    if command -v dnf >/dev/null; then
+      dnf install -y dnf-plugins-core
+      dnf config-manager --add-repo "$repo_url" 2>/dev/null || dnf config-manager addrepo --from-repofile="$repo_url"
+      dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    else
+      yum install -y yum-utils
+      yum-config-manager --add-repo "$repo_url"
+      yum install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    fi
+    ;;
+  *" arch "*|*" manjaro "*)
+    # Arch supports only full upgrades, never a partial -Sy.
+    pacman -Syu --noconfirm --needed docker docker-compose docker-buildx
+    ;;
+  *" suse "*|*" opensuse "*|*" sles "*)
+    zypper --non-interactive install docker docker-compose docker-buildx
+    ;;
+  *)
+    echo "Automatic Docker installation does not support '${ID:-unknown}'. Install Docker Engine with the Compose v2 plugin, then rerun." >&2
+    exit 1
+    ;;
 esac
-if ! docker compose version >/dev/null 2>&1; then
-  # Official standalone CLI plugin; verify the official release checksum before installing.
-  case "$(uname -m)" in x86_64|amd64) arch=x86_64 ;; aarch64|arm64) arch=aarch64 ;; *) exit 64 ;; esac
-  tag="$(curl -fsSL https://api.github.com/repos/docker/compose/releases/latest | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)"
-  [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'Could not resolve Compose release.' >&2; exit 1; }
-  work="$(mktemp -d)"; trap 'rm -rf -- "$work"' EXIT
-  name="docker-compose-linux-$arch"
-  curl -fsSL --proto '=https' --proto-redir '=https' "https://github.com/docker/compose/releases/download/$tag/$name" -o "$work/$name"
-  curl -fsSL --proto '=https' --proto-redir '=https' "https://github.com/docker/compose/releases/download/$tag/checksums.txt" -o "$work/checksums.txt"
-  (cd "$work"; awk -v name="$name" '$2==name || $2=="*"name {print}' checksums.txt > selected.sha256; test -s selected.sha256; sha256sum -c selected.sha256)
-  install -D -m 755 "$work/$name" /usr/local/lib/docker/cli-plugins/docker-compose
-fi
-if command -v systemctl >/dev/null 2>&1; then systemctl enable --now docker; fi
+systemctl enable --now docker
 docker compose version

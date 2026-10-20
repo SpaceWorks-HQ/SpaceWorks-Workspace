@@ -1,0 +1,92 @@
+[
+  {
+    "module": "lib/appReviews/queries",
+    "name": "reviewSettings",
+    "id": "Shared0",
+    "value": true
+  },
+  {
+    "module": "lib/assistant/chat",
+    "name": "ChatItem",
+    "id": "Shared1",
+    "value": false
+  },
+  {
+    "module": "lib/assistant/chat",
+    "name": "ChatStreamEvent",
+    "id": "Shared2",
+    "value": false
+  },
+  {
+    "module": "lib/assistant/chat",
+    "name": "PendingCall",
+    "id": "Shared3",
+    "value": false
+  },
+  {
+    "module": "lib/chat/queries",
+    "name": "ChannelMemberDTO",
+    "id": "Shared4",
+    "value": false
+  },
+  {
+    "module": "lib/appShell",
+    "name": "ShellData",
+    "id": "Shared5",
+    "value": false
+  },
+  {
+    "module": "lib/search/query",
+    "name": "SearchHit",
+    "id": "Shared6",
+    "value": false
+  },
+  {
+    "module": "app/actions/files",
+    "name": "LinkTarget",
+    "id": "Shared7",
+    "value": false
+  },
+  {
+    "module": "lib/notepad/service",
+    "name": "NoteDTO",
+    "id": "Shared8",
+    "value": false
+  },
+  {
+    "module": "lib/notepad/service",
+    "name": "NotepadData",
+    "id": "Shared9",
+    "value": false
+  },
+  {
+    "module": "lib/notepad/service",
+    "name": "TodoDTO",
+    "id": "Shared10",
+    "value": false
+  },
+  {
+    "module": "lib/people/profiles",
+    "name": "EmergencyContact",
+    "id": "Shared11",
+    "value": false
+  },
+  {
+    "module": "lib/approvals/context",
+    "name": "OpsActor",
+    "id": "Shared12",
+    "value": false
+  },
+  {
+    "module": "lib/auth",
+    "name": "SsoMfaChallenge",
+    "id": "Shared13",
+    "value": false
+  },
+  {
+    "module": "lib/blog/queries",
+    "name": "AdminPostFilter",
+    "id": "Shared14",
+    "value": false
+  }
+]

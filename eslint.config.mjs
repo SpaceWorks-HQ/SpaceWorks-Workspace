@@ -17,6 +17,7 @@ const eslintConfig = defineConfig([
     ".claude/**",
     // Separate packages with their own toolchain (Cloudflare Worker).
     "deploy/**",
+    "frontend/contracts.d.ts", "frontend/model-types.d.ts", "frontend/app/**", "frontend/components/**", "frontend/lib/**", "frontend/public/**", "frontend/.next/**", "lib/views/generated/**",
   ]),
 ]);
 

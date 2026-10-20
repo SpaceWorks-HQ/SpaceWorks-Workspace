@@ -68,6 +68,8 @@ export function productionProblems(source) {
   if (!env.SUPER_ADMIN_EMAIL) warnings.push("SUPER_ADMIN_EMAIL is not set: nobody can open /admin");
   if (!env.INTEGRATION_ENCRYPTION_KEY) warnings.push("INTEGRATION_ENCRYPTION_KEY is not set: integration tokens use a subkey of MFA_ENCRYPTION_KEY");
   if (env.OUTBOX_WORKER === "0") warnings.push("OUTBOX_WORKER=0: make sure an external scheduler calls /api/internal/outbox every minute");
+  if (env.DEPLOYMENT_MODE === "backend" && !/^[a-f0-9]{64}$/.test(env.FRONTEND_GATEWAY_SECRET ?? "")) problems.push("FRONTEND_GATEWAY_SECRET: split backend requires a 32-byte hex key");
+  if (env.DEPLOYMENT_MODE && env.DEPLOYMENT_MODE !== "backend") problems.push("DEPLOYMENT_MODE: use backend or leave unset");
   if (problems.length > 0) return { problems, warnings };
 
   // Transport security (the same rules the server enforces at boot).

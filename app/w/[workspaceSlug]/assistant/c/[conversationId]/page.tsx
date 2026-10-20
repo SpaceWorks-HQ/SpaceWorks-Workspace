@@ -10,5 +10,6 @@ export default async function AssistantConversationPage({ params }: PageProps<"/
   const { user, workspace } = await requireWorkspace(workspaceSlug, "MEMBER");
   const data = await loadChatPage({ workspaceId: workspace.id, timeZone: workspace.timezone, userId: user.id, userEmail: user.email, conversationId });
   if (!data?.active) notFound();
-  return <AssistantChat key={data.active.id} slug={workspace.slug} conversations={data.conversations} active={data.active} configured={data.configured} setupHref={data.setupHref} />;
+  const active = data.active;
+  return <AssistantChat key={active.id} slug={workspace.slug} conversations={data.conversations} active={active} configured={data.configured} setupHref={data.setupHref} />;
 }

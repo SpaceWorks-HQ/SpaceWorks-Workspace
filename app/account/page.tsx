@@ -25,6 +25,7 @@ export default async function AccountPage() {
     listUserWorkspaces(sessionUser.id),
     remainingRecoveryCodes(sessionUser.id),
   ]);
+  const hasPassword = Boolean(user.passwordHash);
   return (
     <SimpleShell>
       <div className="flex flex-col gap-6">
@@ -33,8 +34,8 @@ export default async function AccountPage() {
           <SettingsRow title="Profile" description="How the crew sees you across every workspace.">
             <ProfileForm initial={{ name: user.name ?? "", pronouns: user.pronouns ?? "", bio: user.bio ?? "", skills: user.skills, timezone: user.timezone ?? "" }} />
           </SettingsRow>
-          <SettingsRow title="Password" description={user.passwordHash ? "Changing it signs you out on every device." : "You sign in with Google. Add a password as a fallback."}>
-            <PasswordForm hasPassword={Boolean(user.passwordHash)} />
+          <SettingsRow title="Password" description={hasPassword ? "Changing it signs you out on every device." : "You sign in with Google. Add a password as a fallback."}>
+            <PasswordForm hasPassword={hasPassword} />
           </SettingsRow>
           <SettingsRow title="Two-step verification" description="A code from your phone at every sign-in.">
             <MfaCard enabled={Boolean(user.mfaEnabledAt)} remainingCodes={remaining} />

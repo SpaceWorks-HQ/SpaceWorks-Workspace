@@ -41,3 +41,10 @@ config/
 .spaceworks-workspace-*
 
 frontend-public/
+
+frontend/app
+frontend/components
+frontend/lib
+frontend/public
+frontend/.next
+frontend/node_modules

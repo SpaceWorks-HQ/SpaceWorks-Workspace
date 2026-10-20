@@ -21,11 +21,12 @@ export default async function HomeRedirect() {
   const target = workspaces.find((workspace) => workspace.slug === last) ?? workspaces[0];
   if (target) redirect(`/w/${target.slug}`);
 
+  const superAdmin = isSuperAdminEmail(user.email);
   return (
     <AuthFrame title="No workspace yet." description={`You're signed in as ${user.email}, but you aren't a member of any workspace.`}>
       <Callout tone="info">Ask a workspace admin to invite you. The invitation link signs you straight in.</Callout>
       <div className="flex flex-wrap gap-2">
-        {isSuperAdminEmail(user.email) ? <a href="/admin" className="text-sm font-semibold text-ink underline underline-offset-4">Open instance admin</a> : null}
+        {superAdmin ? <a href="/admin" className="text-sm font-semibold text-ink underline underline-offset-4">Open instance admin</a> : null}
         <SignOutButton />
       </div>
     </AuthFrame>

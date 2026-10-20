@@ -14,6 +14,7 @@ export default defineConfig({
   use: {
     baseURL: testBaseUrl,
     trace: "on-first-retry",
+    ...(process.env.PLAYWRIGHT_SPLIT === "1" ? { extraHTTPHeaders: { Origin: testBaseUrl, "x-real-ip": "127.0.0.1" } } : {}),
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {

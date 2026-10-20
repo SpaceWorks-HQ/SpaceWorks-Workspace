@@ -8,7 +8,7 @@ import { cn } from "@/lib/cn";
  * - never recolour, mirror, stretch or add effects; `walk-left` would be the
  *   only way to face left, so this component never flips the art;
  * - dark surfaces use the `dark/` files with the cream sticker border;
- * - with reduced motion the idle frame shows instead of the loop;
+ * - with reduced motion the idle frame shows instead of repeating;
  * - Patch is the layout's one bold moment, so use one per screen.
  */
 export type PatchPose = "idle" | "walk";

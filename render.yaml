@@ -1,14 +1,10 @@
 # Render Blueprint for Space Works Workspace.
 # Step-by-step guide: docs/DEPLOYMENT_CLOUD.md (Render section).
 #
-# Default shape: one Docker web service on the Starter plan (always on, so
-# the in-process outbox worker runs and a pre-deploy command applies
-# migrations), Supabase PostgreSQL, Upstash Redis, Cloudflare R2 and Brevo SMTP.
-#
-# Free plan instead: set `plan: free`, delete `preDeployCommand`, set
-# the explicit migrate role and deploy the Cloudflare Worker in deploy/cloudflare-cron
-# (free instances sleep after 15 idle minutes and block SMTP ports 25/465/587;
-# Brevo on 2525 works).
+# One Docker web service on the free plan, with external TLS PostgreSQL,
+# Redis and private object storage. Start-time migrations replace a release job;
+# the Cloudflare Worker independently calls outbox/jobs. Upgrade for availability
+# and capacity as needed. Guide: docs/DEPLOYMENT_CLOUD.md.
 #
 # `sync: false` values are asked for once, when the Blueprint is created;
 # edit them later in the Render Dashboard (Environment tab).
@@ -16,16 +12,16 @@ services:
   - type: web
     name: spaceworks-workspace
     runtime: docker
-    plan: starter
+    plan: free
     # Closest to your Supabase/Upstash region; cannot change after creation
     # (oregon, ohio, virginia, frankfurt, singapore).
     region: singapore
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    dockerCommand: docker-entrypoint.sh web
+    dockerCommand: node server.js
     healthCheckPath: /api/health
     # Applies migrations once per deploy through DIRECT_URL (falls back to DATABASE_URL).
-    preDeployCommand: docker-entrypoint.sh migrate
+    # Migrations run on start on the free plan.
     autoDeployTrigger: checksPass
     buildFilter:
       ignoredPaths:
@@ -35,6 +31,8 @@ services:
         - .do/**
         - "**/*.md"
     envVars:
+      - key: MIGRATE_ON_START
+        value: "1"
       - key: NODE_OPTIONS
         value: --max-old-space-size=384
 
@@ -133,7 +131,7 @@ services:
   #   schedule: "*/5 * * * *"
   #   dockerfilePath: ./Dockerfile
   #   dockerContext: .
-  #   dockerCommand: docker-entrypoint.sh scheduler --once
+  #   dockerCommand: node scripts/scheduler.mjs --once
   #   envVars:
   #     - key: APP_URL
   #       sync: false # https://work.example.org

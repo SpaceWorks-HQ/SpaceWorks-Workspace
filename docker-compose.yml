@@ -1,4 +1,4 @@
-# Local services only. App development runs with npm run dev or dev.sh.
+# Local services only. App development runs with npm run dev or local.sh.
 services:
   postgres:
     image: postgres:16-alpine

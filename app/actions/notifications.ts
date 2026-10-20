@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath } from "@/lib/frontend/cache";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/permissions";
 import { markNotificationsRead } from "@/lib/notifications";

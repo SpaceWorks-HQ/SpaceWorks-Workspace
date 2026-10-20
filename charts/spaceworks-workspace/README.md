@@ -25,3 +25,5 @@ helm upgrade --install sww charts/spaceworks-workspace --namespace sww \
 | `scheduler.enabled` / `scheduler.schedule` | `true` / `* * * * *` | CronJob calling `/api/internal/outbox` and `/api/internal/jobs` |
 | `replicaCount`, `autoscaling.*`, `podDisruptionBudget.*` | 2, off, on | Scale. Several replicas need Redis for rate limits and realtime |
 | `ingress.*` | off | Disable proxy buffering for `/api/realtime` (SSE) |
+
+The chart runs the backend as the whole application. There is no frontend sidecar. A separate rendering frontend requires its own Deployment, gateway-only Secret and HTTPS origin; see docs/DEPLOYMENT_SPLIT.md.

@@ -1,6 +1,6 @@
 "use server";
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
+import { revalidatePath } from "@/lib/frontend/cache";
 import { prisma } from "@/lib/db";
 import { integrationAccess } from "@/lib/integrations/access";
 import { searchConsoleSites, googleApi, searchConsoleUrl } from "@/lib/integrations/google/api";
