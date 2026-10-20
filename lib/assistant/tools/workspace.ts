@@ -50,6 +50,7 @@ export function filterSearchHits(
   const finance = canViewFinance(principal, principal.workspace);
   return hits.filter((hit) => {
     if (NEVER_TYPES(hit.entityType)) return false;
+    if (hit.entityType === "calendar_entry" && (principal.kind !== "user" || (hit.visibility === "PRIVATE" && hit.ownerId !== principal.userId))) return false;
     if (hit.entityType === "note" && (principal.kind !== "user" || hit.ownerId !== principal.userId)) return false;
     if (principal.kind === "token") {
       const scope = TOKEN_SCOPE_BY_TYPE[hit.entityType];
@@ -112,6 +113,11 @@ export const searchWorkspace = defineTool({
       if (hit.entityType === "note") return Boolean(await prisma.personalNote.findFirst({ where: { id: hit.entityId, workspaceId: principal.workspace.id, userId: principal.userId, archivedAt: null }, select: { id: true } }));
       if (hit.entityType === "member") return Boolean(await prisma.memberProfile.findFirst({ where: { id: hit.entityId, workspaceId: principal.workspace.id, user: { disabledAt: null, memberships: { some: { workspaceId: principal.workspace.id, status: "ACTIVE" } } } }, select: { id: true } }));
       if (hit.entityType === "team") return Boolean(await prisma.team.findFirst({ where: { id: hit.entityId, workspaceId: principal.workspace.id, archivedAt: null, ...(principal.kind === "user" && hasRoleAtLeast(principal.role, "ADMIN") ? {} : { OR: [{ visibility: "PUBLIC" }, { members: { some: { userId: principal.userId } } }] }) }, select: { id: true } }));
+      if (hit.entityType === "calendar_entry") {
+        if (principal.kind !== "user") return false;
+        const { entryWhere } = await import("@/lib/calendar/access");
+        return Boolean(await prisma.calendarEntry.findFirst({ where: { AND: [await entryWhere({ user: { id: principal.userId, name: null }, workspace: principal.workspace, membership: { role: principal.role } }), { id: hit.entityId }] }, select: { id: true } }));
+      }
       if (hit.entityType !== "file") return true;
       // Jobs post to shared destinations and must not recover private files
       // using their creator's broader download rights.

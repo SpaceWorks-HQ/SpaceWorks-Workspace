@@ -25,6 +25,8 @@ import {
   checkTeam,
   admin,
 } from "./core";
+import { expandRecurrence } from "@/lib/calendar/algorithms";
+import { templateWhere } from "@/lib/templates/service";
 import { pickDestinations } from "./destinations";
 
 export async function meetingWhere(
@@ -300,6 +302,7 @@ async function addAction(
 
 export async function mutateMeeting(actor: Actor, input: unknown) {
   const data = meetingCommand.parse(input);
+  const calendarNotifications: Awaited<ReturnType<typeof import("@/lib/calendar/service")["notifyMeeting"]>>[] = [];
   const result = await serial(async (tx) => {
     await assertActor(actor, tx, data.op !== "rsvp");
     if (data.op === "create") {
@@ -356,11 +359,12 @@ export async function mutateMeeting(actor: Actor, input: unknown) {
               workspaceId: actor.workspace.id,
               id: data.templateId,
               kind: "MEETING",
-              ...(await visibilityWhere(actor, tx)),
+              ...(await templateWhere(actor, tx)),
             },
           })
         : null;
       if (data.templateId) ensure(template);
+      ensure(!template || template.scope === "WORKSPACE" || (template.scope === "PRIVATE" && data.visibility === "PRIVATE") || (template.scope === "TEAM" && data.visibility === "TEAM" && template.teamId === data.teamId), "Keep the agenda template's audience for this meeting.");
       const agenda =
         template &&
         typeof template.content === "object" &&
@@ -373,20 +377,15 @@ export async function mutateMeeting(actor: Actor, input: unknown) {
           : [];
       const count = data.repeat === "NONE" ? 1 : data.occurrences;
       let rootId = "";
-      for (let index = 0; index < count; index++) {
-        const startsAt = new Date(data.startsAt),
-          endsAt = new Date(data.endsAt);
-        if (data.repeat === "MONTHLY") {
-          startsAt.setUTCMonth(startsAt.getUTCMonth() + index);
-          endsAt.setUTCMonth(endsAt.getUTCMonth() + index);
-        } else {
-          const days = data.repeat === "FORTNIGHTLY" ? 14 : 7;
-          startsAt.setUTCDate(startsAt.getUTCDate() + index * days);
-          endsAt.setUTCDate(endsAt.getUTCDate() + index * days);
-        }
+      const horizon = new Date(data.startsAt);
+      horizon.setUTCFullYear(horizon.getUTCFullYear() + 5);
+      const dates = expandRecurrence(data.startsAt, data.repeat === "FORTNIGHTLY" ? "BIWEEKLY" : data.repeat, horizon, actor.workspace.timezone).slice(0, count);
+      for (const [index, startsAt] of dates.entries()) {
+        const endsAt = new Date(startsAt.getTime() + data.endsAt.getTime() - data.startsAt.getTime());
         const meeting = await tx.meeting.create({
           data: {
             workspaceId: actor.workspace.id,
+            timezone: actor.workspace.timezone,
             title: data.title,
             startsAt,
             endsAt,
@@ -422,6 +421,7 @@ export async function mutateMeeting(actor: Actor, input: unknown) {
               data: { seriesId: rootId },
             });
         }
+        calendarNotifications.push(await (await import("@/lib/calendar/service")).notifyMeeting(tx, actor, meeting.id, "meeting.scheduled"));
         await changed(
           tx,
           actor,
@@ -445,6 +445,7 @@ export async function mutateMeeting(actor: Actor, input: unknown) {
     });
     ensure(meeting);
     if (data.op === "rsvp") {
+      ensure(meeting.status !== "CANCELLED", "This meeting was cancelled. Open the calendar for another date.");
       ensure(
         await tx.meetingAttendee.findFirst({
           where: {
@@ -463,6 +464,7 @@ export async function mutateMeeting(actor: Actor, input: unknown) {
         },
         data: { rsvp: data.rsvp },
       });
+      await tx.calendarMeetingSync.updateMany({ where: { workspaceId: actor.workspace.id, meetingId: meeting.id, userId: actor.user.id }, data: { sequence: -1 } });
       await recordAuditEvent({
         workspaceId: actor.workspace.id,
         actorId: actor.user.id,
@@ -500,8 +502,11 @@ export async function mutateMeeting(actor: Actor, input: unknown) {
           location: data.location,
           notesDocId: data.notesDocId ?? null,
           status: data.status,
+          sequence: { increment: 1 },
+          reminderSentAt: null,
         },
       });
+      calendarNotifications.push(await (await import("@/lib/calendar/service")).notifyMeeting(tx, actor, meeting.id, data.status === "CANCELLED" ? "meeting.cancelled" : "meeting.updated"));
     } else if (data.op === "agenda" || data.op === "agendaUpdate") {
       if (data.ownerId)
         await checkMembers(
@@ -735,5 +740,6 @@ export async function mutateMeeting(actor: Actor, input: unknown) {
     return { id: meeting.id, notification: null };
   });
   await result.notification?.afterCommit();
+  await Promise.all(calendarNotifications.map(n => n.afterCommit()));
   return { id: result.id };
 }

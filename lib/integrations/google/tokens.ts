@@ -66,9 +66,11 @@ export async function getGoogleAccessToken(connection: Pick<IntegrationConnectio
 }
 
 /** The workspace's active Google connection (the most recent one when several accounts are connected). */
-export function findGoogleConnection(workspaceId: string, connectionId?: string) {
-  return prisma.integrationConnection.findFirst({
+export async function findGoogleConnection(workspaceId: string, connectionId?: string) {
+  const connections = await prisma.integrationConnection.findMany({
     where: { workspaceId, provider: "GOOGLE", status: { not: "REVOKED" }, ...(connectionId ? { id: connectionId } : {}) },
     orderBy: { createdAt: "desc" },
   });
+  // Calendar-only consent never grants workspace tools access to a member's account.
+  return connections.find(connection => !(connection.metadata && typeof connection.metadata === "object" && !Array.isArray(connection.metadata) && connection.metadata.personalCalendar === true)) ?? null;
 }

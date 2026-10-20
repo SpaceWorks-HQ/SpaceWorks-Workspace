@@ -114,7 +114,7 @@ export function folderCrumbs(folder: string): Array<{ name: string; path: string
 export const CHAT_FOLDER = "/chat";
 
 export function isReservedFolder(folder: string): boolean {
-  return folder === CHAT_FOLDER || folder.startsWith(`${CHAT_FOLDER}/`);
+  return folder === "/calendar" || folder.startsWith("/calendar/") || folder === CHAT_FOLDER || folder.startsWith(`${CHAT_FOLDER}/`);
 }
 
 /** Is `folder` the same as or inside `parent`? */

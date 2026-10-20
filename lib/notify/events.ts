@@ -132,6 +132,11 @@ export interface EventPayloads {
   // Work and collaboration
   "cycle.started": { cycleId: Id; projectId: Id | null };
   "cycle.completed": { cycleId: Id; projectId: Id | null };
+  "meeting.scheduled": { meetingId: Id; startsAt: Iso };
+  "meeting.updated": { meetingId: Id; startsAt: Iso };
+  "meeting.cancelled": { meetingId: Id; startsAt: Iso };
+  "meeting.reminder": { meetingId: Id; startsAt: Iso };
+  "calendar.reminder": { entryId: Id };
   "meeting.agenda_reminder": { meetingId: Id; startsAt: Iso };
   "meeting.summary_published": { meetingId: Id };
   "poll.opened": PollRef;
@@ -243,6 +248,11 @@ export const EVENT_CATALOG = {
 
   "cycle.started": s("collaboration", "Cycle started", "both", "info", "MEMBER"),
   "cycle.completed": s("collaboration", "Cycle completed", "both", "info", "MEMBER"),
+  "meeting.scheduled": s("collaboration", "Meeting scheduled", "personal"),
+  "meeting.updated": s("collaboration", "Meeting updated", "personal"),
+  "meeting.cancelled": s("collaboration", "Meeting cancelled", "personal"),
+  "meeting.reminder": s("collaboration", "Meeting reminder", "personal"),
+  "calendar.reminder": s("collaboration", "Calendar reminder", "personal"),
   "meeting.agenda_reminder": s("collaboration", "Add agenda items", "personal"),
   "meeting.summary_published": s("collaboration", "Meeting summary", "both"),
   "poll.opened": s("collaboration", "Poll opened", "both"),

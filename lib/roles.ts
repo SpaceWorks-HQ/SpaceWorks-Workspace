@@ -154,3 +154,7 @@ export const canExportWorkspace = (m: RoleHolder) => atLeast(m, "OWNER");
 /** App reviews: members triage and reply; admins manage store credentials. */
 export const canViewAppReviews = (m: RoleHolder) => atLeast(m, "MEMBER");
 export const canManageAppReviews = (m: RoleHolder) => atLeast(m, "ADMIN");
+
+/** Internal calendar scheduling; guests may only respond to invitations. */
+export const canScheduleMeetings = (m: RoleHolder) => atLeast(m, "MEMBER");
+export const canManageCalendarDeadlines = (m: RoleHolder) => atLeast(m, "ADMIN");

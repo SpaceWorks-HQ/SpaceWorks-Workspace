@@ -496,6 +496,8 @@ model Workspace {
   forms                    Form[]
   goals                    Goal[]
   templates                Template[]
+  calendarEntries          CalendarEntry[]
+  calendarSyncs            CalendarMeetingSync[]
   meetings                 Meeting[]
   decisions                Decision[]
   polls                    Poll[]
@@ -3254,6 +3256,15 @@ model Meeting {
 
   @@index([workspaceId, startsAt])
   @@index([seriesId, startsAt])
+  videoUrl           String?
+  projectId          String?
+  timezone           String        @default("Asia/Kolkata")
+  externalEmails     String[]      @default([])
+  sequence           Int           @default(0)
+  reminderMinutes    Int           @default(30)
+  reminderSentAt     DateTime?
+  calendarSyncs      CalendarMeetingSync[]
+
 }
 
 /// A member (`userId`) or an external contact (`contactId`).
@@ -4642,4 +4653,47 @@ model PersonalTodo {
 
   @@index([workspaceId, userId, done, position])
   @@index([noteId])
+}
+
+// Internal team calendar: finite recurring deadlines and private reminders.
+model CalendarEntry {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  title           String
+  kind            String
+  startsAt        DateTime
+  endsAt          DateTime
+  timezone        String
+  seriesId        String?
+  rrule           String?
+  ownerId         String
+  teamId          String?
+  projectId       String?
+  visibility      Visibility @default(PRIVATE)
+  notes           String?
+  fileIds         String[] @default([])
+  reminderMinutes Int @default(30)
+  reminderSentAt   DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  @@index([workspaceId, startsAt])
+  @@index([workspaceId, ownerId, startsAt])
+}
+
+model CalendarMeetingSync {
+  id           String @id @default(cuid())
+  workspaceId  String
+  meetingId    String
+  userId       String
+  connectionId String
+  externalId   String
+  sequence     Int @default(-1)
+  etag         String?
+  lastSyncedAt DateTime?
+  lastError    String?
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  meeting      Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  @@unique([workspaceId, meetingId, userId])
+  @@index([workspaceId, userId])
 }

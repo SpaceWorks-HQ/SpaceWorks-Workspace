@@ -8,6 +8,7 @@ import { visibleTaskWhere } from "@/lib/tasks/access";
 import { taskUrl } from "@/lib/tasks/links";
 import { hiddenTeamIds, teamScopeFilter } from "@/lib/teamAccess";
 import { meetingWhere } from "@/lib/meetings/service";
+import { entryWhere } from "@/lib/calendar/access";
 import { canContribute } from "@/lib/roles";
 import { safeTimeZone } from "@/lib/timeZone";
 import { canSubscribeToCalendar } from "@/lib/community/access";
@@ -111,7 +112,7 @@ export async function buildFeed(feed: NonNullable<Awaited<ReturnType<typeof reso
       prisma.meetingAttendee.findMany({
         where: { userId: feed.userId, rsvp: { not: "NO" }, meeting: { ...(await meetingWhere(actor)), startsAt: window } },
         take: 500,
-        select: { rsvp: true, meeting: { select: { id: true, title: true, startsAt: true, endsAt: true, location: true, status: true, updatedAt: true } } },
+        select: { rsvp: true, meeting: { select: { id: true, title: true, startsAt: true, endsAt: true, location: true, status: true, updatedAt: true, sequence: true } } },
       }),
       canContribute(actor.membership) ? prisma.shiftAssignment.findMany({
         where: { userId: feed.userId, status: { in: ["CONFIRMED", "WAITLIST", "SWAP_REQUESTED"] }, shift: { workspaceId: feed.workspace.id, startsAt: window, shiftType: { workspaceId: feed.workspace.id, ...teamScopeFilter(hidden) } } },
@@ -129,6 +130,7 @@ export async function buildFeed(feed: NonNullable<Awaited<ReturnType<typeof reso
       const url = `${base}/w/${feed.workspace.slug}/meetings/${meeting.id}`;
       entries.push({
         uid: `meeting-${meeting.id}@spaceworks-workspace`,
+        sequence: meeting.sequence,
         summary: `${meeting.status === "CANCELLED" ? "Cancelled: " : ""}${meeting.title}`,
         description: `Meeting · ${url}`,
         location: meeting.location,
@@ -166,9 +168,16 @@ export async function buildFeed(feed: NonNullable<Awaited<ReturnType<typeof reso
     }
   }
 
+  const [renewals, dates] = await Promise.all([
+    canContribute(actor.membership) ? prisma.subscription.findMany({ where: { workspaceId: feed.workspace.id, status: "ACTIVE", nextRenewalAt: window, ...teamScopeFilter(hidden) }, select: { id: true, name: true, nextRenewalAt: true, updatedAt: true }, take: 500 }) : [],
+    prisma.calendarEntry.findMany({ where: { AND: [await entryWhere(actor), { startsAt: window }] }, take: 500 }),
+  ]);
+  for (const renewal of renewals) entries.push({ uid: `renewal-${renewal.id}@spaceworks-workspace`, summary: `Renewal: ${renewal.name}`, allDay: dayKey(renewal.nextRenewalAt!, zone), lastModified: renewal.updatedAt, url: `${base}/w/${feed.workspace.slug}/subscriptions` });
+  for (const date of dates) entries.push({ uid: `calendar-${date.id}@spaceworks-workspace`, summary: date.title, start: date.startsAt, end: date.endsAt, lastModified: date.updatedAt, url: `${base}/w/${feed.workspace.slug}/calendar` });
+
   return buildCalendar({
     name: `${feed.workspace.name} · my calendar`,
-    description: "Your meetings, shifts and task due dates.",
+    description: "Your meetings, shifts, task due dates, renewals and reminders.",
     timeZone: zone,
     entries,
     now,
