@@ -186,6 +186,11 @@
       "id": "w-workspaceSlug-boardroom-page:loadBoardroomPage"
     },
     {
+      "module": "lib/views/generated/w-workspaceSlug-calendar-page-loadCalendarPage",
+      "name": "loadCalendarPage",
+      "id": "w-workspaceSlug-calendar-page:loadCalendarPage"
+    },
+    {
       "module": "lib/views/generated/w-workspaceSlug-calendar-subscribe-page-loadSubscribePage",
       "name": "loadSubscribePage",
       "id": "w-workspaceSlug-calendar-subscribe-page:loadSubscribePage"
@@ -1051,6 +1056,56 @@
       "module": "app/actions/boardroom",
       "name": "deleteBoardroomSessionAction",
       "id": "boardroom:deleteBoardroomSessionAction"
+    },
+    {
+      "module": "app/actions/calendar",
+      "name": "scheduleMeetingAction",
+      "id": "calendar:scheduleMeetingAction"
+    },
+    {
+      "module": "app/actions/calendar",
+      "name": "cancelCalendarMeetingAction",
+      "id": "calendar:cancelCalendarMeetingAction"
+    },
+    {
+      "module": "app/actions/calendar",
+      "name": "calendarRsvpAction",
+      "id": "calendar:calendarRsvpAction"
+    },
+    {
+      "module": "app/actions/calendar",
+      "name": "moveCalendarTaskAction",
+      "id": "calendar:moveCalendarTaskAction"
+    },
+    {
+      "module": "app/actions/calendar",
+      "name": "saveCalendarEntryAction",
+      "id": "calendar:saveCalendarEntryAction"
+    },
+    {
+      "module": "app/actions/calendar",
+      "name": "deleteCalendarEntryAction",
+      "id": "calendar:deleteCalendarEntryAction"
+    },
+    {
+      "module": "app/actions/calendar",
+      "name": "calendarAvailabilityAction",
+      "id": "calendar:calendarAvailabilityAction"
+    },
+    {
+      "module": "app/actions/calendar",
+      "name": "syncCalendarGoogleAction",
+      "id": "calendar:syncCalendarGoogleAction"
+    },
+    {
+      "module": "app/actions/calendar",
+      "name": "connectCalendarGoogleAction",
+      "id": "calendar:connectCalendarGoogleAction"
+    },
+    {
+      "module": "app/actions/calendar",
+      "name": "attachCalendarFileAction",
+      "id": "calendar:attachCalendarFileAction"
     },
     {
       "module": "app/actions/catalogue",
