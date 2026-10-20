@@ -1,8 +1,0 @@
-/* Extra prose rules for blog posts (the shared .yy-prose covers h2/h3, lists, links, quotes). */
-.sw-blog-prose { font-size: 18px; line-height: 1.7; }
-.sw-blog-prose h4 { font-family: var(--font-display); font-weight: 600; font-size: 18px; line-height: 1.3; color: var(--yy-text); margin-top: 1.1em; }
-.sw-blog-prose hr { border: 0; border-top: 1px solid var(--yy-border); margin: 2em 0; }
-.sw-blog-prose code { font-family: var(--font-mono); font-size: 0.9em; background: var(--yy-bg-surface); border: 1px solid var(--yy-border); border-radius: 6px; padding: 0.1em 0.35em; }
-.sw-blog-prose pre { font-family: var(--font-mono); font-size: 14px; line-height: 1.55; background: var(--yy-inverse-surface); color: var(--yy-on-inverse); border-radius: 12px; padding: 16px 20px; overflow-x: auto; }
-.sw-blog-prose pre code { background: transparent; border: 0; padding: 0; color: inherit; font-size: inherit; }
-.sw-blog-prose s { text-decoration-thickness: 1px; }

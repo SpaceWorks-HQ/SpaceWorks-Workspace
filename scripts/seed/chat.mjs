@@ -76,7 +76,7 @@ export async function seedChat(prisma, { workspaceId, users, channels }) {
       createdById: users.meera.id,
       lastMessageAt: at(10),
       members: { create: participants.map((userId) => ({ userId })) },
-      messages: { create: [{ workspaceId, authorId: users.meera.id, body: "Can I borrow the bench power supply on Sunday?", createdAt: at(10) }] },
+      messages: { create: [{ workspaceId, authorId: users.meera.id, body: "The bench power supply needs an inspection on Sunday.", createdAt: at(10) }] },
     },
   });
 }

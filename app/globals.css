@@ -335,7 +335,7 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Member-written rich text (sanitised HTML from docs, tasks and blog posts). */
+/* Member-written rich text (sanitised HTML from docs and tasks). */
 @layer components {
   .yy-prose { color: var(--yy-text-secondary); font-size: 16px; line-height: 1.6; overflow-wrap: anywhere; }
   .yy-prose > * + * { margin-top: 0.85em; }

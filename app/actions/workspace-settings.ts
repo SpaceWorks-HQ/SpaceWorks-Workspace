@@ -43,7 +43,7 @@ export async function updateWorkspaceSettings(slug: string, input: unknown): Pro
     actorId: ctx.user.id,
     targetType: "Workspace",
     targetId: ctx.workspace.id,
-    metadata: { financeVisibleToMembers: parsed.data.financeVisibleToMembers, blogEnabled: parsed.data.blogEnabled },
+    metadata: { financeVisibleToMembers: parsed.data.financeVisibleToMembers },
   });
   revalidateSettings(ctx.workspace.slug);
   return { ok: true };

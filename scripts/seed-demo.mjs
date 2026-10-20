@@ -93,7 +93,6 @@ async function main() {
       timezone: "Asia/Kolkata",
       currency: "INR",
       financeVisibleToMembers: true,
-      blogEnabled: true,
       memberships: { create: PEOPLE.map((p) => ({ userId: users[p.key].id, role: p.role, title: p.title })) },
     },
   });
@@ -184,15 +183,6 @@ async function main() {
   await prisma.announcement.create({
     data: { workspaceId: workspace.id, title: "Build night this Saturday", body: "Doors open at 6 PM. Bring your half-finished projects and something to share.", authorId: users.owner.id, pinned: true, publishedAt: new Date() },
   });
-  const buildNight = await prisma.communityEvent.create({
-    data: { workspaceId: workspace.id, title: "Saturday build night", description: "Open workbench and show-and-tell.", location: "TinkerSpace, Kakkanad", startsAt: daysFromNow(4, 18), endsAt: daysFromNow(4, 22), kind: "BUILD_NIGHT", createdById: users.owner.id },
-  });
-  await prisma.eventAttendee.createMany({ data: ["owner", "meera", "joel"].map((key) => ({ eventId: buildNight.id, userId: users[key].id, status: "GOING" })) });
-  await prisma.communityEvent.create({
-    data: { workspaceId: workspace.id, title: "Intro to soldering workshop", location: "TinkerSpace, Kakkanad", startsAt: daysFromNow(11, 10), endsAt: daysFromNow(11, 13), kind: "WORKSHOP", createdById: users.admin.id },
-  });
-  await prisma.shoutout.create({ data: { workspaceId: workspace.id, fromId: users.joel.id, toId: users.meera.id, message: "For turning the sensor bar around in two evenings." } });
-
   await prisma.ledgerEntry.createMany({
     data: [
       { workspaceId: workspace.id, kind: "INCOME", amountMinor: 1_200_000, currency: "INR", categoryId: categories["Member contributions"].id, description: "October contributions", occurredOn: dateOnly(18), createdById: users.admin.id },

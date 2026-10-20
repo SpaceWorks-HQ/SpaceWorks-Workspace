@@ -38,8 +38,6 @@ describe("event catalogue", () => {
       "mention",
       "message.dm",
       "announcement.published",
-      "shoutout.received",
-      "event.reminder",
       "finance.approval.requested",
       "finance.approval.decided",
       "monitor.down",
@@ -250,13 +248,13 @@ describe("rendering", () => {
 
   it("renders a channel-neutral message with a severity word", () => {
     const message = renderMessage(
-      { type: "monitor.down", severity: "critical", title: "Laser booking app is down", body: "Timed out after 10 s.", url: "/w/kochi/services", fields: [{ label: "Status", value: "504" }] },
+      { type: "monitor.down", severity: "critical", title: "Equipment monitor is down", body: "Timed out after 10 s.", url: "/w/kochi/services", fields: [{ label: "Status", value: "504" }] },
       workspace,
       "https://work.example.org",
     );
     expect(message.severityLabel).toBe("Critical");
     expect(message.url).toBe("https://work.example.org/w/kochi/services");
     expect(message.text).toBe("Timed out after 10 s.\nStatus: 504");
-    expect(renderPlainText(message)).toBe("[Critical] Laser booking app is down\nTimed out after 10 s.\nStatus: 504\nhttps://work.example.org/w/kochi/services");
+    expect(renderPlainText(message)).toBe("[Critical] Equipment monitor is down\nTimed out after 10 s.\nStatus: 504\nhttps://work.example.org/w/kochi/services");
   });
 });

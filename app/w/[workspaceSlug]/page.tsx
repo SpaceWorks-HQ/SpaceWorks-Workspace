@@ -28,11 +28,6 @@ export default async function WorkspaceHome({
   const base = `/w/${workspace.slug}`;
   const tz = workspace.timezone;
   const upcoming = [
-    ...d.upcomingEvents.map((e) => ({
-      ...e,
-      href: `${base}/calendar/${e.id}`,
-      kind: "Event",
-    })),
     ...d.meetings.map((m) => ({
       ...m,
       href: `${base}/meetings/${m.id}`,
@@ -72,7 +67,7 @@ export default async function WorkspaceHome({
         <StatTile
           label="Coming up"
           value={upcoming.length}
-          href={`${base}/calendar`}
+          href={`${base}/meetings`}
         />
         {d.kittyMinor !== null ? (
           <StatTile
@@ -165,9 +160,9 @@ export default async function WorkspaceHome({
               action={
                 <Link
                   className="inline-flex min-h-11 items-center underline"
-                  href={`${base}/calendar`}
+                  href={`${base}/meetings`}
                 >
-                  Calendar
+                  Meetings
                 </Link>
               }
             />
@@ -194,8 +189,8 @@ export default async function WorkspaceHome({
             ) : (
               <p>
                 Nothing planned.{" "}
-                <Link className="underline" href={`${base}/calendar`}>
-                  Open the calendar
+                <Link className="underline" href={`${base}/meetings`}>
+                  Schedule a meeting
                 </Link>
               </p>
             )}

@@ -61,8 +61,6 @@ export function accessSql(actor: SearchActor) {
       "Announcement",
       Prisma.sql`r."publishedAt" <= CURRENT_TIMESTAMP`,
     ],
-    ["community_event", "CommunityEvent", Prisma.sql`r."cancelledAt" IS NULL`],
-    ["shoutout", "Shoutout", Prisma.sql`TRUE`],
     ["link", "LinkItem", team(Prisma.sql`r."teamId"`)],
     ["monitor", "Monitor", Prisma.sql`${member} AND ${project}`],
     [
@@ -128,7 +126,6 @@ export function accessSql(actor: SearchActor) {
       "Invoice",
       Prisma.sql`${member} AND (${admin} OR EXISTS (SELECT 1 FROM "Workspace" w WHERE w.id=${actor.workspaceId} AND w."financeVisibleToMembers"))`,
     ],
-    ["blog_post", "BlogPost", Prisma.sql`${admin}`],
     [
       "file",
       "FileObject",

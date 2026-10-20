@@ -13,7 +13,6 @@ import { canSeeEmergencyContact, canSeeMemberEmails } from "./access";
 import { type PeopleActor, isActiveMember } from "./context";
 import { listTeams } from "@/lib/teams/teams";
 import { hiddenTeamIds } from "@/lib/teamAccess";
-import { shoutoutTotals } from "@/lib/community/summary";
 import { startAutoChecklists } from "./checklists";
 
 const text = (max: number) => z.string().trim().max(max).default("");
@@ -58,12 +57,11 @@ export async function memberProfile(actor: PeopleActor, userId: string) {
   const member = (await listMembers(actor, { userId })).find(m => m.id === userId);
   if (!member) return null;
   const hidden = await hiddenTeamIds(actor.workspace.id, { userId: actor.user.id, role: actor.membership.role });
-  const [profile, totals, activity] = await Promise.all([
+  const [profile, activity] = await Promise.all([
     prisma.memberProfile.findFirst({ where: { workspaceId: actor.workspace.id, userId }, select: { handles: true, interests: true, isKeyholder: true, membershipType: true, emergencyUpdatedAt: true } }),
-    shoutoutTotals(actor.workspace.id, userId),
     prisma.activityEvent.findMany({ where: { workspaceId: actor.workspace.id, actorId: userId, visibility: "WORKSPACE", OR: [{ teamId: null }, { teamId: { notIn: hidden } }], projectId: null }, orderBy: { createdAt: "desc" }, take: 12, select: { id: true, summary: true, createdAt: true } }),
   ]);
-  return { ...member, interests: profile?.interests ?? [], membershipType: profile?.membershipType ?? "MEMBER", isKeyholder: profile?.isKeyholder ?? false, hasEmergency: Boolean(profile?.emergencyUpdatedAt), adminNotes: canManageMembers(actor.membership) ? profileFields(profile?.handles).adminNotes : undefined, totals, activity };
+  return { ...member, interests: profile?.interests ?? [], membershipType: profile?.membershipType ?? "MEMBER", isKeyholder: profile?.isKeyholder ?? false, hasEmergency: Boolean(profile?.emergencyUpdatedAt), adminNotes: canManageMembers(actor.membership) ? profileFields(profile?.handles).adminNotes : undefined, activity };
 }
 export async function saveOwnProfile(actor: PeopleActor, input: unknown): Promise<ActionResult> {
   const parsed = profileSchema.safeParse(input);

@@ -176,48 +176,6 @@ export const listMembers = defineTool({
   },
 });
 
-export const listEvents = defineTool({
-  name: "sw_list_events",
-  title: "Events",
-  description: "List community events and build nights from the calendar (upcoming by default).",
-  input: z.object({
-    from: z.string().trim().max(40).refine((v) => !Number.isNaN(Date.parse(v)), "Use an ISO date.").optional(),
-    days: z.number().int().min(1).max(180).default(30),
-    limit: z.number().int().min(1).max(50).default(20),
-  }),
-  write: false,
-  scope: "read:members",
-  minRole: "GUEST",
-  async run(ctx, input) {
-    const from = input.from ? new Date(input.from) : ctx.now;
-    const to = new Date(from.getTime() + input.days * 86_400_000);
-    const rows = await prisma.communityEvent.findMany({
-      where: { workspaceId: ctx.principal.workspace.id, cancelledAt: null, startsAt: { gte: from, lte: to } },
-      orderBy: { startsAt: "asc" },
-      take: input.limit,
-      select: { id: true, title: true, description: true, location: true, startsAt: true, endsAt: true, kind: true, capacity: true, _count: { select: { attendees: { where: { status: "GOING" } } } } },
-    });
-    return {
-      summary: `Looked up ${plural(rows.length, "event")}`,
-      data: {
-        timezone: ctx.principal.workspace.timezone,
-        events: rows.map((e) => ({
-          id: e.id,
-          title: e.title,
-          kind: e.kind,
-          startsAt: e.startsAt.toISOString(),
-          endsAt: e.endsAt?.toISOString() ?? null,
-          location: e.location,
-          going: e._count.attendees,
-          capacity: e.capacity,
-          description: e.description ? clip(e.description, 400) : null,
-          url: `/w/${ctx.principal.workspace.slug}/calendar`,
-        })),
-      },
-    };
-  },
-});
-
 export const listAnnouncements = defineTool({
   name: "sw_list_announcements",
   title: "Announcements",
@@ -402,4 +360,4 @@ export const webSearch = defineTool({
   },
 });
 
-export const WORKSPACE_TOOLS = [searchWorkspace, listMembers, listEvents, listAnnouncements, financeSummary, listMonitors, listIncidents, webSearch];
+export const WORKSPACE_TOOLS = [searchWorkspace, listMembers, listAnnouncements, financeSummary, listMonitors, listIncidents, webSearch];

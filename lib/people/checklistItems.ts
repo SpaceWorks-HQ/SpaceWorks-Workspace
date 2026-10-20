@@ -83,7 +83,6 @@ export type OffboardingSources = {
   /** Items they could reveal through a direct grant or did reveal: rotate these. */
   vaultItemsToRotate: Array<{ id: string; title: string }>;
   servicesOwned: Array<{ id: string; name: string; backup: boolean }>;
-  assetsCheckedOut: Array<{ id: string; name: string; tag: string }>;
   assetsOwned: Array<{ id: string; name: string; tag: string }>;
   accessCredentials: Array<{ id: string; label: string; type: string }>;
   subscriptionsOwned: Array<{ id: string; name: string }>;
@@ -96,7 +95,6 @@ export const emptyOffboardingSources = (): OffboardingSources => ({
   vaultItemsOwned: [],
   vaultItemsToRotate: [],
   servicesOwned: [],
-  assetsCheckedOut: [],
   assetsOwned: [],
   accessCredentials: [],
   subscriptionsOwned: [],
@@ -125,7 +123,6 @@ export function offboardingItems(sources: OffboardingSources, options: { adminId
   }
   for (const item of rotate.values()) add(`Rotate the secret in "${item.title}"`, "vault_item", item.id, true, "They could reveal this secret. Change it and save the new value in the vault.");
   for (const service of sources.servicesOwned) add(`${service.backup ? "Pick a new backup owner" : "Reassign ownership"} of the ${service.name} service`, "service", service.id, !service.backup);
-  for (const asset of sources.assetsCheckedOut) add(`Get ${asset.name} (${asset.tag}) returned`, "asset", asset.id);
   for (const asset of sources.assetsOwned) add(`Reassign ${asset.name} (${asset.tag}) to a new owner`, "asset", asset.id, false);
   for (const credential of sources.accessCredentials) add(`Collect the ${CREDENTIAL_WORDS[credential.type] ?? "credential"} "${credential.label}"`, "access_credential", credential.id);
   for (const subscription of sources.subscriptionsOwned) add(`Reassign the ${subscription.name} subscription`, "subscription", subscription.id);

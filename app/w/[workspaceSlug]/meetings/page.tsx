@@ -22,7 +22,7 @@ export default async function MeetingsPage({
 }: PageProps<"/w/[workspaceSlug]/meetings">) {
   const { workspaceSlug } = await params;
   const actor = await requireWorkspace(workspaceSlug, "GUEST");
-  const [meetings, choices, events, templates] = await Promise.all([
+  const [meetings, choices, templates] = await Promise.all([
     prisma.meeting.findMany({
       where: await meetingWhere(actor),
       orderBy: { startsAt: "desc" },
@@ -30,15 +30,6 @@ export default async function MeetingsPage({
       include: { _count: { select: { agenda: true, decisions: true } } },
     }),
     collaborationChoices(actor),
-    prisma.communityEvent.findMany({
-      where: {
-        workspaceId: actor.workspace.id,
-        cancelledAt: null,
-        startsAt: { gte: new Date() },
-      },
-      select: { id: true, title: true },
-      take: 100,
-    }),
     prisma.template.findMany({
       where: { ...(await templateWhere(actor)), kind: "MEETING" },
       select: { id: true, name: true },
@@ -110,16 +101,6 @@ export default async function MeetingsPage({
                 label: "Attendees",
                 type: "multi",
                 options: choices.members,
-              },
-              {
-                name: "calendarEventId",
-                label: "Community event",
-                type: "select",
-                options: [
-                  optionalChoice(),
-                  ...events.map((e) => ({ value: e.id, label: e.title })),
-                ],
-                help: "Workspace meetings can link to a community event.",
               },
               {
                 name: "templateId",

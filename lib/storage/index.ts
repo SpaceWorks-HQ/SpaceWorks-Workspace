@@ -119,7 +119,7 @@ export type UploadWorkspaceFileInput = {
   folder?: string;
   docId?: string | null;
   taskId?: string | null;
-  /** Narrow the global allow-list for a feature (e.g. images only for blog covers). */
+  /** Narrow the global allow-list for a feature (e.g. images only for project covers). */
   allowedTypes?: ReadonlySet<string>;
   maxBytes?: number;
   client?: DbClient;

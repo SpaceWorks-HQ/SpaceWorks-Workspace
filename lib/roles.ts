@@ -29,14 +29,13 @@ type FinanceWorkspace = { financeVisibleToMembers: boolean };
 
 const atLeast = (m: RoleHolder, min: WorkspaceRole) => m != null && hasRoleAtLeast(m.role, min);
 
-/** Create and edit tasks, docs, files, messages, shoutouts. */
+/** Create and edit tasks, docs, files, messages. */
 export const canContribute = (m: RoleHolder) => atLeast(m, "MEMBER");
 /** Invite, change roles, suspend and remove members. */
 export const canManageMembers = (m: RoleHolder) => atLeast(m, "ADMIN");
 export const canManageLabels = (m: RoleHolder) => atLeast(m, "ADMIN");
 export const canManageChannels = (m: RoleHolder) => atLeast(m, "ADMIN");
 export const canManageFinance = (m: RoleHolder) => atLeast(m, "ADMIN");
-export const canManageBlog = (m: RoleHolder) => atLeast(m, "ADMIN");
 export const canManageApiTokens = (m: RoleHolder) => atLeast(m, "ADMIN");
 export const canManageIntegrations = (m: RoleHolder) => atLeast(m, "ADMIN");
 export const canViewAuditLog = (m: RoleHolder) => atLeast(m, "ADMIN");

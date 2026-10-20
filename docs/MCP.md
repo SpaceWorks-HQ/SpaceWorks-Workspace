@@ -24,7 +24,7 @@ Create a token in **Settings → API tokens** (workspace admins). Give it the
 | `write:chat` | `sw_send_channel_message` |
 | `read:docs` | `sw_list_docs`, `sw_get_doc`, `sw_search_memory`, `sw_list_skills`, `sw_get_skill` |
 | `write:docs` | `sw_create_doc`, `sw_remember`, `sw_forget` |
-| `read:members` | `sw_list_members`, `sw_list_events`, `sw_list_announcements` |
+| `read:members` | `sw_list_members`, `sw_list_announcements` |
 | `read:finance` | `sw_finance_summary` |
 | any `read:*` | `sw_search_workspace` (results limited to the entity types your scopes cover) |
 

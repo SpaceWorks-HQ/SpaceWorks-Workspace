@@ -1,7 +1,6 @@
 import "server-only";
 
 import { recordAuditEvent } from "@/lib/audit";
-import { publishDuePosts } from "@/lib/blog/service";
 import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/format/datetime";
 import { dateOnly, localDate } from "@/lib/finance/dates";
@@ -54,8 +53,7 @@ export async function notifyOverdueInvoices(now: Date): Promise<number> {
   return count;
 }
 
-/** Runs on every replica; conditional claims and row locks make both jobs idempotent. */
+/** Runs on every replica; conditional claims and row locks make the job idempotent. */
 export async function run(now: Date): Promise<void> {
-  await publishDuePosts(now);
   await notifyOverdueInvoices(now);
 }

@@ -800,7 +800,7 @@ describe.sequential("work collaboration: tenant-safe workflows", () => {
         .contentHash,
     );
   });
-  it("publishes changelog entries with a draft-only public blog hand-off", async () => {
+  it("publishes internal changelog entries", async () => {
     const e = await mutateChangelog(owner, {
       op: "create",
       title: "Repair station ready",
@@ -813,16 +813,8 @@ describe.sequential("work collaboration: tenant-safe workflows", () => {
       op: "publish",
       entryId: e.id,
       publishedAt: new Date(),
-      blogDraft: true,
     });
-    const entry = await prisma.changelogEntry.findUniqueOrThrow({
-      where: { id: e.id },
-    });
-    expect(
-      await prisma.blogPost.findFirst({
-        where: { workspaceId: owner.workspace.id, id: entry.blogPostId! },
-      }),
-    ).toMatchObject({ status: "DRAFT" });
+    expect((await prisma.changelogEntry.findUniqueOrThrow({ where: { id: e.id } })).publishedAt).not.toBeNull();
     await expect(
       mutateChangelog(member, {
         op: "create",

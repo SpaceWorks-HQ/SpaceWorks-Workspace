@@ -35,7 +35,7 @@ export function AuthFrame({ title, description, children, accent = "Make things\
             <span className="absolute -bottom-2 right-20 size-20 rounded-[16px] bg-sw-sky" />
             <span className="relative max-w-[320px] -rotate-2 rounded-xl border border-line bg-panel p-4 text-label text-ink">#build-night · Soldering the LED wall tonight</span>
             <span className="relative ml-12 max-w-[320px] rotate-1 rounded-xl border border-line bg-panel p-4 text-label text-ink">BOT-12 · Motor driver board moved to Review</span>
-            <span className="relative ml-4 inline-flex items-center gap-2 self-start rounded-full bg-sw-citron px-4 py-2 text-label text-sw-ink">Shoutout to Meera for the 3D prints</span>
+            <span className="relative ml-4 inline-flex items-center gap-2 self-start rounded-full bg-sw-citron px-4 py-2 text-label text-sw-ink">Meera shared the 3D print notes</span>
           </div>
           <p className="relative flex items-end justify-between gap-6">
             <span className="whitespace-pre-line font-accent text-[34px] font-medium leading-[1.1] text-ink">{accent}</span>

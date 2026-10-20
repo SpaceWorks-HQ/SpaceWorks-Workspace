@@ -63,7 +63,6 @@ export const meetingCommand = z.discriminatedUnion("op", [
     location: z.string().trim().max(500).default(""),
     teamId: optionalId,
     visibility: z.enum(["WORKSPACE", "TEAM", "PRIVATE"]).default("WORKSPACE"),
-    calendarEventId: optionalId,
     facilitatorId: optionalId,
     attendeeIds: z.array(id).max(200).default([]),
     repeat: z
@@ -351,21 +350,6 @@ export async function mutateMeeting(actor: Actor, input: unknown) {
         ),
         "Choose attendees who can open this meeting.",
       );
-      if (data.calendarEventId) {
-        ensure(
-          data.visibility === "WORKSPACE" && !data.teamId,
-          "Only workspace meetings can link the community calendar.",
-        );
-        ensure(
-          await tx.communityEvent.findFirst({
-            where: {
-              workspaceId: actor.workspace.id,
-              id: data.calendarEventId,
-              cancelledAt: null,
-            },
-          }),
-        );
-      }
       const template = data.templateId
         ? await tx.template.findFirst({
             where: {
@@ -409,7 +393,6 @@ export async function mutateMeeting(actor: Actor, input: unknown) {
             location: data.location,
             teamId: data.teamId,
             visibility: data.visibility,
-            calendarEventId: index === 0 ? data.calendarEventId : null,
             facilitatorId: data.facilitatorId ?? actor.user.id,
             createdById: actor.user.id,
             seriesId: rootId || null,

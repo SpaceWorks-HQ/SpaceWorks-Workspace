@@ -26,15 +26,15 @@ feature should build on.
 | Work | `Project`, `BoardColumn`, `Task`, `TaskAssignee`, `Label`, `TaskLabel`, `TaskComment`, `TaskActivity` |
 | Chat | `Channel`, `ChannelMember`, `Message`, `MessageReaction`, `MessageAttachment` |
 | Knowledge | `Doc`, `DocRevision`, `FileObject` |
-| Community | `Announcement`, `CommunityEvent`, `EventAttendee`, `Shoutout` |
-| Operations | `FinanceCategory`, `LedgerEntry`, `Invoice`, `BlogPost` |
+| Community | `Announcement` |
+| Operations | `FinanceCategory`, `LedgerEntry`, `Invoice` |
 | Assistant | `AssistantConversation`, `AssistantMessage`, `AssistantMemory`, `AssistantSkill`, `ScheduledJob` |
 | Integrations | `IntegrationConnection`, `OAuthState`, `GithubRepo`, `GithubEvent` |
 | SEO | `SeoSite`, `SeoMetricDaily`, `SeoAudit` |
 | Boardroom | `BoardroomSession`, `BoardroomSeat`, `BoardroomTurn` |
 | Foundations (extension) | `Team`, `TeamMember`, `ApprovalPolicy`, `ApprovalRequest`, `ApprovalDecision`, `RecordLink`, `SearchDocument`, `ActivityEvent`, `SavedView`, `Bookmark`, `LinkItem` |
 | People | `MemberProfile`, `MemberSkill`, `ChecklistTemplate`, `ChecklistRun`, `ChecklistRunItem`, `Availability`, `ShiftType`, `Shift`, `ShiftAssignment`, `ShiftSwapRequest`, `CertType`, `Certification` |
-| Operations (extension) | `ServiceCatalogItem`, `ServiceLink`, `ServiceDependency`, `Subscription`, `VaultCollection`, `VaultItem`, `VaultItemVersion`, `VaultGrant`, `VaultAccessRequest`, `VaultAccessLog`, `Asset`, `AssetCheckout`, `AssetBooking`, `AssetMaintenanceLog`, `AccessCredential` |
+| Operations (extension) | `ServiceCatalogItem`, `ServiceLink`, `ServiceDependency`, `Subscription`, `VaultCollection`, `VaultItem`, `VaultItemVersion`, `VaultGrant`, `VaultAccessRequest`, `VaultAccessLog`, `Asset`, `AssetMaintenanceLog`, `AccessCredential` |
 | Relationships | `Organisation`, `Contact`, `ContactOrgRole`, `ContactInteraction`, `Deal` |
 | Money (extension) | `Budget`, `PurchaseRequest`, `Reimbursement` |
 | Work (extension) | `TaskRecurrence`, `TaskOccurrence`, `TaskDependency`, `Cycle`, `Form`, `FormSubmission`, `Goal`, `KeyResult`, `Template` |
@@ -93,7 +93,7 @@ findWorkspaceForUser(slug, userId): Promise<{ workspace, membership } | null>   
 requireSuperAdmin() / requireSuperAdminMfa()
 // lib/roles.ts (pure, client-safe)
 hasRoleAtLeast(role, min); canContribute(m); canManageMembers(m); canManageLabels(m);
-canManageChannels(m); canManageFinance(m); canViewFinance(m, workspace); canManageBlog(m);
+canManageChannels(m); canManageFinance(m); canViewFinance(m, workspace);
 canManageApiTokens(m); canManageIntegrations(m); canViewAuditLog(m); canManageWorkspace(m);
 canDeleteWorkspace(m); canTransferOwnership(m); assignableRoles(actor); canActOnMember(actor, targetRole)
 ```
@@ -260,20 +260,20 @@ The workspace navigation in `lib/nav.ts` is role-aware; every page and action in
 - [tasks](areas/tasks.md): Projects, kanban boards, recurring tasks, dependencies, cycles and personal tasks.
 - [chat](areas/chat.md): Channels, direct messages, threads, reactions, pins and live updates.
 - [docs-files](areas/docs-files.md): Nested rich-text docs, revisions, verification, private files and versions.
-- [community](areas/community.md): Announcements, shoutouts, community events, RSVPs, waitlists and private calendar feeds.
-- [finance-blog](areas/finance-blog.md): Community kitty, invoices, finance categories and public blog publishing.
+- [community](areas/community.md): Announcements and private personal feeds for internal meetings, shifts and task due dates.
+- [finance](areas/finance.md): Community kitty, invoices and finance categories.
 - [assistant](areas/assistant.md): Assistant conversations, workspace tools, memory, skills, scheduled digests, boardroom, MCP and scoped machine APIs.
 - [integrations-messaging](areas/integrations-messaging.md): Google, GitHub, SEO, messaging connections, account linking, channel bridges and signed webhooks.
 - [monitor](areas/monitor.md): Service checks, incidents, maintenance, on-call, public status pages, cloud inventory and costs.
 - [people-relationships](areas/people-relationships.md): Member profiles, teams, onboarding, certifications, availability, rota, contacts, organisations and pipeline.
-- [ops-money](areas/ops-money.md): Service catalogue, subscriptions, encrypted vault, assets, bookings, budgets, purchases, reimbursements, approvals and forms.
+- [ops-money](areas/ops-money.md): Service catalogue, subscriptions, encrypted vault, internal asset and physical access registers, budgets, purchases, reimbursements, approvals and forms.
 - [work-collaboration](areas/work-collaboration.md): Meetings, decisions, goals, key results, polls, ideas, templates, changelog and sign-offs.
 - [platform-shell](areas/platform-shell.md): My day, global search, activity, pinned links, command palette, notification centre, preferences, exports, imports, legal hold and retention.
 - [app-reviews](areas/app-reviews.md): App-store review inbox, replies, triage, insights, task links and notification routing.
 
 - [Integration finish](areas/integration-finish.md): OIDC/MFA, navigation, cross-area panels, retention, search and verification.
 
-Public entry points include the blog, opted-in status pages, public forms, asset sign-in redirects, hashed calendar feed capabilities, heartbeat capabilities and authenticated integration webhooks. Internal routes require an active session and tenant membership.
+Public entry points include opted-in status pages, public forms, asset sign-in redirects, hashed personal feed capabilities, heartbeat capabilities and authenticated integration webhooks. Internal routes require an active session and tenant membership.
 
 ## Identity and retention integration
 
@@ -281,4 +281,4 @@ Public entry points include the blog, opted-in status pages, public forms, asset
 
 `lib/shell/retention.ts` locks the workspace row before invoking registered writers. Legal hold stops all writers. Audit has no default purge. Inbound events default to 14 days and completed tenant outbox jobs to the instance period (30 days by default); pending work remains. Monitor raw checks retain at least `monitorRetentionDays`, and longer policies take precedence. Monitor summary and metric cleanup uses the same workspace lock. Unscoped legacy email jobs are conservatively retained while any workspace has a legal hold.
 
-Global search uses `indexSearchDocument` on mutations and `lib/search/query.ts` for live source-record permission checks. An index row alone never authorises access. Private contacts remain owner/admin searchable; private chats and vault contents are excluded. App reviews require MEMBER, blog management requires ADMIN, and team/project/channel restrictions are evaluated again on reads.
+Global search uses `indexSearchDocument` on mutations and `lib/search/query.ts` for live source-record permission checks. An index row alone never authorises access. Private contacts remain owner/admin searchable; private chats and vault contents are excluded. App reviews require MEMBER, and team/project/channel restrictions are evaluated again on reads.

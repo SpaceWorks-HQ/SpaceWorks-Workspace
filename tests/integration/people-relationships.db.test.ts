@@ -166,8 +166,7 @@ describe.sequential("people and relationships boundaries", () => {
   it("generates offboarding from read-only records, hides it from subjects and can suspend safely", async () => {
     const vault = await prisma.vaultItem.create({ data: { workspaceId: owner.workspace.id, ownerId: member.user.id, type: "LOGIN", title: "Shared login", secretEnc: "unread-ciphertext", dataKeyEnc: "unread-key" } });
     const service = await prisma.serviceCatalogItem.create({ data: { workspaceId: owner.workspace.id, ownerId: member.user.id, name: "Community site", slug: "community-site", kind: "WEBSITE" } });
-    const asset = await prisma.asset.create({ data: { workspaceId: owner.workspace.id, tag: "PEOPLE-1", name: "Laptop", category: "Computer" } });
-    await prisma.assetCheckout.create({ data: { assetId: asset.id, userId: member.user.id } });
+    const asset = await prisma.asset.create({ data: { workspaceId: owner.workspace.id, tag: "PEOPLE-1", ownerUserId: member.user.id, name: "Laptop", category: "Computer" } });
     const key = await prisma.accessCredential.create({ data: { workspaceId: owner.workspace.id, type: "KEY", label: "Front door", holderUserId: member.user.id } });
     const result = await startOffboarding(owner, { userId: member.user.id });
     if (!result.ok) throw new Error(result.error);

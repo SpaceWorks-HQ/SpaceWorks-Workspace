@@ -16,7 +16,6 @@ export default async function GeneralSettingsPage({ params }: PageProps<"/w/[wor
         timezone: workspace.timezone,
         currency: workspace.currency,
         financeVisibleToMembers: workspace.financeVisibleToMembers,
-        blogEnabled: workspace.blogEnabled,
       }}
     />
   );

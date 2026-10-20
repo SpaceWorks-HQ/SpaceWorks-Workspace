@@ -55,11 +55,10 @@ export async function offboardingSources(tx: Prisma.TransactionClient, workspace
   const teams = await tx.teamMember.findMany({ where: { userId, team: { workspaceId } }, select: { role: true, team: { select: { id: true, name: true } } } });
   const teamIds = teams.map(t => t.team.id);
   const grants = await tx.vaultGrant.findMany({ where: { workspaceId, permission: { in: ["REVEAL", "EDIT", "MANAGE"] }, OR: [{ principalType: "USER", principalId: userId }, { principalType: "TEAM", principalId: { in: teamIds } }, { principalType: "ROLE", principalId: membership.role }] }, select: { itemId: true, collectionId: true } });
-  const [owned, revealed, services, checkouts, assets, keys, subscriptions, identities, tasks] = await Promise.all([
+  const [owned, revealed, services, assets, keys, subscriptions, identities, tasks] = await Promise.all([
     tx.vaultItem.findMany({ where: { workspaceId, ownerId: userId, deletedAt: null }, select: { id: true, title: true } }),
     tx.vaultItem.findMany({ where: { workspaceId, deletedAt: null, OR: [{ logs: { some: { workspaceId, userId, action: { in: ["REVEAL", "COPY"] } } } }, { id: { in: grants.flatMap(g => g.itemId ? [g.itemId] : []) } }, { collectionId: { in: grants.flatMap(g => g.collectionId ? [g.collectionId] : []) } }] }, select: { id: true, title: true } }),
     tx.serviceCatalogItem.findMany({ where: { workspaceId, OR: [{ ownerId: userId }, { backupOwnerId: userId }] }, select: { id: true, name: true, ownerId: true } }),
-    tx.assetCheckout.findMany({ where: { userId, returnedAt: null, asset: { workspaceId } }, select: { asset: { select: { id: true, name: true, tag: true } } } }),
     tx.asset.findMany({ where: { workspaceId, ownerUserId: userId }, select: { id: true, name: true, tag: true } }),
     tx.accessCredential.findMany({ where: { workspaceId, holderUserId: userId, returnedAt: null }, select: { id: true, label: true, type: true } }),
     tx.subscription.findMany({ where: { workspaceId, ownerId: userId }, select: { id: true, name: true } }),
@@ -67,7 +66,7 @@ export async function offboardingSources(tx: Prisma.TransactionClient, workspace
     tx.task.findMany({ where: { workspaceId, assignees: { some: { userId } }, completedAt: null }, select: { id: true, number: true, title: true } }),
   ]);
   sources.vaultItemsOwned = owned; sources.vaultItemsToRotate = [...revealed, ...owned];
-  sources.servicesOwned = services.map(s => ({ ...s, backup: s.ownerId !== userId })); sources.assetsCheckedOut = checkouts.map(c => c.asset); sources.assetsOwned = assets; sources.accessCredentials = keys; sources.subscriptionsOwned = subscriptions;
+  sources.servicesOwned = services.map(s => ({ ...s, backup: s.ownerId !== userId })); sources.assetsOwned = assets; sources.accessCredentials = keys; sources.subscriptionsOwned = subscriptions;
   sources.identityLinks = identities.map(i => ({ id: i.id, provider: i.provider, username: i.externalUsername })); sources.teams = teams.map(t => ({ ...t.team, lead: t.role === "LEAD" })); sources.openTasks = tasks.map(t => ({ ...t, ref: `Task ${t.number}` }));
   return sources;
 }

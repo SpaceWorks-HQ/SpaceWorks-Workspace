@@ -43,7 +43,6 @@ export default async function SearchPage({
           "message",
           "project",
           "link",
-          "community_event",
         ].map((t) => (
           <Link
             key={t}

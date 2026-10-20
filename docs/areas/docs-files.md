@@ -53,8 +53,7 @@ and owns the docs view's single realtime connection; every page still calls
   Review by (7 days before), Needs review. The docs home lists the viewer's
   own pages that are due.
 - **Files library.** Shows workspace files that belong to no other area:
-  message attachments and the reserved `/chat` folder, receipts, blog
-  covers, contracts, certification evidence, status-page logos and signed
+  message attachments and the reserved `/chat` folder, receipts, contracts, certification evidence, status-page logos and signed
   PDFs are excluded (`libraryWhere`). Uploads and moves into `/chat` are
   refused. Uploading a name that already exists in the folder offers "Add as
   a new version" or "Keep both".

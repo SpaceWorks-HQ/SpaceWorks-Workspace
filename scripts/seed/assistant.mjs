@@ -53,7 +53,7 @@ async function main() {
       status: "DONE",
       rounds: 1,
       createdById: owner?.userId ?? null,
-      summary: "## Recommendation\nWait one quarter and lease a second cutter for the workshop season instead of buying.\n\n## Why\n- The kitty would drop below three months of rent.\n- Booking data shows the queue only at weekends.\n\n## Dissent\nThe Maker seat would buy now: weekend queues block workshops.\n\n## Next steps\n- Ask two vendors for lease quotes.\n- Track laser bookings for eight weeks.",
+      summary: "## Recommendation\nWait one quarter and lease a second cutter for the workshop season instead of buying.\n\n## Why\n- The kitty would drop below three months of rent.\n- Usage data shows demand only at weekends.\n\n## Dissent\nThe Maker seat would buy now: weekend queues block workshops.\n\n## Next steps\n- Ask two vendors for lease quotes.\n- Track equipment usage for eight weeks.",
       seats: {
         create: [
           { name: "Treasurer", persona: "Looks after the kitty: cost, cash flow and value for money.", position: 0 },
