@@ -409,6 +409,9 @@ model Notification {
 // ──────────────────────────── Tenancy ────────────────────────────
 
 model Workspace {
+  projectMilestones       ProjectMilestone[]
+  projectMilestoneTasks   ProjectMilestoneTask[]
+  projectStatusUpdates    ProjectStatusUpdate[]
   socialAccounts          SocialAccount[]
   socialMetrics           SocialMetricDaily[]
   socialPosts             SocialPost[]
@@ -683,15 +686,18 @@ model Project {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  owner       User?         @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: SetNull)
-  team        Team?         @relation(fields: [teamId], references: [id], onDelete: SetNull)
-  columns     BoardColumn[]
-  tasks       Task[]
-  githubRepos GithubRepo[]
-  cycles      Cycle[]
-  monitors    Monitor[]
+  workspace     Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  owner         User?                 @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  team          Team?                 @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  columns       BoardColumn[]
+  tasks         Task[]
+  githubRepos   GithubRepo[]
+  cycles        Cycle[]
+  monitors      Monitor[]
+  milestones    ProjectMilestone[]
+  statusUpdates ProjectStatusUpdate[]
 
+  @@unique([workspaceId, id])
   @@unique([workspaceId, key])
   @@index([workspaceId, status])
   @@index([teamId])
@@ -761,7 +767,14 @@ model Task {
   blockedBy          TaskDependency[]    @relation("TaskBlocked")
   meetingActionLinks MeetingActionItem[]
 
+  startsOn       DateTime?              @db.Date
+  blockerReason  String?
+  blockerOwnerId String?
+  milestones     ProjectMilestoneTask[]
+
+  @@unique([workspaceId, projectId, id])
   @@unique([workspaceId, number])
+  @@index([workspaceId, blockerOwnerId])
   @@index([projectId, columnId, position])
   @@index([workspaceId, completedAt])
   @@index([workspaceId, dueAt])
@@ -5879,4 +5892,53 @@ model SafeguardingAttachment {
 
   @@unique([workspaceId, fileId])
   @@index([workspaceId, caseId])
+}
+
+// Simple manual project planning and weekly check-ins.
+model ProjectMilestone {
+  id          String                 @id @default(cuid())
+  workspaceId String
+  projectId   String
+  name        String
+  targetOn    DateTime               @db.Date
+  status      String                 @default("PENDING")
+  notes       String                 @default("")
+  createdById String?
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  workspace   Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project     Project                @relation(fields: [workspaceId, projectId], references: [workspaceId, id], onDelete: Cascade)
+  tasks       ProjectMilestoneTask[]
+
+  @@unique([workspaceId, projectId, id])
+  @@index([workspaceId, projectId, targetOn])
+}
+
+model ProjectMilestoneTask {
+  workspaceId String
+  projectId   String
+  milestoneId String
+  taskId      String
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  milestone   ProjectMilestone @relation(fields: [workspaceId, projectId, milestoneId], references: [workspaceId, projectId, id], onDelete: Cascade)
+  task        Task             @relation(fields: [workspaceId, projectId, taskId], references: [workspaceId, projectId, id], onDelete: Cascade)
+
+  @@id([workspaceId, milestoneId, taskId])
+  @@index([workspaceId, taskId])
+}
+
+model ProjectStatusUpdate {
+  id          String    @id @default(cuid())
+  workspaceId String
+  projectId   String
+  status      String
+  note        String
+  blockers    String[]  @default([])
+  nextSteps   String[]  @default([])
+  authorId    String?
+  createdAt   DateTime  @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project     Project   @relation(fields: [workspaceId, projectId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, projectId, createdAt])
 }

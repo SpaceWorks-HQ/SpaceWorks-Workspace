@@ -124,6 +124,10 @@ export async function updateProject(actor: TaskActor, input: unknown): Promise<A
       client: tx,
     });
     await indexProject(tx, actor.workspace.slug, updated);
+    for (const [entityType, tab] of [["project_milestone", "overview"], ["project_update", "updates"]]) {
+      await tx.searchDocument.updateMany({ where: { workspaceId: actor.workspace.id, projectId: project.id, entityType }, data: { teamId: updated.teamId, url: `/w/${actor.workspace.slug}/projects/${updated.key}/${tab}` } });
+    }
+    await tx.activityEvent.updateMany({ where: { workspaceId: actor.workspace.id, projectId: project.id, entityType: { in: ["project_milestone", "project_update"] } }, data: { teamId: updated.teamId } });
     return updated;
   });
   if (updated.key !== project.key || updated.teamId !== project.teamId) await reindexProjectTasks(actor.workspace.slug, updated);
@@ -134,7 +138,7 @@ export async function updateProject(actor: TaskActor, input: unknown): Promise<A
 async function reindexProjectTasks(workspaceSlug: string, project: { id: string; key: string; teamId: string | null }) {
   const tasks = await prisma.task.findMany({
     where: { projectId: project.id },
-    select: { id: true, workspaceId: true, number: true, title: true, description: true, archivedAt: true, creatorId: true },
+    select: { id: true, workspaceId: true, number: true, title: true, description: true, blockerReason: true, archivedAt: true, creatorId: true },
   });
   for (const task of tasks) await indexTask(prisma, workspaceSlug, task, project);
 }

@@ -12,6 +12,7 @@ import { run as calendar } from "@/lib/scheduled/calendar";
 import { run as opsGaps } from "@/lib/scheduled/opsGaps";
 import { run as appReviews } from "@/lib/scheduled/appReviews";
 import { run as governance } from "@/lib/scheduled/governance";
+import { run as projectsPlus } from "@/lib/scheduled/projectsPlus";
 import { run as tasks } from "@/lib/scheduled/tasks";
 import { run as chat } from "@/lib/scheduled/chat";
 import { run as docsFiles } from "@/lib/scheduled/docsFiles";
@@ -40,6 +41,7 @@ export const SCHEDULED_JOBS: ReadonlyArray<JobDefinition> = [
   { area: "govextras", run: govextras },
   { area: "governance-tools", run: governance },
   { area: "tasks", run: tasks },
+  { area: "projects-plus", run: projectsPlus },
   { area: "chat", run: chat },
   { area: "docs-files", queue: "documents", run: docsFiles },
   { area: "community", run: community },

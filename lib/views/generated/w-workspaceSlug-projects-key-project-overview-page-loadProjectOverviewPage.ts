@@ -6,12 +6,15 @@ import { requireWorkspace } from "@/lib/permissions";
 import { getProjectOverview } from "@/lib/projects/queries";
 import { findProjectByKey, projectSummary } from "@/lib/tasks/queries";
 import { prisma } from "@/lib/db";
+import { getProjectPlan } from "@/lib/projects/plusQueries";
 
 export async function loadProjectOverviewPage({ params }: PageProps<"/w/[workspaceSlug]/projects/[key]/overview">) {
 const { workspaceSlug, key } = await params;
 const context = await requireWorkspace(workspaceSlug, "GUEST");
 const project = await findProjectByKey(context, key);
 if (!project) notFound();
+const plan = await getProjectPlan(context, key);
+if (!plan) notFound();
 const timeZone = context.workspace.timezone;
 const [overview, summary, owner, linkedRepo] = await Promise.all([
     getProjectOverview(context, project),
@@ -22,5 +25,5 @@ const [overview, summary, owner, linkedRepo] = await Promise.all([
 const total = overview.columns.reduce((sum, column) => sum + column.count, 0);
 const done = overview.columns.filter((column) => column.category === "DONE").reduce((sum, column) => sum + column.count, 0);
 const base = `/w/${context.workspace.slug}/projects/${project.key}`;
-return viewDto({ project, timeZone, overview, summary, owner, linkedRepo, total, done, base } as const);
+return viewDto({ project, plan, timeZone, overview, summary, owner, linkedRepo, total, done, base } as const);
 }

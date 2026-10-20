@@ -188,3 +188,9 @@ export function canReadMoneyControl(m: RoleHolder, userId: string, row: { kind: 
 /** Appointments grant no access to case contents without explicit case assignment. */
 export const canManageSafeguardingHandlers = (m: RoleHolder) => atLeast(m, "OWNER");
 export const canHandleSafeguarding = (m: RoleHolder, appointed: boolean, assigned: boolean) => atLeast(m, "MEMBER") && appointed && assigned;
+
+/** Project plans and check-ins: project lead or workspace admins; guests read only. */
+export function canManageProjectPlan(m: RoleHolder, userId: string, ownerId: string | null) {
+  return atLeast(m, "ADMIN") || (atLeast(m, "MEMBER") && userId === ownerId);
+}
+export const canEditTaskPlan = (m: RoleHolder) => atLeast(m, "MEMBER");

@@ -10,6 +10,9 @@ import { getProjectOverview } from "@/lib/projects/queries";
 import { findProjectByKey, projectSummary } from "@/lib/tasks/queries";
 import { prisma } from "@/lib/db";
 
+import { getProjectPlan } from "@/lib/projects/plusQueries";
+import { ProjectMilestones } from "@/components/projects/ProjectPlanning";
+
 export const metadata = { title: "Project overview" };
 
 export default async function ProjectOverviewPage({ params }: PageProps<"/w/[workspaceSlug]/projects/[key]/overview">) {
@@ -17,6 +20,8 @@ export default async function ProjectOverviewPage({ params }: PageProps<"/w/[wor
   const context = await requireWorkspace(workspaceSlug, "GUEST");
   const project = await findProjectByKey(context, key);
   if (!project) notFound();
+  const plan = await getProjectPlan(context, key);
+  if (!plan) notFound();
   const timeZone = context.workspace.timezone;
   const [overview, summary, owner, linkedRepo] = await Promise.all([
     getProjectOverview(context, project),
@@ -30,6 +35,11 @@ export default async function ProjectOverviewPage({ params }: PageProps<"/w/[wor
 
   return (
     <div className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-panel p-4">
+        <p>{plan.progress.percent}% complete · {plan.updateOverdue ? "Weekly update due" : "Next weekly update"}: {formatDate(plan.updateDueAt, timeZone)}</p>
+        <Link className="inline-flex min-h-11 items-center text-accent-text underline" href={`${base}/updates`}>Project updates</Link>
+      </div>
+      <ProjectMilestones slug={workspaceSlug} plan={plan} />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatTile label="Open tasks" value={total - done} href={base} />
         <StatTile label="Done" value={done} progress={{ value: done, max: Math.max(total, 1), tone: "success" }} />
