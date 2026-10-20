@@ -1,203 +1,25 @@
-# Deploy on a cloud platform
+# Cloud deployment
 
-[VPS](DEPLOYMENT_VPS.md) · [AWS](DEPLOYMENT_AWS.md) · [Kubernetes](DEPLOYMENT_KUBERNETES.md) · [Configuration](CONFIGURATION.md) · [Operations](production-operations.md)
-
-Platform-as-a-service options, all running the same Docker image with managed
-data services. Every connection must use TLS: `sslmode=require` for
-PostgreSQL, `rediss://` for Redis, HTTPS for object storage, STARTTLS or TLS
-for SMTP. Pick one region for everything.
-
-| Piece | Render (`render.yaml`) | DigitalOcean App Platform (`.do/app.yaml`) | Fly.io |
-| --- | --- | --- | --- |
-| App | Docker web service | Docker service + pre-deploy job | Fly Machine |
-| PostgreSQL 16 | Supabase (or Render Postgres) | Managed PostgreSQL | Fly Managed Postgres or Supabase |
-| Redis | Upstash | Managed Valkey | Upstash (Fly integration) |
-| Files | Cloudflare R2 | Spaces | Tigris or R2 |
-| Email | Brevo (port 2525 on Render free) | Any SMTP relay | Any SMTP relay |
-| Scheduler | In-process + Cloudflare Worker | In-process (+ Worker) | In-process (+ Worker) |
-
-## Shared preparation
-
-### Secrets
-
-```bash
-openssl rand -base64 33   # AUTH_SECRET, CRON_SECRET, HEALTHCHECK_SECRET (one each)
-openssl rand -base64 32   # NEXT_SERVER_ACTIONS_ENCRYPTION_KEY, MFA_ENCRYPTION_KEY,
-                          # INTEGRATION_ENCRYPTION_KEY, VAULT_MASTER_KEY (one each)
-```
-
-Save every value in a password manager. `MFA_ENCRYPTION_KEY`,
-`INTEGRATION_ENCRYPTION_KEY` and `VAULT_MASTER_KEY` encrypt data at rest:
-losing one makes that data unreadable. Check a finished configuration with
-`node --env-file=/secure/sww.env scripts/check-production-env.mjs`.
-
-### Supabase PostgreSQL
-
-Create a project, open **Connect → Connection string**:
-
-```text
-DATABASE_URL=postgresql://postgres.REF:PASSWORD@aws-0-REGION.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=5&sslmode=require
-DIRECT_URL=postgresql://postgres.REF:PASSWORD@aws-0-REGION.pooler.supabase.com:5432/postgres?sslmode=require
-```
-
-The transaction pooler (6543) needs `pgbouncer=true`; migrations use the
-session pooler (`DIRECT_URL`). URL-encode special characters in the password.
-
-### Upstash Redis
-
-Create a Redis database in your region and copy the TLS URL:
-`REDIS_URL=rediss://default:PASSWORD@NAME.upstash.io:6379`. Leave eviction off.
-
-### Cloudflare R2
-
-Create a bucket (public access off, no custom domain: files are served only
-through the app's authorised route) and an API token with **Object Read &
-Write** on that bucket:
-
-```text
-S3_BUCKET=spaceworks-workspace
-S3_REGION=auto
-S3_ENDPOINT=https://ACCOUNT_ID.r2.cloudflarestorage.com
-S3_ACCESS_KEY_ID=...
-S3_SECRET_ACCESS_KEY=...
-S3_FORCE_PATH_STYLE=1
-```
-
-### Email (Brevo)
-
-Authenticate your sending domain (SPF, DKIM, DMARC), then create an SMTP key:
-`EMAIL_FROM='Space Works <workspace@your-domain>'`, `SMTP_HOST=smtp-relay.brevo.com`,
-`SMTP_PORT=587` (2525 on Render free, which blocks 25/465/587), `SMTP_SECURE=false`,
-`SMTP_USER`, `SMTP_PASSWORD`. These are the bootstrap fallback; SMTP can also
-be set in `/admin → Settings`, where it is stored encrypted.
-
-## Render
-
-[`render.yaml`](../render.yaml) defines a Docker web service on the Starter
-plan: always on (so the in-process outbox worker runs), health check
-`/api/health`, and a pre-deploy command that applies migrations once per
-deploy. Deploys wait for GitHub checks (`autoDeployTrigger: checksPass`) and
-skip documentation-only commits.
-
-1. Render → **New → Blueprint**, connect `SpaceWorks-HQ/SpaceWorks-Workspace`,
-   choose the branch.
-2. Fill in the prompted values. `AUTH_URL` and `NEXT_PUBLIC_BASE_URL` are both
-   `https://spaceworks-workspace.onrender.com` (or your domain), no trailing slash.
-   Render generates `AUTH_SECRET`, `CRON_SECRET` and `HEALTHCHECK_SECRET`.
-3. Apply. The first build takes about 10 minutes.
-4. Custom domain: add it under **Settings → Custom Domains**, create the DNS
-   record Render shows (DNS-only if Cloudflare manages the zone), then set
-   both URL variables to the new origin and redeploy.
-5. Open `https://<host>/setup`.
-
-Client IPs: Render appends to `X-Forwarded-For`, so the Blueprint sets
-`TRUSTED_PROXY_IP_HEADER=x-forwarded-for` and `TRUSTED_PROXY_HOPS=1`. If your
-own Cloudflare zone proxies the domain (orange cloud), switch to
-`cf-connecting-ip`, remove the hops, and turn off Email Address Obfuscation.
-
-**Free plan**: change `plan` to `free`, delete `preDeployCommand`, add
-`MIGRATE_ON_START=1`, and use Brevo on port 2525. Free instances sleep after
-15 idle minutes, which stops the in-process outbox, so deploy the Cloudflare
-Worker below. The 512 MB instance is tight for the assistant; use Starter for
-a real community.
-
-### Cloudflare cron Worker
-
-[`deploy/cloudflare-cron`](../deploy/cloudflare-cron/README.md) wakes the app
-every minute and calls `/api/internal/outbox` and `/api/internal/jobs` with
-`CRON_SECRET`:
-
-```bash
-cd deploy/cloudflare-cron && npm ci && npx wrangler login
-npx wrangler secret put APP_URL       # https://work.example.org
-npx wrangler secret put CRON_SECRET   # copy from Render → Environment
-npx wrangler deploy && npx wrangler tail
-```
-
-An optional paid Render cron service (commented in `render.yaml`) does the
-same with `node /app/scripts/scheduler.mjs --once`.
+A DigitalOcean Droplet, Hetzner Cloud server or AWS EC2 instance can run the [curl installer](DEPLOYMENT_VPS.md) unchanged. Choose cloud services to default PostgreSQL, Redis and S3 to external providers, or keep any service bundled. Keep services in the same region, use provider firewalls, and publish only the HTTPS edge. A hostname and SSH access are enough for the guided install.
 
 ## DigitalOcean App Platform
 
-[`.do/app.yaml`](../.do/app.yaml) builds the Dockerfile, runs a **PRE_DEPLOY**
-migration job, binds a Managed PostgreSQL cluster as `${db.DATABASE_URL}`
-(already `sslmode=require`) and checks `/api/health`.
+`.do/app.yaml` builds the root Dockerfile's generic backend, runs the migration role as PRE_DEPLOY and serves all Next.js pages/API on port 3000. Provision a PostgreSQL 16 cluster, a TLS Valkey/Redis endpoint and a private Spaces bucket. Replace CHANGE_ME values and enter secrets in the dashboard. Use a restricted runtime DB user and a separate migration owner DIRECT_URL. Bindings may use the provider URL; ensure TLS is required. Set AUTH_URL and NEXT_PUBLIC_BASE_URL to the same HTTPS origin at runtime. Configure one trusted forwarding hop for the provider edge.
 
-1. Create, in one region (the spec uses `blr`, Bangalore):
-   - a **Managed PostgreSQL 16** cluster named `sww-db` with database `sww` and user `sww`;
-   - a **Managed Valkey** cluster; copy its `rediss://` connection string;
-   - a **Spaces** bucket (private, file listing off) and a Spaces key scoped to it.
-2. Edit `.do/app.yaml`: replace every `CHANGE_ME`, adjust the region slug,
-   `S3_REGION` and `S3_ENDPOINT` (`https://<region>.digitaloceanspaces.com`).
-3. `doctl apps create --spec .do/app.yaml`, then set each `SECRET` value in
-   the control panel (**Settings → App-Level Environment Variables**) and redeploy.
-4. Add your domain under **Settings → Domains**; keep `AUTH_URL` and
-   `NEXT_PUBLIC_BASE_URL` equal to it (changing the base URL needs a rebuild).
-5. Restrict the database and Valkey **trusted sources** to the app.
-6. Open `https://<host>/setup`.
+Run a scheduler with the same backend version and `scheduler` role (APP_URL points to the web service, CRON_SECRET matches). Alternatively use [the existing cron worker](../deploy/cloudflare-cron/README.md), with both outbox/jobs endpoints enabled. If an in-process outbox worker remains enabled it does not replace the periodic jobs endpoint. Do not omit the scheduler.
 
-App Platform's edge appends to `X-Forwarded-For` (`TRUSTED_PROXY_HOPS=1`).
-The in-process worker covers the outbox; deploy the Cloudflare Worker for an
-independent scheduler. Managed PostgreSQL includes daily backups and
-point-in-time recovery; Spaces has no versioning, so also run the
-storage backup described in [operations](production-operations.md).
+## Render
 
-Prefer a single server instead? A Droplet with the curl installer is the
-cheapest complete setup: see the [VPS guide](DEPLOYMENT_VPS.md#provider-notes).
+`render.yaml` builds the same backend Dockerfile, applies `docker-entrypoint.sh migrate` as a pre-deploy command and starts the explicit web role. Supply managed PostgreSQL, `rediss://` Redis and private S3-compatible storage. The environment prompts include bearer/session secrets, encryption keys and public origins. Paid always-on hosting is the supported baseline. To deploy a published image instead, create an image-backed service using `ghcr.io/spaceworks-hq/spaceworks-workspace-backend:<immutable-version>` and the same runtime settings, then run migrate as a separate release operation.
 
-## Fly.io (optional)
+Use the backend image with `scheduler --once` in a once-per-minute provider scheduler or a dedicated scheduler service. Keep its environment limited to APP_URL and CRON_SECRET. Provider edge TLS and timeouts must support SSE/streaming. Check the private readiness endpoint with the bearer after migrations; public `/api/health` proves process liveness only.
 
-Fly runs the image as a Machine close to your members. A minimal `fly.toml`:
+## Managed service settings
 
-```toml
-app = "spaceworks-workspace"
-primary_region = "sin"
+- **Database:** PostgreSQL TLS, runtime DML user, maintenance DIRECT_URL. Supabase pooler port 6543 needs `pgbouncer=true`; use direct/session port 5432 for migrations. Configure provider-native PITR and backups.
+- **Redis:** native Redis-compatible TLS (`rediss://`), no REST API endpoint. Use no-eviction capacity planning for distributed rate limits and fan-out.
+- **Storage:** private S3/R2/Spaces bucket; HTTPS endpoint, least-privilege credentials, versioning. The server reads/writes files; browsers never need public bucket access.
+- **Email:** authenticated SMTP supported by the provider; set host, port, TLS mode, user/password and sender, or configure it in /admin.
+- **Secrets:** use the provider's secret manager. No deployment secret is a Docker build argument. Keep continuity keys separate from routine app redeploys.
 
-[build]
-  dockerfile = "Dockerfile"
-
-[deploy]
-  # The image's entrypoint migrates when MIGRATE_ON_START=1.
-  release_command = "sh -c 'MIGRATE_ON_START=1 docker-entrypoint.sh true'"
-
-[http_service]
-  internal_port = 3000
-  force_https = true
-  auto_stop_machines = "off"   # keep the in-process outbox running
-  min_machines_running = 1
-
-  [[http_service.checks]]
-    method = "GET"
-    path = "/api/health"
-    interval = "30s"
-    timeout = "5s"
-
-[[vm]]
-  memory = "1gb"
-```
-
-```bash
-fly launch --no-deploy --copy-config
-fly secrets set DATABASE_URL=... DIRECT_URL=... REDIS_URL=... AUTH_URL=https://work.example.org \
-  NEXT_PUBLIC_BASE_URL=https://work.example.org AUTH_SECRET=... CRON_SECRET=... HEALTHCHECK_SECRET=... \
-  NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=... MFA_ENCRYPTION_KEY=... INTEGRATION_ENCRYPTION_KEY=... \
-  VAULT_MASTER_KEY=... TRUSTED_PROXY_IP_HEADER=x-forwarded-for TRUSTED_PROXY_HOPS=1 \
-  S3_BUCKET=... S3_REGION=auto S3_ENDPOINT=https://fly.storage.tigris.dev S3_ACCESS_KEY_ID=... \
-  S3_SECRET_ACCESS_KEY=... SUPER_ADMIN_EMAIL=you@example.org
-fly deploy
-```
-
-Use Fly Managed Postgres (or Supabase) with `sslmode=require`, Upstash Redis
-(`fly redis create`) and Tigris (`fly storage create`) or R2. Fly's proxy sets
-`Fly-Client-IP`, which the app does not read; use `x-forwarded-for` with one hop.
-
-## After any cloud deploy
-
-```bash
-curl -fsS https://work.example.org/api/health
-curl -fsS -H "Authorization: Bearer $HEALTHCHECK_SECRET" https://work.example.org/api/health/db
-```
-
-Then create the owner account at `/setup`, enable two-step verification for
-the admin email, send a test email from `/admin`, upload a file, and check
-that live updates (notifications, chat) reach a second browser.
+Kubernetes instructions are in [DEPLOYMENT_KUBERNETES.md](DEPLOYMENT_KUBERNETES.md), AWS container details in [DEPLOYMENT_AWS.md](DEPLOYMENT_AWS.md), and recovery in [production-operations.md](production-operations.md).

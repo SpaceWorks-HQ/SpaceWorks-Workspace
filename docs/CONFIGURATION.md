@@ -1,142 +1,121 @@
-# Configuration
+# Installation configuration
 
-[VPS](DEPLOYMENT_VPS.md) · [Docker](DEPLOYMENT_DOCKER.md) · [Cloud](DEPLOYMENT_CLOUD.md) · [Operations](production-operations.md)
+The guided installer writes `.env` for non-secret deployment selectors and `config/*.env` for runtime secrets. Never source dotenv files in a shell. Use the wrapper to preserve topology across upgrades. App settings follow below.
 
-Space Works Workspace is configured with environment variables. For local
-development copy `.env.example` to `.env` (or run `./local.sh start`, which
-does it with fresh secrets). In production, values come from the platform's
-secret store or the VPS configuration directory; never from a committed file.
-
-Two checks enforce the rules below:
-
-- **At boot** (`instrumentation.ts` → `lib/env.ts`): a production server
-  (`NODE_ENV=production`) refuses to start with a missing required variable,
-  a malformed key, a non-HTTPS origin, a database URL without TLS, plain
-  `redis://`, or a plain-HTTP S3 endpoint.
-- **Before deploying** (`npm run production:check`, or
-  `node --env-file=/secure/sww.env scripts/check-production-env.mjs`): the same
-  rules plus deployment extras (SMTP completeness, proxy hops, optional keys),
-  printing variable names only, never values. Exit code 1 means fix first.
-
-"Required" below means required in production.
-
-## Core
-
-| Variable | Required | Purpose |
-| --- | --- | --- |
-| `NODE_ENV` | set by the image | `production` in containers; turns on the boot check, HSTS and secure cookies |
-| `DATABASE_URL` | yes | Runtime PostgreSQL 16 URL. Must include `sslmode=require`, `verify-ca` or `verify-full`. Through a transaction pooler (port 6543) add `pgbouncer=true` (and `connection_limit=5` on small instances) |
-| `DIRECT_URL` | with a pooler | Direct or session-mode URL used only by migrations (`prisma migrate`). Scripts, the migrator image and the entrypoint fall back to `DATABASE_URL` when it is empty |
-| `AUTH_SECRET` | yes | Auth.js session encryption, 32+ characters (`openssl rand -base64 33`) |
-| `AUTH_URL` | yes | Canonical public origin, `https://work.example.org` |
-| `NEXT_PUBLIC_BASE_URL` | yes | Same origin as `AUTH_URL`; used for links in emails and metadata. Read at runtime unless compiled in with the image build argument of the same name |
-| `SUPER_ADMIN_EMAIL` | recommended | The one account that may open `/admin` (after a fresh two-step code) |
-| `REDIS_URL` | yes | `rediss://` URL. Rate limits (fail closed in production) and realtime fan-out across instances |
-| `TRUSTED_PROXY_IP_HEADER` | yes | Which header carries the client IP: `x-real-ip` (VPS Caddy), `x-forwarded-for` (Render, DO, ALB, ingress-nginx), `cf-connecting-ip` (behind your Cloudflare zone). The edge must overwrite it |
-| `TRUSTED_PROXY_HOPS` | with `x-forwarded-for` | Number of trusted proxies appending to `X-Forwarded-For` (1 on Render, DO App Platform, AWS ALB, Fly) |
-| `ALLOWED_ACTION_ORIGINS` | no | Extra hosts allowed to post Server Actions, comma-separated, when a trusted proxy rewrites the host |
-
-## Keys and bearer secrets
-
-Generate each independently: `openssl rand -base64 32` for keys,
-`openssl rand -base64 33` for secrets. The VPS installer generates them all.
-
-| Variable | Required | Purpose |
-| --- | --- | --- |
-| `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` | yes | Base64 16/24/32-byte AES key for Server Action payloads. Identical on every instance; changing it invalidates open forms |
-| `MFA_ENCRYPTION_KEY` | yes | Base64 32-byte key for TOTP seeds; a domain-separated subkey encrypts instance settings (SMTP password, Google secret, AI key). **Never lose or casually rotate it** |
-| `INTEGRATION_ENCRYPTION_KEY` | recommended | Base64 32-byte key for integration OAuth tokens (Google, GitHub). Falls back to a subkey of `MFA_ENCRYPTION_KEY` |
-| `VAULT_MASTER_KEY` | recommended | Base64 32-byte key reserved for the team credentials vault; set it at install so the vault can be enabled without a configuration change |
-| `CRON_SECRET` | yes | Bearer for `POST /api/internal/outbox` and `POST /api/internal/jobs` (schedulers) |
-| `HEALTHCHECK_SECRET` | yes | Bearer for `GET /api/health/db` (readiness monitors) |
-
-Wrong or missing bearers get a plain `404`. Never put a bearer in a URL.
-
-## Object storage
-
-| Variable | Required | Purpose |
-| --- | --- | --- |
-| `S3_BUCKET` | yes | Private bucket (Silo, R2, Spaces, S3, Tigris) |
-| `S3_REGION` | yes | `auto` for R2, the bucket region elsewhere, `us-east-1` for Silo |
-| `S3_ENDPOINT` | provider | HTTPS endpoint for non-AWS providers; empty for AWS S3 |
-| `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` | provider | Both, or neither to use an IAM role |
-| `S3_FORCE_PATH_STYLE` | provider | `1` for Silo/MinIO, R2 and Spaces |
-| `UPLOAD_MAX_BYTES` | no | Largest upload in bytes (default 25 MB, maximum 500 MB). Proxies must allow a little more |
-
-Without `S3_BUCKET`, development stores files in `.data/storage`;
-production refuses to run without object storage.
-
-## Email
-
-The environment values are the bootstrap fallback; **/admin → Settings**
-overrides them (stored encrypted) and is the preferred place.
-
-| Variable | Purpose |
+| Variable | Default / meaning |
 | --- | --- |
-| `EMAIL_FROM` | Sender on a domain with SPF, DKIM and DMARC, e.g. `Space Works <workspace@example.org>` |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE` | Relay; `SMTP_SECURE=true` for implicit TLS (465), `false` for STARTTLS (587, 2525) |
-| `SMTP_SERVICE` | A Nodemailer well-known service name instead of host/port |
-| `SMTP_USER`, `SMTP_PASSWORD` | Required whenever SMTP is configured in production |
-| `SMTP_ALLOW_UNAUTHENTICATED` | `1` only for local Mailpit |
-| `OUTBOX_RETENTION_DAYS` | Days to keep sent/failed outbox rows (default 30, maximum 365) |
-| `OUTBOX_WORKER` | `0` disables the in-process outbox worker (then a scheduler must call `/api/internal/outbox`) |
+| `SPACEWORKS_WORKSPACE_DIR` | `/opt/spaceworks-workspace`, bootstrap directory |
+| `SWW_INSTALL_DIR` | Installed directory for operator tools; normally derived automatically |
+| `SWW_REPOSITORY` | `SpaceWorks-HQ/SpaceWorks-Workspace`; `--repo` overrides at bootstrap |
+| `SWW_GITHUB_TOKEN` | Optional private-repository/package read token; never saved by setup |
+| `SWW_BACKEND_IMAGE` | `ghcr.io/<lowercase-owner>/spaceworks-workspace-backend` |
+| `SWW_FRONTEND_IMAGE` | Matching frontend package |
+| `SWW_ALLINONE_IMAGE` | Matching all-in-one package |
+| `SWW_IMAGE_TAG` | Immutable installed main version; latest for a clone unless supplied |
+| `COMPOSE_PROJECT_NAME` | `spaceworks-workspace`; use a unique value for isolated stacks |
+| `SWW_HOSTING_MODEL` | `1` this server, `2` split, `3` cloud defaults |
+| `SWW_HOST_ROLE` | `backend` or `frontend` |
+| `SWW_SHAPE` | `separate` or `single` |
+| `SWW_DATABASE`, `SWW_REDIS`, `SWW_STORAGE` | Each `bundled` or `external` |
+| `SWW_HTTPS` | `auto` Caddy or `proxy` existing HTTPS edge |
+| `SWW_TLS_HOST` | TLS listener hostname; split backend uses its distinct backend origin |
+| `SWW_FRONTEND_CIDR` | Trusted split frontend outbound IP/CIDR; defaults to local-only |
+| `SWW_PUBLIC_HOST` | Website hostname/IP, no scheme/path |
+| `SWW_TLS_EMAIL` | ACME account contact |
+| `SWW_BIND` | `0.0.0.0` for Caddy, `127.0.0.1` for an existing proxy |
+| `SWW_EDGE_PORT` | Existing-proxy HTTP upstream port, 8080 |
+| `SWW_HTTP_PORT`, `SWW_HTTPS_PORT` | Caddy ports, 80 / 443 |
+| `SWW_CADDY_TLS` | `acme`; `internal` for isolated test installations |
+| `SWW_EDGE_UPSTREAM` | Selected internal nginx service: frontend/app/api-edge on 8080 |
+| `SWW_EDGE_SUBNET` | `172.30.80.0/24`; change for conflicting private networks |
+| `SWW_TRUSTED_PROXY_CIDR` | Source CIDR whose forwarding headers nginx trusts; default edge subnet |
+| `SWW_TRUST_FORWARDED_PROTO` | nginx entrypoint: 1 only behind a trusted TLS boundary |
+| `BACKEND_UPSTREAM` | nginx backend origin, default `http://backend:3000`; HTTPS for split hosts |
+| `SWW_SCHEDULER_ENABLED` | All-in-one scheduler: 1; set 0 only with another scheduler |
+| `SWW_HEALTH_ORIGIN` | Internal container health URL; all-in-one sets localhost:8080 |
+| `SWW_BACKUP_KEEP_DAYS` | 14, positive retention days |
+| `SWW_RUNNER_DIR` | `/opt/spaceworks-workspace-runner` |
+| `SWW_DEPLOY` | Repository Actions variable; `true` opts into the deploy runner job |
+| `SWW_STATIC_ENV_FILE` | Helper read path; wrapper uses the installed .env |
+| `SWW_COMPOSE_BUILD` | 1 enables explicit source-build overlay |
+| `SWW_SKIP_PULL` | 1 keeps already-loaded local images; intended for the local smoke harness |
+| `SWW_INSTALL_TEST_MODE` | Hidden dry-run flag: 1 reads answers and stops before host changes |
+| `SWW_INSTALL_INPUT_FILE` | Dry-run/local-smoke prompt input file, private when it holds credentials |
+| `SWW_INSTALL_SOURCE_DIR` | Dry-run questionnaire source directory |
+| `SWW_INSTALL_LOCAL_BUNDLE` | Local smoke runtime bundle path |
+| `SWW_ALLOW_LOCAL_IMAGES` | Must be 1 to opt into a local bundle |
+| `SWW_OPERATION_PARENT_PID` | Internal lock inheritance for a child safety backup; not an operator setting |
+| `SWW_DEV_DB_PORT`, `SWW_DEV_REDIS_PORT` | Local services 5440 / 6395 |
+| `SWW_DEV_STORAGE_PORT`, `SWW_DEV_STORAGE_CONSOLE_PORT` | Local Silo 9010 / 9011 |
+| `SWW_DEV_APP_PORT` | Containerised development HTTP port, 3000 |
 
-## Assistant and integrations
+## Generated private settings
 
-| Variable | Purpose |
+`config/app.env` holds runtime app variables. `config/migrate.env` holds only migration/database-owner URLs and CA trust. `config/postgres.env` holds POSTGRES_USER/DB/PASSWORD and the separate POSTGRES_APP_PASSWORD; `config/storage.env` holds the Silo root credentials. `config/storage-init.env` holds the private initializer identity and bucket-scoped app password. `config/scheduler.env` holds APP_URL and CRON_SECRET only. TLS files live under config/tls and are never part of an image or release bundle.
+
+Set externally managed connection credentials in these private files. Supply DATABASE_URL/DIRECT_URL with required TLS, REDIS_URL with rediss, and S3_ENDPOINT with HTTPS. The production public origin must be HTTPS. The installer generates AUTH_SECRET, MFA_ENCRYPTION_KEY, INTEGRATION_ENCRYPTION_KEY, VAULT_MASTER_KEY, CRON_SECRET, HEALTHCHECK_SECRET and NEXT_SERVER_ACTIONS_ENCRYPTION_KEY independently. Public origin is read at runtime; no secret/public origin is required to build an image.
+
+## Application environment reference
+
+The app reads these runtime variables from .env.example. Optional integration settings can also be stored in the instance settings screens. Production validation is defined in lib/env.ts and scripts/check-production-env.mjs. Do not relax it to make an incomplete deployment start.
+
+| Variable | Example/default (non-secret) |
 | --- | --- |
-| `ANTHROPIC_API_KEY` | Assistant model access (fallback for `/admin` settings) |
-| `ASSISTANT_MODEL` | Model id, default `claude-opus-5-5` (fallback for `/admin`) |
-| `SEARXNG_URL` | Optional self-hosted SearXNG for the assistant's web search |
-| `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET` | Google sign-in for invited members (fallback for `/admin`). Redirect URI `https://<host>/api/auth/callback/google` |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google Calendar, Gmail, Drive and Search Console integrations (may reuse the sign-in client) |
-| `GITHUB_APP_ID`, `GITHUB_APP_NAME`, `GITHUB_APP_PRIVATE_KEY` or `GITHUB_APP_PRIVATE_KEY_FILE`, `GITHUB_WEBHOOK_SECRET` | GitHub App integration; webhook secret 16+ characters |
-| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET` | Telegram bot; webhook secret 16+ characters |
+| `DATABASE_URL` | `postgresql://sww:sww_dev_password@127.0.0.1:5440/sww_dev` |
+| `DIRECT_URL` | `` |
+| `TEST_DATABASE_URL` | `postgresql://sww:sww_dev_password@127.0.0.1:5440/sww_dev_test` |
+| `AUTH_SECRET` | generated/private |
+| `AUTH_URL` | `http://localhost:3000` |
+| `NEXT_PUBLIC_BASE_URL` | `http://localhost:3000` |
+| `AUTH_GOOGLE_ID` | `` |
+| `AUTH_GOOGLE_SECRET` | generated/private |
+| `SUPER_ADMIN_EMAIL` | `owner@example.org` |
+| `MFA_ENCRYPTION_KEY` | generated/private |
+| `INTEGRATION_ENCRYPTION_KEY` | generated/private |
+| `VAULT_MASTER_KEY` | generated/private |
+| `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` | generated/private |
+| `CRON_SECRET` | generated/private |
+| `HEALTHCHECK_SECRET` | generated/private |
+| `REDIS_URL` | `redis://127.0.0.1:6395/0` |
+| `S3_BUCKET` | `sww-dev` |
+| `S3_REGION` | `us-east-1` |
+| `S3_ENDPOINT` | `http://127.0.0.1:9010` |
+| `S3_ACCESS_KEY_ID` | generated/private |
+| `S3_SECRET_ACCESS_KEY` | generated/private |
+| `S3_FORCE_PATH_STYLE` | `1` |
+| `UPLOAD_MAX_BYTES` | `` |
+| `EMAIL_FROM` | `Space Works <workspace@localhost>` |
+| `SMTP_HOST` | `127.0.0.1` |
+| `SMTP_PORT` | `1025` |
+| `SMTP_SECURE` | `false` |
+| `SMTP_SERVICE` | `` |
+| `SMTP_USER` | `` |
+| `SMTP_PASSWORD` | generated/private |
+| `SMTP_ALLOW_UNAUTHENTICATED` | `1` |
+| `OUTBOX_RETENTION_DAYS` | `` |
+| `ANTHROPIC_API_KEY` | generated/private |
+| `ASSISTANT_MODEL` | `claude-opus-5-5` |
+| `SEARXNG_URL` | `` |
+| `GOOGLE_CLIENT_ID` | `` |
+| `GOOGLE_CLIENT_SECRET` | generated/private |
+| `GITHUB_APP_ID` | `` |
+| `GITHUB_APP_NAME` | `` |
+| `GITHUB_APP_PRIVATE_KEY` | generated/private |
+| `GITHUB_APP_PRIVATE_KEY_FILE` | generated/private |
+| `GITHUB_WEBHOOK_SECRET` | generated/private |
+| `TELEGRAM_BOT_TOKEN` | generated/private |
+| `TELEGRAM_WEBHOOK_SECRET` | generated/private |
+| `ALLOW_PRIVATE_WEBHOOK_TARGETS` | `` |
+| `NOTIFY_WORKER_CONCURRENCY` | `` |
+| `MONITOR_WORKER_INPROCESS` | `` |
+| `MONITOR_ALLOW_PRIVATE_TARGETS` | `` |
+| `MONITOR_MAX_PER_WORKSPACE` | `` |
+| `TRUSTED_PROXY_IP_HEADER` | `` |
+| `TRUSTED_PROXY_HOPS` | `` |
+| `ALLOWED_ACTION_ORIGINS` | `` |
+| `OUTBOX_WORKER` | `` |
+| `DEMO_PASSWORD` | generated/private |
 
-## Container and runtime
+The production server requires matching HTTPS AUTH_URL/NEXT_PUBLIC_BASE_URL, database TLS, rediss Redis, HTTPS object storage, stable encryption keys, the health/job bearers and an explicitly trusted proxy IP header. Pair S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY or omit both for an IAM role. SMTP, assistant and OAuth can be configured after setup. Runtime replicas must share encryption keys and a release version. ALLOWED_ACTION_ORIGINS is evaluated while Next config loads; rebuild only when deliberately changing build-time Next configuration.
 
-| Variable | Purpose |
-| --- | --- |
-| `PORT`, `HOSTNAME` | Listen address, `3000` and `0.0.0.0` in the image |
-| `MIGRATE_ON_START` | `1`: the image entrypoint runs `prisma migrate deploy` before starting. Only for a single instance without a release step |
-| `NODE_OPTIONS` | e.g. `--max-old-space-size=384` on a 512 MB instance |
-| `NODE_EXTRA_CA_CERTS` | Extra CA bundle; the VPS stack points it at its private CA (`/tls/ca.crt`) |
-| `PRISMA_LOG_QUERIES` | `1` logs SQL (debugging only) |
-
-## Scheduler (`scripts/scheduler.mjs`)
-
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `APP_URL` | required | Origin of the app (`http://app:3000` in the VPS stack) |
-| `CRON_SECRET` | required | The app's `CRON_SECRET` |
-| `SCHEDULER_ENDPOINTS` | `outbox,jobs` | Which internal endpoints to call |
-| `SCHEDULER_INTERVAL_SECONDS` | `60` | Interval between passes (ignored with `--once`) |
-
-## VPS stack (`compose.env` in the configuration directory)
-
-Written by `scripts/setup-vps.sh`; the installer's own answers are listed in
-[DEPLOYMENT_VPS.md](DEPLOYMENT_VPS.md#unattended-install-cloud-init-terraform).
-
-| Variable | Purpose |
-| --- | --- |
-| `COMPOSE_PROJECT_NAME` | Compose project (`spaceworks-workspace`) |
-| `PUBLIC_HOST`, `PUBLIC_ORIGIN` | Hostname Caddy serves and the origin compiled into the image |
-| `SWW_VERSION` | Release label of the running images (changed only by the updater) |
-| `ACME_EMAIL`, `CADDY_TLS` | Certificate contact; `acme` (public) or `internal` (test) |
-| `SWW_HTTP_PORT`, `SWW_HTTPS_PORT`, `SWW_BIND_PREFIX` | Published ports (80/443) and optional bind address |
-| `SWW_BACKUP_KEEP_DAYS` | Backup retention in days (14) |
-
-Other files there: `app.env` (the app's variables above), `postgres.env`,
-`migrator.env`, `storage.env`, `storage-init.env`, `scheduler.env`,
-`redis.conf`, `tls/` (private CA and service certificates),
-optional `backup-remote.env`, and `backups/`.
-
-## Development and tests only
-
-| Variable | Purpose |
-| --- | --- |
-| `TEST_DATABASE_URL` | Disposable database for `npm run test:integration` (wiped) |
-| `TEST_S3_BUCKET` | Run the storage integration tests against a real bucket |
-| `DEMO_PASSWORD` | Password for `npm run db:seed:demo` members (12+ characters) |
-| `NEXT_DEV_ALLOWED_ORIGINS` | Extra hosts allowed to load dev assets |
-| `CI` + `ALLOW_INSECURE_PRODUCTION_TESTS=1` | Together they relax the transport rules for production builds in CI. Never in a deployment |
+Scheduler settings: APP_URL is the private application origin, SCHEDULER_ENDPOINTS defaults to outbox,jobs, SCHEDULER_INTERVAL_SECONDS defaults to 60 (minimum 15), and OUTBOX_WORKER=0 disables duplicate in-process outbox polling. CI=true plus ALLOW_INSECURE_PRODUCTION_TESTS=1 is exclusively for isolated CI tests; the installer never sets these flags.

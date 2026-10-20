@@ -6,7 +6,7 @@
 # migrations), Supabase PostgreSQL, Upstash Redis, Cloudflare R2 and Brevo SMTP.
 #
 # Free plan instead: set `plan: free`, delete `preDeployCommand`, set
-# MIGRATE_ON_START=1 and deploy the Cloudflare Worker in deploy/cloudflare-cron
+# the explicit migrate role and deploy the Cloudflare Worker in deploy/cloudflare-cron
 # (free instances sleep after 15 idle minutes and block SMTP ports 25/465/587;
 # Brevo on 2525 works).
 #
@@ -22,9 +22,10 @@ services:
     region: singapore
     dockerfilePath: ./Dockerfile
     dockerContext: .
+    dockerCommand: docker-entrypoint.sh web
     healthCheckPath: /api/health
     # Applies migrations once per deploy through DIRECT_URL (falls back to DATABASE_URL).
-    preDeployCommand: sh -c "MIGRATE_ON_START=1 docker-entrypoint.sh true"
+    preDeployCommand: docker-entrypoint.sh migrate
     autoDeployTrigger: checksPass
     buildFilter:
       ignoredPaths:
@@ -132,7 +133,7 @@ services:
   #   schedule: "*/5 * * * *"
   #   dockerfilePath: ./Dockerfile
   #   dockerContext: .
-  #   dockerCommand: node /app/scripts/scheduler.mjs --once
+  #   dockerCommand: docker-entrypoint.sh scheduler --once
   #   envVars:
   #     - key: APP_URL
   #       sync: false # https://work.example.org

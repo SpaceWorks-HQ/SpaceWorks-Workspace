@@ -21,7 +21,7 @@ helm upgrade --install sww charts/spaceworks-workspace --namespace sww \
 | `existingSecret` | `""` | Secret with the runtime environment (required unless `secret.create`) |
 | `secret.create` / `secret.data` | `false` / `{}` | Let the chart create that Secret (evaluation only) |
 | `image.repository` / `image.tag` | GHCR app image / appVersion | Use immutable `sha-<commit>` tags |
-| `migration.enabled` / `migration.image.*` | `true` / GHCR migrator image | `prisma migrate deploy` hook before every rollout |
+| `migration.enabled` / `migration.image.*` | `true` / GHCR backend image | `prisma migrate deploy` hook before every rollout |
 | `scheduler.enabled` / `scheduler.schedule` | `true` / `* * * * *` | CronJob calling `/api/internal/outbox` and `/api/internal/jobs` |
 | `replicaCount`, `autoscaling.*`, `podDisruptionBudget.*` | 2, off, on | Scale. Several replicas need Redis for rate limits and realtime |
 | `ingress.*` | off | Disable proxy buffering for `/api/realtime` (SSE) |

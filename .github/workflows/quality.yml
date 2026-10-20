@@ -1,111 +1,30 @@
 name: Deployment checks
-
-# Proves the deployment story still works: scripts lint clean, the production
-# Compose file and Helm chart render, and the container image builds, migrates
-# and serves its health and setup pages against a real PostgreSQL.
 on:
   pull_request:
-    paths:
-      - Dockerfile
-      - .dockerignore
-      - compose.production.yml
-      - docker-compose.yml
-      - install.sh
-      - local.sh
-      - scripts/**
-      - docker/**
-      - charts/**
-      - render.yaml
-      - .do/**
-      - package-lock.json
-      - prisma/**
-      - .github/workflows/quality.yml
+    paths: ["Dockerfile*", ".dockerignore", "docker-compose*.yml", "install.sh", "setup.*", "scripts/**", "docker/**", "deploy/**", "charts/**", "render.yaml", ".do/**", ".github/workflows/**"]
   push:
     branches: [main, dev]
-
 permissions:
   contents: read
-
 jobs:
   scripts-and-manifests:
-    name: Shell scripts, Compose and Helm
     runs-on: ubuntu-latest
-    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: ShellCheck
-        run: shellcheck -x install.sh local.sh scripts/*.sh docker/vps/*.sh
-      - name: Production Compose file renders
-        run: |
-          config=$(mktemp -d)
-          for name in app postgres migrator storage storage-init scheduler; do touch "$config/$name.env"; done
-          printf "COMPOSE_PROJECT_NAME='sww-ci'\nPUBLIC_HOST='work.example.org'\nPUBLIC_ORIGIN='https://work.example.org'\nSWW_VERSION='ci'\n" > "$config/compose.env"
-          SWW_CONFIG_DIR="$config" scripts/vps-compose.sh config --quiet
-          SWW_CONFIG_DIR="$config" scripts/vps-compose.sh --profile tools config --services
+      - uses: actions/setup-node@v4
+        with: {node-version: 22, cache: npm}
+      - run: npm ci
+      - name: Shell, Node, Python, YAML, installer and Compose checks
+        run: bash scripts/verify-release-local.sh
       - uses: azure/setup-helm@v4
-      - name: Helm chart
-        run: |
-          helm lint charts/spaceworks-workspace --set existingSecret=sww-runtime
-          helm template sww charts/spaceworks-workspace --set existingSecret=sww-runtime --set ingress.enabled=true --set autoscaling.enabled=true > /dev/null
-
+      - run: helm lint charts/spaceworks-workspace --set existingSecret=sww-runtime
+      - run: helm template sww charts/spaceworks-workspace --set existingSecret=sww-runtime --set frontend.enabled=true --set ingress.enabled=true --set autoscaling.enabled=true > /dev/null
   container:
-    name: Container image smoke test
+    name: Three-image installer smoke
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: sww
-          POSTGRES_PASSWORD: sww_ci
-          POSTGRES_DB: sww_ci
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd "pg_isready -U sww -d sww_ci"
-          --health-interval 5s --health-timeout 5s --health-retries 10
-      redis:
-        image: redis:7-alpine
-        ports: ["6379:6379"]
-    env:
-      CRON_SECRET: ci-cron-secret-not-for-production-0123456789
-      HEALTHCHECK_SECRET: ci-health-secret-not-for-production-012345
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v4
-      - name: Build the runner and migrator images
-        run: |
-          docker build --target migrator --tag sww-migrator:ci .
-          docker build --tag sww-app:ci .
-      - name: Migrate with the migrator image
-        run: |
-          docker run --rm --network host \
-            -e DATABASE_URL=postgresql://sww:sww_ci@localhost:5432/sww_ci sww-migrator:ci
-      - name: Start the app (production mode, CI transport exception)
-        run: |
-          docker run -d --name sww-ci --network host \
-            -e CI=true -e ALLOW_INSECURE_PRODUCTION_TESTS=1 -e MIGRATE_ON_START=1 \
-            -e DATABASE_URL=postgresql://sww:sww_ci@localhost:5432/sww_ci \
-            -e AUTH_SECRET=ci-only-not-a-production-secret-0123456789 \
-            -e AUTH_URL=http://localhost:3000 -e NEXT_PUBLIC_BASE_URL=http://localhost:3000 \
-            -e REDIS_URL=redis://localhost:6379 -e CRON_SECRET -e HEALTHCHECK_SECRET \
-            -e NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY= \
-            -e MFA_ENCRYPTION_KEY=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY= \
-            -e TRUSTED_PROXY_IP_HEADER=x-forwarded-for -e S3_BUCKET=sww-ci -e S3_REGION=us-east-1 \
-            sww-app:ci
-      - name: Health, readiness, internal endpoints and first-run setup
-        run: |
-          curl --fail --silent --retry 20 --retry-delay 2 --retry-all-errors http://127.0.0.1:3000/api/health
-          curl --fail --silent --header "Authorization: Bearer $HEALTHCHECK_SECRET" http://127.0.0.1:3000/api/health/db
-          test "$(curl --silent -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/api/health/db)" = 404
-          test "$(curl --silent -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:3000/api/internal/outbox)" = 404
-          curl --fail --silent -X POST --header "Authorization: Bearer $CRON_SECRET" http://127.0.0.1:3000/api/internal/outbox
-          test "$(curl --silent -o /dev/null -w '%{http_code}' -X POST --header "Authorization: Bearer $CRON_SECRET" http://127.0.0.1:3000/api/internal/jobs)" = 204
-          test "$(curl --silent -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/setup)" = 200
-          docker logs sww-ci 2>&1 | grep -q "Applying database migrations"
-      - name: Scheduler one-shot pass
-        run: |
-          docker run --rm --network host --entrypoint node -e APP_URL=http://127.0.0.1:3000 -e CRON_SECRET \
-            sww-app:ci /app/scripts/scheduler.mjs --once
-      - name: Container logs on failure
-        if: failure()
-        run: docker logs sww-ci || true
+      - uses: docker/setup-buildx-action@v3
+      - name: Build backend once and derive matching frontend/all-in-one; install both shapes
+        run: bash scripts/test-release-local.sh

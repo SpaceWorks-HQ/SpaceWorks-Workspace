@@ -1,0 +1,26 @@
+# Caddy is the only public listener. HTTP/3 uses UDP on the HTTPS port.
+services:
+  frontend:
+    ports: !reset []
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      SWW_PUBLIC_HOST: ${SWW_PUBLIC_HOST:?Set SWW_PUBLIC_HOST}
+      SWW_TLS_HOST: ${SWW_TLS_HOST:-${SWW_PUBLIC_HOST}}
+      SWW_FRONTEND_CIDR: ${SWW_FRONTEND_CIDR:-127.0.0.1/32}
+      SWW_TLS_EMAIL: ${SWW_TLS_EMAIL:-}
+      SWW_CADDY_TLS: ${SWW_CADDY_TLS:-acme}
+      SWW_EDGE_UPSTREAM: ${SWW_EDGE_UPSTREAM:-frontend:8080}
+    ports:
+      - "${SWW_BIND:-0.0.0.0}:${SWW_HTTP_PORT:-80}:80"
+      - "${SWW_BIND:-0.0.0.0}:${SWW_HTTPS_PORT:-443}:443"
+      - "${SWW_BIND:-0.0.0.0}:${SWW_HTTPS_PORT:-443}:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [edge]
+volumes:
+  caddy_data:
+  caddy_config:

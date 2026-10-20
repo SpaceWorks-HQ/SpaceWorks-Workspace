@@ -1,0 +1,19 @@
+# Safe to copy this release bundle to the website host: no app credentials needed.
+services:
+  frontend:
+    image: ${SWW_FRONTEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-workspace-frontend}:${SWW_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    environment:
+      BACKEND_UPSTREAM: ${BACKEND_UPSTREAM:?Set the remote backend HTTPS origin}
+      SWW_TRUST_FORWARDED_PROTO: "1"
+      SWW_TRUSTED_PROXY_CIDR: ${SWW_TRUSTED_PROXY_CIDR:-172.30.80.0/24}
+    ports: ["${SWW_BIND:-127.0.0.1}:${SWW_EDGE_PORT:-8080}:8080"]
+    networks: [edge]
+networks:
+  edge:
+    ipam:
+      config: [{subnet: "${SWW_EDGE_SUBNET:-172.30.80.0/24}"}]

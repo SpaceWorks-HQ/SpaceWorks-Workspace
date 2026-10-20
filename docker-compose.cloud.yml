@@ -1,0 +1,84 @@
+# Published images only. Use scripts/spaceworks-workspace-compose.sh.
+# Data services have no published ports; jobs and data networks are private.
+x-logging: &logging
+  driver: json-file
+  options: {max-size: "10m", max-file: "5"}
+x-app: &app
+  image: ${SWW_BACKEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-workspace-backend}:${SWW_IMAGE_TAG:-latest}
+  restart: unless-stopped
+  init: true
+  security_opt: [no-new-privileges:true]
+  cap_drop: [ALL]
+  read_only: true
+  tmpfs: [/tmp, "/app/.next/cache:uid=1001,gid=1001"]
+  env_file: ./config/app.env
+  volumes: ["./config/tls/ca.crt:/tls/ca.crt:ro"]
+  networks: [edge, jobs, data]
+  logging: *logging
+  stop_grace_period: 30s
+x-ready: &ready
+  migrate: {condition: service_completed_successfully}
+services:
+  migrate:
+    image: ${SWW_BACKEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-workspace-backend}:${SWW_IMAGE_TAG:-latest}
+    command: [migrate]
+    env_file: ./config/migrate.env
+    volumes: ["./config/tls/ca.crt:/tls/ca.crt:ro"]
+    networks: [data, edge]
+    logging: *logging
+  backend:
+    <<: *app
+    command: [web]
+    depends_on: *ready
+  scheduler:
+    image: ${SWW_BACKEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-workspace-backend}:${SWW_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    command: [scheduler]
+    env_file: ./config/scheduler.env
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck: {disable: true}
+    depends_on: {backend: {condition: service_healthy}}
+    networks: [jobs]
+    logging: *logging
+  frontend:
+    image: ${SWW_FRONTEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-workspace-frontend}:${SWW_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    environment:
+      BACKEND_UPSTREAM: ${BACKEND_UPSTREAM:-http://backend:3000}
+      SWW_TRUST_FORWARDED_PROTO: "1"
+      SWW_TRUSTED_PROXY_CIDR: ${SWW_TRUSTED_PROXY_CIDR:-172.30.80.0/24}
+    ports: ["${SWW_BIND:-127.0.0.1}:${SWW_EDGE_PORT:-8080}:8080"]
+    depends_on: {backend: {condition: service_healthy}}
+    networks: [edge]
+    logging: *logging
+  app:
+    <<: *app
+    image: ${SWW_ALLINONE_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-workspace-allinone}:${SWW_IMAGE_TAG:-latest}
+    profiles: [single]
+    environment:
+      SWW_SCHEDULER_ENABLED: ${SWW_SCHEDULER_ENABLED:-1}
+      SWW_TRUST_FORWARDED_PROTO: "1"
+      SWW_TRUSTED_PROXY_CIDR: ${SWW_TRUSTED_PROXY_CIDR:-172.30.80.0/24}
+    ports: ["${SWW_BIND:-127.0.0.1}:${SWW_EDGE_PORT:-8080}:8080"]
+    depends_on: *ready
+  ops:
+    <<: *app
+    profiles: [tools]
+    restart: "no"
+    read_only: false
+    env_file: [./config/app.env, ./config/migrate.env]
+    command: [ops, node, /app/scripts/check-production-env.mjs]
+    healthcheck: {disable: true}
+    networks: [data, edge]
+networks:
+  edge:
+    ipam:
+      config: [{subnet: "${SWW_EDGE_SUBNET:-172.30.80.0/24}"}]
+  jobs: {internal: true}
+  data: {internal: true}

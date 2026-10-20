@@ -36,7 +36,7 @@ spec:
               image: {{ include "sww.image" . | quote }}
               imagePullPolicy: {{ .Values.image.pullPolicy }}
               # Bypass the image entrypoint (never migrates) and make one pass.
-              command: ["node", "/app/scripts/scheduler.mjs", "--once"]
+              args: ["scheduler", "--once"]
               env:
                 - name: APP_URL
                   value: "http://{{ include "sww.fullname" . }}:{{ .Values.service.port }}"
