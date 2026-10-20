@@ -1,18 +1,28 @@
-# Kubernetes
+# Kubernetes deployment
 
-The Helm chart uses the published backend image for web, migrations and scheduled jobs, at the chart appVersion or your immutable tag. The optional frontend sidecar uses the matching frontend tag. Data services are managed externally; do not publish PostgreSQL, Redis or S3.
+Use [the Helm chart](../charts/spaceworks-workspace/README.md). It runs the
+backend image as the whole application, with a one-shot `migrate` Job and a
+CronJob calling both outbox and jobs endpoints. Supply external TLS PostgreSQL,
+TLS Redis, private S3 and authenticated SMTP. Runtime secrets stay outside Helm.
 
 ```bash
-helm lint charts/spaceworks-workspace --set existingSecret=sww-runtime
 helm upgrade --install sww charts/spaceworks-workspace \
   --set existingSecret=sww-runtime \
-  --set image.tag=X.Y.Z-main.RUN.SHA12 \
-  --set migration.image.tag=X.Y.Z-main.RUN.SHA12 \
-  --set frontend.enabled=true
+  --set image.tag=<immutable-release> \
+  --set ingress.enabled=true
 ```
 
-Create an external runtime Secret containing the app configuration from [CONFIGURATION.md](CONFIGURATION.md). Use `migration.existingSecret` for a separate maintenance secret with DIRECT_URL and DATABASE_URL; otherwise the hook uses existingSecret. Never grant the web identity schema ownership merely to make the hook work. The pre-install/pre-upgrade hook runs the backend `migrate` role. Hook failure blocks deployment.
+Keep action keys stable across replicas. The migration role uses its own secret
+when configured; runtime roles need no DDL permissions. Ingress must preserve
+Host, overwrite the trusted IP header and avoid buffering streams. Probes use
+public liveness and bearer-protected readiness. Retain a database/object/config
+backup before upgrades: Helm rollback does not reverse migrations.
 
-The scheduler CronJob runs `scheduler --once` with only APP_URL, CRON_SECRET and endpoint selection. It forbids overlapping jobs. The web process can disable its outbox worker when external scheduling handles delivery. Readiness uses the bearer-protected DB check; liveness uses `/api/health`. Non-root containers, dropped capabilities, read-only roots and writable temporary caches are configured. Configure ingress TLS, a trusted forwarding header/hop count, streaming-safe timeouts and upload limits. Review network policies for your provider's DB/Redis/S3 endpoints and SMTP/assistant integrations.
+The chart matches the single-runtime layout. A separately deployed frontend
+uses a dedicated Deployment and Secret with the settings in
+[Netlify + VPS](DEPLOYMENT_SPLIT.md); do not share backend credentials with it.
 
-When frontend.enabled is true, the service routes to nginx on 8080; nginx forwards all dynamic paths to localhost:3000. All static assets come from the same backend build. Ingress must replace untrusted forwarding headers and preserve Host. Set frontend.trustedProxyCidr to the ingress source CIDR and use TRUSTED_PROXY_IP_HEADER=x-real-ip with the frontend sidecar. The default series tag is a convenience; pin an immutable release for production. Tune pod resources, replica count, PDB and autoscaling to the cluster. Before updates, snapshot database and object storage; Helm rollback changes application images and does not undo migrations.
+The default image tag is the rolling `0.1` series for evaluation. Pin a release
+for production. The non-root runtime needs a writable image overlay to replace
+its public-origin placeholders before serving; capabilities remain dropped and
+privilege escalation is disabled.
