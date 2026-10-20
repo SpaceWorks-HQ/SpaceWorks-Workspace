@@ -2,7 +2,7 @@
 
 [Documentation index](README.md) · [VPS deployment](DEPLOYMENT_VPS.md) · [Docker deployment](DEPLOYMENT_DOCKER.md)
 
-> The free-tier [Render](DEPLOYMENT_CLOUD.md) deployment builds from the
+> The [Render](DEPLOYMENT_CLOUD.md) deployment builds from the
 > repository itself and does not need these images. The
 > [VPS installer](DEPLOYMENT_VPS.md), [Docker host](DEPLOYMENT_DOCKER.md) and
 > [Helm](../charts/spaceworks-workspace/README.md) deployments can use them.
@@ -14,7 +14,7 @@ with these roles:
 
 | Image | Dockerfile target | Roles (the container command) |
 | --- | --- | --- |
-| `ghcr.io/spaceworks-hq/spaceworks-workspace-backend` | `runner` | `node server.js` (default): the application and API. `migrate`: apply pending database migrations once and exit. `node docker/vps/scheduler.mjs`: the outbox and jobs recovery scheduler. `node docker/vps/<tool>.mjs`: the VPS operator tools (setup, SMTP and external-storage configuration, certificate renewal, super-admin recovery, preflight, checks, SMTP check, smoke test), run as root. |
+| `ghcr.io/spaceworks-hq/spaceworks-workspace-backend` | `runner` | `node server.js` (default): the application and API. `migrate`: apply pending database migrations once and exit. `node dist/worker.js`: BullMQ consumers. `node dist/beat.js`: registry schedule reconciliation. `node docker/vps/<tool>.mjs`: the VPS operator tools (setup, SMTP and external-storage configuration, certificate renewal, super-admin recovery, preflight, checks, SMTP check, smoke test), run as root. |
 | `ghcr.io/spaceworks-hq/spaceworks-workspace-frontend` | `frontend` | `node frontend/server.js`: the website alone (the `frontend/` workspace). It holds no database, Redis, storage or mail credentials and calls the backend through the authenticated gateway. |
 
 Pull requests and forks' pull requests never publish.
@@ -57,7 +57,7 @@ Nothing installation-specific is compiled in:
   same for `NEXT_PUBLIC_BACKEND_ORIGIN` (placeholder
   `https://spaceworks-workspace-backend.invalid`), the API origin browsers use for
   workspace realtime. A web server without a valid origin refuses to start; the
-  `migrate` and operator-tool roles do not need one.
+  `migrate`, worker, beat and operator-tool roles do not apply web placeholders.
 - **Server Actions key.** The build uses a random key generated in the
   workflow. It stays in the build output, so it is public, and it is never used:
   Next.js prefers `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` from the runtime

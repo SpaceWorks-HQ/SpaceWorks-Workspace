@@ -30,7 +30,7 @@ What it does
   3. Installs to /opt/spaceworks-workspace with secrets in /etc/spaceworks-workspace,
      downloads the release's backend and frontend images from GitHub Packages
      and starts them with PostgreSQL, Redis, Silo object storage and Caddy
-     HTTPS. The backend image also runs the migrations and the scheduler.
+     HTTPS. The backend image also runs the migrations and worker + beat.
   4. Optionally: nightly encrypted backups with off-site copies, a firewall,
      automatic security updates and automatic deploys of new releases.
   Run the same command later to update, back up, check, change settings,

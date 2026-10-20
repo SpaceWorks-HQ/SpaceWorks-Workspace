@@ -10,7 +10,7 @@ the VPS. The same frontend container runs in the default two-hostname VPS layout
 | --- | --- |
 | `workspace.example.com`, Netlify or frontend container | Shared pages, thin Server Actions, same-origin API proxy |
 | `api.workspace.example.com`, backend container | Guarded view/action gateway, Auth.js, APIs, files, realtime, integrations and jobs |
-| Private Docker network | TLS PostgreSQL, authenticated TLS Redis, private Silo storage |
+| Private Docker network | TLS PostgreSQL, authenticated TLS Redis, private Silo storage, worker and beat |
 
 Choose **3** in the curl installer. Point the API A/AAAA records at the VPS;
 point the website records at Netlify. Keep both hosts on the same reviewed
@@ -92,3 +92,5 @@ invitation and published blog links.
 For isolated CI verification, `npm run test:e2e:split` builds both production
 servers with separate action keys and disposable dependencies. Do not run the
 Docker/browser suite on a memory-constrained development machine.
+
+Worker and beat run from the backend image on the VPS with backend runtime settings. They expose no public routes; Netlify receives no Redis or job-processing credentials. See [jobs operations](areas/jobs-queue.md).

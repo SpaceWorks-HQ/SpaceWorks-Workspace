@@ -13,13 +13,15 @@ cleanup() {
   status=$?
   if [[ $status != 0 && -f "$SWW_CONFIG_DIR/compose.env" ]]; then
     # Only this disposable deployment; never dump interpolated configuration.
-    sh scripts/vps-compose.sh ps || true
-    sh scripts/vps-compose.sh logs --tail 30 app frontend || true
+    as_root sh scripts/vps-compose.sh ps || true
+    as_root sh scripts/vps-compose.sh logs --tail 30 app frontend || true
   fi
-  [[ ! -f "$SWW_CONFIG_DIR/compose.env" ]] || sh scripts/vps-compose.sh down --volumes --remove-orphans >/dev/null 2>&1 || true
-  rm -rf -- "$work"
+  [[ ! -f "$SWW_CONFIG_DIR/compose.env" ]] || as_root sh scripts/vps-compose.sh down --volumes --remove-orphans >/dev/null 2>&1 || true
+  as_root rm -rf -- "$work"
 }
 trap cleanup EXIT
+# The real installer runs as root; config files are root-owned with mode 600.
+as_root() { if [[ $(id -u) = 0 ]]; then "$@"; else sudo -E "$@"; fi; }
 mkdir -m 700 "$SWW_CONFIG_DIR"
 export SWW_BUILD_KEY
 SWW_BUILD_KEY=$(openssl rand -base64 32)
@@ -36,18 +38,18 @@ export EMAIL_FROM='Space Works Workspace <noreply@example.test>' SMTP_HOST=smtp.
 docker run --rm --user 0:0 -v "$SWW_CONFIG_DIR:/config" \
   -e EMAIL_FROM -e SMTP_HOST -e SMTP_PORT -e SMTP_SECURE -e SMTP_USER -e SMTP_PASSWORD \
   sww-backend:smoke node docker/vps/configure-smtp.mjs
-printf "SWW_CADDY_TLS='internal'\n" >> "$SWW_CONFIG_DIR/compose.env"
-mkdir -m 755 "$SWW_CONFIG_DIR/status"
-sh scripts/vps-compose.sh config --quiet
-sh scripts/vps-compose.sh up -d --wait --wait-timeout 300
-sh scripts/vps-compose.sh run --rm --no-deps -T ops node docker/vps/check.mjs
-sh scripts/vps-compose.sh run --rm --no-deps -T ops node docker/vps/smoke.mjs
+printf "SWW_CADDY_TLS='internal'\n" | as_root tee -a "$SWW_CONFIG_DIR/compose.env" >/dev/null
+as_root mkdir -m 755 "$SWW_CONFIG_DIR/status"
+as_root sh scripts/vps-compose.sh config --quiet
+as_root sh scripts/vps-compose.sh up -d --wait --wait-timeout 300
+as_root sh scripts/vps-compose.sh run --rm --no-deps -T ops node docker/vps/check.mjs
+as_root sh scripts/vps-compose.sh run --rm --no-deps -T ops node docker/vps/smoke.mjs
 # Exercise the same image with the single-hostname layout too, preserving data.
-# shellcheck source=scripts/vps-lib.sh
-. scripts/vps-lib.sh
-conf_set "$SWW_CONFIG_DIR/compose.env" SWW_LAYOUT single
-conf_set "$SWW_CONFIG_DIR/compose.env" SWW_CADDYFILE Caddyfile
-conf_set "$SWW_CONFIG_DIR/app.env" DEPLOYMENT_MODE ''
-sh scripts/vps-compose.sh up -d --wait --wait-timeout 300 --remove-orphans
-sh scripts/vps-compose.sh run --rm --no-deps -T ops node docker/vps/smoke.mjs
+# shellcheck disable=SC2016 # expanded by the inner shell
+as_root bash -c '. scripts/vps-lib.sh
+conf_set "$1/compose.env" SWW_LAYOUT single
+conf_set "$1/compose.env" SWW_CADDYFILE Caddyfile
+conf_set "$1/app.env" DEPLOYMENT_MODE ""' _ "$SWW_CONFIG_DIR"
+as_root sh scripts/vps-compose.sh up -d --wait --wait-timeout 300 --remove-orphans
+as_root sh scripts/vps-compose.sh run --rm --no-deps -T ops node docker/vps/smoke.mjs
 printf 'Two-image installer smoke passed in split and single layouts.\n'

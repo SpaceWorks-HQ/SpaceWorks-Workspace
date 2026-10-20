@@ -32,18 +32,22 @@ test.beforeAll(async () => {
   const { default: seed } = await import(
     "../../scripts/seed/finance-tools.mjs"
   );
-  await seed(prisma, {
-    workspaceId,
-    workspace,
-    users: { owner: user },
-    channels: [],
-  });
-  await seed(prisma, {
-    workspaceId,
-    workspace,
-    users: { owner: user },
-    channels: [],
-  });
+  // The production servers run with NODE_ENV=production; the demo seed only
+  // guards against seeding a real deployment, so lift it for this fixture.
+  const nodeEnv = process.env.NODE_ENV;
+  Reflect.set(process.env, "NODE_ENV", "test");
+  try {
+    for (let pass = 0; pass < 2; pass += 1)
+      await seed(prisma, {
+        workspaceId,
+        workspace,
+        users: { owner: user },
+        channels: [],
+      });
+  } finally {
+    if (nodeEnv === undefined) Reflect.deleteProperty(process.env, "NODE_ENV");
+    else Reflect.set(process.env, "NODE_ENV", nodeEnv);
+  }
   const profile = await prisma.financePayProfile.findFirstOrThrow({
     where: { workspaceId },
   });

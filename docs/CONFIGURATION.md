@@ -51,7 +51,7 @@ and `ALLOW_INSECURE_PRODUCTION_TESTS=1` belongs only to disposable tests.
 | `BACKUP_KEEP_DAYS`, `BACKUP_AGE_RECIPIENT`, `OFFSITE_*` | Operator-managed backup settings in `backup.env` |
 
 The installer records release metadata in `install.conf` and separate Compose,
-application, migration, database, storage, frontend and scheduler env files.
+application, migration, database, storage, frontend env files; worker and beat use app.env.
 Neither development `.env` nor arbitrary shell variables override saved
 production settings. Internal TLS private keys remain outside runtime mounts.
 
@@ -125,17 +125,31 @@ template for provider-specific details.
 | `TELEGRAM_WEBHOOK_SECRET` | `unset` |
 | `ALLOW_PRIVATE_WEBHOOK_TARGETS` | `unset` |
 | `NOTIFY_WORKER_CONCURRENCY` | `unset` |
-| `MONITOR_WORKER_INPROCESS` | `unset` |
 | `MONITOR_ALLOW_PRIVATE_TARGETS` | `unset` |
 | `MONITOR_MAX_PER_WORKSPACE` | `unset` |
 | `TRUSTED_PROXY_IP_HEADER` | `unset` |
 | `TRUSTED_PROXY_HOPS` | `unset` |
 | `ALLOWED_ACTION_ORIGINS` | `unset` |
-| `OUTBOX_WORKER` | `unset` |
+| `JOBS_INPROCESS` | `false` (Redis-free local development only) |
+| `JOBS_HEALTH_PORT` | `3460` (private worker/beat health) |
+| `QUEUE_OUTBOX_CONCURRENCY` | `5` |
+| `QUEUE_SCHEDULED_CONCURRENCY` | `2` |
+| `QUEUE_SYNC_CONCURRENCY` | `2` |
+| `QUEUE_MONITOR_CONCURRENCY` | `1` |
+| `QUEUE_DOCUMENTS_CONCURRENCY` | `1` |
 | `DEMO_PASSWORD` | `unset` |
 
 `MIGRATE_ON_START=1` enables start-time migrations on platforms without release
 jobs; otherwise run the backend image's `migrate` role once per rollout.
-`APP_URL` and `CRON_SECRET` are the only scheduler inputs. Both jobs and outbox
-need an independent per-minute tick. `OUTBOX_WORKER=0` disables only the
-in-process outbox worker. Monitor-check execution remains in the jobs service.
+Run `node dist/worker.js` and `node dist/beat.js` from the backend image with
+its runtime credentials and the same persistent native Redis URL. Redis must
+use `noeviction`; size connection/command quotas for five queues and workers.
+`QUEUE_*_CONCURRENCY` accepts 1–64 per process. Keep one beat per release.
+`JOBS_QUEUE_PREFIX` optionally isolates an installation/test (default
+`sww:jobs`); all roles must use the same value. Do not change it during normal
+operation: existing work remains under the old prefix.
+
+`APP_URL` and `CRON_SECRET` are the HTTP cron client's only inputs. Both internal
+POST endpoints enqueue work; they require a live worker with the full runtime
+configuration. Cron can replace beat; it cannot replace worker. See
+[background jobs](areas/jobs-queue.md) for retries, retention and recovery.

@@ -116,3 +116,6 @@ prisma/.env
 /frontend/postcss.config.mjs
 /frontend/.next/
 /frontend/node_modules/
+
+# Bundled background processes
+/dist/

@@ -72,7 +72,6 @@ write("postgres.env", envText({ POSTGRES_USER: "sww", POSTGRES_DB: "sww", POSTGR
 write("migrator.env", envText({ DATABASE_URL: dbUrl("sww", adminPassword), DIRECT_URL: dbUrl("sww", adminPassword) }));
 write("storage.env", envText({ MINIO_ROOT_USER: "sww-root", MINIO_ROOT_PASSWORD: storageRoot }));
 write("storage-init.env", envText({ MC_HOST_local: `https://sww-root:${storageRoot}@storage:9000`, S3_APP_PASSWORD: storageApp, SSL_CERT_FILE: "/tls/ca.crt" }));
-write("scheduler.env", envText({ CRON_SECRET: cronSecret }));
 write("app.env", envText({
   NODE_ENV: "production", AUTH_URL: publicOrigin, NEXT_PUBLIC_BASE_URL: publicOrigin,
   ...(frontendHost ? { DEPLOYMENT_MODE: "backend", FRONTEND_GATEWAY_SECRET: peerKey, BACKEND_ORIGIN: `https://${host}` } : {}),

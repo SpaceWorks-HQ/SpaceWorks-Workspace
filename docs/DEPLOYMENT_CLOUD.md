@@ -1,10 +1,11 @@
-# Free-tier cloud deployment
+# Cloud deployment
 
 [Documentation index](README.md) · [Configuration](CONFIGURATION.md)
 
-The optional cloud layout is one backend container serving the whole app, with
-managed data services. Free plans are useful for a small trial; review current
-quotas and upgrade for the community's availability and recovery requirements.
+The default cloud layout runs a web container, a BullMQ worker and beat with
+managed data services. Render background workers require paid compute. Free
+web plans can use an independently hosted worker and the cron trigger described
+below; review native Redis connection and command quotas before choosing them.
 A VPS can instead run the complete stack through the [installer](DEPLOYMENT_VPS.md).
 
 | Piece | Provider | File |
@@ -14,7 +15,8 @@ A VPS can instead run the complete stack through the [installer](DEPLOYMENT_VPS.
 | Native TLS Redis | Upstash | `REDIS_URL` |
 | Private object storage | Cloudflare R2 | `S3_*` |
 | Verified transactional email | Brevo or another SMTP relay | `SMTP_*`, `EMAIL_FROM` |
-| Independent scheduler | Cloudflare Worker | `deploy/cloudflare-cron/` |
+| Background processing | Render worker + beat | `render.yaml`, backend image |
+| Optional beat replacement | Cloudflare Worker | `deploy/cloudflare-cron/` |
 
 ## 1. Database and Redis
 
@@ -57,11 +59,23 @@ Set `AUTH_URL` and `NEXT_PUBLIC_BASE_URL` to the identical HTTPS service/custom
 origin. Set the super-admin email, managed service URLs, storage and mail
 settings and generated keys in the prompted secure environment fields.
 
-Free web services have no separate pre-deploy command, so the Blueprint sets
-`MIGRATE_ON_START=1`. Startup applies committed migrations using `DIRECT_URL`,
-then starts the server; a failed migration prevents startup. On paid plans,
-prefer a separate migration release operation. The runtime memory option is
-separate from the larger build heap. Watch memory and upgrade if necessary.
+The Blueprint uses paid compute for web, worker and beat. Web's pre-deploy
+command applies migrations once; worker and beat use that same release and
+runtime credentials. Deploy migrations before starting consumers on a first
+installation. Worker has a 300-second shutdown delay, Render's documented
+maximum. Beat remains one instance. Health servers listen privately on 3460;
+background worker services receive no public HTTP endpoint. Use `/admin/jobs`
+and Redis heartbeat expiry to monitor them.
+
+To use a free web service, remove the two paid worker services from your copy
+of the Blueprint, set web `plan: free`, remove `preDeployCommand` and set
+`MIGRATE_ON_START=1`. Run `node dist/worker.js` on an always-on host with the
+same runtime settings and native Redis access. Cloudflare cron can replace
+beat, but an HTTP enqueue endpoint cannot execute queued jobs by itself.
+There is no Redis-free production inline fallback. See Render's
+[background workers](https://render.com/docs/background-workers),
+[free limits](https://render.com/docs/free) and
+[Blueprint reference](https://render.com/docs/blueprint-spec).
 
 Render exposes environment variables as Docker build arguments; only the
 public URL and action encryption key are declared by the builder. Prefer a
@@ -74,17 +88,20 @@ Render's appending edge. Only use a different trusted header when that header
 is overwritten on every reachable ingress. Do not assume a CDN makes the
 provider's direct hostname unreachable.
 
-## 5. DNS and independent scheduler
+## 5. DNS and optional external cron
 
 Add the custom domain in Render, follow its DNS instructions, and wait for
 HTTPS issuance. Keep both canonical URLs aligned. Disable CDN HTML rewriting
 or injected scripts that conflict with the nonce CSP. Never buffer realtime
 or assistant streams. Check the provider's current connection-duration limits.
 
-Deploy `deploy/cloudflare-cron` with `APP_URL` set to the canonical HTTPS origin
+If you replace beat, deploy `deploy/cloudflare-cron` with `APP_URL` set to the canonical HTTPS origin
 and the same `CRON_SECRET` as the backend. The Worker wakes `/api/health`, then
 calls **both** `/api/internal/outbox` and `/api/internal/jobs` every minute.
-Watch HTTP statuses without logging secrets or response bodies. A paid
+Both endpoints enqueue into BullMQ; keep the separate worker alive. Do not
+run external cron alongside beat. Minute cron has minute monitor precision;
+beat schedules monitor checks every five seconds. Watch HTTP statuses without
+logging secrets or response bodies. A paid
 scheduler can instead run `node scripts/scheduler.mjs --once` with only
 `APP_URL` and `CRON_SECRET`.
 
@@ -104,9 +121,9 @@ off-server, and test isolated restores. See [Operations](production-operations.m
 ## Other clouds
 
 [DigitalOcean App Platform](../.do/app.yaml) pulls an immutable backend release,
-runs `migrate` as PRE_DEPLOY and a Node scheduler worker. Provide managed
+runs `migrate` as PRE_DEPLOY plus Node worker and beat services. Provide managed
 PostgreSQL, TLS Redis/Valkey, private Spaces and SMTP, then replace every
-placeholder securely. The service, migration job and scheduler use one release.
+placeholder securely. The service, migration job, worker and beat use one release.
 For AWS use [AWS deployment](DEPLOYMENT_AWS.md); for Kubernetes use
 [the Helm guide](DEPLOYMENT_KUBERNETES.md). A separately hosted frontend follows
 [Split hosting](DEPLOYMENT_SPLIT.md) and Netlify's

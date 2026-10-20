@@ -21,6 +21,11 @@
       "id": "admin-backups-page:loadBackupsPage"
     },
     {
+      "module": "lib/views/generated/admin-jobs-page-loadAdminJobsPage",
+      "name": "loadAdminJobsPage",
+      "id": "admin-jobs-page:loadAdminJobsPage"
+    },
+    {
       "module": "lib/views/generated/admin-layout-loadAdminLayout",
       "name": "loadAdminLayout",
       "id": "admin-layout:loadAdminLayout"
@@ -1731,6 +1736,11 @@
       "module": "app/actions/integrations",
       "name": "updateIntegrations",
       "id": "integrations:updateIntegrations"
+    },
+    {
+      "module": "app/actions/jobs",
+      "name": "manageJobsAction",
+      "id": "jobs:manageJobsAction"
     },
     {
       "module": "app/actions/links",

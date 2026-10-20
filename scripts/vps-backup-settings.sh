@@ -67,7 +67,7 @@ EOF
       fi
       [[ -n "$recipient" ]] || { warn 'Turn on encryption first: off-site copies are only sent encrypted.'; continue; }
       ask_offsite
-      save_offsite
+      save_offsite "$(backup_env)"
       unset offsite_secret
       say 'Checking that the bucket is reachable with that key.'
       if run_mc "$(silo_image)" ls "offsite/$offsite_bucket" > /dev/null; then

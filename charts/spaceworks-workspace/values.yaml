@@ -85,19 +85,18 @@ migration:
   backoffLimit: 1
   activeDeadlineSeconds: 600
 
-# CronJob that calls /api/internal/outbox and /api/internal/jobs with the
-# app's CRON_SECRET (scripts/scheduler.mjs --once from the app image).
-scheduler:
+# Same backend image, private health endpoints, no Service or Ingress.
+worker:
   enabled: true
-  schedule: "* * * * *"
-  # Endpoints to call: outbox, jobs.
-  endpoints: "outbox,jobs"
+  replicas: 1
   resources:
-    requests:
-      cpu: 10m
-      memory: 64Mi
-    limits:
-      memory: 128Mi
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { cpu: "2", memory: 1536Mi }
+beat:
+  enabled: true
+  resources:
+    requests: { cpu: 10m, memory: 128Mi }
+    limits: { memory: 512Mi }
 
 nodeSelector: {}
 tolerations: []

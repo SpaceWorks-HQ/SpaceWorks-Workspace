@@ -1,4 +1,8 @@
 import "server-only";
+import type { JobDefinition } from "@/lib/queue/definitions";
+import { enqueueDueOutbox } from "@/lib/queue/enqueue";
+import { purgeExpiredOperationalData } from "@/lib/retention";
+import { runDueChecks } from "@/lib/monitor/scheduler";
 import { run as funding } from "@/lib/scheduled/funding";
 import { run as social } from "@/lib/scheduled/social";
 
@@ -24,31 +28,36 @@ import { run as shell } from "@/lib/scheduled/shell";
  * its own file and never edits this registry. A failing job is logged and
  * does not stop the others.
  */
-export const SCHEDULED_JOBS: ReadonlyArray<{ area: string; run: (now: Date) => Promise<void> }> = [
+export const SCHEDULED_JOBS: ReadonlyArray<JobDefinition> = [
   { area: "funding-tools", run: funding },
   { area: "ops-gaps", run: opsGaps },
-  { area: "social", run: social },
+  { area: "social", queue: "sync", run: social },
   { area: "team-calendar", run: calendar },
-  { area: "app-reviews", run: appReviews },
+  { area: "app-reviews", queue: "sync", run: appReviews },
   { area: "governance-tools", run: governance },
   { area: "tasks", run: tasks },
   { area: "chat", run: chat },
-  { area: "docs-files", run: docsFiles },
+  { area: "docs-files", queue: "documents", run: docsFiles },
   { area: "community", run: community },
   { area: "finance", run: finance },
   { area: "assistant", run: assistant },
-  { area: "integrations-messaging", run: integrations },
-  { area: "monitor", run: monitor },
+  { area: "integrations-messaging", queue: "sync", run: integrations },
+  { area: "monitor", queue: "monitor", run: monitor },
   { area: "people-relationships", run: people },
   { area: "ops-money", run: opsMoney },
   { area: "work-collaboration", run: collaboration },
   { area: "platform-shell", run: shell },
+  { area: "monitor-checks", queue: "monitor", schedule: { every: 5_000 }, run: async () => { await runDueChecks({ claimWindowMs: 0, maxRetryWaitMs: 5_000 }); } },
+  { area: "outbox-relay", queue: "outbox", schedule: { every: 5_000 }, run: async () => { await enqueueDueOutbox(); } },
+  { area: "operational-retention", schedule: { pattern: "0 0 * * *", tz: "UTC" }, run: async () => { await purgeExpiredOperationalData(); } },
 ];
 
 export async function runScheduledJobs(now = new Date()) {
   const failed: string[] = [];
   for (const job of SCHEDULED_JOBS) {
     try {
+      // Redis-free development delivers directly through the existing local worker.
+      if (job.area === "outbox-relay" && !process.env.REDIS_URL) continue;
       await job.run(now);
     } catch {
       failed.push(job.area);

@@ -78,7 +78,14 @@ export const envSchema = z.object({
   // Messaging, notification routing and the Services monitor.
   ALLOW_PRIVATE_WEBHOOK_TARGETS: optionalString(z.enum(["true", "false"])),
   NOTIFY_WORKER_CONCURRENCY: optionalString(z.coerce.number().int().min(1).max(100)),
-  MONITOR_WORKER_INPROCESS: optionalString(z.enum(["true", "false"])),
+  JOBS_INPROCESS: optionalString(z.enum(["true", "false"])),
+  JOBS_HEALTH_PORT: optionalString(z.coerce.number().int().min(1).max(65535)),
+  JOBS_QUEUE_PREFIX: optionalString(z.string().regex(/^[a-zA-Z0-9:_-]{1,100}$/)),
+  QUEUE_OUTBOX_CONCURRENCY: optionalString(z.coerce.number().int().min(1).max(64)),
+  QUEUE_SCHEDULED_CONCURRENCY: optionalString(z.coerce.number().int().min(1).max(64)),
+  QUEUE_SYNC_CONCURRENCY: optionalString(z.coerce.number().int().min(1).max(64)),
+  QUEUE_MONITOR_CONCURRENCY: optionalString(z.coerce.number().int().min(1).max(64)),
+  QUEUE_DOCUMENTS_CONCURRENCY: optionalString(z.coerce.number().int().min(1).max(64)),
   MONITOR_ALLOW_PRIVATE_TARGETS: optionalString(z.enum(["true", "false"])),
   MONITOR_MAX_PER_WORKSPACE: optionalString(z.coerce.number().int().min(1).max(10_000)),
 });
@@ -116,6 +123,7 @@ export function productionEnvironmentProblems(source: Record<string, string | un
   for (const key of REQUIRED_IN_PRODUCTION) {
     if (!source[key]?.trim()) problems.push(`${key}: required in production`);
   }
+  if (source.JOBS_INPROCESS === "true") problems.push("JOBS_INPROCESS is local development only; run worker and beat in production.");
   if (source.DEPLOYMENT_MODE === "backend" && !source.FRONTEND_GATEWAY_SECRET) problems.push("FRONTEND_GATEWAY_SECRET: required for the backend deployment mode");
   if (Boolean(source.S3_ACCESS_KEY_ID) !== Boolean(source.S3_SECRET_ACCESS_KEY)) {
     problems.push("S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY: set both, or neither when using an IAM role");

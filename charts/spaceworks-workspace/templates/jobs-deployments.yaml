@@ -1,0 +1,80 @@
+{{- $root := . }}
+{{- range $role := list "worker" "beat" }}
+{{- $settings := index $root.Values $role }}
+{{- if $settings.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sww.fullname" $root }}-{{ $role }}
+  labels:
+    {{- include "sww.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $role }}
+spec:
+  replicas: {{ if eq $role "beat" }}1{{ else }}{{ $settings.replicas }}{{ end }}
+  selector:
+    matchLabels:
+      {{- include "sww.selectorLabels" $root | nindent 6 }}
+      app.kubernetes.io/component: {{ $role }}
+  template:
+    metadata:
+      labels:
+        {{- include "sww.selectorLabels" $root | nindent 8 }}
+        app.kubernetes.io/component: {{ $role }}
+      annotations:
+        checksum/secret: {{ toJson $root.Values.secret.data | sha256sum }}
+    spec:
+      serviceAccountName: {{ include "sww.serviceAccountName" $root }}
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 600
+      securityContext:
+        {{- include "sww.podSecurityContext" $root | nindent 8 }}
+      {{- with $root.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ $role }}
+          image: {{ include "sww.image" $root | quote }}
+          imagePullPolicy: {{ $root.Values.image.pullPolicy }}
+          args: ["node", "dist/{{ $role }}.js"]
+          ports:
+            - { name: health, containerPort: 3460 }
+          env:
+            - { name: MIGRATE_ON_START, value: "0" }
+          envFrom:
+            - secretRef:
+                name: {{ include "sww.secretName" $root }}
+          securityContext:
+            {{- include "sww.containerSecurityContext" $root | nindent 12 }}
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }
+          resources:
+            {{- toYaml $settings.resources | nindent 12 }}
+          startupProbe:
+            httpGet: { path: /health, port: health }
+            failureThreshold: 30
+            periodSeconds: 5
+          readinessProbe:
+            httpGet: { path: /health, port: health }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health, port: health }
+            periodSeconds: 20
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      {{- with $root.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $root.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $root.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+{{- end }}

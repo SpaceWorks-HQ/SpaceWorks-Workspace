@@ -56,10 +56,17 @@ before the server on platforms without release jobs. Use a one-shot migration
 with multiple replicas. A failed migration blocks startup.
 
 `GET /api/health` is public liveness. `GET /api/health/db` requires
-`Authorization: Bearer $HEALTHCHECK_SECRET`. Independently call both
-`POST /api/internal/outbox` and `POST /api/internal/jobs` every minute with
-`Authorization: Bearer $CRON_SECRET`. `node scripts/scheduler.mjs --once`
-provides that tick with only `APP_URL` and `CRON_SECRET`.
+`Authorization: Bearer $HEALTHCHECK_SECRET`. Run separate worker and beat
+containers from the same backend image: `node dist/worker.js` and
+`node dist/beat.js`, with the backend runtime environment, database and native
+persistent Redis access. Do not publish port 3460; probe `/health` privately.
+Give worker up to ten minutes to drain on SIGTERM. Beat needs one replica.
+
+If an external cron replaces beat, call `POST /api/internal/outbox` and
+`POST /api/internal/jobs` every minute with `Authorization: Bearer $CRON_SECRET`.
+`node scripts/scheduler.mjs --once` provides the tick with `APP_URL` and
+`CRON_SECRET`. Endpoints enqueue; keep worker running. They return 503 if Redis
+is unavailable. See [background jobs](areas/jobs-queue.md).
 
 Back up the database, objects and encryption keys before changing releases.
 Retain the previous image until checks pass. Application rollback does not

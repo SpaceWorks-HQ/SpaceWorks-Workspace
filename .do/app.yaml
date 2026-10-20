@@ -47,7 +47,7 @@ jobs:
     run_command: docker-entrypoint.sh migrate
 
 workers:
-  - name: scheduler
+  - name: worker
     image:
       registry_type: GHCR
       registry: spaceworks-hq
@@ -55,11 +55,16 @@ workers:
       tag: REPLACE_WITH_IMMUTABLE_RELEASE
     instance_size_slug: apps-s-1vcpu-1gb
     instance_count: 1
-    run_command: node scripts/scheduler.mjs
-    envs:
-      - key: APP_URL
-        value: ${web.PRIVATE_URL}
-        scope: RUN_TIME
+    run_command: node dist/worker.js
+  - name: beat
+    image:
+      registry_type: GHCR
+      registry: spaceworks-hq
+      repository: spaceworks-workspace-backend
+      tag: REPLACE_WITH_IMMUTABLE_RELEASE
+    instance_size_slug: apps-s-1vcpu-1gb
+    instance_count: 1
+    run_command: node dist/beat.js
 
 databases:
   - name: db

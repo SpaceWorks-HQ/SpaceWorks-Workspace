@@ -48,3 +48,6 @@ frontend/lib
 frontend/public
 frontend/.next
 frontend/node_modules
+
+# Rebuilt from source in the builder stage
+dist/

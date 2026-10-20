@@ -4,7 +4,7 @@
 
 Run Space Works Workspace on one Linux VPS with Docker Engine and Docker Compose.
 The production stack uses two images of its own: the **backend** (the API, the
-one-shot migrations, the email outbox worker and its recovery scheduler, live
+one-shot migrations, background worker and beat, live
 check-in and the operator tools) and the **frontend** (the website). PostgreSQL
 16, Redis 7, private Silo S3-compatible storage and Caddy HTTPS run from their
 standard images in the same Compose file. Node.js, PostgreSQL and Redis do not
@@ -72,7 +72,7 @@ records the configuration directory and the repository to update from.
  the stack runs a backend and a frontend image (see
 [Releases and container images](CONTAINER_IMAGES.md)), with PostgreSQL, Redis,
 Silo storage, one-shot migrations (the backend image's `migrate` role), the
-outbox and jobs scheduler and Caddy:
+worker, beat and Caddy:
 
 | Choice | Layout | Containers | DNS |
 | --- | --- | --- | --- |
@@ -269,7 +269,7 @@ and SMTP are runtime inputs, not build arguments.
 
 Compose waits for PostgreSQL and Redis health, creates the private storage
 bucket and application policy, and applies Prisma migrations before starting the
-app. Migration failure blocks app startup. Caddy and the scheduler wait for app
+app, worker and beat. Migration failure blocks their startup. Caddy waits for app
 health. Caddy obtains and renews the public TLS certificate; it needs working DNS
 and reachable ports 80/443. This can take a short time on first startup.
 
@@ -291,7 +291,7 @@ curl --fail https://workspace.example.com/api/health
 
 The VPS check verifies production settings, live database TLS, the runtime role,
 the schema contract, authenticated Redis over TLS, access to the storage bucket
-and bearer-protected `/api/health/db`. It never prints credentials or response
+worker/beat health and bearer-protected `/api/health/db`. It never prints credentials or response
 bodies. The storage initializer explicitly disables anonymous bucket access.
 
 Open `https://workspace.example.com/setup` to create the first account with the
@@ -300,8 +300,13 @@ and enter `/admin` with a fresh TOTP proof. New members join by invitation;
 there is no public sign-up. Do not seed demo data on production.
 
 Verify invitation and password-reset email, private file delivery, task changes,
-and live chat updates. The scheduler calls both `/api/internal/outbox` and
-`/api/internal/jobs` every minute with `CRON_SECRET`.
+and live chat updates. Worker processes background jobs; beat reconciles the
+registry's repeat schedules on startup. Both use the same backend image and
+app.env, expose health only on their private port 3460, and drain active work
+on SIGTERM. The status check and support bundle include both roles. Open
+`/admin/jobs` with fresh MFA for counts, failed jobs, retry/remove and pause/resume.
+Old `scheduler.env` files may be removed after upgrading; they are no longer read.
+Compose removes the old scheduler service through the existing orphan cleanup.
 
 ## Upgrades and rollback
 
@@ -404,7 +409,7 @@ For an encrypted backup it asks you to paste the key (or pass `--identity FILE`)
 `vps-restore.sh offsite:<time>` first downloads that backup from the off-site
 bucket; the installer menu's **Backups → List off-site backups** shows the names.
 It shows what will be replaced and asks you to type `RESTORE`. It backs up the
-current database first, stops the app, Caddy and the scheduler, and replaces the
+current database first, stops the app, Caddy, worker and beat, and replaces the
 database in one transaction. It then copies the backup's files back into Silo
 (newer files stay), runs migrations if the backup came from an older release,
 starts everything and runs the VPS checks.
@@ -523,7 +528,7 @@ logs can hold email and IP addresses, so read it before sharing.
 ## A separate frontend on Netlify
 
 Choose mode 3 in the installer and follow [Netlify frontend + Docker VPS backend](DEPLOYMENT_SPLIT.md).
-The same data services, private TLS, migrations, scheduler, backups and renewal
+The same data services, private TLS, migrations, worker, beat, backups and renewal
 procedures apply. `PUBLIC_HOST` is the VPS API hostname; `PUBLIC_ORIGIN`, `AUTH_URL`
 and `NEXT_PUBLIC_BASE_URL` are the frontend HTTPS origin. Public variables require
 rebuilding the appropriate application image/workspace when changed.

@@ -36,7 +36,7 @@ start_stack() {
   compose config --quiet
   fetch_images "$version" "$(conf_get "$SWW_CONFIG_DIR/compose.env" SWW_LAYOUT)"
   compose run --rm --no-deps ops node docker/vps/check.mjs preflight
-  say 'Starting PostgreSQL, Redis, Silo storage, migrations, the backend and website, Caddy and the scheduler.'
+  say 'Starting PostgreSQL, Redis, Silo storage, migrations, the backend and website, Caddy and worker + beat.'
   compose up -d --wait --wait-timeout 300
   compose run --rm --no-deps ops node docker/vps/check.mjs
 }
@@ -297,7 +297,7 @@ install_path=$source_dir
     2) printf '                   Caddy automatic HTTPS (Let'"'"'s Encrypt, %s) on ports 80/443,\n' "$acme_email" ;;
     3) printf '                   no Caddy: your proxy forwards to 127.0.0.1:8080%s,\n' "$([[ $layout != split ]] || echo ' (API) and :8081 (website)')" ;;
   esac
-  printf '                   one-shot migrations and an email-outbox scheduler (Docker Compose project sww)\n'
+  printf '                   one-shot migrations and background worker + beat (Docker Compose project sww)\n'
   [[ $storage_mode = 1 ]] || printf '  File storage:    bucket %s at %s (region %s)\n' "$S3_BUCKET" "$S3_ENDPOINT" "$S3_REGION"
   [[ $install_runner = 0 ]] || printf '  Auto-deploy:     GitHub Actions runner (asks for a registration token at the end)\n'
   if [[ $schedule_backups = 1 ]]; then backup_line='nightly at about 02:30 UTC, kept 14 days'; else backup_line='when you run them (installer menu)'; fi

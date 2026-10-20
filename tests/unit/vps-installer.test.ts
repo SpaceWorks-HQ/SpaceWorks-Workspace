@@ -302,14 +302,16 @@ describe("VPS installer", () => {
     expect(readFileSync(path.join(root, "scripts/vps-lib.sh"), "utf8")).toContain("vps-renew-certs.sh --if-due");
   });
 
-  it("runs the scheduler from the backend image and shows the app only the backup status", () => {
+  it("runs worker and beat from the backend image with private health checks", () => {
     const compose = readFileSync(path.join(root, "compose.production.yml"), "utf8");
     expect(compose).not.toContain("node:22-alpine");
-    expect(compose).toMatch(/ {2}scheduler:\n {4}image: \$\{SWW_BACKEND_IMAGE:-sww-backend\}/);
-    expect(compose).toContain('command: ["node", "docker/vps/scheduler.mjs"]');
-    // The image's web health check would mark the scheduler unhealthy, and `up --wait` refuses a
-    // running service without one: it checks that it can reach the app instead.
-    expect(compose).toMatch(/scheduler\.mjs"\]\n(?: +#.*\n)* +healthcheck:\n +test: \["CMD", "node", "-e", "fetch\('http:\/\/app:3000\/api\/health'\)/);
+    expect(compose).not.toContain("  scheduler:");
+    for (const role of ["worker", "beat"]) {
+      expect(compose).toContain(`  ${role}:`);
+      expect(compose).toContain(`command: ["node", "dist/${role}.js"]`);
+    }
+    expect(compose).toContain("http://127.0.0.1:3460/health");
+    expect(compose).toContain("stop_grace_period: 10m");
     expect(compose).toContain("${SWW_CONFIG_DIR}/status:/status:ro");
     expect(compose).not.toMatch(/\$\{SWW_CONFIG_DIR\}\/backups:\/[a-z]+:ro/);
   });
