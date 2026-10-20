@@ -78,7 +78,7 @@ export default async function DocsPage({ params, searchParams }: PageProps<"/w/[
           )}
         </section>
       ) : total === 0 ? (
-        <EmptyState mood="sleepy" title="No pages yet." action={canCreate ? <NewPageButton label="Write the first page" /> : undefined}>
+        <EmptyState patch title="No pages yet." action={canCreate ? <NewPageButton label="Write the first page" /> : undefined}>
           {canCreate ? "Start with a how-to for the laser cutter or the notes from the last build night." : "When members write guides and notes, they show up here."}
         </EmptyState>
       ) : (

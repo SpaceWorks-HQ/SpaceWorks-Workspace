@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { Patch } from "@/components/brand/Patch";
 import { SpaceWorksLogo, SpaceWorksWorkspaceLogo } from "@/components/brand/SpaceWorksLogo";
 
 /**
@@ -38,7 +39,7 @@ export function AuthFrame({ title, description, children, accent = "Make things\
           </div>
           <p className="relative flex items-end justify-between gap-6">
             <span className="whitespace-pre-line font-accent text-[34px] font-medium leading-[1.1] text-ink">{accent}</span>
-            <span className="size-14 shrink-0 rounded-tl-full bg-highlight" />
+            <Patch size={128} className="-mb-2 shrink-0" />
           </p>
         </div>
       </aside>

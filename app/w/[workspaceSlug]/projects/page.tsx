@@ -33,7 +33,7 @@ export default async function ProjectsPage({ params, searchParams }: PageProps<"
       />
       {projects.length === 0 ? (
         filter === "open" ? (
-          <EmptyState mood="thinking" title="No projects yet." action={create}>
+          <EmptyState patch title="No projects yet." action={create}>
             Start one for the next build night.
           </EmptyState>
         ) : (

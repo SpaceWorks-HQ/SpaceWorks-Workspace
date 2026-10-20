@@ -77,7 +77,7 @@ export function MyTasks({ slug, initial, labels, timeZone, projectsHref }: { slu
 
   if (tasks.length === 0) {
     return (
-      <EmptyState mood="sleepy" title="Nothing assigned to you right now." action={<Link href={projectsHref} className="font-semibold text-ink underline underline-offset-4">Browse projects</Link>}>
+      <EmptyState patch title="Nothing assigned to you right now." action={<Link href={projectsHref} className="font-semibold text-ink underline underline-offset-4">Browse projects</Link>}>
         Pick something up from a project board.
       </EmptyState>
     );
