@@ -31,5 +31,6 @@ export function isFailure(value: WorkspaceContext | ActionResult<never>): value 
 /** Revalidate one area's pages (and the workspace home). */
 export function refreshArea(slug: string, ...areas: string[]) {
   for (const area of areas) revalidatePath(`/w/${slug}/${area}`, "layout");
+  if (areas.includes("members")) revalidatePath(`/w/${slug}/leave`, "layout");
   revalidatePath(`/w/${slug}`);
 }

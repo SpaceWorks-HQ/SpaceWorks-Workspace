@@ -549,6 +549,15 @@ model Workspace {
   appReviewSlackConfig     AppReviewSlackConfig?
   appReviewSlackEvents     AppReviewSlackEvent[]
   appReviewSlackMembers    AppReviewSlackMember[]
+  helpTickets              HelpTicket[]
+  safetyReports            SafetyReport[]
+  volunteerLogs            VolunteerLog[]
+  leaveTypes               LeaveType[]
+  leaveBalances            LeaveBalance[]
+  hiringOpenings           HiringOpening[]
+  hiringCandidates         HiringCandidate[]
+  opsAttachments           OpsAttachment[]
+  facilityLeases           FacilityLease[]
   governanceRecords        GovernanceRecord[]
   governanceAttachments    GovernanceAttachment[]
   governanceBankChanges    GovernanceBankChange[]
@@ -1000,8 +1009,10 @@ model FileObject {
   certificationEvidence Certification[]
   statusPageLogos       StatusPage[]
   signedPdfs            SignatureRequest[]
+  opsAttachments        OpsAttachment[]
   governanceAttachments GovernanceAttachment[]
 
+  @@unique([workspaceId, id])
   @@index([workspaceId, folder])
   @@index([docId])
   @@index([taskId])
@@ -2286,6 +2297,9 @@ model MemberProfile {
   /// Encrypted { name, relation, phone, notes }.
   emergencyContactEnc String?
   emergencyUpdatedAt  DateTime?
+  engagementType      String         @default("VOLUNTEER")
+  engagementStart     DateTime?      @db.Date
+  engagementEnd       DateTime?      @db.Date
   leavingAt           DateTime?
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
@@ -4964,4 +4978,267 @@ model CalendarMeetingSync {
 
   @@unique([workspaceId, meetingId, userId])
   @@index([workspaceId, userId])
+}
+
+// Internal operations: tenant-bound roots and composite tenant child relations.
+enum HelpTicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING
+  RESOLVED
+  CLOSED
+}
+
+enum HelpTicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum SafetyReportKind {
+  INJURY
+  NEAR_MISS
+  DAMAGE
+  HAZARD
+}
+
+enum SafetyReportStatus {
+  REPORTED
+  INVESTIGATING
+  FOLLOW_UP
+  CLOSED
+}
+
+enum VolunteerLogStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+model HelpTicket {
+  id           String              @id @default(cuid())
+  workspaceId  String
+  number       Int
+  requesterId  String
+  title        String
+  description  String
+  category     String
+  priority     HelpTicketPriority  @default(NORMAL)
+  status       HelpTicketStatus    @default(OPEN)
+  assigneeId   String?
+  slaDueAt     DateTime
+  resolvedAt   DateTime?
+  confidential Boolean             @default(false)
+  handlerIds   String[]            @default([])
+  requestKey   String
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  workspace    Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  comments     HelpTicketComment[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, number])
+  @@unique([workspaceId, requesterId, requestKey])
+  @@index([workspaceId, status, slaDueAt])
+  @@index([workspaceId, requesterId, createdAt])
+}
+
+model HelpTicketComment {
+  id          String     @id @default(cuid())
+  workspaceId String
+  ticketId    String
+  authorId    String
+  body        String
+  internal    Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  ticket      HelpTicket @relation(fields: [workspaceId, ticketId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, ticketId, createdAt])
+}
+
+// Always confidential. No content is copied to search, activity or notifications.
+model SafetyReport {
+  id              String             @id @default(cuid())
+  workspaceId     String
+  reporterId      String
+  title           String
+  description     String
+  immediateAction String
+  location        String
+  kind            SafetyReportKind
+  status          SafetyReportStatus @default(REPORTED)
+  occurredAt      DateTime
+  closedAt        DateTime?
+  closureNote     String?
+  requestKey      String
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  workspace       Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  actions         SafetyFollowUp[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, reporterId, requestKey])
+  @@index([workspaceId, status, createdAt])
+  @@index([workspaceId, reporterId, createdAt])
+}
+
+model SafetyFollowUp {
+  id             String       @id @default(cuid())
+  workspaceId    String
+  reportId       String
+  title          String
+  assigneeId     String
+  dueAt          DateTime
+  completedAt    DateTime?
+  completedById  String?
+  completionNote String?
+  createdAt      DateTime     @default(now())
+  report         SafetyReport @relation(fields: [workspaceId, reportId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, reportId, dueAt])
+}
+
+model VolunteerLog {
+  id           String             @id @default(cuid())
+  workspaceId  String
+  userId       String
+  activity     String
+  startsAt     DateTime
+  endsAt       DateTime
+  breakMinutes Int                @default(0)
+  minutes      Int
+  status       VolunteerLogStatus @default(PENDING)
+  reviewedById String?
+  reviewedAt   DateTime?
+  reviewNote   String?
+  requestKey   String
+  createdAt    DateTime           @default(now())
+  workspace    Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId, requestKey])
+  @@index([workspaceId, userId, startsAt])
+  @@index([workspaceId, status, startsAt])
+}
+
+// Yearly entitlements extend existing time-off checklist requests and Availability.
+model LeaveType {
+  id          String         @id @default(cuid())
+  workspaceId String
+  name        String
+  active      Boolean        @default(true)
+  workspace   Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  balances    LeaveBalance[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, name])
+}
+
+model LeaveBalance {
+  id            String    @id @default(cuid())
+  workspaceId   String
+  typeId        String
+  userId        String
+  year          Int
+  allowanceDays Int
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  type          LeaveType @relation(fields: [workspaceId, typeId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId, year, typeId])
+  @@index([workspaceId, year])
+}
+
+model HiringOpening {
+  id             String            @id @default(cuid())
+  workspaceId    String
+  title          String
+  engagementType String
+  description    String
+  ownerId        String
+  status         String            @default("OPEN")
+  dueOn          DateTime?         @db.Date
+  requestKey     String
+  createdAt      DateTime          @default(now())
+  workspace      Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  candidates     HiringCandidate[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, requestKey])
+  @@index([workspaceId, status, dueOn])
+}
+
+model HiringCandidate {
+  id              String            @id @default(cuid())
+  workspaceId     String
+  openingId       String
+  name            String
+  email           String
+  phone           String
+  source          String
+  stage           String            @default("APPLIED")
+  notes           String
+  offer           String            @default("")
+  decision        String            @default("")
+  ownerId         String
+  dueOn           DateTime?         @db.Date
+  onboardingRunId String?
+  requestKey      String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  workspace       Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  opening         HiringOpening     @relation(fields: [workspaceId, openingId], references: [workspaceId, id], onDelete: Cascade)
+  interviews      HiringInterview[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, requestKey])
+  @@index([workspaceId, stage, dueOn])
+}
+
+model HiringInterview {
+  id            String          @id @default(cuid())
+  workspaceId   String
+  candidateId   String
+  interviewerId String
+  heldOn        DateTime        @db.Date
+  note          String
+  candidate     HiringCandidate @relation(fields: [workspaceId, candidateId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, candidateId, heldOn])
+}
+
+// Record-scoped evidence is excluded from the general file library.
+model OpsAttachment {
+  id          String     @id @default(cuid())
+  workspaceId String
+  kind        String
+  recordId    String
+  fileId      String
+  createdAt   DateTime   @default(now())
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  file        FileObject @relation(fields: [workspaceId, fileId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, fileId])
+  @@index([workspaceId, kind, recordId])
+}
+
+model FacilityLease {
+  id                String    @id @default(cuid())
+  workspaceId       String
+  title             String
+  landlordContactId String
+  ownerId           String
+  rentMinor         Int
+  currency          String    @default("INR")
+  startsOn          DateTime  @db.Date
+  renewalOn         DateTime  @db.Date
+  status            String    @default("ACTIVE")
+  notes             String
+  requestKey        String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, requestKey])
+  @@index([workspaceId, status, renewalOn])
 }

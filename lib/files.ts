@@ -1,4 +1,5 @@
 import "server-only";
+import { canDownloadOpsFile } from "@/lib/opsGaps/attachments";
 
 import { prisma } from "@/lib/db";
 import { decideAccess } from "@/lib/chat/access";
@@ -39,6 +40,7 @@ export async function findDownloadableFile(fileId: string, userId: string) {
   if (file.folder === "/governance" || file.folder.startsWith("/governance/") || file.governanceAttachments.length) {
     if (!hasRoleAtLeast(membership.role, "ADMIN")) return null;
   }
+  if (!(await canDownloadOpsFile(file,userId,membership.role))) return null;
   if (file.doc?.visibility === "ADMINS" && !hasRoleAtLeast(membership.role, "ADMIN")) return null;
   const taskTeamId = file.task?.project?.teamId;
   if (taskTeamId && (await hiddenTeamIds(file.workspaceId, { userId, role: membership.role })).includes(taskTeamId)) return null;

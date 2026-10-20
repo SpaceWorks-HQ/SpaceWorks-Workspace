@@ -51,15 +51,16 @@ const OTHER_AREA_RELATIONS: Prisma.FileObjectWhereInput = {
   certificationEvidence: { none: {} },
   statusPageLogos: { none: {} },
   signedPdfs: { none: {} },
+  opsAttachments: { none: {} },
 };
 
 /** Chat uploads (message attachments, the /chat folder) belong to chat, not the library. */
 const NOT_CHAT: Prisma.FileObjectWhereInput = {
   messageAttachments: { none: {} },
-  NOT: { OR: [{ folder: CHAT_FOLDER }, { folder: { startsWith: `${CHAT_FOLDER}/` } }, { folder: "/governance" }, { folder: { startsWith: "/governance/" } }, { folder: "/calendar" }, { folder: { startsWith: "/calendar/" } }] },
+  NOT: { OR: [{ folder: "/people-service" }, { folder: { startsWith: "/people-service/" } }, { folder: CHAT_FOLDER }, { folder: { startsWith: `${CHAT_FOLDER}/` } }, { folder: "/governance" }, { folder: { startsWith: "/governance/" } }, { folder: "/calendar" }, { folder: { startsWith: "/calendar/" } }] },
 };
 
-const RESERVED_FOLDER = "The chat folder is managed by chat. Choose another folder.";
+const RESERVED_FOLDER = "That folder is managed by its tool. Choose another folder.";
 
 /** Array references have no Prisma relation; keep these files with their owning area. */
 async function areaOwnedFileIds(workspaceId: string, client: DbClient = prisma): Promise<string[]> {
@@ -322,6 +323,7 @@ export async function usageSummary(workspaceId: string): Promise<UsageSummary> {
     prisma.$queryRaw<{ bytes: bigint | null }[]>`
       SELECT SUM(v."size")::bigint AS bytes FROM "FileVersion" v JOIN "FileObject" f ON f."id" = v."fileId"
       WHERE f."workspaceId" = ${workspaceId} AND v."version" <> f."currentVersion"
+        AND f."folder" <> '/people-service' AND f."folder" NOT LIKE '/people-service/%'
         AND f."folder" <> ${CHAT_FOLDER} AND f."folder" NOT LIKE ${`${CHAT_FOLDER}/%`}
         AND NOT EXISTS (SELECT 1 FROM "MessageAttachment" a WHERE a."fileId" = f."id")`,
   ]);

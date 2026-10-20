@@ -421,6 +421,36 @@
       "id": "w-workspaceSlug-governance-vendors-page:loadPage"
     },
     {
+      "module": "lib/views/generated/w-workspaceSlug-helpdesk-recordId-page-loadHelpTicketPage",
+      "name": "loadHelpTicketPage",
+      "id": "w-workspaceSlug-helpdesk-recordId-page:loadHelpTicketPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-helpdesk-new-page-loadNewHelpTicketPage",
+      "name": "loadNewHelpTicketPage",
+      "id": "w-workspaceSlug-helpdesk-new-page:loadNewHelpTicketPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-helpdesk-page-loadHelpdeskPage",
+      "name": "loadHelpdeskPage",
+      "id": "w-workspaceSlug-helpdesk-page:loadHelpdeskPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-hiring-recordId-page-loadCandidatePage",
+      "name": "loadCandidatePage",
+      "id": "w-workspaceSlug-hiring-recordId-page:loadCandidatePage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-hiring-openings-recordId-page-loadOpeningPage",
+      "name": "loadOpeningPage",
+      "id": "w-workspaceSlug-hiring-openings-recordId-page:loadOpeningPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-hiring-page-loadHiringPage",
+      "name": "loadHiringPage",
+      "id": "w-workspaceSlug-hiring-page:loadHiringPage"
+    },
+    {
       "module": "lib/views/generated/w-workspaceSlug-ideas-ideaId-page-loadIdeaPage",
       "name": "loadIdeaPage",
       "id": "w-workspaceSlug-ideas-ideaId-page:loadIdeaPage"
@@ -439,6 +469,11 @@
       "module": "lib/views/generated/w-workspaceSlug-layout-loadWorkspaceLayout",
       "name": "loadWorkspaceLayout",
       "id": "w-workspaceSlug-layout:loadWorkspaceLayout"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-leave-page-loadLeavePage",
+      "name": "loadLeavePage",
+      "id": "w-workspaceSlug-leave-page:loadLeavePage"
     },
     {
       "module": "lib/views/generated/w-workspaceSlug-links-page-loadLinksPage",
@@ -599,6 +634,31 @@
       "module": "lib/views/generated/w-workspaceSlug-rota-page-loadRotaPage",
       "name": "loadRotaPage",
       "id": "w-workspaceSlug-rota-page:loadRotaPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-safety-recordId-page-loadSafetyReportPage",
+      "name": "loadSafetyReportPage",
+      "id": "w-workspaceSlug-safety-recordId-page:loadSafetyReportPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-safety-facilities-page-loadFacilitiesPage",
+      "name": "loadFacilitiesPage",
+      "id": "w-workspaceSlug-safety-facilities-page:loadFacilitiesPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-safety-inspections-page-loadInspectionsPage",
+      "name": "loadInspectionsPage",
+      "id": "w-workspaceSlug-safety-inspections-page:loadInspectionsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-safety-new-page-loadNewSafetyPage",
+      "name": "loadNewSafetyPage",
+      "id": "w-workspaceSlug-safety-new-page:loadNewSafetyPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-safety-page-loadSafetyPage",
+      "name": "loadSafetyPage",
+      "id": "w-workspaceSlug-safety-page:loadSafetyPage"
     },
     {
       "module": "lib/views/generated/w-workspaceSlug-search-page-loadSearchPage",
@@ -814,6 +874,21 @@
       "module": "lib/views/generated/w-workspaceSlug-vault-page-loadVaultPage",
       "name": "loadVaultPage",
       "id": "w-workspaceSlug-vault-page:loadVaultPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-volunteering-recordId-page-loadHoursDetailPage",
+      "name": "loadHoursDetailPage",
+      "id": "w-workspaceSlug-volunteering-recordId-page:loadHoursDetailPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-volunteering-new-page-loadNewHoursPage",
+      "name": "loadNewHoursPage",
+      "id": "w-workspaceSlug-volunteering-new-page:loadNewHoursPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-volunteering-page-loadHoursPage",
+      "name": "loadHoursPage",
+      "id": "w-workspaceSlug-volunteering-page:loadHoursPage"
     },
     {
       "module": "lib/views/components",
@@ -1651,6 +1726,156 @@
       "module": "app/actions/notifications",
       "name": "markNotificationsReadAction",
       "id": "notifications:markNotificationsReadAction"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "newHelpTicket",
+      "id": "opsGaps:newHelpTicket"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "saveHelpTicket",
+      "id": "opsGaps:saveHelpTicket"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "replyHelpTicket",
+      "id": "opsGaps:replyHelpTicket"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "newSafetyReport",
+      "id": "opsGaps:newSafetyReport"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "saveSafetyReport",
+      "id": "opsGaps:saveSafetyReport"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "newSafetyFollowUp",
+      "id": "opsGaps:newSafetyFollowUp"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "finishSafetyFollowUp",
+      "id": "opsGaps:finishSafetyFollowUp"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "newVolunteerHours",
+      "id": "opsGaps:newVolunteerHours"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "decideVolunteerHours",
+      "id": "opsGaps:decideVolunteerHours"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "cancelVolunteerHours",
+      "id": "opsGaps:cancelVolunteerHours"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "newHiringOpening",
+      "id": "opsGaps:newHiringOpening"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "saveHiringOpening",
+      "id": "opsGaps:saveHiringOpening"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "newHiringCandidate",
+      "id": "opsGaps:newHiringCandidate"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "saveHiringCandidate",
+      "id": "opsGaps:saveHiringCandidate"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "newHiringInterview",
+      "id": "opsGaps:newHiringInterview"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "startCandidateOnboarding",
+      "id": "opsGaps:startCandidateOnboarding"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "newLeaveType",
+      "id": "opsGaps:newLeaveType"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "saveYearlyBalance",
+      "id": "opsGaps:saveYearlyBalance"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "saveMemberEngagement",
+      "id": "opsGaps:saveMemberEngagement"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "submitLeave",
+      "id": "opsGaps:submitLeave"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "reviewLeave",
+      "id": "opsGaps:reviewLeave"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "withdrawLeave",
+      "id": "opsGaps:withdrawLeave"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "saveFacilityLease",
+      "id": "opsGaps:saveFacilityLease"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "newFacilityContact",
+      "id": "opsGaps:newFacilityContact"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "newInspectionTemplate",
+      "id": "opsGaps:newInspectionTemplate"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "newInspection",
+      "id": "opsGaps:newInspection"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "saveInspectionFinding",
+      "id": "opsGaps:saveInspectionFinding"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "newInspectionAction",
+      "id": "opsGaps:newInspectionAction"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "closeInspection",
+      "id": "opsGaps:closeInspection"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "uploadPeopleServiceFiles",
+      "id": "opsGaps:uploadPeopleServiceFiles"
     },
     {
       "module": "app/actions/people",

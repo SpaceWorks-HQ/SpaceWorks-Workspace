@@ -2,6 +2,7 @@ import "server-only";
 import { run as social } from "@/lib/scheduled/social";
 
 import { run as calendar } from "@/lib/scheduled/calendar";
+import { run as opsGaps } from "@/lib/scheduled/opsGaps";
 import { run as appReviews } from "@/lib/scheduled/appReviews";
 import { run as governance } from "@/lib/scheduled/governance";
 import { run as tasks } from "@/lib/scheduled/tasks";
@@ -23,6 +24,7 @@ import { run as shell } from "@/lib/scheduled/shell";
  * does not stop the others.
  */
 export const SCHEDULED_JOBS: ReadonlyArray<{ area: string; run: (now: Date) => Promise<void> }> = [
+  { area: "ops-gaps", run: opsGaps },
   { area: "social", run: social },
   { area: "team-calendar", run: calendar },
   { area: "app-reviews", run: appReviews },

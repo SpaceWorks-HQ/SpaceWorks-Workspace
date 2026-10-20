@@ -42,6 +42,12 @@ export async function removeAvailability(actor: PeopleActor, id: string): Promis
   if (!row) return actionError("That away period is already gone.");
   if (!canManageAvailabilityFor(actor.membership, row.userId === actor.user.id)) return actionError(NOT_ALLOWED);
   await prisma.$transaction(async (tx) => {
+    const requests = await tx.checklistRun.findMany({ where: { workspaceId: actor.workspace.id, subjectUserId: row.userId, status: "DONE", items: { some: { sourceType: "availability_request" } } }, include: { items: { where: { sourceType: "availability_request" }, select: { descriptionMd: true } } } });
+    for (const request of requests.sort((a,b)=>a.id.localeCompare(b.id))) await tx.$queryRaw`SELECT "id" FROM "ChecklistRun" WHERE "workspaceId"=${actor.workspace.id} AND "id"=${request.id} FOR UPDATE`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`availability:${actor.workspace.id}:${row.userId}`}))`;
+    for (const request of requests) {
+      try { const data = JSON.parse(request.items[0]?.descriptionMd ?? "{}"); if (data.availabilityId === row.id) await tx.checklistRun.update({ where: { id: request.id, workspaceId: actor.workspace.id }, data: { status: "CANCELLED" } }); } catch { /* Leave legacy records unchanged. */ }
+    }
     await tx.availability.delete({ where: { id: row.id, workspaceId: actor.workspace.id } });
     await recordAuditEvent({ client: tx, action: "people.availability_removed", workspaceId: actor.workspace.id, actorId: actor.user.id, targetType: "Availability", targetId: row.id, metadata: { self: row.userId === actor.user.id } });
   });

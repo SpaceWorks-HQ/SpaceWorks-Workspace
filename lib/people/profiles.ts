@@ -58,10 +58,10 @@ export async function memberProfile(actor: PeopleActor, userId: string) {
   if (!member) return null;
   const hidden = await hiddenTeamIds(actor.workspace.id, { userId: actor.user.id, role: actor.membership.role });
   const [profile, activity] = await Promise.all([
-    prisma.memberProfile.findFirst({ where: { workspaceId: actor.workspace.id, userId }, select: { handles: true, interests: true, isKeyholder: true, membershipType: true, emergencyUpdatedAt: true } }),
+    prisma.memberProfile.findFirst({ where: { workspaceId: actor.workspace.id, userId }, select: { handles: true, interests: true, isKeyholder: true, membershipType: true, engagementType: true, engagementStart: true, engagementEnd: true, emergencyUpdatedAt: true } }),
     prisma.activityEvent.findMany({ where: { workspaceId: actor.workspace.id, actorId: userId, visibility: "WORKSPACE", OR: [{ teamId: null }, { teamId: { notIn: hidden } }], projectId: null }, orderBy: { createdAt: "desc" }, take: 12, select: { id: true, summary: true, createdAt: true } }),
   ]);
-  return { ...member, interests: profile?.interests ?? [], membershipType: profile?.membershipType ?? "MEMBER", isKeyholder: profile?.isKeyholder ?? false, hasEmergency: Boolean(profile?.emergencyUpdatedAt), adminNotes: canManageMembers(actor.membership) ? profileFields(profile?.handles).adminNotes : undefined, activity };
+  return { ...member, engagementType: profile?.engagementType ?? "VOLUNTEER", engagementStart: profile?.engagementStart ?? null, engagementEnd: profile?.engagementEnd ?? null, interests: profile?.interests ?? [], membershipType: profile?.membershipType ?? "MEMBER", isKeyholder: profile?.isKeyholder ?? false, hasEmergency: Boolean(profile?.emergencyUpdatedAt), adminNotes: canManageMembers(actor.membership) ? profileFields(profile?.handles).adminNotes : undefined, activity };
 }
 export async function saveOwnProfile(actor: PeopleActor, input: unknown): Promise<ActionResult> {
   const parsed = profileSchema.safeParse(input);

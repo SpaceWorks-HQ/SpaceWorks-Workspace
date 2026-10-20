@@ -96,21 +96,27 @@
     "value": false
   },
   {
+    "module": "lib/opsGaps/attachments",
+    "name": "AttachmentKind",
+    "id": "Shared16",
+    "value": false
+  },
+  {
     "module": "lib/people/profiles",
     "name": "EmergencyContact",
-    "id": "Shared16",
+    "id": "Shared17",
     "value": false
   },
   {
     "module": "lib/approvals/context",
     "name": "OpsActor",
-    "id": "Shared17",
+    "id": "Shared18",
     "value": false
   },
   {
     "module": "lib/auth",
     "name": "SsoMfaChallenge",
-    "id": "Shared18",
+    "id": "Shared19",
     "value": false
   }
 ]
