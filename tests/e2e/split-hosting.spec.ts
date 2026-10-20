@@ -33,7 +33,8 @@ test("renders shared UI, writes through thin actions and consumes direct stream 
   await composer.fill(message);
   await page.getByRole("button", { name: "Send message", exact: true }).click();
   await expect(page.getByText(message, { exact: true })).toBeVisible();
-  expect(await prisma.message.count({ where: { workspaceId, authorId: userId, body: message } })).toBe(1);
+  // The composer shows the message while it is still saving; wait for the stored copy.
+  await expect.poll(() => prisma.message.count({ where: { workspaceId, authorId: userId, body: message } }), { timeout: 15_000 }).toBe(1);
 
   const ticket = await page.request.post(`/api/realtime/${slug}/ticket`);
   expect(ticket.ok()).toBeTruthy();
