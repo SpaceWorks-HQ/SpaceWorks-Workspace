@@ -1,4 +1,5 @@
 import "server-only";
+import { run as financeTools } from "@/lib/scheduled/financeTools";
 
 import { recordAuditEvent } from "@/lib/audit";
 import { prisma } from "@/lib/db";
@@ -56,4 +57,5 @@ export async function notifyOverdueInvoices(now: Date): Promise<number> {
 /** Runs on every replica; conditional claims and row locks make the job idempotent. */
 export async function run(now: Date): Promise<void> {
   await notifyOverdueInvoices(now);
+  await financeTools(now);
 }

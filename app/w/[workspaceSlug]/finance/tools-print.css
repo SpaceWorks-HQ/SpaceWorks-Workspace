@@ -1,0 +1,20 @@
+@media print {
+  html:has(#finance-print), body:has(#finance-print) { background: transparent !important; }
+  body:has(#finance-print) * { visibility: hidden; }
+  #finance-print, #finance-print * {
+    visibility: visible;
+    color: var(--sw-ink) !important;
+    background: transparent !important;
+    border-color: var(--sw-ink) !important;
+    box-shadow: none !important;
+  }
+  #finance-print { position: absolute; inset: 0; width: 100%; }
+  #finance-print .print\:hidden, #finance-print .print\:hidden * { display: none; }
+  #finance-print table { font-size: 10pt; }
+  #finance-print a { overflow-wrap: anywhere; }
+  #finance-print article { break-inside: avoid; }
+  #finance-print button { display: none; }
+  #finance-print svg text { fill: var(--sw-ink) !important; }
+  #finance-print svg line { stroke: var(--sw-ink) !important; }
+}
+@page { size: A4; margin: 15mm; }

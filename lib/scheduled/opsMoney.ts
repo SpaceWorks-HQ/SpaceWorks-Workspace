@@ -1,4 +1,5 @@
 import "server-only";
+import { budgetActual } from "@/lib/finance/tools/service";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { dispatch } from "@/lib/notify/dispatch";
@@ -34,8 +35,7 @@ export async function run(now: Date) {
   for (const m of maintenance) await once(ws.id, `maintenance:${m.id}`, { type: "asset.maintenance_due", title: "Equipment maintenance is due", recipients: admins, url: `/w/${ws.slug}/assets`, data: { assetId: m.assetId, dueAt: m.nextDueAt!.toISOString() } });
   const budgets = await prisma.budget.findMany({ where: { workspaceId: ws.id, periodStart: { lte: now }, periodEnd: { gte: now } } });
   for (const b of budgets) {
-   const agg = await prisma.ledgerEntry.aggregate({ where: { workspaceId: ws.id, budgetId: b.id, currency: b.currency, kind: "EXPENSE", voidedAt: null, occurredOn: { gte: b.periodStart, lte: b.periodEnd } }, _sum: { amountMinor: true } });
-   const spentMinor = agg._sum.amountMinor ?? 0;
+   const spentMinor = await budgetActual(prisma, b);
    for (const thresholdPct of b.thresholdsPct) if (b.amountMinor > 0 && spentMinor * 100 >= b.amountMinor * thresholdPct) await once(ws.id, `budget:${b.id}:${thresholdPct}`, { type: "budget.threshold", title: "A budget threshold has been reached", recipients: admins, url: `/w/${ws.slug}/requests`, scope: { budgetId: b.id }, data: { budgetId: b.id, thresholdPct, spentMinor, amountMinor: b.amountMinor, currency: b.currency }, useWorkspaceRules: false }, tx => tx.budget.updateMany({ where: { id: b.id, workspaceId: ws.id }, data: { notifiedPct: { push: thresholdPct } } }));
   }
   const gaps = await prisma.serviceCatalogItem.findMany({ where: { workspaceId: ws.id, lifecycle: "ACTIVE", OR: [{ ownerId: null }, { runbookDocId: null }] }, select: { id: true } });

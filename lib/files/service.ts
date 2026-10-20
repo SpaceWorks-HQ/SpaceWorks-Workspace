@@ -47,6 +47,7 @@ const OTHER_AREA_RELATIONS: Prisma.FileObjectWhereInput = {
   governanceAttachments: { none: {} },
   messageAttachments: { none: {} },
   ledgerReceipts: { none: {} },
+  financeAttachments: { none: {} },
   subscriptionContracts: { none: {} },
   certificationEvidence: { none: {} },
   statusPageLogos: { none: {} },
@@ -57,7 +58,7 @@ const OTHER_AREA_RELATIONS: Prisma.FileObjectWhereInput = {
 /** Chat uploads (message attachments, the /chat folder) belong to chat, not the library. */
 const NOT_CHAT: Prisma.FileObjectWhereInput = {
   messageAttachments: { none: {} },
-  NOT: { OR: [{ folder: "/people-service" }, { folder: { startsWith: "/people-service/" } }, { folder: CHAT_FOLDER }, { folder: { startsWith: `${CHAT_FOLDER}/` } }, { folder: "/governance" }, { folder: { startsWith: "/governance/" } }, { folder: "/calendar" }, { folder: { startsWith: "/calendar/" } }] },
+  NOT: { OR: [{ folder: "/people-service" }, { folder: { startsWith: "/people-service/" } }, { folder: CHAT_FOLDER }, { folder: { startsWith: `${CHAT_FOLDER}/` } }, { folder: "/governance" }, { folder: { startsWith: "/governance/" } }, { folder: "/calendar" }, { folder: { startsWith: "/calendar/" } }, { folder: { startsWith: "/finance-tools" } }] },
 };
 
 const RESERVED_FOLDER = "That folder is managed by its tool. Choose another folder.";
@@ -365,6 +366,7 @@ export async function purgeDeletedFiles(now: Date, batch = 50) {
       AND f.folder <> '/calendar'
       AND NOT EXISTS (SELECT 1 FROM "CalendarEntry" c WHERE c."workspaceId"=f."workspaceId" AND f.id=ANY(c."fileIds"))
       AND NOT EXISTS (SELECT 1 FROM "LedgerEntry" r WHERE r."receiptFileId"=f.id)
+      AND NOT EXISTS (SELECT 1 FROM "FinanceAttachment" r WHERE r."workspaceId"=f."workspaceId" AND r."fileId"=f.id)
       AND NOT EXISTS (SELECT 1 FROM "Subscription" r WHERE r."contractFileId"=f.id)
       AND NOT EXISTS (SELECT 1 FROM "Certification" r WHERE r."evidenceFileId"=f.id)
       AND NOT EXISTS (SELECT 1 FROM "StatusPage" r WHERE r."logoFileId"=f.id)

@@ -66,57 +66,87 @@
     "value": false
   },
   {
+    "module": "lib/finance/tools/queries",
+    "name": "FinanceQuery",
+    "id": "Shared11",
+    "value": false
+  },
+  {
+    "module": "lib/finance/tools/access",
+    "name": "FinanceActor",
+    "id": "Shared12",
+    "value": false
+  },
+  {
+    "module": "lib/finance/tools/queries",
+    "name": "ToolSection",
+    "id": "Shared13",
+    "value": false
+  },
+  {
+    "module": "lib/finance/tools/queries",
+    "name": "FinancePickers",
+    "id": "Shared14",
+    "value": false
+  },
+  {
+    "module": "lib/finance/tools/extract",
+    "name": "ExtractedReceipt",
+    "id": "Shared15",
+    "value": false
+  },
+  {
     "module": "lib/governance/service",
     "name": "Actor",
-    "id": "Shared11",
+    "id": "Shared16",
     "value": false
   },
   {
     "module": "lib/governance/service",
     "name": "Filters",
-    "id": "Shared12",
+    "id": "Shared17",
     "value": false
   },
   {
     "module": "lib/notepad/service",
     "name": "NoteDTO",
-    "id": "Shared13",
+    "id": "Shared18",
     "value": false
   },
   {
     "module": "lib/notepad/service",
     "name": "NotepadData",
-    "id": "Shared14",
+    "id": "Shared19",
     "value": false
   },
   {
     "module": "lib/notepad/service",
     "name": "TodoDTO",
-    "id": "Shared15",
+    "id": "Shared20",
     "value": false
   },
   {
     "module": "lib/opsGaps/attachments",
     "name": "AttachmentKind",
-    "id": "Shared16",
+    "id": "Shared21",
     "value": false
   },
   {
     "module": "lib/people/profiles",
     "name": "EmergencyContact",
-    "id": "Shared17",
+    "id": "Shared22",
     "value": false
   },
   {
     "module": "lib/approvals/context",
     "name": "OpsActor",
-    "id": "Shared18",
+    "id": "Shared23",
     "value": false
   },
   {
     "module": "lib/auth",
     "name": "SsoMfaChallenge",
-    "id": "Shared19",
+    "id": "Shared24",
     "value": false
   }
 ]

@@ -53,7 +53,8 @@ describe("ops security and atomic transitions",()=>{
  });
  it("posts one ledger entry after approval and concurrent completion; blocks self decisions",async()=>{
   for(const kind of ["purchase_request","reimbursement"] as const){
-   const id=await createRequest(member,{kind,title:"Workshop materials",totalMinor:10000,currency:"INR",vendor:"Local vendor",justification:"Build night"});
+   const receipt = kind === "reimbursement" ? await prisma.fileObject.create({ data: { workspaceId: owner.workspace.id, uploadedById: member.user.id, storageKey: `ops-proof/${suffix}`, filename: "receipt.pdf", contentType: "application/pdf", size: 100, folder: "/requests" } }) : null;
+   const id=await createRequest(member,{kind,title:"Workshop materials",totalMinor:10000,currency:"INR",vendor:"Local vendor",justification:"Build night",receiptFileIds:receipt?[receipt.id]:[]});
    const approval=await prisma.approvalRequest.findFirstOrThrow({where:{workspaceId:owner.workspace.id,subjectId:id}});
    expect((await decide(member,{requestId:approval.id,decision:"APPROVED"})).ok).toBe(false);
    await expect(completeRequest(owner,kind,id)).rejects.toThrow("Approve");

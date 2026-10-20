@@ -27,7 +27,7 @@ const TOKEN_SCOPE_BY_TYPE: Record<string, ApiScope> = {
 };
 const GUEST_TYPES = new Set(["task", "project", "doc", "message", "channel", "announcement", "event", "meeting", "member", "team", "note"]);
 const FINANCE_TYPES = new Set(["ledger", "ledger_entry", "invoice", "budget", "purchase_request", "reimbursement", "expense"]);
-const NEVER_TYPES = (type: string) => type.startsWith("vault") || type === "emergency_contact";
+const NEVER_TYPES = (type: string) => type.startsWith("finance_pay") || type.startsWith("vault") || type === "emergency_contact";
 
 export type SearchHit = {
   entityType: string;
@@ -59,7 +59,7 @@ export function filterSearchHits(
       if (!scope || !hasScope(principal.scopes ?? [], scope)) return false;
     }
     if (principal.role === "GUEST" && !GUEST_TYPES.has(hit.entityType)) return false;
-    if (FINANCE_TYPES.has(hit.entityType) && !finance) return false;
+    if ((FINANCE_TYPES.has(hit.entityType) || hit.entityType.startsWith("finance_")) && !finance) return false;
     if (hit.teamId && access.hiddenTeams.has(hit.teamId)) return false;
     if (hit.channelId && !access.readableChannels.has(hit.channelId)) return false;
     if (hit.entityType === "doc" && !admin && access.adminOnlyDocs.has(hit.entityId)) return false;
@@ -222,7 +222,7 @@ export const listAnnouncements = defineTool({
 export const financeSummary = defineTool({
   name: "sw_finance_summary",
   title: "Kitty summary",
-  description: "Summarise the community kitty: income, expenses and balance per month for the last few months, top categories and the all-time balance.",
+  description: "Summarise income, expenses, categories and balance excluding private payroll payments. These totals are not the full bank balance.",
   input: z.object({ months: z.number().int().min(1).max(12).default(3) }),
   write: false,
   scope: "read:finance",
@@ -235,16 +235,16 @@ export const financeSummary = defineTool({
       prisma.$queryRaw<Array<{ month: string; kind: string; total: bigint }>>`
         SELECT to_char(date_trunc('month', "occurredOn"), 'YYYY-MM') AS month, "kind"::text AS kind, SUM("amountMinor")::bigint AS total
         FROM "LedgerEntry"
-        WHERE "workspaceId" = ${workspace.id} AND "voidedAt" IS NULL AND "currency" = ${workspace.currency} AND "occurredOn" >= ${since}
+        WHERE "workspaceId" = ${workspace.id} AND "privatePayroll" = false AND "voidedAt" IS NULL AND "currency" = ${workspace.currency} AND "occurredOn" >= ${since}
         GROUP BY 1, 2 ORDER BY 1`,
       prisma.$queryRaw<Array<{ name: string | null; kind: string; total: bigint }>>`
         SELECT c."name" AS name, e."kind"::text AS kind, SUM(e."amountMinor")::bigint AS total
         FROM "LedgerEntry" e LEFT JOIN "FinanceCategory" c ON c."id" = e."categoryId"
-        WHERE e."workspaceId" = ${workspace.id} AND e."voidedAt" IS NULL AND e."currency" = ${workspace.currency} AND e."occurredOn" >= ${since}
+        WHERE e."workspaceId" = ${workspace.id} AND e."privatePayroll" = false AND e."voidedAt" IS NULL AND e."currency" = ${workspace.currency} AND e."occurredOn" >= ${since}
         GROUP BY 1, 2 ORDER BY 3 DESC LIMIT 12`,
       prisma.$queryRaw<Array<{ kind: string; total: bigint }>>`
         SELECT "kind"::text AS kind, SUM("amountMinor")::bigint AS total FROM "LedgerEntry"
-        WHERE "workspaceId" = ${workspace.id} AND "voidedAt" IS NULL AND "currency" = ${workspace.currency}
+        WHERE "workspaceId" = ${workspace.id} AND "privatePayroll" = false AND "voidedAt" IS NULL AND "currency" = ${workspace.currency}
         GROUP BY 1`,
     ]);
     const money = (minor: number) => formatMoney(minor, workspace.currency);
@@ -257,9 +257,10 @@ export const financeSummary = defineTool({
     const income = Number(totals.find((t) => t.kind === "INCOME")?.total ?? 0);
     const expense = Number(totals.find((t) => t.kind === "EXPENSE")?.total ?? 0);
     return {
-      summary: `Summarised the kitty for ${plural(input.months, "month")}`,
+      summary: `Summarised finance excluding private payroll for ${plural(input.months, "month")}`,
       data: {
         currency: workspace.currency,
+        excludesPrivatePayroll: true,
         balance: money(income - expense),
         months: [...byMonth.entries()].map(([month, v]) => ({ month, income: money(v.income), expenses: money(v.expense), net: money(v.income - v.expense) })),
         topCategories: categories.map((c) => ({ category: c.name ?? "Uncategorised", kind: c.kind.toLowerCase(), total: money(Number(c.total)) })),

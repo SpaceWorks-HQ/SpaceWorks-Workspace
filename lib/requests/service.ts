@@ -1,4 +1,7 @@
 import "server-only";
+import { budgetActual } from "@/lib/finance/tools/service";
+import { lockFinance, assertOpen } from "@/lib/finance/tools/access";
+import { dateOnly, localDate } from "@/lib/finance/dates";
 import { zonedDatetimeLocalValue } from "@/lib/timeZone";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
@@ -12,6 +15,7 @@ import type { Prisma } from "@prisma/client";
 export const requestSchema = z.object({ kind: z.enum(["purchase_request", "reimbursement"]), title, totalMinor: minor.refine(v => v > 0, "Enter an amount greater than zero."), currency, vendor: z.string().trim().max(200).default(""), justification: z.string().trim().min(1).max(4000), budgetId: optionalId, receiptFileIds: z.array(id).max(10).default([]) });
 export async function createRequest(actor: OpsActor, input: unknown) {
  await guard(actor); const v = parse(requestSchema, input);
+ if (v.kind === "reimbursement" && !v.receiptFileIds.length) throw new OpsError("Attach a receipt before submitting an expense claim.");
  const result = await prisma.$transaction(async tx => {
   if (v.budgetId && !await tx.budget.findFirst({ where: { id: v.budgetId, workspaceId: actor.workspace.id, currency: v.currency } })) throw new OpsError("Choose a budget with the same currency.");
   if (await tx.fileObject.count({ where: { id: { in: v.receiptFileIds }, workspaceId: actor.workspace.id, uploadedById: actor.user.id, deletedAt: null } }) !== new Set(v.receiptFileIds).size) throw new OpsError("Choose your uploaded receipts in this workspace.");
@@ -28,12 +32,15 @@ export async function createRequest(actor: OpsActor, input: unknown) {
 export async function completeRequest(actor: OpsActor, kind: "purchase_request" | "reimbursement", requestId: string) {
  await guard(actor, true); parse(id, requestId);
  const after = await prisma.$transaction(async tx => {
+  await lockFinance(tx, actor.workspace.id);
+  await assertOpen(tx, actor.workspace.id, dateOnly(localDate(new Date(), actor.workspace.timezone)));
   // Lock the source: payment and ledger posting are one atomic transition.
   if (kind === "purchase_request") await tx.$queryRaw`SELECT "id" FROM "PurchaseRequest" WHERE "id"=${requestId} AND "workspaceId"=${actor.workspace.id} FOR UPDATE`;
   else await tx.$queryRaw`SELECT "id" FROM "Reimbursement" WHERE "id"=${requestId} AND "workspaceId"=${actor.workspace.id} FOR UPDATE`;
   const row = kind === "purchase_request" ? await tx.purchaseRequest.findFirst({ where: { id: requestId, workspaceId: actor.workspace.id } }) : await tx.reimbursement.findFirst({ where: { id: requestId, workspaceId: actor.workspace.id } });
   if (!row) throw new OpsError("That request is unavailable.");
   if (row.ledgerEntryId) return null;
+  if (kind === "reimbursement" && "receiptFileIds" in row && !await tx.fileObject.count({ where: { workspaceId: actor.workspace.id, id: { in: row.receiptFileIds }, deletedAt: null } })) throw new OpsError("Attach a receipt before paying this expense claim.");
   if (!["APPROVED", "ORDERED"].includes(row.status)) throw new OpsError("Approve this request before recording payment or receipt.");
   const description = "title" in row ? row.title : "Reimbursement";
   const ledger = await tx.ledgerEntry.upsert({ where: { sourceType_sourceId: { sourceType: kind, sourceId: row.id } }, create: { workspaceId: actor.workspace.id, sourceType: kind, sourceId: row.id, kind: "EXPENSE", amountMinor: row.totalMinor, currency: row.currency, budgetId: row.budgetId, description, occurredOn: new Date(`${zonedDatetimeLocalValue(new Date(), actor.workspace.timezone).slice(0,10)}T00:00:00.000Z`), createdById: actor.user.id, receiptFileId: "receiptFileIds" in row ? row.receiptFileIds[0] : row.fileIds[0] }, update: {} });
@@ -82,8 +89,7 @@ export async function budgetTotals(actor: OpsActor) {
  const rows = await prisma.budget.findMany({ where: { workspaceId: actor.workspace.id }, orderBy: { periodStart: "desc" }, take: 100 });
  if (!isAdmin(actor) && !actor.workspace.financeVisibleToMembers) return rows.map(r => ({ id: r.id, name: r.name, currency: r.currency, amountMinor: null, spentMinor: null, remainingMinor: null }));
  return Promise.all(rows.map(async r => {
-  const sum = await prisma.ledgerEntry.aggregate({ where: { workspaceId: actor.workspace.id, budgetId: r.id, currency: r.currency, kind: "EXPENSE", voidedAt: null, occurredOn: { gte: r.periodStart, lte: r.periodEnd } }, _sum: { amountMinor: true } });
-  const spentMinor = sum._sum.amountMinor ?? 0; return { ...r, spentMinor, remainingMinor: r.amountMinor - spentMinor };
+  const spentMinor = await budgetActual(prisma, r); return { ...r, spentMinor, remainingMinor: r.amountMinor - spentMinor };
  }));
 }
 export async function resubmitRequest(actor: OpsActor, kind: "purchase_request" | "reimbursement", requestId: string, input?: unknown) {

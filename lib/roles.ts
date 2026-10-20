@@ -168,3 +168,7 @@ export const canViewGovernance = canManageGovernance;
 /** Internal calendar scheduling; guests may only respond to invitations. */
 export const canScheduleMeetings = (m: RoleHolder) => atLeast(m, "MEMBER");
 export const canManageCalendarDeadlines = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** Payroll requires an explicit tenant grant; role alone never grants it. */
+export type PayrollGrant = { manage: boolean } | null | undefined;
+export const canViewPayroll = (m: RoleHolder, grant: PayrollGrant) => atLeast(m, "MEMBER") && grant != null;
+export const canManagePayroll = (m: RoleHolder, grant: PayrollGrant) => canViewPayroll(m, grant) && grant?.manage === true;

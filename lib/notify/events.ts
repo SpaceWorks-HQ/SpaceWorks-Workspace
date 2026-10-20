@@ -107,6 +107,11 @@ export interface EventPayloads {
   "assistant.job.completed": { jobId: Id | null; conversationId: Id | null; status: "ok" | "failed" };
   "boardroom.summary_ready": { sessionId: Id };
   "seo.report_ready": { siteId: Id; auditId: Id | null };
+  // Manual finance reminders carry record ids, never payroll data.
+  "finance.bill.overdue": { billId: Id; dueOn: Iso };
+  "finance.receipt.missing": { entryId: Id };
+  "finance.month.review_due": { month: string };
+  "finance.disbursement.due": { disbursementId: Id };
   // Money and approvals
   "finance.approval.requested": ApprovalRef & { amountMinor: number | null; currency: string | null };
   "finance.approval.decided": ApprovalRef & { decision: Decision };
@@ -192,6 +197,10 @@ export const EVENT_CATALOG = {
   "social.reply.failed": s("operations", "Social reply failed", "broadcast", "warning", "MEMBER"),
   "social.token.expiring": s("operations", "Social connection expiring", "broadcast", "warning", "ADMIN"),
   "governance.reminder": s("operations", "Governance deadline", "personal", "warning", "ADMIN"),
+  "finance.bill.overdue": s("finance", "Supplier bill overdue", "personal", "warning", "ADMIN"),
+  "finance.receipt.missing": s("finance", "Receipt needed", "personal", "warning", "ADMIN"),
+  "finance.month.review_due": s("finance", "Monthly spending review due", "personal", "info", "ADMIN"),
+  "finance.disbursement.due": s("finance", "Disbursement due", "personal", "warning", "ADMIN"),
   "app_review.received": s("operations", "App review received", "broadcast", "info", "MEMBER"),
   "app_review.replied": s("operations", "App review reply published", "broadcast", "info", "MEMBER"),
   "app_review.reply_failed": s("operations", "App review reply failed", "broadcast", "warning", "MEMBER"),

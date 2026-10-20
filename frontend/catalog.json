@@ -336,9 +336,34 @@
       "id": "w-workspaceSlug-files-page:loadFilesPage"
     },
     {
+      "module": "lib/views/generated/w-workspaceSlug-finance-bills-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-bills-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-budgets-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-budgets-page:loadPage"
+    },
+    {
       "module": "lib/views/generated/w-workspaceSlug-finance-categories-page-loadFinanceCategoriesPage",
       "name": "loadFinanceCategoriesPage",
       "id": "w-workspaceSlug-finance-categories-page:loadFinanceCategoriesPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-close-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-close-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-disbursements-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-disbursements-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-funds-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-funds-page:loadPage"
     },
     {
       "module": "lib/views/generated/w-workspaceSlug-finance-invoices-invoiceId-edit-page-loadEditInvoicePage",
@@ -384,6 +409,36 @@
       "module": "lib/views/generated/w-workspaceSlug-finance-page-loadFinanceOverviewPage",
       "name": "loadFinanceOverviewPage",
       "id": "w-workspaceSlug-finance-page:loadFinanceOverviewPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-payroll-runId-print-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-payroll-runId-print-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-payroll-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-payroll-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-receipt-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-receipt-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-reports-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-reports-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-reports-print-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-reports-print-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-spending-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-spending-page:loadPage"
     },
     {
       "module": "lib/views/generated/w-workspaceSlug-forms-id-page-loadFormPage",
@@ -1461,6 +1516,41 @@
       "module": "app/actions/files",
       "name": "searchLinkTargetsAction",
       "id": "files:searchLinkTargetsAction"
+    },
+    {
+      "module": "app/actions/finance-tools",
+      "name": "financeToolAction",
+      "id": "finance-tools:financeToolAction"
+    },
+    {
+      "module": "app/actions/finance-tools",
+      "name": "uploadFinanceFilesAction",
+      "id": "finance-tools:uploadFinanceFilesAction"
+    },
+    {
+      "module": "app/actions/finance-tools",
+      "name": "removeFinanceFileAction",
+      "id": "finance-tools:removeFinanceFileAction"
+    },
+    {
+      "module": "app/actions/finance-tools",
+      "name": "extractReceiptAction",
+      "id": "finance-tools:extractReceiptAction"
+    },
+    {
+      "module": "app/actions/finance-tools",
+      "name": "generatePayslipAction",
+      "id": "finance-tools:generatePayslipAction"
+    },
+    {
+      "module": "app/actions/finance-tools",
+      "name": "revealPayDetailsAction",
+      "id": "finance-tools:revealPayDetailsAction"
+    },
+    {
+      "module": "app/actions/finance-tools",
+      "name": "generateReportPdfAction",
+      "id": "finance-tools:generateReportPdfAction"
     },
     {
       "module": "app/actions/finance",

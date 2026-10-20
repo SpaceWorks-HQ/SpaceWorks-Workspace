@@ -1,4 +1,5 @@
 import "server-only";
+import { assertOpen, lockFinance } from "@/lib/finance/tools/access";
 
 import { Prisma, type LedgerKind } from "@prisma/client";
 import { actionError, SAVE_FAILED, type ActionResult } from "@/lib/actionResult";
@@ -81,6 +82,8 @@ export async function createLedgerEntry(ctx: Ctx, values: LedgerValues, receipt:
   try {
     const result = await prisma.$transaction(
       async (tx) => {
+        await lockFinance(tx, workspace.id);
+        await assertOpen(tx, workspace.id, dateOnly(values.occurredOn));
         let receiptFileId: string | null = null;
         if (receipt) {
           const upload = await uploadWorkspaceFile({ workspaceId: workspace.id, uploadedById: user.id, file: receipt, folder: "/finance/receipts", allowedTypes: RECEIPT_TYPES, maxBytes: RECEIPT_MAX_BYTES, client: tx });
@@ -126,6 +129,7 @@ export async function updateLedgerEntry(
   const { workspace, user } = ctx;
   const existing = await prisma.ledgerEntry.findFirst({ where: { id: entryId, workspaceId: workspace.id } });
   if (!existing) return actionError(NOT_FOUND);
+  if (existing.privatePayroll) return actionError("Open this record in the pay register.");
   if (existing.voidedAt) return actionError("Voided entries can't be edited.");
   const linked = Boolean(existing.sourceType);
   // Entries posted from another record keep their money facts; only the bookkeeping fields change.
@@ -146,6 +150,9 @@ export async function updateLedgerEntry(
   try {
     const result = await prisma.$transaction(
       async (tx) => {
+        await lockFinance(tx, workspace.id);
+        await assertOpen(tx, workspace.id, existing.occurredOn, existing.accountId);
+        await assertOpen(tx, workspace.id, linked ? existing.occurredOn : dateOnly(values.occurredOn), existing.accountId);
         let receiptFileId = existing.receiptFileId;
         if (receipt.file) {
           const upload = await uploadWorkspaceFile({ workspaceId: workspace.id, uploadedById: user.id, file: receipt.file, folder: "/finance/receipts", allowedTypes: RECEIPT_TYPES, maxBytes: RECEIPT_MAX_BYTES, client: tx });
@@ -190,6 +197,9 @@ export async function setLedgerEntryVoided(ctx: Ctx, entryId: string, voided: bo
   if (existing.sourceType) return actionError("This entry was posted from another record. Change it there instead.");
   if (Boolean(existing.voidedAt) === voided) return { ok: true };
   await prisma.$transaction(async (tx) => {
+    await lockFinance(tx, workspace.id);
+    const current = await tx.ledgerEntry.findFirstOrThrow({ where: { id: existing.id, workspaceId: workspace.id } });
+    await assertOpen(tx, workspace.id, current.occurredOn, current.accountId);
     await tx.ledgerEntry.updateMany({ where: { id: existing.id, workspaceId: workspace.id }, data: { voidedAt: voided ? new Date() : null } });
     await recordAuditEvent({ action: voided ? "finance.entry_voided" : "finance.entry_restored", workspaceId: workspace.id, actorId: user.id, targetType: "ledger_entry", targetId: existing.id, client: tx });
     await financeActivity(tx, ctx, "ledger_entry", existing.id, voided ? "voided" : "restored");
@@ -206,6 +216,8 @@ export async function importLedgerRows(ctx: Ctx, rows: ImportRow[]): Promise<Act
   if (rows.some((row) => row.categoryId && kindOf.get(row.categoryId) !== row.kind)) return actionError("A category changed since the preview. Check the file again.");
   if (rows.some((row) => row.currency !== workspace.currency)) return actionError(`Every entry must be in ${workspace.currency}. Check the file again.`);
   await prisma.$transaction(async (tx) => {
+    await lockFinance(tx, workspace.id);
+    for (const month of new Set(rows.map(row => row.occurredOn.slice(0,7)))) await assertOpen(tx, workspace.id, dateOnly(`${month}-01`));
     await tx.ledgerEntry.createMany({
       data: rows.map((row) => ({
         workspaceId: workspace.id,
@@ -378,6 +390,8 @@ export async function markInvoicePaid(ctx: Ctx, invoiceId: string, options: { pa
   if (categoryError) return actionError(categoryError, { categoryId: [categoryError] });
   const paidOn = options.paidOn ?? localDate(new Date(), workspace.timezone);
   return prisma.$transaction(async (tx) => {
+    await lockFinance(tx, workspace.id);
+    await assertOpen(tx, workspace.id, dateOnly(paidOn));
     const invoice = await lockedInvoice(tx, workspace.id, invoiceId);
     if (!invoice) return actionError(INVOICE_NOT_FOUND);
     if (invoice.status === "PAID") return { ok: true as const };
@@ -429,6 +443,9 @@ export async function voidInvoice(ctx: Ctx, invoiceId: string): Promise<ActionRe
   const from = invoice.status as InvoiceStatusValue;
   if (!canTransition(from, "VOID")) return actionError("That invoice can't be voided.");
   return prisma.$transaction(async (tx) => {
+    await lockFinance(tx, workspace.id);
+    const entry = await tx.ledgerEntry.findFirst({ where: { workspaceId: workspace.id, sourceType: INVOICE_SOURCE_TYPE, sourceId: invoice.id } });
+    if (entry) await assertOpen(tx, workspace.id, entry.occurredOn, entry.accountId);
     const changed = await tx.invoice.updateMany({ where: { id: invoice.id, workspaceId: workspace.id, status: from }, data: { status: "VOID" } });
     if (changed.count === 0) return actionError("That invoice changed. Refresh and try again.");
     await invoiceChanged(tx, ctx, { ...invoice, status: "VOID" }, "voided");

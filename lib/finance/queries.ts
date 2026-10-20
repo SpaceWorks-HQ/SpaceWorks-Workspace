@@ -1,4 +1,5 @@
 import "server-only";
+import { budgetActual } from "@/lib/finance/tools/service";
 
 import { Prisma, type Workspace } from "@prisma/client";
 import { prisma } from "@/lib/db";
@@ -27,6 +28,7 @@ export function ledgerWhere(workspaceId: string, filters: Omit<LedgerFilters, "p
   }
   return {
     workspaceId,
+    privatePayroll: false,
     ...(filters.kind ? { kind: filters.kind } : {}),
     ...(filters.categoryId ? { categoryId: filters.categoryId } : {}),
     ...(filters.from || filters.to ? { occurredOn: { ...(filters.from ? { gte: dateOnly(filters.from) } : {}), ...(filters.to ? { lte: dateOnly(filters.to) } : {}) } } : {}),
@@ -136,7 +138,7 @@ export async function listBudgetOptions(workspaceId: string) {
 
 export async function getLedgerEntry(workspaceId: string, id: string) {
   return prisma.ledgerEntry.findFirst({
-    where: { id, workspaceId },
+    where: { id, workspaceId, privatePayroll: false },
     include: { category: { select: { id: true, name: true } }, budget: { select: { id: true, name: true } }, receiptFile: { select: { id: true, filename: true, deletedAt: true } } },
   });
 }
@@ -180,11 +182,11 @@ export async function getFinanceSummary(workspace: Ws, now = new Date()) {
       where: { workspaceId: workspace.id, periodEnd: { gte: dateOnly(today) }, periodStart: { lte: dateOnly(today) } },
       orderBy: { periodEnd: "asc" },
       take: 8,
-      select: { id: true, name: true, amountMinor: true, currency: true, periodStart: true, periodEnd: true },
+      select: { id: true, workspaceId: true, name: true, amountMinor: true, currency: true, periodStart: true, periodEnd: true, categories: true, costCentreId: true },
     }),
     prisma.invoice.aggregate({ where: { workspaceId: workspace.id, status: "SENT", currency: workspace.currency }, _sum: { totalMinor: true }, _count: true }),
     prisma.ledgerEntry.findMany({
-      where: { workspaceId: workspace.id, voidedAt: null },
+      where: { workspaceId: workspace.id, voidedAt: null, privatePayroll: false },
       orderBy: [{ occurredOn: "desc" }, { createdAt: "desc" }],
       take: 5,
       select: { id: true, kind: true, amountMinor: true, currency: true, occurredOn: true, description: true, category: { select: { name: true } } },
@@ -206,13 +208,7 @@ export async function getFinanceSummary(workspace: Ws, now = new Date()) {
   const categoryIds = topCategories.map((row) => row.categoryId).filter((id): id is string => Boolean(id));
   const names = new Map((await prisma.financeCategory.findMany({ where: { workspaceId: workspace.id, id: { in: categoryIds } }, select: { id: true, name: true } })).map((c) => [c.id, c.name]));
 
-  const actuals = await Promise.all(budgets.map(async (budget) => {
-    const sum = await prisma.ledgerEntry.aggregate({
-      where: { workspaceId: workspace.id, voidedAt: null, kind: "EXPENSE", budgetId: budget.id, currency: budget.currency, occurredOn: { gte: budget.periodStart, lte: budget.periodEnd } },
-      _sum: { amountMinor: true },
-    });
-    return [budget.id, sum._sum.amountMinor ?? 0] as const;
-  }));
+  const actuals = await Promise.all(budgets.map(async (budget) => [budget.id, await budgetActual(prisma, budget)] as const));
   const spent = new Map(actuals);
   const thisMonth = series[series.length - 1]!;
 
