@@ -188,3 +188,9 @@ export function canReadMoneyControl(m: RoleHolder, userId: string, row: { kind: 
 /** Appointments grant no access to case contents without explicit case assignment. */
 export const canManageSafeguardingHandlers = (m: RoleHolder) => atLeast(m, "OWNER");
 export const canHandleSafeguarding = (m: RoleHolder, appointed: boolean, assigned: boolean) => atLeast(m, "MEMBER") && appointed && assigned;
+
+/** Marketing planning is internal; approved brand assets are readable by members. */
+export const canUseMarketingOperations = (m: RoleHolder) => atLeast(m, "MEMBER");
+export const canManageMarketingOperations = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** Device assignments, incident details and access reviews are admin records. */
+export const canManageItAdministration = (m: RoleHolder) => atLeast(m, "ADMIN");

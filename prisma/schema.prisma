@@ -409,6 +409,13 @@ model Notification {
 // ──────────────────────────── Tenancy ────────────────────────────
 
 model Workspace {
+  backupRuns BackupRun[]
+
+  marketingItRecords     MarketingItRecord[]
+  marketingItAttachments MarketingItAttachment[]
+  marketingItEvents      MarketingItEvent[]
+  marketingItReviewItems MarketingItReviewItem[]
+
   socialAccounts          SocialAccount[]
   socialMetrics           SocialMetricDaily[]
   socialPosts             SocialPost[]
@@ -1007,6 +1014,8 @@ model DocRevision {
 /// A private object in S3-compatible storage (lib/storage). Always served
 /// through /api/files/[id] after a membership check.
 model FileObject {
+  marketingItAttachments MarketingItAttachment[]
+
   id             String    @id @default(cuid())
   workspaceId    String
   storageKey     String    @unique
@@ -3657,6 +3666,9 @@ model ImportJob {
 
 /// Instance-level backup runs reported by the backup script.
 model BackupRun {
+  workspaceId String?
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
   id         String    @id @default(cuid())
   /// DB | FILES
   kind       String
@@ -3668,6 +3680,7 @@ model BackupRun {
   checksum   String?
   error      String?
 
+  @@index([workspaceId, startedAt])
   @@index([kind, startedAt(sort: Desc)])
 }
 
@@ -5879,4 +5892,89 @@ model SafeguardingAttachment {
 
   @@unique([workspaceId, fileId])
   @@index([workspaceId, caseId])
+}
+
+// Manual marketing and IT administration. Linked source ids are tenant-validated by the service.
+model MarketingItRecord {
+  id             String                  @id @default(cuid())
+  workspaceId    String
+  kind           String
+  title          String
+  status         String
+  ownerId        String?
+  assetId        String?
+  subscriptionId String?
+  dateOn         DateTime?               @db.Date
+  dueOn          DateTime?               @db.Date
+  reminderDays   Int                     @default(1)
+  details        Json                    @default("{}")
+  notes          String                  @default("")
+  completedAt    DateTime?
+  completedById  String?
+  createdById    String
+  archivedAt     DateTime?
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  workspace      Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  attachments    MarketingItAttachment[]
+  events         MarketingItEvent[]
+  reviewItems    MarketingItReviewItem[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, assetId])
+  @@unique([workspaceId, subscriptionId])
+  @@index([workspaceId, kind, archivedAt, dueOn])
+  @@index([workspaceId, ownerId])
+}
+
+model MarketingItAttachment {
+  id          String            @id @default(cuid())
+  workspaceId String
+  recordId    String
+  fileId      String
+  // Existing library files remain in the library; dedicated proofs stay private.
+  fromLibrary Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+  workspace   Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  record      MarketingItRecord @relation(fields: [workspaceId, recordId], references: [workspaceId, id], onDelete: Cascade)
+  file        FileObject        @relation(fields: [workspaceId, fileId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, recordId, fileId])
+  @@index([workspaceId, fileId])
+}
+
+model MarketingItEvent {
+  id          String            @id @default(cuid())
+  workspaceId String
+  recordId    String
+  actorId     String
+  action      String
+  note        String            @default("")
+  data        Json              @default("{}")
+  createdAt   DateTime          @default(now())
+  workspace   Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  record      MarketingItRecord @relation(fields: [workspaceId, recordId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, recordId, createdAt])
+}
+
+model MarketingItReviewItem {
+  id           String            @id @default(cuid())
+  workspaceId  String
+  recordId     String
+  userId       String
+  sourceType   String
+  sourceId     String
+  label        String
+  path         String
+  decision     String            @default("PENDING")
+  note         String            @default("")
+  reviewedById String?
+  reviewedAt   DateTime?
+  workspace    Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  record       MarketingItRecord @relation(fields: [workspaceId, recordId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, recordId, userId, sourceType, sourceId])
+  @@index([workspaceId, recordId])
+  @@index([workspaceId, userId])
 }
