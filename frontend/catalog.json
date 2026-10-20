@@ -56,31 +56,6 @@
       "id": "admin-workspaces-page:loadAdminWorkspacesPage"
     },
     {
-      "module": "lib/views/generated/blog-workspaceSlug-postSlug-page-loadgenerateMetadata",
-      "name": "loadgenerateMetadata",
-      "id": "blog-workspaceSlug-postSlug-page:loadgenerateMetadata"
-    },
-    {
-      "module": "lib/views/generated/blog-workspaceSlug-postSlug-page-loadPublicPostPage",
-      "name": "loadPublicPostPage",
-      "id": "blog-workspaceSlug-postSlug-page:loadPublicPostPage"
-    },
-    {
-      "module": "lib/views/generated/blog-workspaceSlug-layout-loadPublicBlogLayout",
-      "name": "loadPublicBlogLayout",
-      "id": "blog-workspaceSlug-layout:loadPublicBlogLayout"
-    },
-    {
-      "module": "lib/views/generated/blog-workspaceSlug-page-loadgenerateMetadata",
-      "name": "loadgenerateMetadata",
-      "id": "blog-workspaceSlug-page:loadgenerateMetadata"
-    },
-    {
-      "module": "lib/views/generated/blog-workspaceSlug-page-loadPublicBlogIndex",
-      "name": "loadPublicBlogIndex",
-      "id": "blog-workspaceSlug-page:loadPublicBlogIndex"
-    },
-    {
       "module": "lib/views/generated/f-publicSlug-page-loadPublicFormPage",
       "name": "loadPublicFormPage",
       "id": "f-publicSlug-page:loadPublicFormPage"
@@ -201,21 +176,6 @@
       "id": "w-workspaceSlug-assistant-skills-page:loadAssistantSkillsPage"
     },
     {
-      "module": "lib/views/generated/w-workspaceSlug-blog-postId-page-loadEditPostPage",
-      "name": "loadEditPostPage",
-      "id": "w-workspaceSlug-blog-postId-page:loadEditPostPage"
-    },
-    {
-      "module": "lib/views/generated/w-workspaceSlug-blog-postId-preview-page-loadPreviewPostPage",
-      "name": "loadPreviewPostPage",
-      "id": "w-workspaceSlug-blog-postId-preview-page:loadPreviewPostPage"
-    },
-    {
-      "module": "lib/views/generated/w-workspaceSlug-blog-page-loadBlogAdminPage",
-      "name": "loadBlogAdminPage",
-      "id": "w-workspaceSlug-blog-page:loadBlogAdminPage"
-    },
-    {
       "module": "lib/views/generated/w-workspaceSlug-boardroom-sessionId-page-loadBoardroomSessionPage",
       "name": "loadBoardroomSessionPage",
       "id": "w-workspaceSlug-boardroom-sessionId-page:loadBoardroomSessionPage"
@@ -224,26 +184,6 @@
       "module": "lib/views/generated/w-workspaceSlug-boardroom-page-loadBoardroomPage",
       "name": "loadBoardroomPage",
       "id": "w-workspaceSlug-boardroom-page:loadBoardroomPage"
-    },
-    {
-      "module": "lib/views/generated/w-workspaceSlug-calendar-eventId-edit-page-loadEditEventPage",
-      "name": "loadEditEventPage",
-      "id": "w-workspaceSlug-calendar-eventId-edit-page:loadEditEventPage"
-    },
-    {
-      "module": "lib/views/generated/w-workspaceSlug-calendar-eventId-page-loadEventPage",
-      "name": "loadEventPage",
-      "id": "w-workspaceSlug-calendar-eventId-page:loadEventPage"
-    },
-    {
-      "module": "lib/views/generated/w-workspaceSlug-calendar-new-page-loadNewEventPage",
-      "name": "loadNewEventPage",
-      "id": "w-workspaceSlug-calendar-new-page:loadNewEventPage"
-    },
-    {
-      "module": "lib/views/generated/w-workspaceSlug-calendar-page-loadCalendarPage",
-      "name": "loadCalendarPage",
-      "id": "w-workspaceSlug-calendar-page:loadCalendarPage"
     },
     {
       "module": "lib/views/generated/w-workspaceSlug-calendar-subscribe-page-loadSubscribePage",
@@ -786,9 +726,9 @@
       "id": "w-workspaceSlug-settings-retention-page:loadRetentionPage"
     },
     {
-      "module": "lib/views/generated/w-workspaceSlug-shoutouts-page-loadShoutoutsPage",
-      "name": "loadShoutoutsPage",
-      "id": "w-workspaceSlug-shoutouts-page:loadShoutoutsPage"
+      "module": "lib/views/generated/w-workspaceSlug-settings-social-page-loadSocialSettingsPage",
+      "name": "loadSocialSettingsPage",
+      "id": "w-workspaceSlug-settings-social-page:loadSocialSettingsPage"
     },
     {
       "module": "lib/views/generated/w-workspaceSlug-sign-requestId-page-loadSignaturePage",
@@ -799,6 +739,26 @@
       "module": "lib/views/generated/w-workspaceSlug-sign-page-loadSignaturesPage",
       "name": "loadSignaturesPage",
       "id": "w-workspaceSlug-sign-page:loadSignaturesPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-social-accounts-accountId-page-loadSocialAccountPage",
+      "name": "loadSocialAccountPage",
+      "id": "w-workspaceSlug-social-accounts-accountId-page:loadSocialAccountPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-social-comments-commentId-page-loadSocialCommentPage",
+      "name": "loadSocialCommentPage",
+      "id": "w-workspaceSlug-social-comments-commentId-page:loadSocialCommentPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-social-comments-page-loadSocialCommentsPage",
+      "name": "loadSocialCommentsPage",
+      "id": "w-workspaceSlug-social-comments-page:loadSocialCommentsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-social-page-loadSocialPage",
+      "name": "loadSocialPage",
+      "id": "w-workspaceSlug-social-page:loadSocialPage"
     },
     {
       "module": "lib/views/generated/w-workspaceSlug-subscriptions-page-loadSubscriptionsPage",
@@ -964,26 +924,6 @@
     },
     {
       "module": "app/actions/assets",
-      "name": "bookEquipment",
-      "id": "assets:bookEquipment"
-    },
-    {
-      "module": "app/actions/assets",
-      "name": "borrowEquipment",
-      "id": "assets:borrowEquipment"
-    },
-    {
-      "module": "app/actions/assets",
-      "name": "returnEquipment",
-      "id": "assets:returnEquipment"
-    },
-    {
-      "module": "app/actions/assets",
-      "name": "cancelEquipmentBooking",
-      "id": "assets:cancelEquipmentBooking"
-    },
-    {
-      "module": "app/actions/assets",
       "name": "addMaintenance",
       "id": "assets:addMaintenance"
     },
@@ -1086,41 +1026,6 @@
       "module": "app/actions/auth",
       "name": "acceptInviteAsCurrentUser",
       "id": "auth:acceptInviteAsCurrentUser"
-    },
-    {
-      "module": "app/actions/blog",
-      "name": "createPostAction",
-      "id": "blog:createPostAction"
-    },
-    {
-      "module": "app/actions/blog",
-      "name": "savePostAction",
-      "id": "blog:savePostAction"
-    },
-    {
-      "module": "app/actions/blog",
-      "name": "publishPostAction",
-      "id": "blog:publishPostAction"
-    },
-    {
-      "module": "app/actions/blog",
-      "name": "schedulePostAction",
-      "id": "blog:schedulePostAction"
-    },
-    {
-      "module": "app/actions/blog",
-      "name": "unpublishPostAction",
-      "id": "blog:unpublishPostAction"
-    },
-    {
-      "module": "app/actions/blog",
-      "name": "deletePostAction",
-      "id": "blog:deletePostAction"
-    },
-    {
-      "module": "app/actions/blog",
-      "name": "setCoverAction",
-      "id": "blog:setCoverAction"
     },
     {
       "module": "app/actions/boardroom",
@@ -1284,21 +1189,6 @@
     },
     {
       "module": "app/actions/community",
-      "name": "saveEventAction",
-      "id": "community:saveEventAction"
-    },
-    {
-      "module": "app/actions/community",
-      "name": "cancelEventAction",
-      "id": "community:cancelEventAction"
-    },
-    {
-      "module": "app/actions/community",
-      "name": "rsvpAction",
-      "id": "community:rsvpAction"
-    },
-    {
-      "module": "app/actions/community",
       "name": "createFeedAction",
       "id": "community:createFeedAction"
     },
@@ -1306,16 +1196,6 @@
       "module": "app/actions/community",
       "name": "revokeFeedAction",
       "id": "community:revokeFeedAction"
-    },
-    {
-      "module": "app/actions/community",
-      "name": "giveShoutoutAction",
-      "id": "community:giveShoutoutAction"
-    },
-    {
-      "module": "app/actions/community",
-      "name": "deleteShoutoutAction",
-      "id": "community:deleteShoutoutAction"
     },
     {
       "module": "app/actions/contacts",
@@ -1806,6 +1686,31 @@
       "module": "app/actions/services",
       "name": "serviceAction",
       "id": "services:serviceAction"
+    },
+    {
+      "module": "app/actions/social",
+      "name": "commentAction",
+      "id": "social:commentAction"
+    },
+    {
+      "module": "app/actions/social",
+      "name": "connectAction",
+      "id": "social:connectAction"
+    },
+    {
+      "module": "app/actions/social",
+      "name": "selectAccountsAction",
+      "id": "social:selectAccountsAction"
+    },
+    {
+      "module": "app/actions/social",
+      "name": "accountAction",
+      "id": "social:accountAction"
+    },
+    {
+      "module": "app/actions/social",
+      "name": "reconcileCommentAction",
+      "id": "social:reconcileCommentAction"
     },
     {
       "module": "app/actions/subscriptions",

@@ -23,7 +23,6 @@ const meeting = await prisma.meeting.findFirst({
         orderBy: { decidedAt: "asc" },
       },
       attendees: { include: { user: { select: { id: true, name: true } } } },
-      calendarEvent: { select: { title: true } },
     },
   });
 if (!meeting) notFound();

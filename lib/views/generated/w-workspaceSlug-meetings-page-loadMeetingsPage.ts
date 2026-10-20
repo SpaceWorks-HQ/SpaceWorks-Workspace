@@ -12,7 +12,7 @@ export async function loadMeetingsPage({
 }: PageProps<"/w/[workspaceSlug]/meetings">) {
 const { workspaceSlug } = await params;
 const actor = await requireWorkspace(workspaceSlug, "GUEST");
-const [meetings, choices, events, templates] = await Promise.all([
+const [meetings, choices, templates] = await Promise.all([
     prisma.meeting.findMany({
       where: await meetingWhere(actor),
       orderBy: { startsAt: "desc" },
@@ -20,19 +20,10 @@ const [meetings, choices, events, templates] = await Promise.all([
       include: { _count: { select: { agenda: true, decisions: true } } },
     }),
     collaborationChoices(actor),
-    prisma.communityEvent.findMany({
-      where: {
-        workspaceId: actor.workspace.id,
-        cancelledAt: null,
-        startsAt: { gte: new Date() },
-      },
-      select: { id: true, title: true },
-      take: 100,
-    }),
     prisma.template.findMany({
       where: { ...(await templateWhere(actor)), kind: "MEETING" },
       select: { id: true, name: true },
     }),
   ]);
-return viewDto({ actor, meetings, choices, events, templates } as const);
+return viewDto({ actor, meetings, choices, templates } as const);
 }

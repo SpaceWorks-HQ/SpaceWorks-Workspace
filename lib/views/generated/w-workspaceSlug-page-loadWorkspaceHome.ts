@@ -13,11 +13,6 @@ const d = await getDashboardData(workspace, user.id, membership);
 const base = `/w/${workspace.slug}`;
 const tz = workspace.timezone;
 const upcoming = [
-    ...d.upcomingEvents.map((e) => ({
-      ...e,
-      href: `${base}/calendar/${e.id}`,
-      kind: "Event",
-    })),
     ...d.meetings.map((m) => ({
       ...m,
       href: `${base}/meetings/${m.id}`,

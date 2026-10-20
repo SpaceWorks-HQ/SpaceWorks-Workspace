@@ -82,11 +82,5 @@
     "name": "SsoMfaChallenge",
     "id": "Shared13",
     "value": false
-  },
-  {
-    "module": "lib/blog/queries",
-    "name": "AdminPostFilter",
-    "id": "Shared14",
-    "value": false
   }
 ]

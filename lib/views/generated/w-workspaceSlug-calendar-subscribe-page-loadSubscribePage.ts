@@ -10,7 +10,7 @@ const { workspaceSlug } = await params;
 const ctx = await requireWorkspace(workspaceSlug, "GUEST");
 const feeds = await listFeeds(ctx);
 const tz = ctx.workspace.timezone;
-const since = (scope: "PERSONAL" | "CALENDAR") => {
+const since = (scope: "PERSONAL") => {
     const at = feeds.get(scope);
     return at ? formatDate(at, tz) : null;
   };
