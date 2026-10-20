@@ -586,6 +586,11 @@
       "id": "w-workspaceSlug-ideas-page:loadIdeasPage"
     },
     {
+      "module": "lib/views/generated/w-workspaceSlug-it-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-it-page:loadPage"
+    },
+    {
       "module": "lib/views/generated/w-workspaceSlug-layout-loadgenerateMetadata",
       "name": "loadgenerateMetadata",
       "id": "w-workspaceSlug-layout:loadgenerateMetadata"
@@ -604,6 +609,11 @@
       "module": "lib/views/generated/w-workspaceSlug-links-page-loadLinksPage",
       "name": "loadLinksPage",
       "id": "w-workspaceSlug-links-page:loadLinksPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-marketing-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-marketing-page:loadPage"
     },
     {
       "module": "lib/views/generated/w-workspaceSlug-meetings-meetingId-page-loadMeetingPage",
@@ -1871,6 +1881,41 @@
       "module": "app/actions/links",
       "name": "linkState",
       "id": "links:linkState"
+    },
+    {
+      "module": "app/actions/marketingIt",
+      "name": "saveMarketingIt",
+      "id": "marketingIt:saveMarketingIt"
+    },
+    {
+      "module": "app/actions/marketingIt",
+      "name": "archiveMarketingIt",
+      "id": "marketingIt:archiveMarketingIt"
+    },
+    {
+      "module": "app/actions/marketingIt",
+      "name": "decideMarketingItAccess",
+      "id": "marketingIt:decideMarketingItAccess"
+    },
+    {
+      "module": "app/actions/marketingIt",
+      "name": "completeMarketingItReview",
+      "id": "marketingIt:completeMarketingItReview"
+    },
+    {
+      "module": "app/actions/marketingIt",
+      "name": "uploadMarketingItFile",
+      "id": "marketingIt:uploadMarketingItFile"
+    },
+    {
+      "module": "app/actions/marketingIt",
+      "name": "linkMarketingItFile",
+      "id": "marketingIt:linkMarketingItFile"
+    },
+    {
+      "module": "app/actions/marketingIt",
+      "name": "removeMarketingItFile",
+      "id": "marketingIt:removeMarketingItFile"
     },
     {
       "module": "app/actions/meetings",

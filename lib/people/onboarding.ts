@@ -66,6 +66,7 @@ export async function offboardingSources(tx: Prisma.TransactionClient, workspace
     tx.task.findMany({ where: { workspaceId, assignees: { some: { userId } }, completedAt: null }, select: { id: true, number: true, title: true } }),
   ]);
   const accounts = await tx.fundingRecord.findMany({ where: { workspaceId, kind: "TOOL_ACCOUNT", archivedAt: null, status: { not: "REMOVED" }, details: { path: ["userId"], equals: userId } }, select: { id: true, title: true, details: true } });
+  sources.itAssignments = await tx.marketingItRecord.findMany({ where: { workspaceId, archivedAt: null, OR: [{ kind: "DEVICE", assetId: { in: assets.map(a => a.id) } }, { kind: "LICENCE", details: { path: ["assigneeIds"], array_contains: [userId] } }] }, select: { id: true, title: true, kind: true } });
   sources.toolAccounts = accounts.map(a => ({ id: a.id, title: a.title, identity: String((a.details as Record<string, unknown>).identity ?? "") }));
   sources.vaultItemsOwned = owned; sources.vaultItemsToRotate = [...revealed, ...owned];
   sources.servicesOwned = services.map(s => ({ ...s, backup: s.ownerId !== userId })); sources.assetsOwned = assets; sources.accessCredentials = keys; sources.subscriptionsOwned = subscriptions;

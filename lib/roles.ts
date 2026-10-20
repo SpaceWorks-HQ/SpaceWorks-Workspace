@@ -203,3 +203,8 @@ export const canManageOrgPeople = (m: RoleHolder) => atLeast(m, "ADMIN");
 export function canRecordAttendance(m: RoleHolder, isSelf: boolean, isDirectManager: boolean, targetRole: WorkspaceRole) {
   return canViewOrgPeople(m) && (isSelf || (isDirectManager && targetRole === "MEMBER") || canActOnMember(m, targetRole));
 }
+/** Marketing planning is internal; approved brand assets are readable by members. */
+export const canUseMarketingOperations = (m: RoleHolder) => atLeast(m, "MEMBER");
+export const canManageMarketingOperations = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** Device assignments, incident details and access reviews are admin records. */
+export const canManageItAdministration = (m: RoleHolder) => atLeast(m, "ADMIN");

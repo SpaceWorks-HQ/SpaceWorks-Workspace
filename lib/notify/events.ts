@@ -52,6 +52,11 @@ type GithubRef = { repoId: Id; number: number; url: string };
 /** Typed `data` payload per event type. */
 export interface EventPayloads {
   "people.responsibility_review_due": { responsibilityId: Id; reviewOn: Iso };
+  "marketing.publish_due": { recordId: Id; dueOn: Iso };
+  "marketing.follow_up_due": { recordId: Id; dueOn: Iso };
+  "it.review_due": { recordId: Id; dueOn: Iso };
+  "it.restore_due": { recordId: Id; dueOn: Iso };
+
   "moneycontrols.reminder": { recordId: Id; dueOn: Iso };
   "documents.receivable.due": { documentId: Id };
   "ops.people_changed": { recordId: Id };
@@ -195,6 +200,10 @@ const s = (category: NotifyCategory, label: string, audience: EventAudience, sev
 
 export const EVENT_CATALOG = {
   "people.responsibility_review_due": s("people", "Responsibility review due", "personal", "info", "MEMBER"),
+  "marketing.publish_due": s("operations", "Content publish date", "personal", "info", "MEMBER"),
+  "marketing.follow_up_due": s("operations", "Outreach follow-up", "personal", "info", "ADMIN"),
+  "it.review_due": s("security", "Access review due", "personal", "warning", "ADMIN"),
+  "it.restore_due": s("security", "Restore test due", "personal", "warning", "ADMIN"),
   "moneycontrols.reminder": s("finance", "Internal control due", "personal", "warning", "MEMBER"),
   "ops.people_changed": s("operations", "People tool update", "personal", "info", "MEMBER"),
   "ops.reminder": s("operations", "People and service reminder", "personal", "info", "MEMBER"),
