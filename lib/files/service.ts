@@ -56,7 +56,7 @@ const OTHER_AREA_RELATIONS: Prisma.FileObjectWhereInput = {
 /** Chat uploads (message attachments, the /chat folder) belong to chat, not the library. */
 const NOT_CHAT: Prisma.FileObjectWhereInput = {
   messageAttachments: { none: {} },
-  NOT: { OR: [{ folder: CHAT_FOLDER }, { folder: { startsWith: `${CHAT_FOLDER}/` } }, { folder: "/governance" }, { folder: { startsWith: "/governance/" } }] },
+  NOT: { OR: [{ folder: CHAT_FOLDER }, { folder: { startsWith: `${CHAT_FOLDER}/` } }, { folder: "/governance" }, { folder: { startsWith: "/governance/" } }, { folder: "/calendar" }, { folder: { startsWith: "/calendar/" } }] },
 };
 
 const RESERVED_FOLDER = "The chat folder is managed by chat. Choose another folder.";
@@ -65,6 +65,7 @@ const RESERVED_FOLDER = "The chat folder is managed by chat. Choose another fold
 async function areaOwnedFileIds(workspaceId: string, client: DbClient = prisma): Promise<string[]> {
   const rows = await client.$queryRaw<{ id: string }[]>`
     SELECT unnest("fileIds") AS id FROM "PurchaseRequest" WHERE "workspaceId"=${workspaceId}
+    UNION SELECT unnest("fileIds") AS id FROM "CalendarEntry" WHERE "workspaceId"=${workspaceId}
     UNION SELECT unnest("receiptFileIds") AS id FROM "Reimbursement" WHERE "workspaceId"=${workspaceId}
     UNION SELECT unnest("photoFileIds") AS id FROM "Asset" WHERE "workspaceId"=${workspaceId}`;
   return rows.map((row) => row.id);
@@ -359,6 +360,8 @@ export async function purgeDeletedFiles(now: Date, batch = 50) {
     WHERE f."deletedAt" < ${cutoff} AND NOT w."legalHold"
       AND f.folder <> ${CHAT_FOLDER} AND f.folder NOT LIKE ${`${CHAT_FOLDER}/%`}
       AND NOT EXISTS (SELECT 1 FROM "MessageAttachment" a WHERE a."fileId"=f.id)
+      AND f.folder <> '/calendar'
+      AND NOT EXISTS (SELECT 1 FROM "CalendarEntry" c WHERE c."workspaceId"=f."workspaceId" AND f.id=ANY(c."fileIds"))
       AND NOT EXISTS (SELECT 1 FROM "LedgerEntry" r WHERE r."receiptFileId"=f.id)
       AND NOT EXISTS (SELECT 1 FROM "Subscription" r WHERE r."contractFileId"=f.id)
       AND NOT EXISTS (SELECT 1 FROM "Certification" r WHERE r."evidenceFileId"=f.id)

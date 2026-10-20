@@ -26,7 +26,7 @@ import {
  *   tracks attempts, so this row only mirrors the outcome.
  */
 
-type EmailPayload = { workspaceId?: string; to: string; subject: string; html: string; text: string };
+type EmailPayload = { workspaceId?: string; to: string; subject: string; html: string; text: string; calendarInvite?: { method: "REQUEST" | "CANCEL"; content: string } };
 type InvitePayload = { workspaceId?: string; to: string; workspaceName: string; inviterName?: string | null; role: string; inviteUrl: string; expiresAt: string };
 type ResetPayload = { to: string; resetUrl: string; expiresAt: string };
 type VerificationPayload = { to: string; verificationUrl: string; expiresAt: string };
@@ -89,6 +89,11 @@ export function renderOutboxMessage(kind: string, raw: Prisma.JsonValue, now = n
   switch (kind) {
     case "email":
       if (!isBoundedString(p.subject, 300) || !isBoundedString(p.html, 500_000) || !isBoundedString(p.text, 200_000)) throw new PermanentOutboxError();
+      if (p.calendarInvite !== undefined) {
+        const invite = p.calendarInvite as Record<string, unknown>;
+        if (!invite || !["REQUEST", "CANCEL"].includes(String(invite.method)) || !isBoundedString(invite.content, 100_000) || !invite.content.startsWith("BEGIN:VCALENDAR\r\n")) throw new PermanentOutboxError();
+        return { to: p.to, email: { subject: p.subject, html: p.html, text: p.text, calendarInvite: { method: invite.method as "REQUEST" | "CANCEL", content: invite.content } } };
+      }
       return { to: p.to, email: { subject: p.subject, html: p.html, text: p.text } };
     case "workspace-invite":
       if (!isBoundedString(p.workspaceName, 120) || !isBoundedString(p.role, 16) || !isSafeUrl(p.inviteUrl)) throw new PermanentOutboxError();

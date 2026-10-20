@@ -42,6 +42,16 @@ export async function findDownloadableFile(fileId: string, userId: string) {
   if (file.doc?.visibility === "ADMINS" && !hasRoleAtLeast(membership.role, "ADMIN")) return null;
   const taskTeamId = file.task?.project?.teamId;
   if (taskTeamId && (await hiddenTeamIds(file.workspaceId, { userId, role: membership.role })).includes(taskTeamId)) return null;
+  const calendarRecords = await prisma.calendarEntry.findMany({ where: { workspaceId: file.workspaceId, fileIds: { has: file.id } }, select: { id: true } });
+  if (file.storageKey && file.filename && calendarRecords.length > 0) {
+    const { entryWhere } = await import("@/lib/calendar/access");
+    const workspace = await prisma.workspace.findUniqueOrThrow({ where: { id: file.workspaceId } });
+    const actor = { user: { id: userId, name: null }, workspace, membership };
+    if (!(await prisma.calendarEntry.findFirst({ where: { AND: [await entryWhere(actor), { id: { in: calendarRecords.map(r => r.id) } }] } }))) return null;
+  }
+  // Unlinked calendar uploads are never downloadable through the library.
+  const calendarFile = await prisma.fileObject.findFirst({ where: { id: file.id, workspaceId: file.workspaceId, folder: "/calendar" }, select: { id: true } });
+  if (calendarFile && calendarRecords.length === 0) return null;
   if (!(await canReadRequestReceipt(file.id, file.workspaceId, userId, membership.role))) return null;
   if (file._count.ledgerReceipts > 0 && !canViewFinance(membership, file.workspace)) return null;
   if (file.messageAttachments.length > 0 && !(await canReadAnyChannel(file.workspaceId, userId, membership.role, file.messageAttachments.map((a) => a.message.channel)))) return null;

@@ -10,6 +10,7 @@ export type IcsStatus = "CONFIRMED" | "TENTATIVE" | "CANCELLED";
 
 export type IcsEntry = {
   uid: string;
+  sequence?: number;
   summary: string;
   description?: string | null;
   location?: string | null;
@@ -80,6 +81,7 @@ function nextDayKey(key: string): string {
 
 function entryLines(entry: IcsEntry, now: Date): string[] {
   const lines = ["BEGIN:VEVENT", `UID:${escapeText(entry.uid)}`, `DTSTAMP:${formatUtc(now)}`];
+  if (entry.sequence !== undefined) lines.push(`SEQUENCE:${entry.sequence}`);
   if (entry.allDay !== undefined) {
     lines.push(`DTSTART;VALUE=DATE:${formatDateValue(entry.allDay)}`, `DTEND;VALUE=DATE:${formatDateValue(nextDayKey(entry.allDay))}`, "TRANSP:TRANSPARENT");
   } else {

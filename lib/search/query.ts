@@ -71,6 +71,7 @@ export function accessSql(actor: SearchActor) {
     ],
     ["app_review", "AppReview", Prisma.sql`${member}`],
     // Personal notepad: the owner only, never admins.
+    ["calendar_entry", "CalendarEntry", Prisma.sql`${team(Prisma.sql`r."teamId"`)} AND (r."ownerId"=${actor.userId} OR (${member} AND r.visibility='WORKSPACE') OR (${member} AND r.visibility='TEAM' AND EXISTS (SELECT 1 FROM "TeamMember" tm WHERE tm."teamId"=r."teamId" AND tm."userId"=${actor.userId})))`],
     ["note", "PersonalNote", Prisma.sql`r."archivedAt" IS NULL AND r."userId"=${actor.userId}`],
     ["incident", "Incident", Prisma.sql`${member}`],
     ["asset", "Asset", Prisma.sql`${member}`],

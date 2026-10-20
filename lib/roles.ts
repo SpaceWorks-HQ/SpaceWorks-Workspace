@@ -162,3 +162,6 @@ export const canConnectSocial = (m: RoleHolder) => atLeast(m, "ADMIN");
 /** Legal, board and vendor banking records are restricted to workspace admins. */
 export const canManageGovernance = (m: RoleHolder) => atLeast(m, "ADMIN");
 export const canViewGovernance = canManageGovernance;
+/** Internal calendar scheduling; guests may only respond to invitations. */
+export const canScheduleMeetings = (m: RoleHolder) => atLeast(m, "MEMBER");
+export const canManageCalendarDeadlines = (m: RoleHolder) => atLeast(m, "ADMIN");

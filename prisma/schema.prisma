@@ -506,6 +506,8 @@ model Workspace {
   forms                    Form[]
   goals                    Goal[]
   templates                Template[]
+  calendarEntries          CalendarEntry[]
+  calendarSyncs            CalendarMeetingSync[]
   meetings                 Meeting[]
   decisions                Decision[]
   polls                    Poll[]
@@ -3258,15 +3260,23 @@ model Meeting {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
-  workspace         Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  notesDoc          Doc?                @relation(fields: [notesDocId], references: [id], onDelete: SetNull)
+  workspace         Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  notesDoc          Doc?                  @relation(fields: [notesDocId], references: [id], onDelete: SetNull)
   attendees         MeetingAttendee[]
   agenda            AgendaItem[]
   decisions         Decision[]
   actionItems       MeetingActionItem[]
-  sourcedTasks      Task[]              @relation("TaskSourceMeeting")
+  sourcedTasks      Task[]                @relation("TaskSourceMeeting")
   polls             Poll[]
   governanceMinutes GovernanceRecord[]
+  videoUrl          String?
+  projectId         String?
+  timezone          String                @default("Asia/Kolkata")
+  externalEmails    String[]              @default([])
+  sequence          Int                   @default(0)
+  reminderMinutes   Int                   @default(30)
+  reminderSentAt    DateTime?
+  calendarSyncs     CalendarMeetingSync[]
 
   @@index([workspaceId, startsAt])
   @@index([seriesId, startsAt])
@@ -4909,4 +4919,49 @@ model GovernanceBankChange {
   vendor      GovernanceRecord @relation(fields: [workspaceId, vendorId], references: [workspaceId, id], onDelete: Cascade)
 
   @@index([workspaceId, vendorId, createdAt])
+}
+
+// Internal team calendar: finite recurring deadlines and private reminders.
+model CalendarEntry {
+  id              String     @id @default(cuid())
+  workspaceId     String
+  title           String
+  kind            String
+  startsAt        DateTime
+  endsAt          DateTime
+  timezone        String
+  seriesId        String?
+  rrule           String?
+  ownerId         String
+  teamId          String?
+  projectId       String?
+  visibility      Visibility @default(PRIVATE)
+  notes           String?
+  fileIds         String[]   @default([])
+  reminderMinutes Int        @default(30)
+  reminderSentAt  DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  workspace       Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, startsAt])
+  @@index([workspaceId, ownerId, startsAt])
+}
+
+model CalendarMeetingSync {
+  id           String    @id @default(cuid())
+  workspaceId  String
+  meetingId    String
+  userId       String
+  connectionId String
+  externalId   String
+  sequence     Int       @default(-1)
+  etag         String?
+  lastSyncedAt DateTime?
+  lastError    String?
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  meeting      Meeting   @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, meetingId, userId])
+  @@index([workspaceId, userId])
 }
