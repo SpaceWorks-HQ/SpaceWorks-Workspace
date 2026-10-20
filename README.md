@@ -105,6 +105,9 @@ See the [area guides](docs/README.md#feature-areas) for implemented contracts an
 
 ## A look around
 
+Screenshots of every area arrive with the 0.6.5 release.
+
+<!-- Restored by the release screenshot capture (scripts/capture-readme-screens.mjs).
 <table>
   <tr>
     <td width="50%" valign="top"><img src="docs/readme/screens/home.webp" alt="My day in Space Works Workspace" /><p><strong>My day.</strong> Tasks, upcoming plans, announcements and recent activity.</p></td>
@@ -127,6 +130,7 @@ See the [area guides](docs/README.md#feature-areas) for implemented contracts an
     <td width="50%" valign="top"><img src="docs/readme/screens/finance-dark.webp" alt="Finance, dark mode in Space Works Workspace" /><p><strong>Finance, dark mode.</strong> The kitty, invoices and recent expenses.</p></td>
   </tr>
 </table>
+-->
 
 ## Host it on a VPS with Docker
 
