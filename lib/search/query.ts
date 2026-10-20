@@ -68,6 +68,8 @@ export function accessSql(actor: SearchActor) {
       Prisma.sql`${member} AND ${team(Prisma.sql`r."teamId"`)}`,
     ],
     ["app_review", "AppReview", Prisma.sql`${member}`],
+    // Personal notepad: the owner only, never admins.
+    ["note", "PersonalNote", Prisma.sql`r."archivedAt" IS NULL AND r."userId"=${actor.userId}`],
     ["incident", "Incident", Prisma.sql`${member}`],
     ["asset", "Asset", Prisma.sql`${member}`],
     [
@@ -137,6 +139,7 @@ export function accessSql(actor: SearchActor) {
   return Prisma.sql`d."workspaceId"=${actor.workspaceId}
     AND EXISTS (SELECT 1 FROM "Membership" mem JOIN "Workspace" w ON w.id=mem."workspaceId" JOIN "User" u ON u.id=mem."userId" WHERE mem."workspaceId"=${actor.workspaceId} AND mem."userId"=${actor.userId} AND mem.status='ACTIVE' AND mem.role::text=${actor.role} AND w."archivedAt" IS NULL AND u."disabledAt" IS NULL)
     AND ${team(Prisma.sql`d."teamId"`)}
+    AND (d."entityType"<>'note' OR d."ownerId"=${actor.userId})
     AND (d.visibility='WORKSPACE' OR (d."entityType"='app_review' AND ${member}) OR ${admin} OR (d.visibility='PRIVATE' AND d."ownerId"=${actor.userId}) OR (d.visibility='TEAM' AND EXISTS (SELECT 1 FROM "TeamMember" tm JOIN "Team" t ON t.id=tm."teamId" WHERE t."workspaceId"=${actor.workspaceId} AND tm."teamId"=d."teamId" AND tm."userId"=${actor.userId})))
     AND (d."projectId" IS NULL OR EXISTS (SELECT 1 FROM "Project" p WHERE p.id=d."projectId" AND p."workspaceId"=${actor.workspaceId} AND ${team(Prisma.sql`p."teamId"`)}))
     AND (d."channelId" IS NULL OR EXISTS (SELECT 1 FROM "Channel" c WHERE c.id=d."channelId" AND c."workspaceId"=${actor.workspaceId} AND c."archivedAt" IS NULL AND ${team(Prisma.sql`c."teamId"`)} AND ((${member} AND c.kind='PUBLIC') OR EXISTS (SELECT 1 FROM "ChannelMember" cm WHERE cm."channelId"=c.id AND cm."userId"=${actor.userId}))))
