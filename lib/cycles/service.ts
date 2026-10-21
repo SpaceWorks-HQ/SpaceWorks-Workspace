@@ -1,74 +1,24 @@
 import "server-only";
-import { z } from "zod";
-import type { Prisma } from "@prisma/client";
-import { prisma, type DbClient } from "@/lib/db";
-import { dispatch } from "@/lib/notify";
-import { visibleProjectWhere } from "@/lib/tasks/access";
+
 import { recordActivity } from "@/lib/activity";
 import {
-  type Actor,
   assertActor,
-  ensure,
-  id,
-  title,
-  text,
-  date,
   changed,
-  serial,
+  ensure,
   jsonObject,
+  serial,
+  type Actor,
 } from "@/lib/meetings/core";
-import { carryOverTaskIds } from "./progress";
+import { dispatch } from "@/lib/notify";
 import { fromDateInputValue } from "@/lib/tasks/localDate";
+import { carryOverTaskIds } from "./progress";
 
-export async function cycleWhere(
-  actor: Actor,
-  client: DbClient = prisma,
-): Promise<Prisma.CycleWhereInput> {
-  return {
-    workspaceId: actor.workspace.id,
-    project: {
-      ...(await visibleProjectWhere(actor, client)),
-      cyclesEnabled: true,
-    },
-  };
-}
+import { cycleWhere } from "./access";
+import { createCycle } from "./create";
+import { cycleCommand } from "./validation";
 
-export const cycleCommand = z.discriminatedUnion("op", [
-  z.object({
-    op: z.literal("create"),
-    projectId: id,
-    name: title,
-    goal: text,
-    startsAt: date,
-    endsAt: date,
-  }),
-  z.object({
-    op: z.literal("assign"),
-    cycleId: id,
-    taskId: id,
-    remove: z.boolean().default(false),
-  }),
-  z.object({ op: z.literal("start"), cycleId: id }),
-  z.object({
-    op: z.literal("review"),
-    cycleId: id,
-    review: z.string().trim().min(1).max(20_000),
-  }),
-  z.object({
-    op: z.literal("edit"),
-    cycleId: id,
-    name: title,
-    goal: text,
-    startsAt: date,
-    endsAt: date,
-  }),
-  z.object({
-    op: z.literal("complete"),
-    cycleId: id,
-    carryToId: z.preprocess((v) => (v === "" ? null : v), id.nullish()),
-    review: text,
-  }),
-]);
+export { cycleWhere } from "./access";
+export { cycleCommand } from "./validation";
 
 export async function mutateCycle(actor: Actor, input: unknown) {
   const raw: Record<string, unknown> =
@@ -91,52 +41,8 @@ export async function mutateCycle(actor: Actor, input: unknown) {
     let notification: import("@/lib/notify/types").DispatchResult | null = null;
     await assertActor(actor, tx);
     if (data.op === "create") {
-      ensure(
-        data.endsAt > data.startsAt &&
-          data.endsAt.getTime() - data.startsAt.getTime() <= 366 * 86_400_000,
-        "Choose an end date after the start, within a year.",
-      );
-      const project = await tx.project.findFirst({
-        where: {
-          AND: [
-            await visibleProjectWhere(actor, tx),
-            {
-              id: data.projectId,
-              cyclesEnabled: true,
-              status: { not: "ARCHIVED" },
-            },
-          ],
-        },
-      });
-      ensure(project, "Enable cycles in an available project first.");
-      const last = await tx.cycle.aggregate({
-        where: { workspaceId: actor.workspace.id, projectId: project.id },
-        _max: { number: true },
-      });
-      const cycle = await tx.cycle.create({
-        data: {
-          workspaceId: actor.workspace.id,
-          projectId: project.id,
-          teamId: project.teamId,
-          number: (last._max.number ?? 0) + 1,
-          name: data.name,
-          goal: data.goal,
-          startsAt: data.startsAt,
-          endsAt: data.endsAt,
-        },
-      });
-      await changed(
-        tx,
-        actor,
-        "cycle",
-        cycle.id,
-        data.name,
-        `cycles/${cycle.id}`,
-        "created",
-        data.goal,
-        { teamId: project.teamId, projectId: project.id },
-      );
-      return { id: cycle.id, notification };
+      const id = await createCycle(actor, data, tx);
+      return { id, notification };
     }
     const cycle = await tx.cycle.findFirst({
       where: { ...(await cycleWhere(actor, tx)), id: data.cycleId },
