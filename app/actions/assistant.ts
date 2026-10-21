@@ -9,10 +9,11 @@ import { getWorkspaceForAction } from "@/lib/permissions";
 import { canContribute, hasRoleAtLeast } from "@/lib/roles";
 import { setScopedDestinations } from "@/lib/notify";
 import { actionError, NOT_ALLOWED, RATE_LIMITED, validationError, type ActionResult } from "@/lib/actionResult";
-import { idSchema, timeZoneSchema } from "@/lib/validation";
+import { idSchema } from "@/lib/validation";
 import { normalizeTags } from "@/lib/assistant/memory";
 import { BUILTIN_SKILLS } from "@/lib/assistant/skills";
-import { nextRunAt, validateCron } from "@/lib/assistant/cron";
+import { nextRunAt } from "@/lib/assistant/cron";
+import { checkChannel, jobSchema } from "@/lib/assistant/job-validation";
 import { runScheduledJob } from "@/lib/assistant/jobs";
 
 /**
@@ -201,27 +202,6 @@ export async function installBuiltinSkillsAction(slug: string): Promise<ActionRe
 }
 
 /* ───────────── Scheduled jobs (admins) ───────────── */
-
-const jobSchema = z
-  .object({
-    name: z.string().trim().min(1, "Enter a name.").max(80),
-    cron: z.string().trim().min(9, "Enter a schedule.").max(100),
-    timezone: timeZoneSchema,
-    prompt: z.string().trim().min(10, "Tell the assistant what to do.").max(4000),
-    channelId: idSchema.nullable().default(null),
-    destinationIds: z.array(idSchema).max(20).default([]),
-    enabled: z.boolean().default(true),
-  })
-  .superRefine((value, issue) => {
-    const check = validateCron(value.cron, value.timezone);
-    if (!check.ok) issue.addIssue({ code: "custom", path: ["cron"], message: check.error });
-  });
-
-async function checkChannel(workspaceId: string, channelId: string | null) {
-  if (!channelId) return true;
-  const channel = await prisma.channel.findFirst({ where: { id: channelId, workspaceId, archivedAt: null, kind: { not: "DIRECT" } }, select: { id: true } });
-  return Boolean(channel);
-}
 
 export async function createJobAction(slug: string, input: unknown): Promise<ActionResult<{ id: string }>> {
   const ctx = await context(slug, "ADMIN");
