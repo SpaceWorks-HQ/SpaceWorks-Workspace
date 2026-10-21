@@ -84,26 +84,26 @@
     "value": false
   },
   {
-    "module": "lib/finance/tools/access",
-    "name": "FinanceActor",
+    "module": "lib/finance/tools/views",
+    "name": "FinanceReportsView",
     "id": "Shared14",
     "value": false
   },
   {
-    "module": "lib/finance/tools/views",
-    "name": "FinanceReportsView",
+    "module": "lib/finance/tools/access",
+    "name": "FinanceActor",
     "id": "Shared15",
-    "value": false
-  },
-  {
-    "module": "lib/finance/tools/queries",
-    "name": "ToolSection",
-    "id": "Shared16",
     "value": false
   },
   {
     "module": "lib/finance/tools/views",
     "name": "AttachedFileMap",
+    "id": "Shared16",
+    "value": false
+  },
+  {
+    "module": "lib/finance/tools/queries",
+    "name": "ToolSection",
     "id": "Shared17",
     "value": false
   },

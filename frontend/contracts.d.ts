@@ -1,5 +1,5 @@
 // Generated transport DTOs. No backend imports.
-// Source SHA256: 9323888ae3ae82a01fb8e9dc569dce86247fc68a14f7da1477bed7fb6e069cb2
+// Source SHA256: 3c96db1c824615792c7ed2425650bb763e53a12c488fe328f30887535d808eb8
 export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 export type Views = {
 "a-tag-page:loadAssetLabel": void;

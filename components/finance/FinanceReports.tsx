@@ -1,96 +1,21 @@
 import Link from "next/link";
-import { Card, CardHeader, Chip, EmptyState } from "@/components/ui/display";
+import { Card, CardHeader, EmptyState } from "@/components/ui/display";
 import { buttonClasses } from "@/components/ui/button";
-import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { formatMoney } from "@/lib/format/money";
-import { formatDay } from "@/lib/finance/dates";
 import type { FinanceQuery } from "@/lib/finance/tools/queries";
 import type { FinanceActor } from "@/lib/finance/tools/access";
 import type { FinanceReportsView } from "@/lib/finance/tools/views";
-import { INCOME_SOURCES, label } from "@/lib/finance/tools-rules";
-import { ToolForm } from "./ToolForm";
-import { hidden, currencyField, money, options, tagFields } from "./ToolFields";
-import { EditPanel, AttachedFiles } from "./FinanceToolScreen";
-import { FilePreviews } from "./FinanceAttachments";
 import { FinanceFilters } from "./FinanceFilters";
 import { MonthlyChart } from "./MonthlyChart";
 import { PrintButton } from "./PrintButton";
 import { ReportPdfButton } from "./ReportPdfButton";
+import { GroupTable, byName } from "./FinanceReportGroupTable";
+import { FinanceSpendingReview } from "./FinanceSpendingReview";
+import { FinanceReportEntries } from "./FinanceReportEntries";
+import { FinanceReportBudgets } from "./FinanceReportBudgets";
 
-export function GroupTable({
-  title,
-  rows,
-  currency,
-  previous,
-  budget,
-}: {
-  title: string;
-  rows: Array<{
-    name: string;
-    incomeMinor: number;
-    expenseMinor: number;
-    netMinor: number;
-    count: number;
-  }>;
-  currency: string;
-  previous?: Array<{ name: string; expenseMinor: number }>;
-  budget?: Map<string, number>;
-}) {
-  return (
-    <Card>
-      <CardHeader title={title} />
-      {rows.length ? (
-        <Table label={title}>
-          <THead>
-            <TR>
-              <TH scope="col">Name</TH>
-              <TH scope="col">Money in</TH>
-              <TH scope="col">Money out</TH>
-              <TH scope="col">Net</TH>
-              {previous ? <TH scope="col">Last month out</TH> : null}
-              {budget ? <TH scope="col">Budget</TH> : null}
-              <TH scope="col">Entries</TH>
-            </TR>
-          </THead>
-          <TBody>
-            {rows.map((r) => (
-              <TR key={r.name}>
-                <TD>{label(r.name)}</TD>
-                <TD>{formatMoney(r.incomeMinor, currency)}</TD>
-                <TD>{formatMoney(r.expenseMinor, currency)}</TD>
-                <TD>{formatMoney(r.netMinor, currency)}</TD>
-                {previous ? (
-                  <TD>
-                    {formatMoney(
-                      previous.find((p) => p.name === r.name)?.expenseMinor ??
-                        0,
-                      currency,
-                    )}
-                  </TD>
-                ) : null}
-                {budget ? (
-                  <TD>{formatMoney(budget.get(r.name) ?? 0, currency)}</TD>
-                ) : null}
-                <TD>{r.count}</TD>
-              </TR>
-            ))}
-          </TBody>
-        </Table>
-      ) : (
-        <p className="text-ink-muted">No entries in this period.</p>
-      )}
-    </Card>
-  );
-}
-function byName<T extends { amountMinor: number }>(
-  rows: T[],
-  key: (e: T) => string,
-) {
-  const m = new Map<string, number>();
-  for (const row of rows)
-    m.set(key(row), (m.get(key(row)) ?? 0) + row.amountMinor);
-  return [...m].map(([name, expenseMinor]) => ({ name, expenseMinor }));
-}
+export { GroupTable } from "./FinanceReportGroupTable";
+
 const EXPORTS = [
   ["entries", "Ledger with receipts"],
   ["bills", "Bills"],
@@ -119,7 +44,7 @@ export function FinanceReportsScreen({
   spending?: boolean;
   print?: boolean;
 }) {
-  const { data, pickers: p, manage, files } = view;
+  const { data, pickers: p, manage } = view;
   // Only the spending review carries duplicate pairs.
   const review = "duplicates" in data ? data : null;
   const slug = actor.workspace.slug,
@@ -335,281 +260,9 @@ export function FinanceReportsScreen({
           <p className="text-ink-muted">No cash movements in this period.</p>
         )}
       </Card>
-      {data.budgets.length ? (
-        <Card>
-          <CardHeader
-            title="Budget against actual"
-            description="Each line uses its full budget period; category and cost centre lines include matching ledger entries."
-          />
-          <Table label="Budget against actual">
-            <THead>
-              <TR>
-                <TH>Line and period</TH>
-                <TH>Budget</TH>
-                <TH>Actual</TH>
-                <TH>Variance (actual minus budget)</TH>
-                <TH>Note</TH>
-              </TR>
-            </THead>
-            <TBody>
-              {data.budgets.map((b) => (
-                <TR key={b.id}>
-                  <TD>
-                    {b.name}
-                    <br />
-                    {formatDay(b.periodStart)} to {formatDay(b.periodEnd)}
-                  </TD>
-                  <TD>{formatMoney(b.amountMinor, c)}</TD>
-                  <TD>{formatMoney(b.actualMinor, c)}</TD>
-                  <TD>{formatMoney(b.actualMinor - b.amountMinor, c)}</TD>
-                  <TD>{b.varianceNote ?? "No note"}</TD>
-                </TR>
-              ))}
-            </TBody>
-          </Table>
-        </Card>
-      ) : null}
-      {review ? (
-        <>
-          <GroupTable
-            title="Spending by person who logged it"
-            rows={review.byPerson}
-            currency={c}
-            previous={byName(
-              review.previous,
-              (e) => e.createdBy?.name ?? "Former member",
-            )}
-          />
-          <Card>
-            <CardHeader title="Biggest expenses" />
-            <ol className="divide-y divide-line">
-              {review.biggest.map((e) => (
-                <li key={e.id} className="py-3">
-                  {e.description} · {e.counterparty ?? "No vendor"} ·{" "}
-                  {formatMoney(e.amountMinor, c)}
-                </li>
-              ))}
-            </ol>
-          </Card>
-          <Card>
-            <CardHeader
-              title={`Missing receipts (${review.missingReceipts.length})`}
-              description="Add proof to the entry, or remind the person who logged it."
-            />
-            {review.missingReceipts
-              .slice((page - 1) * 40, page * 40)
-              .map((e) => (
-                <div
-                  className="flex flex-wrap items-center justify-between gap-3 border-b border-line py-3"
-                  key={e.id}
-                >
-                  <div>
-                    <p>
-                      {e.description} · {formatMoney(e.amountMinor, c)}
-                    </p>
-                    <p className="text-ink-muted">
-                      {e.createdBy?.name ?? "Former member"}
-                    </p>
-                  </div>
-                  {manage ? (
-                    <ToolForm
-                      slug={slug}
-                      operation="remind"
-                      fields={[hidden("entryId", e.id)]}
-                      button="Send receipt reminder"
-                    />
-                  ) : null}
-                </div>
-              ))}
-            {!review.missingReceipts.length ? (
-              <p className="text-ink-muted">
-                Every expense has proof attached.
-              </p>
-            ) : null}
-            <a
-              href={exp("missing-receipts")}
-              className={buttonClasses({ variant: "quiet" })}
-            >
-              Export missing receipts CSV
-            </a>
-          </Card>
-          <Card>
-            <CardHeader
-              title="Possible duplicates"
-              description="A matching invoice number, or the same vendor and amount within seven days, needs a second look."
-            />
-            {review.duplicates.length ? (
-              <ul className="divide-y divide-line">
-                {review.duplicates.map((pair) => (
-                  <li className="py-3" key={pair.join(":")}>
-                    {pair.map((id) => {
-                      const e = review.duplicateEntries.find(
-                        (e) => e.id === id,
-                      );
-                      return (
-                        <p key={id}>
-                          {e
-                            ? `${e.description} · ${e.counterparty ?? "No vendor"} · ${formatMoney(e.amountMinor, c)} · ${formatDay(e.occurredOn)}`
-                            : "Earlier entry"}
-                        </p>
-                      );
-                    })}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-ink-muted">No possible duplicates found.</p>
-            )}
-          </Card>
-          <Card>
-            <CardHeader title="Expenses needing a second look" />
-            {review.overThreshold.length ? (
-              <ul>
-                {review.overThreshold.map((e) => (
-                  <li key={e.id} className="py-2">
-                    {e.description} · {formatMoney(e.amountMinor, c)}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-ink-muted">
-                No expenses above the category thresholds.
-              </p>
-            )}
-            {manage ? (
-              <EditPanel title="Set a category review threshold">
-                <ToolForm
-                  slug={slug}
-                  operation="threshold"
-                  fields={[
-                    currencyField(c),
-                    {
-                      name: "categoryId",
-                      label: "Expense category",
-                      type: "select",
-                      required: true,
-                      options: p.categories.filter((c) => c.kind === "EXPENSE"),
-                    },
-                    money(
-                      "thresholdMinor",
-                      "Ask for a second look above",
-                      "",
-                      true,
-                    ),
-                  ]}
-                  button="Save threshold"
-                />
-              </EditPanel>
-            ) : null}
-          </Card>
-          <Card>
-            <CardHeader
-              title="Monthly spending sign-off"
-              action={
-                <Chip
-                  tone={review.review?.reviewSignedAt ? "success" : "neutral"}
-                >
-                  {review.review?.reviewSignedAt ? "Reviewed" : "To review"}
-                </Chip>
-              }
-            />
-            <p className="text-ink-muted">
-              Check the category totals, missing receipts, possible duplicates
-              and budget warnings before signing.
-            </p>
-            {review.review?.reviewNotes ? (
-              <p className="my-3 whitespace-pre-wrap">
-                {review.review.reviewNotes}
-              </p>
-            ) : null}
-            {manage ? (
-              <ToolForm
-                slug={slug}
-                operation="review"
-                fields={[
-                  hidden("month", data.period.month),
-                  {
-                    name: "notes",
-                    label: "Review notes and follow-ups",
-                    type: "textarea",
-                    value: review.review?.reviewNotes ?? "",
-                  },
-                ]}
-                button="Sign off spending review"
-              />
-            ) : null}
-          </Card>
-        </>
-      ) : null}
-      <Card>
-        <CardHeader
-          title="Entries and receipts"
-          description={
-            !print
-              ? `Page ${page}. Payroll records are in the pay register.`
-              : undefined
-          }
-        />
-        <div className="flex flex-col gap-4">
-          {entries.map((e) => (
-            <article
-              key={e.id}
-              className="break-inside-avoid rounded-lg border border-line p-4"
-            >
-              <div className="flex flex-wrap justify-between gap-2">
-                <strong>{e.description}</strong>
-                <Chip tone={e.kind === "INCOME" ? "success" : "neutral"}>
-                  {label(e.kind)} · {formatMoney(e.amountMinor, c)}
-                </Chip>
-              </div>
-              <p className="mt-1 text-ink-muted">
-                {formatDay(e.occurredOn)} ·{" "}
-                {e.counterparty ?? "No vendor or funder"} ·{" "}
-                {e.category?.name ?? "Uncategorised"} ·{" "}
-                {e.costCentre?.name ?? "No cost centre"}
-              </p>
-              {e.purpose ? <p>{e.purpose}</p> : null}
-              <FilePreviews files={e.receipts} />
-              {manage && spending ? (
-                <div className="mt-4">
-                  <EditPanel title="Receipts and bookkeeping">
-                    <AttachedFiles
-                      slug={slug}
-                      files={files}
-                      type="LEDGER"
-                      id={e.id}
-                      editable
-                    />
-                    <div className="mt-4">
-                      <ToolForm
-                        slug={slug}
-                        operation="tags"
-                        fields={[
-                          hidden("entryId", e.id),
-                          ...tagFields(p, e),
-                          {
-                            name: "incomeSource",
-                            label: "Income source",
-                            type: "select",
-                            options: options(INCOME_SOURCES),
-                            value: e.incomeSource,
-                          },
-                          {
-                            name: "invoiceNumber",
-                            label: "Invoice number",
-                            value: e.invoiceNumber ?? "",
-                          },
-                        ]}
-                        button="Save bookkeeping"
-                      />
-                    </div>
-                  </EditPanel>
-                </div>
-              ) : null}
-            </article>
-          ))}
-        </div>
-      </Card>
+      <FinanceReportBudgets data={data} />
+      {review ? <FinanceSpendingReview review={review} view={view} slug={slug} page={page} exp={exp} /> : null}
+      <FinanceReportEntries view={view} entries={entries} slug={slug} page={page} print={print} spending={spending} />
       {!print ? (
         <nav
           className="flex flex-wrap justify-between gap-3"
