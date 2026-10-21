@@ -1,32 +1,22 @@
+import { DashboardForecast } from "./DashboardForecast";
+import { change, dashboardSummary } from "./dashboardSummary";
 import { Field, Input } from "@/components/ui/field";
 import { Dropdown } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Card, Chip, EmptyState, PageHeader } from "@/components/ui/display";
+import { Card, EmptyState, PageHeader } from "@/components/ui/display";
 import { Chart } from "./Chart";
 import {
   SavedReports,
   Adjustments,
-  CashThreshold,
   type AdjustmentRow,
 } from "./Controls";
 import { SECTION_LABELS, type ForecastResult } from "@/lib/analytics/types";
 import {
-  delta,
   displayValue,
   queryString,
   displayDay,
-  monthlyBurn,
-  comparisons,
-  addDays,
-  forecastBucketPeriod,
 } from "@/lib/analytics/metrics";
 import type { DashboardData } from "@/lib/analytics/types";
-function change(value: number | null, baseline: number | null) {
-  const d = delta(value, baseline);
-  return d === null
-    ? "No comparable baseline"
-    : `${d > 0 ? "+" : ""}${d.toFixed(1)}%`;
-}
 export function Dashboard({
   data,
   slug,
@@ -38,116 +28,12 @@ export function Dashboard({
   forecast: ForecastResult | null;
   adjustments: AdjustmentRow[];
 }) {
-  const { q, period, metrics, options } = data,
-    currency = q.currency!,
-    base = `/w/${slug}/analytics`,
-    fmt = (n: number | null, u: "count" | "money" | "percent") =>
-      displayValue(n, u, currency),
-    find = (id: string) => metrics.find((m) => m.id === id),
-    insights: { text: string; href: string }[] = [];
-  const comparison = comparisons(period, q.period);
-  const comparisonLink = (
-    metric: string,
-    which: "previous" | "lastYear",
-    group?: string,
-  ) =>
-    `${base}/drill/${metric}?${queryString({ ...q, period: "custom", ...comparison[which], page: undefined, bucket: undefined, group })}`;
-  const payables = find("payables");
-  if (payables?.value)
-    insights.push({
-      text: `${fmt(payables.value, "money")} of supplier dues remain unpaid at the selected end.`,
-      href: payables.drill,
-    });
-  const spend = find("spending"),
-    income = find("income"),
-    sla = find("help-sla"),
-    attendance = find("attendance"),
-    overdue = find("overdue-tasks"),
-    reports = find("grant-reports"),
-    health = find("project-health"),
-    budgets = find("budgets");
-  const biggest = spend?.groups
-    .filter((g) => g.previous !== null && g.previous !== undefined)
-    .sort(
-      (a, b) =>
-        Math.abs(b.value - b.previous!) - Math.abs(a.value - a.previous!),
-    )[0];
-  if (biggest && biggest.value !== biggest.previous)
-    insights.push({
-      text: `Largest spending change: ${biggest.label}, ${fmt(biggest.value, "money")} compared with ${fmt(biggest.previous!, "money")} in the previous period.`,
-      href: biggest.count
-        ? `${spend!.drill}&group=${encodeURIComponent(biggest.label)}`
-        : comparisonLink("spending", "previous", biggest.label),
-    });
-  if (
-    spend?.previous !== null &&
-    spend?.value !== null &&
-    spend?.previous !== undefined
-  )
-    insights.push({
-      text: `Spending changed by ${change(spend.value, spend.previous)} against the previous period. Review categories before changing a budget.`,
-      href: spend.drill,
-    });
-  if (sla?.value)
-    insights.push({
-      text: `${fmt(sla.value, "percent")} of visible help requests missed their resolution deadline.`,
-      href: sla.drill,
-    });
-  if (
-    attendance?.value !== null &&
-    attendance?.previous !== null &&
-    attendance?.value !== undefined &&
-    attendance?.previous !== undefined &&
-    attendance.value < attendance.previous
-  )
-    insights.push({
-      text: `Recorded attendance dipped by ${(attendance.previous - attendance.value).toFixed(1)} percentage points. Check missing records before drawing conclusions.`,
-      href: attendance.drill,
-    });
-  if (overdue?.value)
-    insights.push({
-      text: `${overdue.value} tasks are overdue and still open.`,
-      href: overdue.drill,
-    });
-  if (reports?.value)
-    insights.push({
-      text: `${reports.value} grant reports or deliverables are due in this period.`,
-      href: reports.drill,
-    });
-  const offTrack = health?.groups.find((g) => g.label === "OFF_TRACK");
-  if (offTrack?.count)
-    insights.push({
-      text: `${offTrack.count} projects have an off-track check-in.`,
-      href: `${health!.drill}&group=OFF_TRACK`,
-    });
-  const overBudget = budgets?.groups.filter((g) => g.value >= 90);
-  if (overBudget?.length)
-    insights.push({
-      text: `${overBudget.length} budget lines have used at least 90% of their envelope.`,
-      href: budgets!.drill,
-    });
-  let burn: null | ReturnType<typeof monthlyBurn> = null;
-  if (
-    forecast &&
-    forecast.openingKnown &&
-    spend?.value !== null &&
-    income?.value !== null &&
-    spend?.value !== undefined &&
-    income?.value !== undefined
-  ) {
-    burn = monthlyBurn(
-      spend.value,
-      income.value,
-      Math.round((Date.parse(period.to) - Date.parse(period.from)) / 86400000) +
-        1,
-      forecast.openingMinor,
-    );
-    if (burn.runwayMonths !== null && burn.runwayMonths < 3)
-      insights.push({
-        text: `Cash covers about ${burn.runwayMonths.toFixed(1)} months at this period’s net burn. Forecast commitments may change that estimate.`,
-        href: `${base}?section=finance#forecast`,
-      });
-  }
+  const { q, period, metrics, options } = data;
+  const { currency, base, insights, burn, comparisonLink } = dashboardSummary(
+    data,
+    slug,
+    forecast,
+  );
   const fields: [
     "fund" | "centre" | "team" | "project" | "programme",
     string,
@@ -377,120 +263,13 @@ export function Dashboard({
         ))}
       </div>
       {forecast ? (
-        <Card
-          as="section"
-          id="forecast"
-          className="space-y-4"
-        >
-          <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-h2">Cash-flow forecast</h2>
-            <Chip tone={forecast.incomplete ? "warning" : "info"}>
-              {forecast.incomplete ? "Incomplete forecast" : "Estimate"}
-            </Chip>
-          </div>
-          <p>
-            {forecast.openingKnown
-              ? "Opening cash"
-              : "Assumed opening cash · no accounts recorded"}{" "}
-            as of {forecast.asOf}:{" "}
-            <a
-              className="inline-flex min-h-11 min-w-11 items-center text-accent-text underline"
-              href={`/w/${slug}/finance/funds?currency=${currency}`}
-            >
-              {fmt(forecast.openingMinor, "money")}
-            </a>
-          </p>
-          {!forecast.openingKnown ? (
-            <p className="text-warning-fg">
-              Closing cash assumes a zero opening balance. Add a finance account
-              before using these projections.
-            </p>
-          ) : null}
-          {burn ? (
-            <p>
-              Monthly gross burn {fmt(burn.grossMinor, "money")} · Net burn{" "}
-              {fmt(burn.netMinor, "money")} ·{" "}
-              {burn.runwayMonths === null
-                ? "Income covered expenses in this period."
-                : `${burn.runwayMonths.toFixed(1)} months of runway at this period’s burn.`}
-            </p>
-          ) : null}
-          <CashThreshold
-            slug={slug}
-            q={q}
-            currency={currency}
-            value={forecast.thresholdMinor}
-          />
-          <ul className="space-y-1 text-body-sm text-ink-muted">
-            {forecast.warnings.map((w) => (
-              <li key={w}>{w}</li>
-            ))}
-          </ul>
-          <div className="grid gap-5 md:grid-cols-2">
-            {[
-              ["Next 12 weeks", forecast.weekly],
-              ["Next 6 months", forecast.monthly],
-            ].map(([title, buckets]) => (
-              <div key={String(title)}>
-                <Chart
-                  title={String(title)}
-                  points={(buckets as ForecastResult["weekly"]).map((b, i) => {
-                    const { from, to } = forecastBucketPeriod(
-                      addDays(forecast.asOf, 1),
-                      i,
-                      title === "Next 12 weeks" ? "week" : "month",
-                    );
-                    return {
-                      label: b.label,
-                      value: b.closingMinor,
-                      base: 0,
-                      count: forecast.lines.filter(
-                        (l) => l.date >= from && l.date < to,
-                      ).length,
-                    };
-                  })}
-                  kind="line"
-                  unit="money"
-                  currency={currency}
-                  href={`${base}/drill/forecast?currency=${currency}&cadence=${title === "Next 12 weeks" ? "week" : "month"}`}
-                  dimension="bucket"
-                />
-                <p className="text-body-sm">
-                  {forecast.openingKnown
-                    ? `${(buckets as ForecastResult["weekly"]).filter((b) => b.low).length} periods fall below the threshold.`
-                    : "Add an opening balance to assess the threshold."}
-                </p>
-              </div>
-            ))}
-          </div>
-          <a
-            className="inline-flex min-h-11 min-w-11 items-center text-accent-text underline"
-            href={`${base}/export?${queryString({ currency, threshold: q.threshold }, { kind: "forecast" })}`}
-          >
-            Export forecast CSV
-          </a>
-          <details>
-            <summary className="min-h-11 cursor-pointer py-3 text-accent-text">
-              Forecast assumptions and source records ({forecast.lines.length})
-            </summary>
-            <ul className="divide-y divide-line">
-              {forecast.lines.map((l) => (
-                <li
-                  key={`${l.source}:${l.id}`}
-                  className="flex flex-wrap justify-between gap-2 py-3"
-                >
-                  <a href={l.path} className="inline-flex min-h-11 min-w-11 items-center text-accent-text underline">
-                    {l.date} · {l.title} · {l.source}
-                  </a>
-                  <span>
-                    {fmt(l.amountMinor, "money")} ·{" "}
-                    <Chip tone={l.estimated ? "info" : "neutral"}>{l.estimated ? "Estimate" : "Recorded balance"}</Chip>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </details>
-        </Card>
+        <DashboardForecast
+          forecast={forecast}
+          burn={burn}
+          slug={slug}
+          q={q}
+          currency={currency}
+        />
       ) : null}
       {data.admin && q.section === "finance" ? (
         <Adjustments slug={slug} currency={currency} rows={adjustments} />
