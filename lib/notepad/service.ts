@@ -1,5 +1,5 @@
 import "server-only";
-import type { NoteTone, PersonalNote, PersonalTodo, WorkspaceRole } from "@prisma/client";
+import type { NoteTone, PersonalNote, WorkspaceRole } from "@prisma/client";
 import { z } from "zod";
 import { actionError, NOT_ALLOWED, validationError, type ActionResult } from "@/lib/actionResult";
 import { prisma, type DbClient } from "@/lib/db";
@@ -10,6 +10,7 @@ import { indexSearchDocument, removeSearchDocument } from "@/lib/search/document
 import { createTask } from "@/lib/tasks/service";
 import { isDay, positionBetween, todayIn } from "./dates";
 import { NOTE_CONFLICT } from "./saving";
+import { noteDTO, todoDTO } from "./mappers";
 
 /**
  * The personal notepad: private notes and to-dos for one member in one
@@ -39,42 +40,6 @@ const id = z.string().min(1).max(64);
 const tone = z.enum(NOTE_TONES);
 const dayOrNull = z.union([z.string().refine(isDay, "Pick a valid date."), z.null()]);
 
-/* ---------- Mapping ---------- */
-
-function checklistCounts(html: string) {
-  const total = (html.match(/data-type="taskItem"/g) ?? []).length;
-  const done = (html.match(/data-type="taskItem"[^>]*data-checked="true"|data-checked="true"[^>]*data-type="taskItem"/g) ?? []).length;
-  return { done, total };
-}
-
-function noteDTO(note: PersonalNote): NoteDTO {
-  return {
-    id: note.id,
-    title: note.title,
-    contentHtml: note.contentHtml,
-    excerpt: note.contentText.slice(0, 280),
-    tone: note.tone,
-    pinned: note.pinned,
-    archived: Boolean(note.archivedAt),
-    checklist: checklistCounts(note.contentHtml),
-    updatedAt: note.updatedAt.toISOString(),
-  };
-}
-
-function todoDTO(todo: PersonalTodo & { task?: { number: number; project: { key: string } | null } | null }, slug: string): TodoDTO {
-  return {
-    id: todo.id,
-    text: todo.text,
-    done: todo.done,
-    doneAt: todo.doneAt?.toISOString() ?? null,
-    dueOn: todo.dueOn ? todo.dueOn.toISOString().slice(0, 10) : null,
-    starred: todo.starred,
-    position: todo.position,
-    noteId: todo.noteId,
-    taskId: todo.taskId,
-    taskUrl: todo.task ? (todo.task.project ? `/w/${slug}/projects/${todo.task.project.key}/${todo.task.number}` : `/w/${slug}/t/${todo.task.number}`) : null,
-  };
-}
 
 const mine = (actor: NotepadActor) => ({ workspaceId: actor.workspace.id, userId: actor.user.id });
 const dayToDate = (day: string | null) => (day ? new Date(`${day}T00:00:00Z`) : null);
