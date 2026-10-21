@@ -147,6 +147,7 @@ async function dispatchWith<T extends EventType>(tx: Tx, workspaceId: string, ev
         candidates.push({ kind: "in-app", target: personalTarget(member.userId, "IN_APP"), windowSec, userId: member.userId });
         const resolved = resolvePersonalChannels({
           category: spec.category,
+          eventType: event.type,
           role: member.role,
           userPreference: preferences.find((row) => row.userId === member.userId) ?? null,
           workspaceDefault,
