@@ -13,5 +13,5 @@ export function ReviewTaskButton({ slug, reviewId, linked }: { slug: string; rev
       setMessage(result.ok ? `Task #${result.data?.number} created and assigned to you.` : result.error);
       if (result.ok) router.refresh();
     } catch { setFailed(true); setMessage("Couldn't create a task. Reload to check its state."); }
-  })}>{pending ? "Creating…" : linked ? "Task linked" : "Create task"}</Button>{message ? <p role={failed ? "alert" : "status"} className={failed ? "text-caption text-danger-fg" : "text-caption text-ink-secondary"}>{message}</p> : null}</div>;
+  })}>{pending ? "Creating" : linked ? "Task linked" : "Create task"}</Button>{message ? <p role={failed ? "alert" : "status"} className={failed ? "text-caption text-danger-fg" : "text-caption text-ink-secondary"}>{message}</p> : null}</div>;
 }

@@ -1,19 +1,19 @@
 "use client";
 
 import { SegmentedControl } from "@/components/ui/choice";
-import { useAppColorMode, type ColorModePreference } from "@/components/providers";
+import { useAppColorMode } from "@/components/providers";
+import type { ColorMode } from "@/lib/colorMode";
 
 export function AppearanceCard() {
-  const { preference, setColorModePreference } = useAppColorMode();
+  const { mode, setColorModePreference } = useAppColorMode();
   return (
-    <SegmentedControl<ColorModePreference>
+    <SegmentedControl<ColorMode>
       ariaLabel="Colour mode"
-      value={preference}
+      value={mode}
       onValueChange={(value) => setColorModePreference(value)}
       options={[
         { value: "light", label: "Light" },
         { value: "dark", label: "Dark" },
-        { value: "system", label: "Match device" },
       ]}
     />
   );

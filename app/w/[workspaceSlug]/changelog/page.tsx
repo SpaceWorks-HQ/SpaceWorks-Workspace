@@ -79,7 +79,7 @@ export default async function ChangelogPage({
         </Disclosure>
       ) : null}
       {!entries.length ? (
-        <EmptyState title="No changes published yet. The next release will appear here." />
+        <EmptyState patch title="No changes published yet. The next release will appear here." />
       ) : (
         entries.map((entry) => (
           <Section key={entry.id} title={entry.title}>

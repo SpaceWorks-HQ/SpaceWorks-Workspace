@@ -23,7 +23,7 @@ export default async function FinanceOverviewPage({ params }: PageProps<"/w/[wor
 
   if (!hasHistory) {
     return (
-      <EmptyState
+      <EmptyState patch
         mood="sleepy"
         title="The kitty is empty so far."
         action={manage ? <Button asChild variant="primary"><Link href={`${base}/ledger?new=1`}>Record the first entry</Link></Button> : null}

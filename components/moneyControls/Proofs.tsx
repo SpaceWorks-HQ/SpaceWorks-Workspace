@@ -102,7 +102,7 @@ export function Proofs({
           />
         </div>
       ) : null}
-      {pending ? <p role="status">Saving proof…</p> : null}
+      {pending ? <p role="status">Saving proof</p> : null}
       {error ? (
         <Callout tone="danger" role="alert">
           {error}
@@ -156,7 +156,7 @@ export function ReconcileMovement({ slug, id }: { slug: string; id: string }) {
           })
         }
       >
-        {pending ? "Saving…" : "Mark reconciled"}
+        {pending ? "Saving" : "Mark reconciled"}
       </Button>
       {error ? (
         <p role="alert" className="text-danger-fg">

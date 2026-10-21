@@ -12,5 +12,5 @@ export default async function IntegrationsPage({ params }: PageProps<"/w/[worksp
     prisma.project.findMany({ where: { workspaceId: workspace.id }, select: { id: true, name: true } }),
     prisma.githubEvent.findMany({ where: { workspaceId: workspace.id }, select: { id: true, kind: true, title: true, url: true }, orderBy: { receivedAt: "desc" }, take: 50 }),
   ]);
-  return <div className="space-y-6"><h1 className="text-h1">Integrations</h1><p>Connect Google services and bring GitHub activity into the workspace.</p><IntegrationSettings slug={workspaceSlug} connections={connections.map(c => ({ id: c.id, provider: c.provider, label: c.accountLabel, status: c.status }))} repos={repos} projects={projects} feed={feed} /></div>;
+  return <div className="space-y-6"><h2 className="text-h4">Integrations</h2><p>Connect Google services and bring GitHub activity into the workspace.</p><IntegrationSettings slug={workspaceSlug} connections={connections.map(c => ({ id: c.id, provider: c.provider, label: c.accountLabel, status: c.status }))} repos={repos} projects={projects} feed={feed} /></div>;
 }

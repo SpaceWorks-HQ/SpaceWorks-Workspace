@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Archive, ArchiveRestore, LogOut, MessageSquareText, UserPlus, X } from "lucide-react";
+import { Archive, LogOut } from "lucide-react";
 import {
   addChannelMembersAction,
   leaveChannelAction,
@@ -39,7 +39,7 @@ function PanelFrame({ title, subtitle, onClose, children }: { title: string; sub
           {subtitle ? <p className="truncate text-caption text-ink-muted">{subtitle}</p> : null}
         </div>
         <IconButton label={`Close ${title.toLowerCase()}`} onClick={onClose}>
-          <X />
+          <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">×</span>
         </IconButton>
       </header>
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4">{children}</div>
@@ -269,7 +269,7 @@ export function DetailsPanel({ info, onClose }: { info: ChannelInfo; onClose: ()
               {isDm ? "People" : "Members"} <span className="text-ink-muted tabular-nums">{members ? members.length : info.memberCount}</span>
             </h3>
             {info.can.addMembers ? (
-              <Button size="sm" variant="ghost" startIcon={<UserPlus />} onClick={() => setAdding(true)}>
+              <Button size="sm" variant="ghost" startIcon={null} onClick={() => setAdding(true)}>
                 Add people
               </Button>
             ) : null}
@@ -293,8 +293,9 @@ export function DetailsPanel({ info, onClose }: { info: ChannelInfo; onClose: ()
                     </span>
                   </span>
                   {member.id !== viewer.id && member.role !== "GUEST" && member.role !== "FORMER" && viewer.role !== "GUEST" ? (
-                    <IconButton
-                      label={`Message ${member.name}`}
+                    <Button
+                      variant="quiet"
+                      className="min-w-11 px-2"
                       size="sm"
                       onClick={() =>
                         startTransition(async () => {
@@ -304,12 +305,12 @@ export function DetailsPanel({ info, onClose }: { info: ChannelInfo; onClose: ()
                         })
                       }
                     >
-                      <MessageSquareText />
-                    </IconButton>
+                      Message<span className="sr-only"> {member.name}</span>
+                    </Button>
                   ) : null}
                   {info.can.removeMembers && member.id !== viewer.id ? (
                     <IconButton label={`Remove ${member.name}`} size="sm" variant="danger" onClick={() => setConfirm({ remove: member })}>
-                      <X />
+                      <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">×</span>
                     </IconButton>
                   ) : null}
                 </li>
@@ -331,7 +332,7 @@ export function DetailsPanel({ info, onClose }: { info: ChannelInfo; onClose: ()
                   variant="secondary"
                   size="sm"
                   className="self-start"
-                  startIcon={<ArchiveRestore />}
+                  startIcon={null}
                   onClick={() => run(() => setChannelArchivedAction(slug, { channelId: info.id, archived: false }), "Channel unarchived.", () => router.refresh())}
                 >
                   Unarchive channel

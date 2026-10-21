@@ -69,7 +69,7 @@ export default async function NotificationsPage({
             key={t}
             href={`${base}?tab=${t}${category ? `&category=${encodeURIComponent(category)}` : ""}`}
             aria-current={tab === t ? "page" : undefined}
-            className={`inline-flex min-h-11 items-center px-3 capitalize ${tab === t ? "border-b-2 border-primary font-semibold" : "text-ink-muted"}`}
+            className={`inline-flex min-h-11 items-center px-3 capitalize ${tab === t ? "border-b-2 border-accent-text font-semibold" : "text-ink-muted"}`}
           >
             {t}
           </Link>

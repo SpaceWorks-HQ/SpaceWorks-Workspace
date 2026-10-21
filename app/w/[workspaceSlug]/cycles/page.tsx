@@ -73,7 +73,7 @@ export default async function CyclesPage({
           />
         </Disclosure>
       ) : (
-        <EmptyState
+        <EmptyState patch
           title="Enable cycles in a project to plan your first sprint."
           action={
             <a

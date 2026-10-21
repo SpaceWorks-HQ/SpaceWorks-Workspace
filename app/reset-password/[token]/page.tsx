@@ -13,7 +13,7 @@ export default async function ResetPasswordPage({ params }: PageProps<"/reset-pa
   const valid = isPlausibleResetToken(token)
     && Boolean(await prisma.passwordResetToken.findFirst({ where: { tokenHash: hashPasswordResetToken(token), usedAt: null, expiresAt: { gt: new Date() } }, select: { id: true } }));
   return (
-    <AuthFrame title="Choose a new password." description={valid ? "Signing in with the new password signs you out everywhere else." : undefined}>
+    <AuthFrame centered title="Choose a new password." description={valid ? "Signing in with the new password signs you out everywhere else." : undefined}>
       {valid ? (
         <ResetPasswordForm token={token} />
       ) : (

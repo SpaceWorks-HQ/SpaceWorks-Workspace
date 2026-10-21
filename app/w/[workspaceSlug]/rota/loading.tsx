@@ -1,2 +1,5 @@
-import { PeopleLoading } from "@/components/people/PageStates";
-export default function Loading() { return <PeopleLoading label="the volunteer rota" />; }
+import { BrandPageLoader } from "@/components/brand/BrandLoader";
+
+export default function Loading() {
+  return <BrandPageLoader label="Loading the volunteer rota" />;
+}

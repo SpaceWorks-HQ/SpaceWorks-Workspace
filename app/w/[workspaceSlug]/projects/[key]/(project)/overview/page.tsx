@@ -1,5 +1,6 @@
-import { Suspense } from "react";
+import { loadGithubPullRequests } from "@/lib/views/components";
 import { GithubPullRequests } from "@/components/integrations/GithubPullRequests";
+import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PriorityChip } from "@/components/tasks/bits";
@@ -14,6 +15,12 @@ import { getProjectPlan } from "@/lib/projects/plusQueries";
 import { ProjectMilestones } from "@/components/projects/ProjectPlanning";
 
 export const metadata = { title: "Project overview" };
+
+// Keep the guarded read in the page, inside the streamed section.
+async function PullRequestsSection({ workspaceSlug, projectId }: { workspaceSlug: string; projectId: string }) {
+  const repos = await loadGithubPullRequests({ params: { workspaceSlug, projectId } });
+  return <GithubPullRequests repos={repos} />;
+}
 
 export default async function ProjectOverviewPage({ params }: PageProps<"/w/[workspaceSlug]/projects/[key]/overview">) {
   const { workspaceSlug, key } = await params;
@@ -32,6 +39,7 @@ export default async function ProjectOverviewPage({ params }: PageProps<"/w/[wor
   const total = overview.columns.reduce((sum, column) => sum + column.count, 0);
   const done = overview.columns.filter((column) => column.category === "DONE").reduce((sum, column) => sum + column.count, 0);
   const base = `/w/${context.workspace.slug}/projects/${project.key}`;
+  const projectId = project.id;
 
   return (
     <div className="flex flex-col gap-6">
@@ -122,7 +130,7 @@ export default async function ProjectOverviewPage({ params }: PageProps<"/w/[wor
           )}
         </Card>
       </div>
-      {linkedRepo ? <Card><Suspense fallback={<p role="status">Loading pull requests and issues…</p>}><GithubPullRequests workspaceSlug={workspaceSlug} projectId={project.id} /></Suspense></Card> : null}
+      {linkedRepo ? <Card><Suspense fallback={<p role="status">Loading pull requests and issues…</p>}><PullRequestsSection workspaceSlug={workspaceSlug} projectId={projectId} /></Suspense></Card> : null}
       <Card>
         <CardHeader title="Recent activity" />
         {overview.activity.length === 0 ? (

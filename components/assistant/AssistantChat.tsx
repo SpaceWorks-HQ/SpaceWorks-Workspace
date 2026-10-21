@@ -97,7 +97,7 @@ export function AssistantChat({
         break;
       case "tool":
         setItems((all) => {
-          const card: LiveItem = { kind: "tool", id: `tool-${event.tool.id}`, title: event.tool.title, summary: event.tool.summary ?? "Working…", error: event.tool.status === "error", running: event.tool.status === "running" };
+          const card: LiveItem = { kind: "tool", id: `tool-${event.tool.id}`, title: event.tool.title, summary: event.tool.summary ?? "Working", error: event.tool.status === "error", running: event.tool.status === "running" };
           const existing = all.findIndex((item) => item.id === card.id);
           if (existing >= 0) return all.map((item, i) => (i === existing ? card : item));
           return [...all, card];
@@ -234,7 +234,7 @@ export function AssistantChat({
         value={draft}
         maxLength={8000}
         disabled={!configured}
-        placeholder={pending.length ? "Confirm or cancel the change above, or ask something else" : "Ask about tasks, people, docs, events…"}
+        placeholder={pending.length ? "Confirm or cancel the change above, or ask something else" : "Ask about tasks, people, docs or events"}
         onChange={(event) => setDraft(event.target.value)}
         onKeyDown={(event) => {
           if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
@@ -280,15 +280,18 @@ export function AssistantChat({
           ) : null}
           {items.length === 0 ? (
             configured ? (
-            <EmptyState title="Ask the assistant anything about the workspace." className="border-none">
-              <div className="mt-3 flex flex-wrap justify-center gap-2">
+            <EmptyState patch title="Ask the assistant about the workspace." className="border-none" action={
+              <Menu>
+                <MenuTrigger asChild><Button variant="secondary" disabled={streaming}>Choose a prompt</Button></MenuTrigger>
+                <MenuContent align="center">
                 {SUGGESTIONS.map((suggestion) => (
-                  <Button key={suggestion} size="sm" variant="secondary" onClick={() => void send({ text: suggestion })} disabled={streaming}>
+                  <MenuItem key={suggestion} onSelect={() => void send({ text: suggestion })} disabled={streaming}>
                     {suggestion}
-                  </Button>
+                  </MenuItem>
                 ))}
-              </div>
-            </EmptyState>
+                </MenuContent>
+              </Menu>
+            } />
             ) : null
           ) : (
             <ol className="flex flex-col gap-4">
@@ -311,12 +314,12 @@ export function AssistantChat({
                 </li>
               ))}
               {streaming && items.at(-1)?.kind === "user" ? (
-                <li className="flex items-center gap-2 text-caption text-ink-muted"><Spinner className="size-4" /> Thinking…</li>
+                <li className="flex items-center gap-2 text-caption text-ink-muted"><Spinner className="size-4" /> Thinking</li>
               ) : null}
             </ol>
           )}
           {pending.length > 0 && !streaming ? (
-            <section aria-label="Confirm changes" className="mt-4 rounded-lg border-[1.5px] border-primary bg-panel p-4">
+            <section aria-label="Confirm changes" className="mt-4 rounded-lg border-[1.5px] border-accent-text bg-panel p-4">
               <h3 className="text-label text-ink">Confirm {pending.length === 1 ? "this change" : "these changes"}</h3>
               <ul className="mt-2 flex flex-col gap-3">
                 {pending.map((call) => (

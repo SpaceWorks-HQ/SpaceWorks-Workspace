@@ -95,7 +95,7 @@ export default async function BoardroomSessionPage({ params }: PageProps<"/w/[wo
         })}
         {speaking ? (
           <p className="flex items-center gap-2 text-body-ui text-ink-muted" role="status">
-            <Spinner className="size-4" /> {speaking} is thinking…
+            <Spinner className="size-4" /> {speaking} is thinking
           </p>
         ) : seatTurns.length === 0 && session.status === "DRAFT" ? (
           <p className="text-body-ui text-ink-muted">The panel hasn&apos;t started yet.</p>

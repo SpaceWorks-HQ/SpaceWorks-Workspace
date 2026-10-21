@@ -24,7 +24,7 @@ export function Operations({ slug, data }: { slug: string; data: ProductData }) 
  {data.approval?<a className="min-h-11 py-3 text-accent-text underline" href={`/w/${slug}/requests/approvals`}>Review approval ({data.approval.status.toLowerCase().replaceAll("_"," ")})</a>:null}
  </div>
  {row.kind==="ESTIMATE"?<div className="space-y-3"><h3 className="text-h3">Estimate history</h3><p className="text-caption text-ink-muted">Each revision keeps its quantities, prices and supporting quotes. Generated PDFs use the saved revision.</p><ul className="divide-y divide-line">{row.estimates.map(v=><li key={v.id} className="flex flex-wrap items-center gap-3 py-2"><span>Revision {v.version}</span><a className="min-h-11 py-3 text-accent-text underline" href={`/api/w/${slug}/product-ops/export?estimate=${row.id}&version=${v.version}`}>CSV<span className="sr-only"> revision {v.version}</span></a><Button variant="secondary" disabled={pending} onClick={()=>run("pdf",v.version)}>Save PDF<span className="sr-only"> revision {v.version}</span></Button></li>)}</ul></div>:null}
- <p role="status" aria-live="polite">{pending?"Updating…":message}</p>
+ <p role="status" aria-live="polite">{pending?"Updating":message}</p>
  <ConfirmDialog open={Boolean(confirm)} title={confirm?.label??"Update record"} message={confirm?.op==="ship"?"Record this release as shipped. Its scope, checklist and QA records will remain locked.":"This updates the saved record and keeps an audit entry."} confirmLabel={confirm?.label??"Save changes"} onCancel={()=>setConfirm(null)} onConfirm={()=>{const op=confirm?.op;setConfirm(null);if(op)run(op);}}/>
  </section>;
 }

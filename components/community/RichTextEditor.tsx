@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import { Bold, Heading2, Italic, Link2, List, ListOrdered, Quote, Unlink } from "lucide-react";
+
 import { cn } from "@/lib/cn";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
@@ -65,20 +65,20 @@ export function RichTextEditor({
   const [linkOpen, setLinkOpen] = useState(false);
   const [href, setHref] = useState("");
 
-  const tool = (labelText: string, active: boolean | undefined, run: () => void, icon: React.ReactNode) => (
+  const tool = (labelText: string, active: boolean | undefined, run: () => void, icon?: React.ReactNode) => (
     <button
       type="button"
-      aria-label={labelText}
+      aria-label={icon ? labelText : undefined}
       title={labelText}
       aria-pressed={Boolean(active)}
       disabled={!editor}
       onClick={run}
       className={cn(
-        "inline-flex size-9 items-center justify-center rounded-md text-ink-secondary transition-colors duration-[120ms] hover:bg-muted hover:text-ink [&_svg]:size-[18px]",
+        "inline-flex min-h-11 min-w-11 px-2 items-center justify-center rounded-md text-xs font-semibold text-ink-secondary transition-colors duration-[120ms] hover:bg-muted hover:text-ink [&_svg]:size-5",
         active && "bg-accent-soft text-accent-text",
       )}
     >
-      {icon}
+      {icon ?? labelText}
     </button>
   );
 
@@ -98,12 +98,12 @@ export function RichTextEditor({
       )}
     >
       <div role="toolbar" aria-label="Formatting" className="flex flex-wrap items-center gap-0.5 border-b border-line bg-surface px-1.5 py-1">
-        {tool("Bold", state?.bold, () => editor?.chain().focus().toggleBold().run(), <Bold />)}
-        {tool("Italic", state?.italic, () => editor?.chain().focus().toggleItalic().run(), <Italic />)}
-        {tool("Heading", state?.heading, () => editor?.chain().focus().toggleHeading({ level: 2 }).run(), <Heading2 />)}
-        {tool("Bulleted list", state?.bullet, () => editor?.chain().focus().toggleBulletList().run(), <List />)}
-        {tool("Numbered list", state?.ordered, () => editor?.chain().focus().toggleOrderedList().run(), <ListOrdered />)}
-        {tool("Quote", state?.quote, () => editor?.chain().focus().toggleBlockquote().run(), <Quote />)}
+        {tool("Bold", state?.bold, () => editor?.chain().focus().toggleBold().run(), <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">B</span>)}
+        {tool("Italic", state?.italic, () => editor?.chain().focus().toggleItalic().run(), <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">I</span>)}
+        {tool("Heading", state?.heading, () => editor?.chain().focus().toggleHeading({ level: 2 }).run(), <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">H2</span>)}
+        {tool("List", state?.bullet, () => editor?.chain().focus().toggleBulletList().run())}
+        {tool("Numbered list", state?.ordered, () => editor?.chain().focus().toggleOrderedList().run(), <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">1.</span>)}
+        {tool("Quote", state?.quote, () => editor?.chain().focus().toggleBlockquote().run())}
         <Popover
           open={linkOpen}
           onOpenChange={(open) => {
@@ -114,13 +114,12 @@ export function RichTextEditor({
           <PopoverTrigger asChild>
             <button
               type="button"
-              aria-label="Link"
               title="Link"
               aria-pressed={Boolean(state?.link)}
               disabled={!editor}
-              className={cn("inline-flex size-9 items-center justify-center rounded-md text-ink-secondary hover:bg-muted hover:text-ink [&_svg]:size-[18px]", state?.link && "bg-accent-soft text-accent-text")}
+              className={cn("inline-flex min-h-11 min-w-11 px-2 items-center justify-center rounded-md text-xs font-semibold text-ink-secondary hover:bg-muted hover:text-ink [&_svg]:size-5", state?.link && "bg-accent-soft text-accent-text")}
             >
-              <Link2 />
+              <span className="inline-flex items-center justify-center text-xs font-semibold">Link</span>
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-72">
@@ -135,7 +134,7 @@ export function RichTextEditor({
               <Input id={`${id}-link`} value={href} onChange={(event) => setHref(event.target.value)} placeholder="https://" autoFocus />
               <div className="flex justify-end gap-2">
                 {state?.link ? (
-                  <Button size="sm" variant="quiet" startIcon={<Unlink />} onClick={() => { setHref(""); editor?.chain().focus().extendMarkRange("link").unsetLink().run(); setLinkOpen(false); }}>
+                  <Button size="sm" variant="quiet" startIcon={null} onClick={() => { setHref(""); editor?.chain().focus().extendMarkRange("link").unsetLink().run(); setLinkOpen(false); }}>
                     Remove
                   </Button>
                 ) : null}

@@ -18,7 +18,7 @@ export function DocumentsNav() {
           key={href}
           aria-current={path === href ? "page" : undefined}
           href={href}
-          className={`shrink-0 border-b-2 py-3 ${path === href ? "border-primary text-ink" : "border-transparent text-ink-muted"}`}
+          className={`shrink-0 border-b-2 py-3 ${path === href ? "border-accent-text text-ink" : "border-transparent text-ink-muted"}`}
         >
           {title}
         </Link>

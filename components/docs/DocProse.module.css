@@ -30,10 +30,10 @@
   letter-spacing: -0.01em;
 }
 
-.prose h1 { font-size: 28px; line-height: 1.2; margin-top: 1.4em; }
-.prose h2 { font-size: 22px; line-height: 1.25; margin-top: 1.3em; }
-.prose h3 { font-size: 19px; line-height: 1.3; margin-top: 1.2em; }
-.prose h4 { font-size: 17px; line-height: 1.35; margin-top: 1.1em; }
+.prose h1 { font-size: 32px; line-height: 1.2; margin-top: 1.4em; }
+.prose h2 { font-size: 20px; line-height: 1.25; margin-top: 1.3em; }
+.prose h3 { font-size: 20px; line-height: 1.3; margin-top: 1.2em; }
+.prose h4 { font-size: 16px; line-height: 1.35; margin-top: 1.1em; }
 .prose > :first-child { margin-top: 0; }
 
 .prose strong { color: var(--yy-text); font-weight: 700; }
@@ -63,7 +63,7 @@
 }
 
 .prose code {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 0.9em;
   background: var(--yy-bg-surface);
   border: 1px solid var(--yy-border);
@@ -109,7 +109,7 @@
   width: 100%;
   table-layout: fixed;
   overflow: hidden;
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .prose th,
@@ -121,7 +121,7 @@
   min-width: 60px;
 }
 
-.prose th { background: var(--yy-bg-surface); color: var(--yy-text); font-weight: 600; text-align: left; }
+.prose th { background: var(--yy-bg-surface); color: var(--yy-accent-text); font-weight: 600; text-align: left; }
 .prose th > p,
 .prose td > p { margin: 0; }
 

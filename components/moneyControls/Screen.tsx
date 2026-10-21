@@ -1,3 +1,4 @@
+import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import Link from "next/link";
 import {
   Card,
@@ -216,12 +217,12 @@ export function ControlsScreen({ view }: { view: ControlsView }) {
             tabIndex={0}
             className="overflow-x-auto"
           >
-            <table className="w-full text-left text-body-ui">
+            <Table className="w-full text-left text-body-ui">
               <caption className="sr-only">
                 Financial year {data.q.fiscalYear} to {data.q.fiscalYear + 1}
               </caption>
-              <thead>
-                <tr>
+              <THead>
+                <TR>
                   {[
                     "Asset",
                     "Cost",
@@ -230,25 +231,25 @@ export function ControlsScreen({ view }: { view: ControlsView }) {
                     "Disposal book value",
                     "Closing value",
                   ].map((h) => (
-                    <th
+                    <TH
                       scope="col"
                       key={h}
                       className="whitespace-nowrap border-b border-line p-3"
                     >
                       {h}
-                    </th>
+                    </TH>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
+                </TR>
+              </THead>
+              <TBody>
                 {summary.schedules.map((r) => (
-                  <tr key={r.id}>
-                    <th
+                  <TR key={r.id}>
+                    <TH
                       scope="row"
                       className="border-b border-line p-3 font-medium"
                     >
                       {r.title}
-                    </th>
+                    </TH>
                     {[
                       r.costMinor,
                       r.openingMinor,
@@ -256,17 +257,17 @@ export function ControlsScreen({ view }: { view: ControlsView }) {
                       r.disposalMinor,
                       r.closingMinor,
                     ].map((v, i) => (
-                      <td
+                      <TD
                         key={i}
                         className="whitespace-nowrap border-b border-line p-3"
                       >
                         {formatMoney(v, r.currency)}
-                      </td>
+                      </TD>
                     ))}
-                  </tr>
+                  </TR>
                 ))}
-              </tbody>
-            </table>
+              </TBody>
+            </Table>
           </div>
           {!summary.schedules.length ? (
             <p className="mt-3 text-body-ui">

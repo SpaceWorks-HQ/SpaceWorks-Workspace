@@ -33,7 +33,7 @@ export default async function AdminOutboxPage() {
         )}
       </Card>
       {health.recentFailures.length === 0 ? (
-        <EmptyState title="No failed emails.">Failures show here with a short reason, never the message content.</EmptyState>
+        <EmptyState patch title="No failed emails.">Failures show here with a short reason, never the message content.</EmptyState>
       ) : (
         <Table label="Failed emails">
           <THead><tr><TH>Kind</TH><TH>Attempts</TH><TH>Reason</TH><TH>Queued</TH></tr></THead>

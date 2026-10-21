@@ -487,7 +487,7 @@ export function CalendarScreen(p: Props) {
                     },
                     p.googleConnected
                       ? "Google sync finished."
-                      : "Opening Google…",
+                      : "Opening Google",
                   )
                 }
               >

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BellOff, Hash, Lock, Plus, Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { loadSidebarAction } from "@/app/actions/chat";
 import { cn } from "@/lib/cn";
 import { canCreateChannel, canStartDirectMessage, formatBadge, sidebarState } from "@/lib/chat/client";
@@ -161,7 +161,7 @@ function Row({ item, active }: { item: SidebarItem; active: boolean }) {
       aria-current={active ? "page" : undefined}
       aria-label={label}
       className={cn(
-        "flex min-h-10 items-center gap-2 rounded-md px-3 text-[15px] transition-colors duration-[120ms]",
+        "flex min-h-11 items-center gap-2 rounded-md px-3 text-sm transition-colors duration-[120ms]",
         active ? "bg-accent-soft font-semibold text-accent-text" : "text-ink-secondary hover:bg-subtle hover:text-ink",
         !active && state.bold && "font-semibold text-ink",
         !active && state.muted && "text-ink-muted",
@@ -170,14 +170,14 @@ function Row({ item, active }: { item: SidebarItem; active: boolean }) {
       {item.kind === "DIRECT" ? (
         <Avatar name={item.people?.[0]?.name ?? item.name} src={item.people?.[0]?.image} size="xs" />
       ) : item.kind === "PRIVATE" ? (
-        <Lock aria-hidden className="size-4 shrink-0" />
+        <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">Private</span>
       ) : (
-        <Hash aria-hidden className="size-4 shrink-0" />
+        <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">#</span>
       )}
       <span className="min-w-0 flex-1 truncate">{item.name}</span>
-      {state.muted ? <BellOff aria-hidden className="size-3.5 shrink-0" /> : null}
+      {state.muted ? <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">Muted</span> : null}
       {state.badge ? (
-        <span aria-hidden className="inline-flex min-w-5 items-center justify-center rounded-full bg-highlight px-1.5 text-xs font-semibold leading-5 text-on-highlight tabular-nums">
+        <span aria-hidden className="inline-flex min-w-5 items-center justify-center rounded-full bg-accent-soft px-1.5 text-xs font-semibold leading-5 text-accent-text tabular-nums">
           {formatBadge(state.badge)}
         </span>
       ) : null}

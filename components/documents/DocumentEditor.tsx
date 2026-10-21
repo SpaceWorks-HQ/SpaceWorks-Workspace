@@ -275,7 +275,7 @@ export function DocumentEditor({
         {sourceType ? (
           <Field label="Existing source">
             <Dropdown name="sourceId" defaultValue={initial.sourceId}>
-              <option value="">Choose…</option>
+              <option value="">Choose an option</option>
               {sourceOptions.map((o) => (
                 <option key={o.id} value={o.id}>
                   {o.name}
@@ -703,7 +703,7 @@ export function DocumentEditor({
         {message}
       </p>
       <Button type="submit" disabled={pending}>
-        {pending ? "Saving…" : "Save draft"}
+        {pending ? "Saving" : "Save draft"}
       </Button>
       <p className="text-caption text-ink-muted">
         Save first, attach evidence, then review and issue the frozen copy.

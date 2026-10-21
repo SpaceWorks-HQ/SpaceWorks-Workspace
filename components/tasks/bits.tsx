@@ -1,5 +1,5 @@
 import type { TaskPriority } from "@prisma/client";
-import { Ban, Repeat } from "lucide-react";
+
 import { Avatar, Chip, type ChipTone } from "@/components/ui/display";
 import { cn } from "@/lib/cn";
 import { formatRelativeDay } from "@/lib/format/datetime";
@@ -37,7 +37,7 @@ export function DueChip({ dueAt, completedAt, timeZone, size = "sm", now }: { du
 
 export function BlockedChip({ size = "sm" }: { size?: "sm" | "md" }) {
   return (
-    <Chip tone="danger" size={size} icon={<Ban />}>
+    <Chip tone="danger" size={size} icon={null}>
       Blocked
     </Chip>
   );
@@ -45,7 +45,7 @@ export function BlockedChip({ size = "sm" }: { size?: "sm" | "md" }) {
 
 export function RepeatChip({ label = "Repeats", size = "sm" }: { label?: string; size?: "sm" | "md" }) {
   return (
-    <Chip tone="accent" size={size} icon={<Repeat />}>
+    <Chip tone="accent" size={size} icon={null}>
       {label}
     </Chip>
   );
@@ -83,7 +83,7 @@ export function AvatarStack({ people, max = 3, size = "xs", className }: { peopl
           <Avatar key={person.id} name={person.name} src={person.image} size={size} className="ring-2 ring-panel" />
         ))}
         {people.length > shown.length ? (
-          <span className={cn("inline-flex items-center justify-center rounded-full bg-emphasis font-semibold text-ink-secondary ring-2 ring-panel", size === "xs" ? "size-6 text-[10px]" : "size-8 text-xs")}>
+          <span className={cn("inline-flex items-center justify-center rounded-full bg-emphasis font-semibold text-ink-secondary ring-2 ring-panel", size === "xs" ? "size-6 text-xs" : "size-8 text-xs")}>
             +{people.length - shown.length}
           </span>
         ) : null}

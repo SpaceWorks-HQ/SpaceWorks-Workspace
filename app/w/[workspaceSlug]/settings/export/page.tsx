@@ -21,7 +21,7 @@ export default async function ExportPage({
   });
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader
+      <PageHeader titleAs="h2"
         title="Workspace export"
         description="Download a portable JSON bundle of your workspace records."
       />

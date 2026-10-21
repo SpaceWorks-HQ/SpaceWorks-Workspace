@@ -37,7 +37,7 @@ export default async function BoardroomPage({ params }: PageProps<"/w/[workspace
       <section aria-labelledby="boardroom-history" className="flex flex-col gap-3">
         <h2 id="boardroom-history" className="text-h4 text-ink">Past sessions</h2>
         {sessions.length === 0 ? (
-          <EmptyState title="No sessions yet.">Ask the panel about the next big purchase, a new house rule or a workshop plan.</EmptyState>
+          <EmptyState patch title="No sessions yet.">Ask the panel about the next big purchase, a new house rule or a workshop plan.</EmptyState>
         ) : (
           <Card padding="none">
             <ul className="divide-y divide-line">

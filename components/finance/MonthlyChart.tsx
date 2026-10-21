@@ -98,7 +98,7 @@ export function MonthlyChart({ data, currency }: { data: MonthDatum[]; currency:
             {ticks.map((tick) => (
               <g key={tick}>
                 <line x1={PAD.left} x2={width - PAD.right} y1={y(tick)} y2={y(tick)} className="stroke-line" strokeWidth={1} />
-                <text x={PAD.left - 8} y={y(tick)} dy="0.32em" textAnchor="end" className="fill-ink-muted text-[12px] tabular-nums">
+                <text x={PAD.left - 8} y={y(tick)} dy="0.32em" textAnchor="end" className="fill-ink-muted text-xs tabular-nums">
                   {formatMoneyCompact(tick, currency)}
                 </text>
               </g>
@@ -123,7 +123,7 @@ export function MonthlyChart({ data, currency }: { data: MonthDatum[]; currency:
                   <path d={barPath(x0, incomeTop, bar, PAD.top + plotH - incomeTop)} className="fin-fill-income" />
                   <path d={barPath(x0 + bar + GAP, expenseTop, bar, PAD.top + plotH - expenseTop)} className="fin-fill-expense" />
                   {index % showEvery === 0 || index === data.length - 1 ? (
-                    <text x={PAD.left + index * band + band / 2} y={HEIGHT - 8} textAnchor="middle" className="fill-ink-muted text-[12px]">
+                    <text x={PAD.left + index * band + band / 2} y={HEIGHT - 8} textAnchor="middle" className="fill-ink-muted text-xs">
                       {d.label}
                     </text>
                   ) : null}

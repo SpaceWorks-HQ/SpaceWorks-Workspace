@@ -45,7 +45,7 @@ export default async function InvoicesPage({ params, searchParams }: PageProps<"
         ]}
       />
       {invoices.length === 0 ? (
-        <EmptyState
+        <EmptyState patch
           mood="sleepy"
           title={status ? `No ${INVOICE_STATUS_LABEL[status].toLowerCase()} invoices.` : "No invoices yet."}
           action={manage && !status ? <Button asChild variant="primary"><Link href={`${href}/new`}>Write the first invoice</Link></Button> : null}

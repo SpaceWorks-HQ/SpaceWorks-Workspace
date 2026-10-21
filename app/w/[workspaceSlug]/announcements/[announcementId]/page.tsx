@@ -1,6 +1,5 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { DetailLayout } from "@/components/ui/layouts";
 import { AnnouncementActions } from "@/components/community/AnnouncementActions";
 import { Avatar, Chip, PageHeader } from "@/components/ui/display";
 import { formatDate, formatDayTime, formatTimeZoneName } from "@/lib/format/datetime";
@@ -19,14 +18,11 @@ export default async function AnnouncementPage({ params }: PageProps<"/w/[worksp
   const base = `/w/${ctx.workspace.slug}/announcements`;
 
   return (
-    <article className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      <Link href={base} className="inline-flex min-h-11 items-center gap-1.5 self-start text-sm font-semibold text-ink-secondary hover:text-ink">
-        <ArrowLeft aria-hidden className="size-4" /> All announcements
-      </Link>
+    <DetailLayout className="mx-auto max-w-3xl" back={{ href: base, label: "All announcements" }}>
       <PageHeader
         kicker={
           <span className="flex flex-wrap items-center gap-2">
-            {announcement.pinned ? <Chip tone="highlight" size="sm">Pinned</Chip> : null}
+            {announcement.pinned ? <Chip tone="neutral" size="sm">Pinned</Chip> : null}
             {announcement.status === "scheduled" ? <Chip tone="info" size="sm">Scheduled · {formatDayTime(announcement.publishedAt!, tz)} {formatTimeZoneName(announcement.publishedAt!, tz)}</Chip> : null}
             {announcement.status === "draft" ? <Chip tone="outline" size="sm">Draft</Chip> : null}
           </span>
@@ -47,6 +43,6 @@ export default async function AnnouncementPage({ params }: PageProps<"/w/[worksp
       </p>
       {/* Sanitised on save and again when read (lib/community/richText.ts). */}
       <div className="yy-prose rounded-xl border border-line bg-panel p-5 sm:p-8" dangerouslySetInnerHTML={{ __html: announcement.body }} />
-    </article>
+    </DetailLayout>
   );
 }

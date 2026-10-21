@@ -131,7 +131,7 @@ export default async function PollsPage({
         />
       </Disclosure>
       {!polls.length ? (
-        <EmptyState title="No polls yet. Ask the crew a question above." />
+        <EmptyState patch title="No polls yet. Ask the crew a question above." />
       ) : (
         <ul className="space-y-3">
           {polls.map((p) => (

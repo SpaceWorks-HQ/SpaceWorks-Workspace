@@ -34,15 +34,12 @@ export type ButtonSize = "sm" | "md" | "lg";
 const base =
   "relative inline-flex select-none items-center justify-center gap-2 whitespace-nowrap rounded-md font-semibold transition-[background-color,border-color,color] duration-[120ms] ease-yy disabled:pointer-events-none aria-disabled:pointer-events-none";
 
-/** Accent hover darkens toward Deep Ink in sRGB instead of using a fixed token. */
-const accentHover = "hover:bg-[color-mix(in_srgb,var(--yy-accent)_88%,var(--sw-ink))]";
-
 const neutral = "border border-line bg-panel text-ink hover:bg-muted active:bg-emphasis";
 const dangerOutline = "border border-danger-fg bg-panel text-danger-fg hover:border-danger-hover hover:bg-muted hover:text-danger-hover";
 
 const variants: Record<ButtonVariant, string> = {
-  primary: "bg-primary text-on-primary hover:bg-primary-hover active:bg-primary-active",
-  accent: cn("bg-accent text-on-accent", accentHover),
+  primary: "border border-transparent bg-primary text-on-primary hover:bg-primary-hover active:bg-primary-active dark:border-accent-text",
+  accent: "bg-accent text-on-accent hover:bg-primary-hover active:bg-primary-active",
   secondary: neutral,
   neutral,
   ghost: "text-accent-text hover:bg-accent-soft active:bg-accent-soft active:text-ink",
@@ -76,13 +73,13 @@ const disabledVariants: Partial<Record<ButtonVariant, string>> = {
 /** Every size keeps the 44px minimum target; `sm` is only more compact horizontally. */
 const sizes: Record<ButtonSize, string> = {
   sm: "min-h-11 px-3.5 py-2 text-sm",
-  md: "min-h-11 px-[18px] py-2.5 text-[15px]",
+  md: "min-h-11 px-[18px] py-2.5 text-sm",
   lg: "min-h-12 px-6 py-3 text-base",
 };
 
 const quietSizes: Record<ButtonSize, string> = {
   sm: "min-h-11 px-1.5 text-sm",
-  md: "min-h-11 px-2 text-[15px]",
+  md: "min-h-11 px-2 text-sm",
   lg: "min-h-12 px-2.5 text-base",
 };
 
@@ -125,9 +122,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         </>
       ) : (
         <>
-          {startIcon ? <span aria-hidden className="inline-flex shrink-0 [&>svg]:size-[18px]">{startIcon}</span> : null}
+          {startIcon ? <span aria-hidden className="inline-flex shrink-0 [&>svg]:size-5">{startIcon}</span> : null}
           {children}
-          {endIcon ? <span aria-hidden className="inline-flex shrink-0 [&>svg]:size-[18px]">{endIcon}</span> : null}
+          {endIcon ? <span aria-hidden className="inline-flex shrink-0 [&>svg]:size-5">{endIcon}</span> : null}
         </>
       )}
     </button>
@@ -152,8 +149,8 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
       aria-label={label}
       title={label}
       className={cn(
-        "inline-flex shrink-0 items-center justify-center rounded-md transition-colors duration-[120ms] ease-yy disabled:pointer-events-none disabled:text-ink-disabled [&_svg]:size-[18px]",
-        size === "sm" ? "size-9" : "size-11",
+        "inline-flex shrink-0 items-center justify-center rounded-md transition-colors duration-[120ms] ease-yy disabled:pointer-events-none disabled:text-ink-disabled [&_svg]:size-5",
+        size === "sm" ? "size-11 [&_svg]:size-4" : "size-11 [&_svg]:size-5",
         variant === "quiet" && "text-ink-secondary hover:bg-muted hover:text-ink",
         variant === "secondary" && "border border-line bg-panel text-ink hover:bg-muted",
         variant === "danger" && "text-danger-fg hover:bg-danger-bg",

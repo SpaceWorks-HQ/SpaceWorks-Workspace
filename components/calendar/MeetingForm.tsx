@@ -428,7 +428,7 @@ export function MeetingForm(p: Props) {
                 Close
               </Button>
               <Button type="submit" disabled={pending}>
-                {pending ? "Saving…" : m ? "Save meeting" : "Schedule meeting"}
+                {pending ? "Saving" : m ? "Save meeting" : "Schedule meeting"}
               </Button>
             </div>
           </form>

@@ -2,7 +2,7 @@
 
 import { forwardRef, useState, type ComponentPropsWithoutRef, type ElementRef, type ReactNode } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { X } from "lucide-react";
+
 import { cn } from "@/lib/cn";
 import { Button, IconButton } from "./button";
 import { Field, Input } from "./field";
@@ -13,15 +13,18 @@ export const DialogClose = DialogPrimitive.Close;
 
 export const DialogContent = forwardRef<
   ElementRef<typeof DialogPrimitive.Content>,
-  ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { size?: "sm" | "md" | "lg" | "xl"; hideClose?: boolean }
->(function DialogContent({ className, children, size = "sm", hideClose = false, ...props }, ref) {
+  ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { size?: "sm" | "md" | "lg" | "xl"; hideClose?: boolean; presentation?: "dialog" | "drawer" }
+>(function DialogContent({ className, children, size = "sm", hideClose = false, presentation = "dialog", ...props }, ref) {
   return (
     <DialogPrimitive.Portal>
-      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[rgb(20_44_42/0.48)] data-[state=open]:animate-[yy-fade-in_180ms_ease-out]" />
+      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[var(--yy-overlay)] data-[state=open]:animate-[yy-fade-in_120ms_ease-out]" />
       <DialogPrimitive.Content
         ref={ref}
         className={cn(
-          "fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100dvh-32px)] w-[calc(100vw-32px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-line bg-panel text-ink shadow-float focus:outline-none data-[state=open]:animate-[yy-dialog-in_240ms_cubic-bezier(0.2,0.8,0.2,1)]",
+          "fixed z-50 flex flex-col overflow-hidden border border-line bg-panel text-ink shadow-float focus:outline-none data-[state=open]:animate-[yy-dialog-in_240ms_cubic-bezier(0.32,0.72,0,1)]",
+          presentation === "dialog"
+            ? "inset-x-0 bottom-0 max-h-[calc(100dvh-16px)] w-full rounded-t-xl sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:max-h-[calc(100dvh-32px)] sm:w-[calc(100vw-32px)] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl"
+            : "right-0 top-0 h-dvh max-h-dvh w-full rounded-none",
           size === "sm" && "max-w-[480px]",
           size === "md" && "max-w-[640px]",
           size === "lg" && "max-w-[860px]",
@@ -34,7 +37,7 @@ export const DialogContent = forwardRef<
         {hideClose ? null : (
           <DialogPrimitive.Close asChild>
             <IconButton label="Close" size="sm" className="absolute right-3 top-3">
-              <X />
+              <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">×</span>
             </IconButton>
           </DialogPrimitive.Close>
         )}

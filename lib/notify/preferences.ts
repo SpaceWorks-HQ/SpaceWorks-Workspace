@@ -3,7 +3,8 @@ import { NOTIFY_CATEGORIES, type NotifyCategory } from "@/lib/notify/events";
 
 /**
  * Personal channel resolution (pure). Order: the member's own row for the
- * category → the workspace default row → the catalogue default. In-app is
+ * category → the workspace default row → reminders on every available channel
+ * → the catalogue default. In-app is
  * always on (the notification centre is the record); other channels need a
  * verified account link, and guests only get in-app and email.
  */
@@ -29,16 +30,30 @@ export function availablePersonalChannels(role: WorkspaceRole, linkedProviders: 
   return available;
 }
 
+/**
+ * Reminders and due/overdue/expiring alerts are worth interrupting for, so when
+ * a member has no explicit preference for the category they reach every channel
+ * the member can receive: email and each linked messaging account.
+ */
+export function isReminderEvent(type: string) {
+  return /(?:reminder|_due|\.due|overdue|expiring)$/.test(type);
+}
+
 export function resolvePersonalChannels(input: {
   category: NotifyCategory;
+  eventType?: string;
   role: WorkspaceRole;
   userPreference?: PreferenceRow | null;
   workspaceDefault?: PreferenceRow | null;
   linkedProviders: Iterable<MessagingProvider>;
 }): { channels: PersonalChannel[]; digestFrequency: DigestFrequency } {
   const row = input.userPreference ?? input.workspaceDefault ?? null;
-  const wanted: PersonalChannel[] = row ? row.channels : [...NOTIFY_CATEGORIES[input.category].defaultChannels];
   const available = availablePersonalChannels(input.role, input.linkedProviders);
+  const wanted: PersonalChannel[] = row
+    ? row.channels
+    : input.eventType && isReminderEvent(input.eventType)
+      ? [...available]
+      : [...NOTIFY_CATEGORIES[input.category].defaultChannels];
   const channels = new Set<PersonalChannel>(["IN_APP"]);
   for (const channel of wanted) if (available.has(channel)) channels.add(channel);
   return { channels: [...channels], digestFrequency: row?.digestFrequency ?? "IMMEDIATE" };

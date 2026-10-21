@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import * as Popover from "@radix-ui/react-popover";
-import { Bell as BellIcon } from "lucide-react";
+
 import {
   notificationSummaryAction,
   notificationStateAction,
@@ -45,14 +45,14 @@ export function NotificationBell({
       }}
     >
       <Popover.Trigger
-        className="relative flex size-11 shrink-0 items-center justify-center rounded-md hover:bg-muted"
-        aria-label={`Notifications, ${data.unread} unread`}
+        className="relative flex min-h-11 min-w-11 px-3 shrink-0 items-center justify-center rounded-md hover:bg-muted"
       >
-        <BellIcon aria-hidden className="size-5" />
+        <span className="inline-flex items-center justify-center text-xs font-semibold">Notifications</span>
+        <span className="sr-only">, {data.unread} unread</span>
         {data.unread > 0 ? (
           <span
             aria-hidden
-            className="absolute right-0 top-0 rounded-full bg-highlight px-1.5 text-caption text-on-highlight"
+            className="absolute right-0 top-0 rounded-full bg-accent-soft px-1.5 text-caption text-accent-text"
           >
             {data.unread > 99 ? "99+" : data.unread}
           </span>
