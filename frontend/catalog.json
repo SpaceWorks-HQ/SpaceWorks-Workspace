@@ -106,6 +106,21 @@
       "id": "w-workspaceSlug-activity-page:loadActivityPage"
     },
     {
+      "module": "lib/views/generated/w-workspaceSlug-analytics-drill-metric-page-loadAnalyticsDrillPage",
+      "name": "loadAnalyticsDrillPage",
+      "id": "w-workspaceSlug-analytics-drill-metric-page:loadAnalyticsDrillPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-analytics-page-loadAnalyticsPage",
+      "name": "loadAnalyticsPage",
+      "id": "w-workspaceSlug-analytics-page:loadAnalyticsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-analytics-print-page-loadAnalyticsPrintPage",
+      "name": "loadAnalyticsPrintPage",
+      "id": "w-workspaceSlug-analytics-print-page:loadAnalyticsPrintPage"
+    },
+    {
       "module": "lib/views/generated/w-workspaceSlug-announcements-announcementId-edit-page-loadEditAnnouncementPage",
       "name": "loadEditAnnouncementPage",
       "id": "w-workspaceSlug-announcements-announcementId-edit-page:loadEditAnnouncementPage"
@@ -371,6 +386,11 @@
       "id": "w-workspaceSlug-files-page:loadFilesPage"
     },
     {
+      "module": "lib/views/generated/w-workspaceSlug-finance-advances-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-advances-page:loadPage"
+    },
+    {
       "module": "lib/views/generated/w-workspaceSlug-finance-bills-page-loadPage",
       "name": "loadPage",
       "id": "w-workspaceSlug-finance-bills-page:loadPage"
@@ -394,6 +414,11 @@
       "module": "lib/views/generated/w-workspaceSlug-finance-disbursements-page-loadPage",
       "name": "loadPage",
       "id": "w-workspaceSlug-finance-disbursements-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-dues-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-dues-page:loadPage"
     },
     {
       "module": "lib/views/generated/w-workspaceSlug-finance-funds-page-loadPage",
@@ -451,6 +476,11 @@
       "id": "w-workspaceSlug-finance-payroll-runId-print-page:loadPage"
     },
     {
+      "module": "lib/views/generated/w-workspaceSlug-finance-payroll-dues-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-payroll-dues-page:loadPage"
+    },
+    {
       "module": "lib/views/generated/w-workspaceSlug-finance-payroll-page-loadPage",
       "name": "loadPage",
       "id": "w-workspaceSlug-finance-payroll-page:loadPage"
@@ -459,6 +489,11 @@
       "module": "lib/views/generated/w-workspaceSlug-finance-receipt-page-loadPage",
       "name": "loadPage",
       "id": "w-workspaceSlug-finance-receipt-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-recurring-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-recurring-page:loadPage"
     },
     {
       "module": "lib/views/generated/w-workspaceSlug-finance-reports-page-loadPage",
@@ -751,9 +786,24 @@
       "id": "w-workspaceSlug-projects-key-project-page:loadProjectBoardPage"
     },
     {
+      "module": "lib/views/generated/w-workspaceSlug-projects-key-project-report-page-loadProjectReportPage",
+      "name": "loadProjectReportPage",
+      "id": "w-workspaceSlug-projects-key-project-report-page:loadProjectReportPage"
+    },
+    {
       "module": "lib/views/generated/w-workspaceSlug-projects-key-project-settings-page-loadProjectSettingsPage",
       "name": "loadProjectSettingsPage",
       "id": "w-workspaceSlug-projects-key-project-settings-page:loadProjectSettingsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-projects-key-project-timeline-page-loadProjectTimelinePage",
+      "name": "loadProjectTimelinePage",
+      "id": "w-workspaceSlug-projects-key-project-timeline-page:loadProjectTimelinePage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-projects-key-project-updates-page-loadProjectUpdatesPage",
+      "name": "loadProjectUpdatesPage",
+      "id": "w-workspaceSlug-projects-key-project-updates-page:loadProjectUpdatesPage"
     },
     {
       "module": "lib/views/generated/w-workspaceSlug-projects-key-number-page-loadgenerateMetadata",
@@ -769,6 +819,11 @@
       "module": "lib/views/generated/w-workspaceSlug-projects-key-tasks-number-page-loadTaskAliasPage",
       "name": "loadTaskAliasPage",
       "id": "w-workspaceSlug-projects-key-tasks-number-page:loadTaskAliasPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-projects-blockers-page-loadProjectBlockersPage",
+      "name": "loadProjectBlockersPage",
+      "id": "w-workspaceSlug-projects-blockers-page:loadProjectBlockersPage"
     },
     {
       "module": "lib/views/generated/w-workspaceSlug-projects-page-loadProjectsPage",
@@ -1126,6 +1181,36 @@
       "module": "app/actions/admin",
       "name": "adminSetWorkspaceArchived",
       "id": "admin:adminSetWorkspaceArchived"
+    },
+    {
+      "module": "app/actions/analytics",
+      "name": "saveAnalyticsPreset",
+      "id": "analytics:saveAnalyticsPreset"
+    },
+    {
+      "module": "app/actions/analytics",
+      "name": "removeAnalyticsPreset",
+      "id": "analytics:removeAnalyticsPreset"
+    },
+    {
+      "module": "app/actions/analytics",
+      "name": "saveAnalyticsAdjustment",
+      "id": "analytics:saveAnalyticsAdjustment"
+    },
+    {
+      "module": "app/actions/analytics",
+      "name": "removeAnalyticsAdjustment",
+      "id": "analytics:removeAnalyticsAdjustment"
+    },
+    {
+      "module": "app/actions/analytics",
+      "name": "uploadAnalyticsProof",
+      "id": "analytics:uploadAnalyticsProof"
+    },
+    {
+      "module": "app/actions/analytics",
+      "name": "generateAnalyticsPack",
+      "id": "analytics:generateAnalyticsPack"
     },
     {
       "module": "app/actions/apiTokens",
@@ -2326,6 +2411,31 @@
       "module": "app/actions/projects",
       "name": "deleteColumnAction",
       "id": "projects:deleteColumnAction"
+    },
+    {
+      "module": "app/actions/projectsPlus",
+      "name": "saveMilestoneAction",
+      "id": "projectsPlus:saveMilestoneAction"
+    },
+    {
+      "module": "app/actions/projectsPlus",
+      "name": "removeMilestoneAction",
+      "id": "projectsPlus:removeMilestoneAction"
+    },
+    {
+      "module": "app/actions/projectsPlus",
+      "name": "postProjectUpdateAction",
+      "id": "projectsPlus:postProjectUpdateAction"
+    },
+    {
+      "module": "app/actions/projectsPlus",
+      "name": "saveTaskPlanAction",
+      "id": "projectsPlus:saveTaskPlanAction"
+    },
+    {
+      "module": "app/actions/recurring-costs",
+      "name": "recurringCostAction",
+      "id": "recurring-costs:recurringCostAction"
     },
     {
       "module": "app/actions/requests",

@@ -42,6 +42,8 @@ export function accessSql(actor: SearchActor) {
     ["product_ops", "ProductRecord", Prisma.sql`${member} AND (r.kind <> 'ESTIMATE' OR ${admin}) AND r."archivedAt" IS NULL AND ${project}`],
     ["project_milestone", "ProjectMilestone", project],
     ["project_update", "ProjectStatusUpdate", project],
+    ["analytics_adjustment", "AnalyticsAdjustment", Prisma.sql`${admin}`],
+    ["analytics_preset", "AnalyticsPreset", Prisma.sql`${member} AND (r."ownerId"=${actor.userId} OR (${admin} AND r.shared))`],
     ["funding", "FundingRecord", Prisma.sql`${admin} AND r."archivedAt" IS NULL`],
     ["money_control", "MoneyControlRecord", Prisma.sql`${member} AND r.payroll=false AND (${admin} OR (r.kind IN ('HANDOVER','ASSIGNMENT') AND (r."ownerId"=${actor.userId} OR r.details->>'outgoingId'=${actor.userId})))`],
     ["governance", "GovernanceRecord", Prisma.sql`${admin} AND r."archivedAt" IS NULL`],

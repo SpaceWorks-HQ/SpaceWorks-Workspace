@@ -288,7 +288,9 @@ export async function makeReportPdf(data: {
   workspaceName: string;
   title: string;
   subtitle: string;
-  sections: Array<{ title: string; rows: string[][] }>;
+  footerLabel?: string;
+  strictText?: boolean;
+  sections: Array<{ title: string; rows: string[][]; chart?: Array<{ label: string; value: number }> }>;
 }) {
   const doc = await PDFDocument.create();
   doc.registerFontkit(fontkit);
@@ -304,6 +306,11 @@ export async function makeReportPdf(data: {
     ),
     { features: { liga: false } },
   );
+  if (data.strictText) {
+    const supported = new Set(font.getCharacterSet());
+    const texts = [data.workspaceName, data.title, data.subtitle, ...data.sections.flatMap(s=>[s.title,...s.rows.flat(),...(s.chart??[]).map(p=>p.label)])];
+    if (texts.some(text=>[...text.replace(/[\r\n\t]/g," ")].some(c=>!supported.has(c.codePointAt(0)!)))) throw new Error("The PDF font cannot render some report text.");
+  }
   let page: PDFPage,
     y = 0;
   const next = () => {
@@ -325,6 +332,20 @@ export async function makeReportPdf(data: {
   for (const section of data.sections) {
     if (y < 150) next();
     y = wrapped(page!, strong, section.title, 44, y, 507, 14) - 6;
+    if (section.chart?.length) {
+      const points = section.chart.slice(0, 8);
+      if (y < 70 + points.length * 24) next();
+      const max = Math.max(1, ...points.map(p => Math.abs(p.value)));
+      const signed = points.some(p=>p.value<0), zeroX=signed?330:210, scaleWidth=signed?120:240;
+      if(signed)page!.drawLine({start:{x:zeroX,y:y+10},end:{x:zeroX,y:y-points.length*24+10},thickness:0.5,color:ink});
+      for (const point of points) {
+        const label = clean(font, point.label).slice(0, 30);
+        page!.drawText(label, { x: 44, y, font, size: 9, color: ink });
+        page!.drawRectangle({ x: point.value<0?zeroX-scaleWidth*Math.abs(point.value)/max:zeroX, y: y - 2, width: Math.max(1, scaleWidth * Math.abs(point.value) / max), height: 9, color: teal });
+        y -= 24;
+      }
+      y -= 12;
+    }
     for (const row of section.rows) {
       const text = row.join("  |  ");
       // A long variance note or receipt list can span pages without clipping.
@@ -340,7 +361,7 @@ export async function makeReportPdf(data: {
     y -= 16;
   }
   for (const [index, p] of doc.getPages().entries()) {
-    p.drawText("Private finance report", {
+    p.drawText(data.footerLabel ?? "Private finance report", {
       x: 44,
       y: 36,
       font,

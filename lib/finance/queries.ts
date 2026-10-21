@@ -29,6 +29,7 @@ export function ledgerWhere(workspaceId: string, filters: Omit<LedgerFilters, "p
   return {
     workspaceId,
     privatePayroll: false,
+    ...(filters.recordId ? { id: filters.recordId } : {}),
     ...(filters.kind ? { kind: filters.kind } : {}),
     ...(filters.categoryId ? { categoryId: filters.categoryId } : {}),
     ...(filters.from || filters.to ? { occurredOn: { ...(filters.from ? { gte: dateOnly(filters.from) } : {}), ...(filters.to ? { lte: dateOnly(filters.to) } : {}) } } : {}),

@@ -23,6 +23,7 @@ export type NavGroupConfig = { key: string; label: string | null; items: NavItem
 
 export const NAV_GROUPS: readonly NavGroupConfig[] = [
   { key: "home", label: null, items: [{ key: "home", label: "Home", path: "", minRole: "GUEST", exact: true },
+      { key: "analytics", label: "Reports & analytics", path: "/analytics", minRole: "MEMBER" },
       { key: "search", label: "Search", path: "/search", minRole: "GUEST" },
       { key: "activity", label: "Activity", path: "/activity", minRole: "GUEST" },
       { key: "links", label: "Links", path: "/links", minRole: "GUEST" }] },

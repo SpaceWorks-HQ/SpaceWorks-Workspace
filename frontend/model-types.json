@@ -126,123 +126,153 @@
     "value": false
   },
   {
+    "module": "lib/finance/recurring/queries",
+    "name": "AdvancesView",
+    "id": "Shared21",
+    "value": false
+  },
+  {
+    "module": "lib/finance/recurring/queries",
+    "name": "RecurringQuery",
+    "id": "Shared22",
+    "value": false
+  },
+  {
+    "module": "lib/finance/recurring/queries",
+    "name": "LeaseFinanceView",
+    "id": "Shared23",
+    "value": false
+  },
+  {
+    "module": "lib/finance/recurring/queries",
+    "name": "ScheduleView",
+    "id": "Shared24",
+    "value": false
+  },
+  {
+    "module": "lib/finance/recurring/queries",
+    "name": "UpcomingView",
+    "id": "Shared25",
+    "value": false
+  },
+  {
     "module": "lib/funding/service",
     "name": "FundingData",
-    "id": "Shared21",
+    "id": "Shared26",
     "value": false
   },
   {
     "module": "lib/funding/service",
     "name": "Filters",
-    "id": "Shared22",
+    "id": "Shared27",
     "value": false
   },
   {
     "module": "lib/governance/service",
     "name": "GovernanceData",
-    "id": "Shared23",
+    "id": "Shared28",
     "value": false
   },
   {
     "module": "lib/governance/service",
     "name": "Actor",
-    "id": "Shared24",
+    "id": "Shared29",
     "value": false
   },
   {
     "module": "lib/governance/service",
     "name": "Filters",
-    "id": "Shared25",
+    "id": "Shared30",
     "value": false
   },
   {
     "module": "lib/govextras/cases",
     "name": "CaseData",
-    "id": "Shared26",
+    "id": "Shared31",
     "value": false
   },
   {
     "module": "lib/govextras/conflicts",
     "name": "ConflictData",
-    "id": "Shared27",
+    "id": "Shared32",
     "value": false
   },
   {
     "module": "lib/marketingIt/service",
     "name": "ToolData",
-    "id": "Shared28",
+    "id": "Shared33",
     "value": false
   },
   {
     "module": "lib/marketingIt/service",
     "name": "Filters",
-    "id": "Shared29",
+    "id": "Shared34",
     "value": false
   },
   {
     "module": "lib/notepad/service",
     "name": "NoteDTO",
-    "id": "Shared30",
+    "id": "Shared35",
     "value": false
   },
   {
     "module": "lib/notepad/service",
     "name": "NotepadData",
-    "id": "Shared31",
+    "id": "Shared36",
     "value": false
   },
   {
     "module": "lib/notepad/service",
     "name": "TodoDTO",
-    "id": "Shared32",
+    "id": "Shared37",
     "value": false
   },
   {
     "module": "lib/opsGaps/attachments",
     "name": "AttachmentKind",
-    "id": "Shared33",
+    "id": "Shared38",
     "value": false
   },
   {
     "module": "lib/orgPeople/files",
     "name": "OrgFileKind",
-    "id": "Shared34",
+    "id": "Shared39",
     "value": false
   },
   {
     "module": "lib/people/profiles",
     "name": "EmergencyContact",
-    "id": "Shared35",
+    "id": "Shared40",
     "value": false
   },
   {
     "module": "lib/productOps/load",
     "name": "ProductData",
-    "id": "Shared36",
+    "id": "Shared41",
     "value": false
   },
   {
     "module": "lib/productOps/service",
     "name": "Filters",
-    "id": "Shared37",
+    "id": "Shared42",
     "value": false
   },
   {
     "module": "lib/approvals/context",
     "name": "OpsActor",
-    "id": "Shared38",
+    "id": "Shared43",
     "value": false
   },
   {
     "module": "lib/auth",
     "name": "SsoMfaChallenge",
-    "id": "Shared39",
+    "id": "Shared44",
     "value": false
   },
   {
     "module": "lib/documents/service",
     "name": "DocumentSnapshot",
-    "id": "Shared40",
+    "id": "Shared45",
     "value": false
   }
 ]

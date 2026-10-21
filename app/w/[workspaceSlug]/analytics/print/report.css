@@ -1,0 +1,53 @@
+@media print {
+  html:has(#analytics-print),
+  body:has(#analytics-print) {
+    background: transparent !important;
+  }
+  body:has(#analytics-print) * {
+    visibility: hidden;
+  }
+  #analytics-print,
+  #analytics-print * {
+    visibility: visible;
+    color: var(--sw-ink) !important;
+    background: transparent !important;
+    border-color: var(--sw-ink) !important;
+    box-shadow: none !important;
+  }
+  #analytics-print {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    max-width: none;
+  }
+  #analytics-print .print\:hidden,
+  #analytics-print button {
+    display: none !important;
+  }
+  #analytics-print section {
+    break-inside: avoid;
+  }
+  #analytics-print a {
+    overflow-wrap: anywhere;
+  }
+  #analytics-print details {
+    display: block;
+  }
+  #analytics-print details > table,
+  #analytics-print details > div {
+    display: block !important;
+  }
+  #analytics-print svg {
+    max-height: 50mm;
+  }
+  #analytics-print svg text {
+    fill: var(--sw-ink) !important;
+  }
+  #analytics-print svg line {
+    stroke: var(--sw-ink) !important;
+  }
+}
+@page {
+  size: A4;
+  margin: 15mm;
+}

@@ -51,6 +51,7 @@ type GithubRef = { repoId: Id; number: number; url: string };
 
 /** Typed `data` payload per event type. */
 export interface EventPayloads {
+  "analytics.assumption_due": { adjustmentId: Id; dueOn: Iso };
   "people.responsibility_review_due": { responsibilityId: Id; reviewOn: Iso };
   "marketing.publish_due": { recordId: Id; dueOn: Iso };
   "marketing.follow_up_due": { recordId: Id; dueOn: Iso };
@@ -203,6 +204,7 @@ const s = (category: NotifyCategory, label: string, audience: EventAudience, sev
   minRole ? { category, label, audience, severity, minRole } : { category, label, audience, severity };
 
 export const EVENT_CATALOG = {
+  "analytics.assumption_due": s("finance", "Forecast assumption due", "personal", "info", "ADMIN"),
   "people.responsibility_review_due": s("people", "Responsibility review due", "personal", "info", "MEMBER"),
   "marketing.publish_due": s("operations", "Content publish date", "personal", "info", "MEMBER"),
   "marketing.follow_up_due": s("operations", "Outreach follow-up", "personal", "info", "ADMIN"),

@@ -325,7 +325,7 @@ export function FinanceToolScreen({
             />
           ) : null}
           {data.funds.map((f) => (
-            <Card key={f.id}>
+            <Card key={f.id} id={f.id}>
               <CardHeader
                 title={f.name}
                 description={f.funder ?? undefined}
@@ -520,7 +520,7 @@ export function FinanceToolScreen({
             />
           ) : null}
           {data.budgets.map((b) => (
-            <Card key={b.id}>
+            <Card key={b.id} id={b.id}>
               <CardHeader
                 title={b.name}
                 description={`${formatDay(b.periodStart)} to ${formatDay(b.periodEnd)}`}
@@ -598,7 +598,7 @@ export function FinanceToolScreen({
             />
           ) : null}
           {data.bills.map((b) => (
-            <Card key={b.id}>
+            <Card key={b.id} id={b.id}>
               <CardHeader
                 title={`${b.vendor} · ${b.number}`}
                 description={`Bill ${formatDay(b.issuedOn)} · Due ${formatDay(b.dueOn)}`}
@@ -928,7 +928,7 @@ export function FinanceToolScreen({
             )}
           </Card>
           {data.reconciliations.map((r) => (
-            <Card key={r.id}>
+            <Card key={r.id} id={r.id}>
               <CardHeader
                 title={r.account.name}
                 description={`Statement up to ${formatDay(r.upTo)}`}
@@ -1033,7 +1033,7 @@ export function FinanceToolScreen({
             />
           ) : null}
           {data.disbursements.map((d) => (
-            <Card key={d.id}>
+            <Card key={d.id} id={d.id}>
               <CardHeader
                 title={d.payee}
                 description={`${label(d.kind)} · ${d.purpose}`}

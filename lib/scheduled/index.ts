@@ -1,4 +1,5 @@
 import "server-only";
+import { run as analytics } from "@/lib/scheduled/analytics";
 import { run as marketingIt } from "@/lib/scheduled/marketingIt";
 import { run as productOps } from "@/lib/scheduled/productOps";
 import { run as recurringCosts } from "@/lib/scheduled/recurringCosts";
@@ -36,6 +37,7 @@ import { run as shell } from "@/lib/scheduled/shell";
  * does not stop the others.
  */
 export const SCHEDULED_JOBS: ReadonlyArray<JobDefinition> = [
+  { area: "analytics", run: analytics },
   { area: "marketing-it", run: marketingIt },
   { area: "product-ops", run: productOps },
   { area: "funding-tools", run: funding },

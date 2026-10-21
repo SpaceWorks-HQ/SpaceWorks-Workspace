@@ -187,7 +187,9 @@ export async function deliverOutboxBatch(limit = 20, scope: { ids?: string[] } =
     }
 
     try {
-      const rendered = message.kind === "documents.email"
+      const rendered = message.kind === "analytics.email"
+        ? await (await import("@/lib/analytics/email")).renderAnalyticsEmail(message.payload)
+        : message.kind === "documents.email"
         ? await (await import("@/lib/documents/email")).renderDocumentEmail(message.payload)
         : renderOutboxMessage(message.kind, message.payload);
       if (rendered === "expired") {

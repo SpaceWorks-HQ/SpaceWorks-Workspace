@@ -43,6 +43,8 @@ export async function findDownloadableFile(fileId: string, userId: string) {
     select: { role: true, status: true, user: { select: { disabledAt: true } } },
   });
   if (!membership || membership.status !== "ACTIVE" || membership.user.disabledAt) return null;
+  const { canDownloadAnalyticsFile } = await import("@/lib/analytics/files");
+  if (!await canDownloadAnalyticsFile(file,userId,membership.role)) return null;
   const { canDownloadMarketingItFile } = await import("@/lib/marketingIt/files");
   if (!await canDownloadMarketingItFile(file, { user: { id: userId }, workspace: { id: file.workspaceId, slug: "", timezone: "UTC" }, membership })) return null;
   if (file.folder === "/governance" || file.folder.startsWith("/governance/") || file.governanceAttachments.length) {

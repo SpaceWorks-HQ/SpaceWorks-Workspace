@@ -1,4 +1,5 @@
 import "server-only";
+import { budgetReportActuals } from "@/lib/finance/reportMetrics";
 import { monthlyCashFlow } from "@/lib/finance/recurring/cash-flow";
 import { prisma } from "@/lib/db";
 import { Prisma } from "@prisma/client";
@@ -15,7 +16,6 @@ import {
   financeAccess,
   type FinanceActor,
 } from "./access";
-import { budgetActual } from "./service";
 import { hiddenTeamIds, teamScopeFilter } from "@/lib/teamAccess";
 
 export const FINANCE_PAGE_SIZE = 40;
@@ -30,6 +30,7 @@ export type ToolSection =
   | "spending"
   | "receipt";
 export type FinanceQuery = {
+  record?: string;
   month?: string;
   from?: string;
   to?: string;
@@ -352,12 +353,8 @@ export async function financeReports(actor: FinanceActor, query: FinanceQuery) {
     },
     orderBy: { name: "asc" },
   });
-  const budgetRows = await Promise.all(
-    budgets.map(async (b) => ({
-      ...b,
-      actualMinor: await budgetActual(prisma, b),
-    })),
-  );
+  const actuals = await budgetReportActuals(actor.workspace.id, budgets.map(b => b.id));
+  const budgetRows = budgets.map(b => ({ ...b, actualMinor: actuals.get(b.id) ?? 0 }));
   return {
     period,
     entries,
@@ -477,14 +474,22 @@ export async function toolLists(
     await Promise.all([
       section === "funds"
         ? prisma.financeFund.findMany({
-            where: { workspaceId, name: { contains: q, mode: "insensitive" } },
+            where: {
+              workspaceId,
+              ...(query.record ? { id: query.record } : {}),
+              name: { contains: q, mode: "insensitive" },
+            },
             orderBy: { name: "asc" },
             ...paging,
           })
         : [],
       section === "budgets"
         ? prisma.budget.findMany({
-            where: { workspaceId, name: { contains: q, mode: "insensitive" } },
+            where: {
+              workspaceId,
+              ...(query.record ? { id: query.record } : {}),
+              name: { contains: q, mode: "insensitive" },
+            },
             orderBy: { periodStart: "desc" },
             ...paging,
           })
@@ -493,6 +498,7 @@ export async function toolLists(
         ? prisma.financeBill.findMany({
             where: {
               workspaceId,
+            ...(query.record ? { id: query.record } : {}),
               privatePayroll: false,
               OR: [
                 { vendor: { contains: q, mode: "insensitive" } },
@@ -535,6 +541,7 @@ export async function toolLists(
         ? prisma.financeDisbursement.findMany({
             where: {
               workspaceId,
+            ...(query.record ? { id: query.record } : {}),
               payee: { contains: q, mode: "insensitive" },
               ...(query.status ? { status: query.status } : {}),
             },
@@ -552,6 +559,7 @@ export async function toolLists(
         ? prisma.financeReconciliation.findMany({
             where: {
               workspaceId,
+            ...(query.record ? { id: query.record } : {}),
               ...(query.account ? { accountId: query.account } : {}),
             },
             orderBy: { createdAt: "desc" },
@@ -560,11 +568,8 @@ export async function toolLists(
           })
         : [],
     ]);
-  const actualBudgets = await Promise.all(
-    budgets
-      .slice(0, FINANCE_PAGE_SIZE)
-      .map(async (b) => ({ ...b, actualMinor: await budgetActual(prisma, b) })),
-  );
+  const budgetActuals = await budgetReportActuals(workspaceId, budgets.slice(0, FINANCE_PAGE_SIZE).map(b=>b.id));
+  const actualBudgets = budgets.slice(0, FINANCE_PAGE_SIZE).map(b=>({...b,actualMinor:budgetActuals.get(b.id)??0}));
   const fundBalances = await Promise.all(
     funds.slice(0, FINANCE_PAGE_SIZE).map(async (f) => {
       const amounts = await prisma.ledgerEntry.groupBy({
@@ -633,6 +638,7 @@ export async function toolLists(
       ? await prisma.ledgerEntry.findMany({
           where: {
             workspaceId,
+            ...(query.record ? { id: query.record } : {}),
             voidedAt: null,
             privatePayroll: !access.payrollView ? false : undefined,
             ...(query.account ? { accountId: query.account } : {}),
