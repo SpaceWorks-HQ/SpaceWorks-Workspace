@@ -1,81 +1,19 @@
 import "server-only";
-import { z } from "zod";
-import type { Prisma } from "@prisma/client";
-import { prisma, type DbClient } from "@/lib/db";
 import { visibleProjectWhere, visibleTaskWhere } from "@/lib/tasks/access";
 import {
   type Actor,
   assertActor,
   ensure,
-  id,
-  optionalId,
-  title,
-  text,
-  date,
   changed,
   serial,
-  teamWhere,
   checkMembers,
   checkTeam,
 } from "@/lib/meetings/core";
+import { goalCommand } from "./goal-command";
+import { goalWhere } from "./goal-access";
 
-export async function goalWhere(
-  actor: Actor,
-  client: DbClient = prisma,
-): Promise<Prisma.GoalWhereInput> {
-  return {
-    workspaceId: actor.workspace.id,
-    ...(await teamWhere(actor, client)),
-  };
-}
-export const goalCommand = z.discriminatedUnion("op", [
-  z.object({
-    op: z.literal("create"),
-    title,
-    description: text,
-    ownerId: optionalId,
-    teamId: optionalId,
-    parentGoalId: optionalId,
-    periodStart: date,
-    periodEnd: date,
-  }),
-  z.object({
-    op: z.literal("result"),
-    goalId: id,
-    title,
-    metricType: z.enum(["NUMBER", "PERCENT", "BOOLEAN"]),
-    start: z.coerce.number().finite(),
-    target: z.coerce.number().finite(),
-  }),
-  z.object({
-    op: z.literal("checkin"),
-    goalId: id,
-    resultId: id,
-    value: z.coerce.number().finite(),
-    note: text,
-    confidence: z.enum(["HIGH", "MEDIUM", "LOW"]),
-  }),
-  z.object({
-    op: z.literal("status"),
-    goalId: id,
-    status: z.enum(["ON_TRACK", "AT_RISK", "OFF_TRACK", "DONE"]),
-  }),
-  z.object({
-    op: z.literal("edit"),
-    goalId: id,
-    title,
-    description: text,
-    ownerId: id,
-    periodStart: date,
-    periodEnd: date,
-  }),
-  z.object({
-    op: z.literal("link"),
-    goalId: id,
-    type: z.enum(["task", "project"]),
-    targetId: id,
-  }),
-]);
+export { goalCommand } from "./goal-command";
+export { goalWhere } from "./goal-access";
 
 export async function mutateGoal(actor: Actor, input: unknown) {
   const data = goalCommand.parse(input);
