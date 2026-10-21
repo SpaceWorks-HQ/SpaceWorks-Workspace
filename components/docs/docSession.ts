@@ -118,7 +118,7 @@ export function createDocSession(init: { slug: string; docId: string; version: s
     TaskItem.configure({ nested: true }),
     TableKit.configure({ table: { resizable: false } }),
     Image.configure({ allowBase64: false }),
-    Placeholder.configure({ placeholder: init.canEdit ? "Write something, or type @ to mention a member…" : "" }),
+    Placeholder.configure({ placeholder: init.canEdit ? "Write something, or type @ to mention a member" : "" }),
     Mention.configure({
       HTMLAttributes: { class: "mention" },
       suggestion: {

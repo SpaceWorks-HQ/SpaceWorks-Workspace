@@ -1,3 +1,4 @@
+import { FormPageLayout } from "@/components/ui/layouts";
 import { AnnouncementForm } from "@/components/community/AnnouncementForm";
 import { PageHeader } from "@/components/ui/display";
 import { formatTimeZoneName } from "@/lib/format/datetime";
@@ -12,7 +13,7 @@ export default async function NewAnnouncementPage({ params }: PageProps<"/w/[wor
   const { options } = await announcementDestinations(ctx, null);
   const tz = ctx.workspace.timezone;
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+    <FormPageLayout className="max-w-3xl">
       <PageHeader title="New announcement" description="Tell the crew what's happening. Publish now, schedule it, or keep a draft." />
       <AnnouncementForm
         slug={ctx.workspace.slug}
@@ -22,6 +23,6 @@ export default async function NewAnnouncementPage({ params }: PageProps<"/w/[wor
         settingsHref={canManageNotificationRouting(ctx.membership) ? `/w/${ctx.workspace.slug}/settings/notifications` : null}
         timeZoneLabel={`${formatTimeZoneName(new Date(), tz)} (${tz})`}
       />
-    </div>
+    </FormPageLayout>
   );
 }

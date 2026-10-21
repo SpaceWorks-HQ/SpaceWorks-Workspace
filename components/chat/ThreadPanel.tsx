@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
+
 import { editMessageAction, loadThreadAction, markReadAction, postMessageAction } from "@/app/actions/chat";
 import type { ChannelInfo, MessageDTO } from "@/lib/chat/types";
 import { ConfirmDialog } from "@/components/ui/dialog";
@@ -184,7 +184,7 @@ export function ThreadPanel({
           <p className="truncate text-caption text-ink-muted">{info.kind === "DIRECT" ? info.name : `#${info.name}`}</p>
         </div>
         <IconButton label="Close thread" onClick={onClose}>
-          <X />
+          <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">×</span>
         </IconButton>
       </header>
       <div
@@ -223,7 +223,7 @@ export function ThreadPanel({
             <p className="text-body-ui text-ink-muted">{info.archived ? "This channel is archived, so the thread is read-only." : "Join the channel to reply."}</p>
           )}
           <p aria-live="polite" className="min-h-5 pt-1 text-caption text-ink-muted">
-            {typing ? `${typing.name} is typing…` : ""}
+            {typing ? `${typing.name} is typing` : ""}
           </p>
         </div>
       ) : null}

@@ -17,7 +17,7 @@ export default async function RetentionPage({
   });
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader
+      <PageHeader titleAs="h2"
         title="Retention and locale"
         description="Choose how long platform records stay in this workspace."
       />

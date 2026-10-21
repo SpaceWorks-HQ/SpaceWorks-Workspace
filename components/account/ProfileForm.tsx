@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { X } from "lucide-react";
+
 import { updateProfile } from "@/app/actions/account";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/display";
@@ -60,7 +60,7 @@ export function ProfileForm({ initial }: { initial: Profile }) {
           value={skill}
           onChange={(e) => setSkill(e.target.value)}
           maxLength={40}
-          placeholder="Soldering, CAD, Python…"
+          placeholder="Soldering, CAD or Python"
           onKeyDown={(event) => {
             if (event.key === "Enter") {
               event.preventDefault();
@@ -74,8 +74,8 @@ export function ProfileForm({ initial }: { initial: Profile }) {
           {values.skills.map((item) => (
             <li key={item} className="inline-flex items-center gap-1">
               <Chip tone="accent">{item}</Chip>
-              <button type="button" aria-label={`Remove ${item}`} className="inline-flex size-7 items-center justify-center rounded-full text-ink-muted hover:bg-muted" onClick={() => setValues((v) => ({ ...v, skills: v.skills.filter((s) => s !== item) }))}>
-                <X aria-hidden className="size-3.5" />
+              <button type="button" aria-label={`Remove ${item}`} className="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-muted" onClick={() => setValues((v) => ({ ...v, skills: v.skills.filter((s) => s !== item) }))}>
+                <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">×</span>
               </button>
             </li>
           ))}

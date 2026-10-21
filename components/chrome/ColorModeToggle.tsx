@@ -18,7 +18,7 @@ export function ColorModeToggle({ variant = "quiet", size = "md" }: { variant?: 
       }}
     >
       {/* Both icons stay mounted and cross-rotate, so the swap reads as one motion. */}
-      <span aria-hidden className="relative inline-flex size-[18px]">
+      <span aria-hidden className="relative inline-flex size-5">
         <Sun className={`yy-mode-icon absolute inset-0 ${mode === "dark" ? "rotate-0 scale-100 opacity-100" : "-rotate-90 scale-50 opacity-0"}`} />
         <Moon className={`yy-mode-icon absolute inset-0 ${mode === "dark" ? "rotate-90 scale-50 opacity-0" : "rotate-0 scale-100 opacity-100"}`} />
       </span>

@@ -3,7 +3,7 @@
 import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowDown, ArrowLeft, Hash, Info, Lock, Pin, Search, Users } from "lucide-react";
+import { ArrowLeft, Info, Search } from "lucide-react";
 import {
   editMessageAction,
   joinChannelAction,
@@ -331,7 +331,7 @@ export function Conversation({ info, initial, initialThreadId, highlightId }: { 
     const key = `${Date.now()}-${Math.random()}`;
     pendingCount.current += 1;
     stick.current = true;
-    setPending((current) => [...current, { key, text: raw || "Sharing a file…" }]);
+    setPending((current) => [...current, { key, text: raw || "Sharing a file" }]);
     const result = await postMessageAction(slug, { channelId: info.id, body, parentId: null, attachmentIds });
     pendingCount.current -= 1;
     setPending((current) => current.filter((p) => p.key !== key));
@@ -387,9 +387,9 @@ export function Conversation({ info, initial, initialThreadId, highlightId }: { 
                 ))}
               </span>
             ) : info.kind === "PRIVATE" ? (
-              <Lock aria-hidden className="size-[18px] shrink-0 text-ink-secondary" />
+              <span className="inline-flex items-center justify-center text-xs font-semibold">Private</span>
             ) : (
-              <Hash aria-hidden className="size-[18px] shrink-0 text-ink-secondary" />
+              <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">#</span>
             )}
             <span className="min-w-0">
               <span className="block truncate text-title text-ink">{info.name}</span>
@@ -399,14 +399,14 @@ export function Conversation({ info, initial, initialThreadId, highlightId }: { 
           </button>
           </h1>
           {!isDm ? (
-            <button type="button" onClick={() => setPanel({ type: "details" })} aria-label={`${info.memberCount} members`} className="hidden min-h-11 items-center gap-1.5 rounded-md px-2.5 text-label text-ink-secondary hover:bg-muted hover:text-ink sm:inline-flex">
-              <Users aria-hidden className="size-[18px]" />
+            <button type="button" onClick={() => setPanel({ type: "details" })} className="hidden min-h-11 items-center gap-1.5 rounded-md px-2.5 text-label text-ink-secondary hover:bg-muted hover:text-ink sm:inline-flex">
               <span className="tabular-nums">{info.memberCount}</span>
+              <span>{info.memberCount === 1 ? "member" : "members"}</span>
             </button>
           ) : null}
-          <IconButton label="Pinned messages" onClick={() => setPanel({ type: "pinned" })} aria-pressed={panel?.type === "pinned"}>
-            <Pin />
-          </IconButton>
+          <Button variant="quiet" className="min-w-11 px-2" title="Pinned messages" onClick={() => setPanel({ type: "pinned" })} aria-pressed={panel?.type === "pinned"}>
+            Pinned
+          </Button>
           <IconButton label="Search this conversation" onClick={() => setPanel({ type: "search" })} aria-pressed={panel?.type === "search"}>
             <Search />
           </IconButton>
@@ -456,8 +456,8 @@ export function Conversation({ info, initial, initialThreadId, highlightId }: { 
                   ) : null}
                   {message.id === divider ? (
                     <li id={`divider-${message.id}`} role="separator" aria-label="New messages" className="flex scroll-mt-4 items-center gap-3 px-4 py-1">
-                      <span className="h-px flex-1 bg-highlight" />
-                      <Chip tone="highlight" size="sm">New messages</Chip>
+                      <span className="h-px flex-1 bg-accent-soft" />
+                      <Chip tone="accent" size="sm">New messages</Chip>
                     </li>
                   ) : null}
                   <li>
@@ -493,7 +493,7 @@ export function Conversation({ info, initial, initialThreadId, highlightId }: { 
               <li key={item.key} className="flex gap-3 px-4 py-1 text-body-ui text-ink-muted" aria-live="polite">
                 <span className="w-9 shrink-0" />
                 <span className="min-w-0 flex-1 whitespace-pre-wrap break-words">{item.text}</span>
-                <span className="shrink-0 text-caption">Sending…</span>
+                <span className="shrink-0 text-caption">Sending</span>
               </li>
             ))}
           </ol>
@@ -513,7 +513,7 @@ export function Conversation({ info, initial, initialThreadId, highlightId }: { 
               size="sm"
               variant="secondary"
               className="pointer-events-auto shadow-float"
-              startIcon={<ArrowDown />}
+              startIcon={null}
               loading={loading === "latest"}
               onClick={() => {
                 if (hasNewer) void jumpToLatest();
@@ -553,7 +553,7 @@ export function Conversation({ info, initial, initialThreadId, highlightId }: { 
             <p className="text-body-ui text-ink-muted">You can read this conversation but not post in it.</p>
           )}
           <p aria-live="polite" className="min-h-5 pt-1 text-caption text-ink-muted">
-            {typingNames.length === 1 ? `${typingNames[0]} is typing…` : typingNames.length > 1 ? "Several people are typing…" : ""}
+            {typingNames.length === 1 ? `${typingNames[0]} is typing` : typingNames.length > 1 ? "Several people are typing" : ""}
           </p>
         </footer>
       </section>

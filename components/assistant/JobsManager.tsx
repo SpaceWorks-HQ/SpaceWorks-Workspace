@@ -120,7 +120,7 @@ export function JobsManager({
       {!configured ? <Callout tone="warning" title="The assistant isn't set up yet.">Jobs are saved but won&apos;t run until an AI key is added in instance settings.</Callout> : null}
 
       {jobs.length === 0 ? (
-        <EmptyState title="No scheduled jobs yet." action={<Button variant="primary" onClick={() => { setErrors({}); setDraft(fromTemplate("morning-digest")); }}>Start with the morning digest</Button>}>
+        <EmptyState patch title="No scheduled jobs yet." action={<Button variant="primary" onClick={() => { setErrors({}); setDraft(fromTemplate("morning-digest")); }}>Start with the morning digest</Button>}>
           A morning digest of what&apos;s due, what&apos;s on and what changed keeps the crew up to date.
         </EmptyState>
       ) : (

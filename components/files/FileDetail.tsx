@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Download, Ellipsis, Upload } from "lucide-react";
+import { Ellipsis } from "lucide-react";
 import { restoreFileVersionAction } from "@/app/actions/files";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { Button, IconButton } from "@/components/ui/button";
@@ -45,12 +45,12 @@ export function FileDetailActions({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap gap-2.5">
-        <Button asChild variant="primary" startIcon={<Download />}>
+        <Button asChild variant="primary" startIcon={null}>
           <a href={`/api/files/${file.id}?download=1`}>Download</a>
         </Button>
         {canEdit ? (
           <>
-            <Button variant="secondary" startIcon={<Upload />} disabled={uploads.busy} onClick={() => input.current?.click()}>Upload new version</Button>
+            <Button variant="secondary" startIcon={null} disabled={uploads.busy} onClick={() => input.current?.click()}>Upload new version</Button>
             <input
               ref={input}
               type="file"

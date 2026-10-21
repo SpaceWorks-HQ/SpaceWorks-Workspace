@@ -14,7 +14,7 @@ import {
   type SelectHTMLAttributes,
 } from "react";
 import * as SelectPrimitive from "@radix-ui/react-select";
-import { Check, ChevronDown } from "lucide-react";
+
 import { cn } from "@/lib/cn";
 import { controlClasses } from "./styles";
 
@@ -34,7 +34,7 @@ export const SelectTrigger = forwardRef<ElementRef<typeof SelectPrimitive.Trigge
     <SelectPrimitive.Trigger ref={ref} className={cn(controlClasses, "flex items-center justify-between gap-2 text-left data-[placeholder]:text-ink-muted", className)} {...props}>
       <span className="min-w-0 truncate">{children}</span>
       <SelectPrimitive.Icon asChild>
-        <ChevronDown aria-hidden className="size-[18px] shrink-0 text-ink-muted" />
+        <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">⌄</span>
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   );
@@ -66,7 +66,7 @@ export const SelectItem = forwardRef<
   return (
     <SelectPrimitive.Item
       ref={ref}
-      className={cn("relative flex min-h-10 cursor-pointer select-none items-start gap-2 rounded-md py-2 pl-3 pr-9 text-body-ui outline-none data-[disabled]:pointer-events-none data-[disabled]:text-ink-disabled data-[highlighted]:bg-muted", className)}
+      className={cn("relative flex min-h-11 cursor-pointer select-none items-start gap-2 rounded-md py-2 pl-3 pr-9 text-body-ui outline-none data-[disabled]:pointer-events-none data-[disabled]:text-ink-disabled data-[highlighted]:bg-muted", className)}
       {...props}
     >
       <span className="min-w-0">
@@ -74,7 +74,7 @@ export const SelectItem = forwardRef<
         {description ? <span className="block text-caption text-ink-muted">{description}</span> : null}
       </span>
       <SelectPrimitive.ItemIndicator className="absolute right-3 top-2.5">
-        <Check aria-hidden className="size-4" />
+        <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">✓</span>
       </SelectPrimitive.ItemIndicator>
     </SelectPrimitive.Item>
   );

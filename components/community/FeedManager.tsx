@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Copy } from "lucide-react";
+
 import { createFeedAction, revokeFeedAction } from "@/app/actions/community";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { Button } from "@/components/ui/button";
@@ -75,7 +75,7 @@ export function FeedManager({ slug, feeds }: { slug: string; feeds: FeedRow[] })
               <Callout tone="success" title="Here's your private link. Copy it now: it won't be shown again.">
                 <div className="mt-2 flex flex-col gap-2 sm:flex-row">
                   <Input readOnly value={shown.url} aria-label={`${feed.title} link`} onFocus={(event) => event.currentTarget.select()} />
-                  <Button variant="secondary" startIcon={<Copy />} onClick={() => copy(shown.url)}>Copy</Button>
+                  <Button variant="secondary" startIcon={null} onClick={() => copy(shown.url)}>Copy</Button>
                 </div>
                 <p className="mt-2 text-caption">
                   Google Calendar: Other calendars, then From URL. Apple Calendar:{" "}

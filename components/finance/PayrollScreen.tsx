@@ -31,7 +31,7 @@ export function PayrollScreen({
     today = localDate(new Date(), actor.workspace.timezone);
   const accessPanel = isOwner ? (
     <Card>
-      <div className="mb-4 flex flex-wrap gap-4"><Link className="min-h-11 py-3 text-primary underline" href={`${base}/payroll/dues`}>Payroll remittances</Link><Link className="min-h-11 py-3 text-primary underline" href={`${base}/advances`}>Staff advances and loans</Link></div>
+      <div className="mb-4 flex flex-wrap gap-4"><Link className="min-h-11 py-3 text-accent-text underline" href={`${base}/payroll/dues`}>Payroll remittances</Link><Link className="min-h-11 py-3 text-accent-text underline" href={`${base}/advances`}>Staff advances and loans</Link></div>
       <CardHeader
         title="Payroll access"
         description="Admin status does not grant payroll access. Choose who may view and who may manage pay records."
@@ -270,7 +270,7 @@ export function PayrollScreen({
         month
         currency={data.period.currency}
       />
-      <div className="flex flex-wrap gap-4"><Link className="min-h-11 py-3 text-primary underline" href={`${base}/payroll/dues`}>Payroll remittances</Link><Link className="min-h-11 py-3 text-primary underline" href={`${base}/advances`}>Staff advances and loans</Link></div>
+      <div className="flex flex-wrap gap-4"><Link className="min-h-11 py-3 text-accent-text underline" href={`${base}/payroll/dues`}>Payroll remittances</Link><Link className="min-h-11 py-3 text-accent-text underline" href={`${base}/advances`}>Staff advances and loans</Link></div>
       {accessPanel}
       <Card>
         <CardHeader

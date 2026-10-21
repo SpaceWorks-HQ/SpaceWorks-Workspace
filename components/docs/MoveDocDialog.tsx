@@ -68,7 +68,7 @@ export function MoveDocDialog({ slug, item, items, onClose }: { slug: string; it
         </DialogBody>
         <DialogFooter>
           <Button variant="secondary" onClick={onClose} disabled={pending}>Cancel</Button>
-          <Button variant="primary" onClick={submit} loading={pending} loadingLabel="Moving…">Move page</Button>
+          <Button variant="primary" onClick={submit} loading={pending} loadingLabel="Moving">Move page</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

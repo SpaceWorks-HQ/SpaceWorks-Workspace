@@ -13,7 +13,7 @@ export default async function AdminMfaPage() {
   const session = await requireSuperAdmin();
   const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { mfaEnabledAt: true } });
   return (
-    <AuthFrame title="Confirm it's you." description="Instance admin needs a fresh code from your authenticator app.">
+    <AuthFrame centered title="Confirm it's you." description="Instance admin needs a fresh code from your authenticator app.">
       {user?.mfaEnabledAt ? (
         <AdminMfaForm />
       ) : (

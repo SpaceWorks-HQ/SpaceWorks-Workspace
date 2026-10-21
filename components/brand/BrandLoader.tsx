@@ -1,9 +1,10 @@
 import { cn } from "@/lib/cn";
+import { Patch } from "./Patch";
 
-/** Maker Teal, Workshop Orange and an ink dot (cream in dark mode), hopping left to right in turn. */
+/** Teal, soft accent and an ink dot (cream in dark mode), hopping left to right in turn. */
 const DOTS = [
   { className: "bg-primary", delay: 0 },
-  { className: "bg-highlight", delay: 160 },
+  { className: "bg-accent-soft", delay: 160 },
   { className: "bg-ink", delay: 320 },
 ] as const;
 
@@ -30,11 +31,12 @@ export function BrandLoader({ size = 48, label = "Loading", className }: { size?
   );
 }
 
-/** Route-level loading state: the brand loader fixed in the centre of the viewport. */
+/** Route-level loading state. Patch is the single bold moment. */
 export function BrandPageLoader({ label }: { label?: string }) {
   return (
-    <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center">
-      <BrandLoader size={56} label={label} />
+    <div role="status" className="flex min-h-64 flex-col items-center justify-center gap-3">
+      <Patch pose="walk" size={128} />
+      <p className="text-body-ui text-ink-muted">{label ?? "Loading page"}</p>
     </div>
   );
 }

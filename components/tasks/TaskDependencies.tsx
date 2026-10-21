@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Link2, X } from "lucide-react";
+
 import { addDependencyAction, removeDependencyAction } from "@/app/actions/tasks";
 import { Button, IconButton } from "@/components/ui/button";
 import { Chip } from "@/components/ui/display";
@@ -24,7 +24,7 @@ function RefRow({ slug, item, onRemove, removeLabel }: { slug: string; item: Tas
       </Chip>
       {onRemove ? (
         <IconButton label={removeLabel} size="sm" onClick={onRemove}>
-          <X />
+          <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">×</span>
         </IconButton>
       ) : null}
     </li>
@@ -55,7 +55,7 @@ export function TaskDependencies({ slug, task, run }: { slug: string; task: Task
           Dependencies
         </h3>
         {canEdit && !open ? (
-          <Button variant="ghost" size="sm" startIcon={<Link2 />} onClick={() => setOpen(true)}>
+          <Button variant="ghost" size="sm" startIcon={null} onClick={() => setOpen(true)}>
             Link a task
           </Button>
         ) : null}

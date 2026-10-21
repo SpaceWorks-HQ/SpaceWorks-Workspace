@@ -366,14 +366,14 @@ export function ScheduleScreen({
   ];
   return (
     <div className="mx-auto flex max-w-6xl min-w-0 flex-col gap-6 p-4 sm:p-6">
-      <PageHeader
+      <PageHeader titleAs="h2"
         title="Recurring costs"
         description="Rent, utilities and other regular dues. Each payment goes through Finance bills."
       />
       <CostNav slug={slug} payroll={view.payrollView} />
       <Filters view={view} query={query} />
       <a
-        className="min-h-11 py-3 text-primary underline"
+        className="min-h-11 py-3 text-accent-text underline"
         href={`${base}/recurring/export?${new URLSearchParams({ ...query, kind: query.kind ?? "", export: "schedules" })}`}
       >
         Export schedules CSV
@@ -406,7 +406,7 @@ export function ScheduleScreen({
               <Card>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <Link
-                    className="min-h-11 break-words py-2 text-lg font-semibold text-primary underline"
+                    className="min-h-11 break-words py-2 text-lg font-semibold text-accent-text underline"
                     href={`${base}/recurring?edit=${r.id}`}
                   >
                     {r.title}
@@ -524,7 +524,7 @@ export function DuesScreen({
     pageBase = `${base}/${view.payrollOnly ? "payroll/dues" : "dues"}`;
   return (
     <div className="mx-auto flex max-w-6xl min-w-0 flex-col gap-6 p-4 sm:p-6">
-      <PageHeader
+      <PageHeader titleAs="h2"
         title={
           view.payrollOnly
             ? "Payroll remittances and recoveries"
@@ -539,7 +539,7 @@ export function DuesScreen({
       />
       <Filters view={view} query={query} dues />
       <a
-        className="min-h-11 py-3 text-primary underline"
+        className="min-h-11 py-3 text-accent-text underline"
         href={`${base}/recurring/export?${new URLSearchParams({ ...query, export: view.payrollOnly ? "payroll" : "dues" })}`}
       >
         Export dues CSV
@@ -596,14 +596,14 @@ export function DuesScreen({
                   {r.projected ? (
                     <Link
                       href={`${base}/recurring?edit=${r.scheduleId}`}
-                      className="inline-flex min-h-11 items-center text-primary underline"
+                      className="inline-flex min-h-11 items-center text-accent-text underline"
                     >
                       Review schedule
                     </Link>
                   ) : r.kind === "ADVANCE_RECOVERY" ? (
                     <Link
                       href={`${base}/advances`}
-                      className="inline-flex min-h-11 items-center text-primary underline"
+                      className="inline-flex min-h-11 items-center text-accent-text underline"
                     >
                       Record recovery
                     </Link>

@@ -174,7 +174,7 @@ export function FinanceAttachments({
           />
         </div>
       ) : null}
-      {pending ? <p role="status">Saving files…</p> : null}
+      {pending ? <p role="status">Saving files</p> : null}
       {error ? (
         <Callout tone="danger" role="alert">
           {error}

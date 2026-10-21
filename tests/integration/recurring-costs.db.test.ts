@@ -445,7 +445,8 @@ describe.sequential("manual recurring finance", () => {
   });
   it("keeps payroll bills out of general CSV and revokes private proof downloads", async () => {
     const due = await prisma.recurringCostDue.findFirstOrThrow({
-      where: { workspaceId: owner.workspace.id, payRunId: runId },
+      // The statutory payment test below needs its salary-tax bill without proof.
+      where: { workspaceId: owner.workspace.id, payRunId: runId, kind: { not: "SALARY_TDS" } },
     });
     const [file] = await uploadFinanceFiles(owner, "BILL", due.billId, [pdf()]);
     expect(await findDownloadableFile(file!.id, owner.user.id)).not.toBeNull();

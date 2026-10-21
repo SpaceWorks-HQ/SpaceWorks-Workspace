@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Paperclip } from "lucide-react";
+
 import { LedgerFilterForm } from "@/components/finance/LedgerFilters";
 import { LedgerRowActions, LedgerToolbar } from "@/components/finance/LedgerControls";
 import { Button } from "@/components/ui/button";
@@ -75,7 +75,7 @@ export default async function LedgerPage({ params, searchParams }: PageProps<"/w
       </dl>
 
       {ledger.rows.length === 0 ? (
-        <EmptyState
+        <EmptyState patch
           mood="sleepy"
           title={filtered ? "Nothing matches these filters." : "No entries yet."}
           action={filtered ? <Button asChild variant="secondary"><Link href={ledgerHref}>Clear filters</Link></Button> : null}
@@ -119,7 +119,7 @@ export default async function LedgerPage({ params, searchParams }: PageProps<"/w
                       {row.budget ? <span>Budget: {row.budget.name}</span> : null}
                       {row.receiptFileId ? (
                         <a href={`/api/files/${row.receiptFileId}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-accent-text underline underline-offset-4">
-                          <Paperclip aria-hidden className="size-3.5" />
+                          {null}
                           Receipt
                         </a>
                       ) : null}

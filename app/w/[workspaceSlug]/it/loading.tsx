@@ -1,1 +1,5 @@
-export default function Loading() { return <div role="status" className="space-y-3 rounded-xl border border-line bg-panel p-6"><h2 className="text-h2">Loading records…</h2><p className="text-ink-muted">Your workspace records will appear here.</p></div>; }
+import { BrandPageLoader } from "@/components/brand/BrandLoader";
+
+export default function Loading() {
+  return <BrandPageLoader label="Loading records" />;
+}

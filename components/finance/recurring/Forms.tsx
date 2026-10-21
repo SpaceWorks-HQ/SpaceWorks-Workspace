@@ -60,7 +60,7 @@ export function RecurringForm({
             </div>
           </details>
         ) : null}
-        <Button type="submit" loading={pending} loadingLabel="Saving…">
+        <Button type="submit" loading={pending} loadingLabel="Saving">
           {button}
         </Button>
       </fieldset>

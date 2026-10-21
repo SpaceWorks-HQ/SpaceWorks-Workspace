@@ -1,3 +1,4 @@
+import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Chip } from "@/components/ui/display";
 import { formatDay } from "@/lib/finance/dates";
 import { INVOICE_STATUS_LABEL, type InvoiceStatusValue } from "@/lib/finance/invoice";
@@ -64,28 +65,28 @@ export function InvoiceDocument({ invoice, workspaceName, overdue }: { invoice: 
       </section>
 
       <div className="overflow-x-auto py-6">
-        <table className="w-full min-w-[480px] border-collapse text-left text-body-ui">
-          <thead>
-            <tr className="border-b border-line text-sm text-ink-muted">
-              <th scope="col" className="py-2 pr-4 font-semibold">Item</th>
-              <th scope="col" className="py-2 pr-4 text-right font-semibold">Qty</th>
-              <th scope="col" className="py-2 pr-4 text-right font-semibold">Unit price</th>
-              {anyTax ? <th scope="col" className="py-2 pr-4 text-right font-semibold">Tax</th> : null}
-              <th scope="col" className="py-2 text-right font-semibold">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table className="w-full min-w-[480px] border-collapse text-left text-body-ui">
+          <THead>
+            <TR className="border-b border-line text-sm text-ink-muted">
+              <TH scope="col" className="py-2 pr-4 font-semibold">Item</TH>
+              <TH scope="col" className="py-2 pr-4 text-right font-semibold">Qty</TH>
+              <TH scope="col" className="py-2 pr-4 text-right font-semibold">Unit price</TH>
+              {anyTax ? <TH scope="col" className="py-2 pr-4 text-right font-semibold">Tax</TH> : null}
+              <TH scope="col" className="py-2 text-right font-semibold">Amount</TH>
+            </TR>
+          </THead>
+          <TBody>
             {invoice.items.map((item, index) => (
-              <tr key={index} className="border-b border-line align-top">
-                <td className="py-3 pr-4">{item.description}</td>
-                <td className="py-3 pr-4 text-right tabular-nums">{item.quantity}</td>
-                <td className="py-3 pr-4 text-right tabular-nums">{money(item.unitMinor)}</td>
-                {anyTax ? <td className="py-3 pr-4 text-right tabular-nums">{item.taxBps ? `${money(lineTaxMinor(item))} (${formatBps(item.taxBps)})` : "—"}</td> : null}
-                <td className="py-3 text-right tabular-nums">{money(lineSubtotalMinor(item))}</td>
-              </tr>
+              <TR key={index} className="border-b border-line align-top">
+                <TD className="py-3 pr-4">{item.description}</TD>
+                <TD className="py-3 pr-4 text-right tabular-nums">{item.quantity}</TD>
+                <TD className="py-3 pr-4 text-right tabular-nums">{money(item.unitMinor)}</TD>
+                {anyTax ? <TD className="py-3 pr-4 text-right tabular-nums">{item.taxBps ? `${money(lineTaxMinor(item))} (${formatBps(item.taxBps)})` : "—"}</TD> : null}
+                <TD className="py-3 text-right tabular-nums">{money(lineSubtotalMinor(item))}</TD>
+              </TR>
             ))}
-          </tbody>
-        </table>
+          </TBody>
+        </Table>
         <dl className="ml-auto mt-4 grid max-w-72 grid-cols-[1fr_auto] gap-x-6 gap-y-1 text-body-ui">
           <dt className="text-ink-muted">Subtotal</dt>
           <dd className="text-right tabular-nums">{money(totals.subtotalMinor)}</dd>

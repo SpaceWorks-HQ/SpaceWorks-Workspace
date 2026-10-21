@@ -50,7 +50,7 @@ export const MenuItem = forwardRef<
       ref={ref}
       asChild={Boolean(slotted)}
       className={cn(
-        "flex min-h-10 cursor-pointer select-none items-center gap-2.5 rounded-md px-3 py-2 text-body-ui outline-none data-[disabled]:pointer-events-none data-[disabled]:text-ink-disabled data-[highlighted]:bg-muted [&_svg]:size-[18px] [&_svg]:shrink-0",
+        "flex min-h-11 cursor-pointer select-none items-center gap-2.5 rounded-md px-3 py-2 text-body-ui outline-none data-[disabled]:pointer-events-none data-[disabled]:text-ink-disabled data-[highlighted]:bg-muted [&_svg]:size-5 [&_svg]:shrink-0",
         danger ? "text-danger-fg" : "text-ink",
         className,
       )}

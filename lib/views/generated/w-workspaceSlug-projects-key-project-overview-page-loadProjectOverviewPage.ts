@@ -25,5 +25,6 @@ const [overview, summary, owner, linkedRepo] = await Promise.all([
 const total = overview.columns.reduce((sum, column) => sum + column.count, 0);
 const done = overview.columns.filter((column) => column.category === "DONE").reduce((sum, column) => sum + column.count, 0);
 const base = `/w/${context.workspace.slug}/projects/${project.key}`;
-return viewDto({ project, plan, timeZone, overview, summary, owner, linkedRepo, total, done, base } as const);
+const projectId = project.id;
+return viewDto({ plan, timeZone, overview, summary, owner, linkedRepo, total, done, base, projectId } as const);
 }

@@ -19,8 +19,8 @@ export function OpsForm({ action, children, submit, hidden = {}, secondary = fal
   }, null);
   return <Errors.Provider value={state && !state.ok ? state.fieldErrors ?? {} : {}}><form action={formAction} className="space-y-4" aria-busy={pending}>
     {Object.entries(hidden).map(([key, value]) => <input key={key} type="hidden" name={key} value={value} />)}
-    <fieldset disabled={pending} className="min-w-0 space-y-4">{children}<Button type="submit" variant={secondary ? "secondary" : "primary"} loading={pending} loadingLabel="Saving…">{submit}</Button></fieldset>
-    <div aria-live="polite" aria-atomic="true">{state ? state.ok ? <p role="status" className="text-sm text-success-fg">{state.data?.startsWith("/w/") ? "Saved. Opening the record…" : state.data}</p> : <p role="alert" className="text-sm text-danger-fg">{state.error}</p> : null}</div>
+    <fieldset disabled={pending} className="min-w-0 space-y-4">{children}<Button type="submit" variant={secondary ? "secondary" : "primary"} loading={pending} loadingLabel="Saving">{submit}</Button></fieldset>
+    <div aria-live="polite" aria-atomic="true">{state ? state.ok ? <p role="status" className="text-sm text-success-fg">{state.data?.startsWith("/w/") ? "Saved. Opening the record" : state.data}</p> : <p role="alert" className="text-sm text-danger-fg">{state.error}</p> : null}</div>
   </form></Errors.Provider>;
 }
 export function TextField({ name, label, type = "text", defaultValue, required = true, maxLength = 160, min, max, helper }: { name: string; label: string; type?: string; defaultValue?: string | number; required?: boolean; maxLength?: number; min?: string | number; max?: string | number; helper?: string }) {

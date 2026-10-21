@@ -20,7 +20,7 @@ export default async function LoginPage() {
   const ssoMfa = Boolean((session as typeof session & { ssoMfa?: SsoMfaChallenge })?.ssoMfa);
   return (
     <AuthFrame title="Welcome back." description="Sign in to your community workspace.">
-      <Suspense fallback={<p className="text-body-ui text-ink-muted">Loading sign in…</p>}>
+      <Suspense fallback={<p className="text-body-ui text-ink-muted">Loading sign in</p>}>
         <LoginForm googleEnabled={googleEnabled} oidcProviders={oidcProviders} ssoMfa={ssoMfa} />
       </Suspense>
     </AuthFrame>

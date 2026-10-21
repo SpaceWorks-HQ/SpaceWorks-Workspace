@@ -63,7 +63,7 @@ function prefersReducedMotion() {
 
 /** The feathered edge animates a registered custom property (see globals.css). */
 function supportsFeatheredReveal() {
-  return typeof CSS !== "undefined" && typeof CSS.registerProperty === "function" && CSS.supports("mask-image", "radial-gradient(circle, #000, transparent)");
+  return typeof CSS !== "undefined" && typeof CSS.registerProperty === "function" && CSS.supports("mask-image", "radial-gradient(circle, currentColor, transparent)");
 }
 
 /**
@@ -82,7 +82,7 @@ function transitionColorMode(commit: () => void, origin?: ColorModeOrigin) {
   if (typeof doc.startViewTransition !== "function") {
     root.classList.add("yy-theme-fade");
     commit();
-    window.setTimeout(() => root.classList.remove("yy-theme-fade"), 460);
+    window.setTimeout(() => root.classList.remove("yy-theme-fade"), 160);
     return;
   }
   const x = origin?.x ?? window.innerWidth - 40;
@@ -101,7 +101,7 @@ function transitionColorMode(commit: () => void, origin?: ColorModeOrigin) {
   const transition = doc.startViewTransition(commit);
   // Hold the final frame: without fill the mask snaps back to 0 for a frame
   // before the transition tears down, flashing the old mode.
-  const timing: KeyframeAnimationOptions = { duration: 720, easing: "cubic-bezier(0.45, 0, 0.2, 1)", fill: "forwards", pseudoElement: "::view-transition-new(root)" };
+  const timing: KeyframeAnimationOptions = { duration: 240, easing: "cubic-bezier(0.45, 0, 0.2, 1)", fill: "forwards", pseudoElement: "::view-transition-new(root)" };
   transition.ready
     .then(() => {
       root.animate(

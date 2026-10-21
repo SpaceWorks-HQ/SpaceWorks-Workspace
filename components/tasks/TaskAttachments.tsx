@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ArrowUpRight, Paperclip, X } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { removeTaskAttachmentAction, uploadTaskAttachmentAction } from "@/app/actions/tasks";
 import { Button, IconButton } from "@/components/ui/button";
 import { formatRelativeTime } from "@/lib/format/datetime";
@@ -56,7 +56,7 @@ export function TaskAttachments({ slug, task, run }: { slug: string; task: TaskD
             <input ref={input} type="file" multiple className="sr-only" tabIndex={-1} aria-hidden onChange={(event) => void upload(event.target.files)} />
             <input ref={camera} type="file" accept="image/*,application/pdf" capture="environment" multiple className="sr-only" tabIndex={-1} aria-hidden onChange={event => void upload(event.target.files)} />
             <Button variant="secondary" size="sm" disabled={busy} onClick={() => camera.current?.click()}>Add photo or PDF</Button>
-            <Button variant="ghost" size="sm" startIcon={<Paperclip />} loading={busy} loadingLabel="Uploading" onClick={() => input.current?.click()}>
+            <Button variant="ghost" size="sm" startIcon={null} loading={busy} loadingLabel="Uploading" onClick={() => input.current?.click()}>
               Attach files
             </Button>
           </>
@@ -78,7 +78,7 @@ export function TaskAttachments({ slug, task, run }: { slug: string; task: TaskD
               </a>
               {file.canDelete ? (
                 <IconButton label={`Remove ${file.filename}`} onClick={() => void run(() => removeTaskAttachmentAction(slug, { taskId: task.id, fileId: file.id }), "Attachment removed.")}>
-                  <X />
+                  <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">×</span>
                 </IconButton>
               ) : null}
             </li>

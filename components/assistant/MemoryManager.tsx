@@ -71,7 +71,7 @@ export function MemoryManager({ slug, query, memories }: { slug: string; query: 
       </form>
 
       {memories.length === 0 ? (
-        <EmptyState title={query ? "Nothing in memory matches that." : "Nothing in memory yet."}>
+        <EmptyState patch title={query ? "Nothing in memory matches that." : "Nothing in memory yet."}>
           {query ? "Try other words or clear the search." : "Add a fact above, or ask the assistant to remember something in chat."}
         </EmptyState>
       ) : (

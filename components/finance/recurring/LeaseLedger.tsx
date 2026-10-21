@@ -1,3 +1,4 @@
+import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import Link from "next/link";
 import { RecurringForm } from "./Forms";
 import { hidden, pretty as date } from "./Screen";
@@ -25,7 +26,7 @@ export function LeaseLedger({
           <div className="flex flex-wrap gap-3">
             <Link
               href={`/w/${slug}/finance/recurring?edit=${schedule.id}`}
-              className="inline-flex min-h-11 items-center text-primary underline"
+              className="inline-flex min-h-11 items-center text-accent-text underline"
             >
               Review rent schedule
             </Link>
@@ -40,12 +41,12 @@ export function LeaseLedger({
             tabIndex={0}
             className="overflow-x-auto"
           >
-            <table className="w-full text-left text-sm">
+            <Table className="w-full text-left text-sm">
               <caption className="sr-only">
                 Dated rent bills and payments
               </caption>
-              <thead>
-                <tr>
+              <THead>
+                <TR>
                   {[
                     "Due",
                     "Amount",
@@ -54,50 +55,50 @@ export function LeaseLedger({
                     "Outstanding",
                     "Receipt",
                   ].map((t) => (
-                    <th
+                    <TH
                       key={t}
                       className="whitespace-nowrap border-b border-line p-3"
                       scope="col"
                     >
                       {t}
-                    </th>
+                    </TH>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
+                </TR>
+              </THead>
+              <TBody>
                 {schedule.dues.map((d) => (
-                  <tr key={d.id}>
-                    <td className="p-3">{date(d.dueOn)}</td>
-                    <td className="p-3">
+                  <TR key={d.id}>
+                    <TD className="p-3">{date(d.dueOn)}</TD>
+                    <TD className="p-3">
                       {formatMoney(d.bill.amountMinor, d.bill.currency)}
-                    </td>
-                    <td className="p-3">
+                    </TD>
+                    <TD className="p-3">
                       {d.bill.payments.length
                         ? d.bill.payments.map((p) => date(p.paidOn)).join(", ")
                         : "Unpaid"}
-                    </td>
-                    <td className="p-3">
+                    </TD>
+                    <TD className="p-3">
                       {formatMoney(
                         d.bill.paidMinor >= d.bill.amountMinor
                           ? d.bill.tdsMinor
                           : 0,
                         d.bill.currency,
                       )}
-                    </td>
-                    <td className="p-3">
+                    </TD>
+                    <TD className="p-3">
                       {formatMoney(
                         d.bill.amountMinor - d.bill.paidMinor,
                         d.bill.currency,
                       )}
-                    </td>
-                    <td className="min-w-48 p-3">
+                    </TD>
+                    <TD className="min-w-48 p-3">
                       <FilePreviews files={view.files[d.billId] ?? []} />
                       {!view.files[d.billId]?.length ? "No receipt yet" : null}
-                    </td>
-                  </tr>
+                    </TD>
+                  </TR>
                 ))}
-              </tbody>
-            </table>
+              </TBody>
+            </Table>
           </div>
           {!schedule.dues.length ? (
             <p>
@@ -146,7 +147,7 @@ export function LeaseLedger({
               ))}
           </ul>
           <Link
-            className="inline-flex min-h-11 items-center text-primary underline"
+            className="inline-flex min-h-11 items-center text-accent-text underline"
             href={`/w/${slug}/money-controls/cash?edit=${deposit.id}`}
           >
             Record refund or review deposit proof
@@ -156,7 +157,7 @@ export function LeaseLedger({
         <p className="text-sm text-ink-secondary">
           Record the security deposit in{" "}
           <Link
-            className="text-primary underline"
+            className="text-accent-text underline"
             href={`/w/${slug}/money-controls/cash`}
           >
             Money controls

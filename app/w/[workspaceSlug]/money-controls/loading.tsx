@@ -1,7 +1,5 @@
+import { BrandPageLoader } from "@/components/brand/BrandLoader";
+
 export default function Loading() {
-  return (
-    <p role="status" className="p-5 text-body-ui text-ink-muted">
-      Loading money controls…
-    </p>
-  );
+  return <BrandPageLoader label="Loading money controls" />;
 }

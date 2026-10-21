@@ -221,4 +221,5 @@ export const canReadStaffAdvance = (m: RoleHolder, grant: PayrollGrant, userId: 
 /** Project plans and check-ins: project lead or workspace admins; guests read only. */
 export function canManageProjectPlan(m: RoleHolder, userId: string, ownerId: string | null) {
   return atLeast(m, "ADMIN") || (atLeast(m, "MEMBER") && userId === ownerId);
+}
 export const canEditTaskPlan = (m: RoleHolder) => atLeast(m, "MEMBER");

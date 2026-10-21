@@ -619,7 +619,7 @@ export function FinanceToolScreen({
                   </Chip>
                 }
               />
-              {b.needsActual && manage ? <a className="inline-flex min-h-11 items-center text-primary underline" href={`/w/${slug}/finance/dues`}>Enter the actual amount in Upcoming dues</a> : null}
+              {b.needsActual && manage ? <a className="inline-flex min-h-11 items-center text-accent-text underline" href={`/w/${slug}/finance/dues`}>Enter the actual amount in Upcoming dues</a> : null}
               <p className="text-title">
                 {formatMoney(b.amountMinor, b.currency)} total ·{" "}
                 {formatMoney(b.amountMinor - b.paidMinor, b.currency)} unpaid

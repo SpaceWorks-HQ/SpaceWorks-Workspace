@@ -298,7 +298,7 @@ export function RecordForm({
             errors={result && !result.ok ? result.fieldErrors : undefined}
           />
           <Button type="submit" disabled={pending}>
-            {pending ? "Saving…" : record ? "Save changes" : "Add record"}
+            {pending ? "Saving" : record ? "Save changes" : "Add record"}
           </Button>
         </fieldset>
         {result && !result.ok ? (
@@ -355,7 +355,7 @@ export function OperationButton({
         disabled={pending}
         onClick={() => (confirm ? setOpen(true) : run())}
       >
-        {pending ? "Saving…" : children}
+        {pending ? "Saving" : children}
       </Button>
       {error ? (
         <p role="alert" className="text-danger-fg">
@@ -423,7 +423,7 @@ export function AgmForm({ slug, choices }: { slug: string; choices: Choices }) {
         ]}
       />
       <Button variant="secondary" type="submit" disabled={pending}>
-        {pending ? "Adding…" : "Add AGM checklist"}
+        {pending ? "Adding" : "Add AGM checklist"}
       </Button>
       <p role="status">{message}</p>
     </form>

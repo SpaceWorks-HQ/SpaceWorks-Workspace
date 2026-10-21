@@ -30,7 +30,7 @@ export default async function DeletedFilesPage({ params }: PageProps<"/w/[worksp
         description={`Deleted files stay here for ${FILE_TRASH_DAYS} days, then they and their versions are removed for good.`}
       />
       {files.length === 0 ? (
-        <EmptyState title="Nothing deleted.">Files you delete wait here for {FILE_TRASH_DAYS} days in case you need them back.</EmptyState>
+        <EmptyState patch title="Nothing deleted.">Files you delete wait here for {FILE_TRASH_DAYS} days in case you need them back.</EmptyState>
       ) : (
         <Card padding="none">
           <ul className="divide-y divide-line">

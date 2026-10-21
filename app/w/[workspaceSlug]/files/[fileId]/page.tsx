@@ -95,7 +95,7 @@ export default async function FilePage({ params }: PageProps<"/w/[workspaceSlug]
             </div>
           ) : preview ? (
             <div className="flex flex-col">
-              <pre className="max-h-[70vh] overflow-auto whitespace-pre-wrap break-words bg-surface p-5 font-mono text-sm text-ink">{preview.text}</pre>
+              <pre className="max-h-[70vh] overflow-auto whitespace-pre-wrap break-words bg-surface p-5 code-text text-sm text-ink">{preview.text}</pre>
               {preview.truncated ? <p className="border-t border-line px-5 py-3 text-caption text-ink-muted">Showing the first 100 KB. Download the file to see all of it.</p> : null}
             </div>
           ) : (

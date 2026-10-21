@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronsUpDown, Columns3, List } from "lucide-react";
+import { ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SegmentedControl } from "@/components/ui/choice";
 import { Avatar } from "@/components/ui/display";
@@ -48,8 +48,8 @@ export function FilterBar({ query, onChange, members, labels }: { query: TaskQue
           value={query.view}
           onValueChange={(view) => onChange({ ...query, view })}
           options={[
-            { value: "board", label: "Board", icon: <Columns3 aria-hidden /> },
-            { value: "list", label: "List", icon: <List aria-hidden /> },
+            { value: "board", label: "Board" },
+            { value: "list", label: "List" },
           ]}
         />
       </div>
