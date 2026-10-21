@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Pin, Plus, Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { createNoteAction } from "@/app/actions/notepad";
 import { Patch } from "@/components/brand/Patch";
 import { useToast } from "@/components/feedback/ToastProvider";
@@ -126,7 +126,7 @@ function NoteSection({ label, notes, timeZone, onOpen }: { label: string | null;
             >
               <span className="flex items-start justify-between gap-2">
                 <span className={cn("text-label", note.title ? "text-ink" : "text-ink-muted")}>{note.title || "Untitled note"}</span>
-                {note.pinned ? <Pin aria-label="Pinned" className="size-4 shrink-0 text-ink" /> : null}
+                {note.pinned ? <span className="inline-flex items-center justify-center text-xs font-semibold">Pinned</span> : null}
               </span>
               {note.excerpt ? <span className="line-clamp-6 whitespace-pre-line text-body-ui text-ink-secondary">{note.excerpt}</span> : null}
               <span className="flex items-center justify-between gap-2 text-caption text-ink-muted">

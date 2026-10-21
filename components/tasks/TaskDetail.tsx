@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Archive, ArrowUpRight, Check, Ellipsis, Link as LinkIcon, RotateCcw } from "lucide-react";
+import { Archive, ArrowUpRight, Ellipsis } from "lucide-react";
 import {
   loadTaskAction,
   moveTaskAction,
@@ -30,6 +30,7 @@ import { BlockedChip, DueChip, PriorityChip } from "./bits";
 import { MultiSelect } from "./MultiSelect";
 import { RepeatControl } from "./RepeatControl";
 import { RichTextEditor, RichTextView } from "./RichTextEditor";
+import { TaskPlan } from "@/components/projects/TaskPlan";
 import { TaskAttachments } from "./TaskAttachments";
 import { TaskComments } from "./TaskComments";
 import { TaskDependencies } from "./TaskDependencies";
@@ -310,7 +311,7 @@ export function TaskDetail({ slug, initial, variant, onChanged }: { slug: string
         <TitleEditor value={task.title} as={isPage ? "h1" : "h2"} editable={canEdit} onSave={(title) => run(() => updateTaskAction(slug, { taskId: task.id, title }))} />
         <div className="flex flex-wrap items-center gap-2">
           {task.completedAt ? (
-            <Chip tone="success" icon={<Check />}>
+            <Chip tone="success" icon={null}>
               Done
             </Chip>
           ) : column ? (
@@ -318,7 +319,7 @@ export function TaskDetail({ slug, initial, variant, onChanged }: { slug: string
           ) : (
             <Chip tone="neutral">Open</Chip>
           )}
-          {task.blockedBy.some((item) => !item.completedAt && !item.archivedAt) ? <BlockedChip size="md" /> : null}
+          {(Boolean(task.blockerReason) || task.blockedBy.some((item) => !item.completedAt && !item.archivedAt)) ? <BlockedChip size="md" /> : null}
           {task.archivedAt ? <Chip tone="outline">Archived</Chip> : null}
           <DueChip dueAt={task.dueAt} completedAt={task.completedAt} timeZone={task.timeZone} size="md" />
           <div className="ml-auto flex items-center gap-1.5">
@@ -326,7 +327,7 @@ export function TaskDetail({ slug, initial, variant, onChanged }: { slug: string
               <Button
                 variant={task.completedAt ? "secondary" : "primary"}
                 size="sm"
-                startIcon={task.completedAt ? <RotateCcw /> : <Check />}
+                startIcon={task.completedAt ? undefined : <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">✓</span>}
                 onClick={() => void run(() => setTaskCompletedAction(slug, { taskId: task.id, completed: !task.completedAt }), task.completedAt ? `${reference} reopened.` : `${reference} done. Nice work.`)}
               >
                 {task.completedAt ? "Reopen" : "Mark done"}
@@ -347,12 +348,12 @@ export function TaskDetail({ slug, initial, variant, onChanged }: { slug: string
                 </IconButton>
               </MenuTrigger>
               <MenuContent>
-                <MenuItem icon={<LinkIcon />} onSelect={() => void copyLink()}>
+                <MenuItem icon={null} onSelect={() => void copyLink()}>
                   Copy link
                 </MenuItem>
                 {task.permissions.canEdit ? (
                   task.archivedAt ? (
-                    <MenuItem icon={<RotateCcw />} onSelect={() => void run(() => setTaskArchivedAction(slug, { taskId: task.id, archived: false }), `${reference} restored.`)}>
+                    <MenuItem icon={null} onSelect={() => void run(() => setTaskArchivedAction(slug, { taskId: task.id, archived: false }), `${reference} restored.`)}>
                       Restore task
                     </MenuItem>
                   ) : (
@@ -426,6 +427,7 @@ export function TaskDetail({ slug, initial, variant, onChanged }: { slug: string
               <p className="text-body-ui text-ink-muted">{canEdit ? "Add the details someone needs to pick this up." : "No description."}</p>
             )}
           </section>
+          <TaskPlan key={`${task.id}-${task.updatedAt}`} slug={slug} task={task} reload={reload} />
           <TaskSubtasks slug={slug} task={task} run={run} />
           <TaskDependencies slug={slug} task={task} run={run} />
           <TaskAttachments slug={slug} task={task} run={run} />

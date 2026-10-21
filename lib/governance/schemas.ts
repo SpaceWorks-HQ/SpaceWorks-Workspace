@@ -122,6 +122,7 @@ const permitDetails = z.object({
   reference: z.string().trim().min(1, "Enter the number.").max(300),
   scope: notes,
   sumInsuredMinor: z.number().int().min(0).max(2147483647).default(0),
+  premiumFrequency: z.enum(["MONTHLY","QUARTERLY","YEARLY"]).default("YEARLY"),
   premiumMinor: z.number().int().min(0).max(2147483647).default(0),
   currency: z.string().refine(isValidCurrency, "Choose a currency."),
   obligationId: id,

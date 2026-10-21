@@ -1,7 +1,5 @@
+import { BrandPageLoader } from "@/components/brand/BrandLoader";
+
 export default function Loading() {
-  return (
-    <div className="p-6" role="status">
-      <p className="text-ink-muted">Loading ideas…</p>
-    </div>
-  );
+  return <BrandPageLoader label="Loading ideas" />;
 }

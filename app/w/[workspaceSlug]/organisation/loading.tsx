@@ -1,2 +1,5 @@
-import { OpsLoading } from "@/components/ops-gaps/Shared";
-export default OpsLoading;
+import { BrandPageLoader } from "@/components/brand/BrandLoader";
+
+export default function Loading() {
+  return <BrandPageLoader label="Loading organisation" />;
+}

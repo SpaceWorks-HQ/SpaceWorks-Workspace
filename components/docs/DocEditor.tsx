@@ -29,8 +29,8 @@ export type DocView = {
 const STATUS_LABEL: Record<SaveStatus, string> = {
   saved: "Saved",
   dirty: "Unsaved changes",
-  saving: "Saving…",
-  error: "Couldn't save. Retrying…",
+  saving: "Saving",
+  error: "Couldn't save. Retrying",
   conflict: "Not saved",
 };
 
@@ -265,7 +265,7 @@ export function DocEditor({
         <div className="sticky top-0 z-10 -mx-2 rounded-lg border border-line bg-panel px-2 py-1.5">
           <EditorToolbar editor={editor} imageBusy={imageProgress !== null} onPickImage={() => fileInput.current?.click()} />
           {imageProgress !== null ? (
-            <p className="px-1 pt-1 text-caption text-ink-muted" aria-live="polite">Uploading image… {Math.round(imageProgress * 100)}%</p>
+            <p className="px-1 pt-1 text-caption text-ink-muted" aria-live="polite">Uploading image {Math.round(imageProgress * 100)}%</p>
           ) : null}
           <input
             ref={fileInput}

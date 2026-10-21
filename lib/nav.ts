@@ -45,6 +45,7 @@ export const NAV_GROUPS: readonly NavGroupConfig[] = [
     label: "Work",
     items: [
       { key: "projects", label: "Projects", path: "/projects", minRole: "GUEST" },
+      { key: "project-blockers", label: "Project blockers", path: "/projects/blockers", minRole: "GUEST" },
       { key: "calendar", label: "Calendar", path: "/calendar", minRole: "MEMBER", exact: true },
       { key: "my-tasks", label: "My tasks", path: "/my-tasks", minRole: "MEMBER" },
       { key: "notepad", label: "Notepad", path: "/notepad", minRole: "GUEST" },
@@ -79,6 +80,7 @@ export const NAV_GROUPS: readonly NavGroupConfig[] = [
       { key: "marketing", label: "Marketing", path: "/marketing", minRole: "MEMBER" },
       { key: "it", label: "IT administration", path: "/it", minRole: "MEMBER" },
       { key: "social", label: "Social", path: "/social", minRole: "MEMBER" },
+      { key: "product-ops", label: "Product and engineering", path: "/product-ops", minRole: "MEMBER" },
       { key: "funding", label: "Funding and impact", path: "/funding", minRole: "ADMIN" },
       { key: "safeguarding", label: "Safeguarding", path: "/safeguarding", minRole: "MEMBER" },
       { key: "governance", label: "Governance", path: "/governance", minRole: "ADMIN" },
@@ -94,6 +96,7 @@ export const NAV_GROUPS: readonly NavGroupConfig[] = [
       { key: "documents", label: "Documents", path: "/documents", minRole: "ADMIN" },
       { key: "finance", label: "Finance", path: "/finance", minRole: "MEMBER", requires: "finance" },
       { key: "money-controls", label: "Money controls", path: "/money-controls", minRole: "ADMIN" },
+      { key: "staff-advances", label:"Staff advances", path:"/finance/advances", minRole:"MEMBER" },
       { key: "payroll", label: "Payroll", path: "/finance/payroll", minRole: "MEMBER", requires: "payroll" },
       { key: "secrets", label: "Secrets", path: "/secrets", minRole: "MEMBER" },
       { key: "subscriptions", label: "Subscriptions", path: "/subscriptions", minRole: "MEMBER" },

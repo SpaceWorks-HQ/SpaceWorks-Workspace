@@ -615,10 +615,11 @@ export function FinanceToolScreen({
                     {b.paidMinor < b.amountMinor && isoDay(b.dueOn) < today
                       ? "Overdue · "
                       : ""}
-                    {billStatus(b.amountMinor, b.paidMinor)}
+                    {b.needsActual ? "Needs actual amount" : billStatus(b.amountMinor, b.paidMinor)}
                   </Chip>
                 }
               />
+              {b.needsActual && manage ? <a className="inline-flex min-h-11 items-center text-accent-text underline" href={`/w/${slug}/finance/dues`}>Enter the actual amount in Upcoming dues</a> : null}
               <p className="text-title">
                 {formatMoney(b.amountMinor, b.currency)} total ·{" "}
                 {formatMoney(b.amountMinor - b.paidMinor, b.currency)} unpaid

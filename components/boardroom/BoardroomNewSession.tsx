@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import { createBoardroomSessionAction } from "@/app/actions/boardroom";
 import { Button, IconButton } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/display";
@@ -59,7 +59,7 @@ export function BoardroomNewSession({ slug }: { slug: string }) {
                 <Textarea rows={2} value={seat.persona} maxLength={600} required onChange={(e) => setSeats(seats.map((s, i) => (i === index ? { ...s, persona: e.target.value } : s)))} />
               </Field>
               <IconButton label={`Remove ${seat.name || "seat"}`} size="sm" disabled={seats.length <= 2} onClick={() => setSeats(seats.filter((_, i) => i !== index))}>
-                <X />
+                <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">×</span>
               </IconButton>
             </div>
           ))}

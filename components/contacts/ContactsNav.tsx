@@ -9,7 +9,7 @@ export function ContactsNav({ slug }: { slug: string }) {
     {[["", "Contacts"], ["/organisations", "Organisations"], ["/pipeline", "Pipeline"]].map(([suffix, label]) => {
       const href = `${base}${suffix}`;
       const active = suffix ? pathname.startsWith(href) : !pathname.startsWith(`${base}/organisations`) && !pathname.startsWith(`${base}/pipeline`);
-      return <Link key={href} href={href} aria-current={active ? "page" : undefined} className={`flex min-h-11 items-center border-b-2 ${active ? "border-primary text-ink" : "border-transparent text-ink-muted hover:text-ink"}`}>{label}</Link>;
+      return <Link key={href} href={href} aria-current={active ? "page" : undefined} className={`flex min-h-11 items-center border-b-2 ${active ? "border-accent-text text-ink" : "border-transparent text-ink-muted hover:text-ink"}`}>{label}</Link>;
     })}
   </nav>;
 }

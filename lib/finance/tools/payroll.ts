@@ -1,4 +1,5 @@
 import "server-only";
+import { createRemittances } from "@/lib/finance/recurring/service";
 import { prisma } from "@/lib/db";
 import { decryptSecret, encryptSecret } from "@/lib/crypto";
 import { toolSchemas, payTotals } from "@/lib/finance/tools-rules";
@@ -237,6 +238,7 @@ export async function transitionPayRun(actor: FinanceActor, input: unknown) {
           reference: v.reference,
         },
       });
+      await createRemittances(tx, {...row,status:"PAID",paidOn:dateOnly(v.paidOn)});
     } else {
       if (row.status !== "PAID" || !row.paidOn)
         throw new FinanceError(

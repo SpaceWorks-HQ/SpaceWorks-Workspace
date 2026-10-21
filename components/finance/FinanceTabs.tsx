@@ -11,6 +11,7 @@ export function FinanceTabs({ base, canManage, canView = true, payroll = false }
     { href: `${base}/invoices`, label: "Invoices", active: pathname.startsWith(`${base}/invoices`) },
     { href: `${base}/funds`, label: "Funds", active: pathname.startsWith(`${base}/funds`) },
     { href: `${base}/budgets`, label: "Budgets", active: pathname.startsWith(`${base}/budgets`) },
+    ...(canManage ? [{href:`${base}/recurring`,label:"Recurring costs",active:pathname.startsWith(`${base}/recurring`)},{href:`${base}/dues`,label:"Upcoming dues",active:pathname===`${base}/dues`}] : []),
     { href: `${base}/bills`, label: "Bills", active: pathname.startsWith(`${base}/bills`) },
     { href: `${base}/disbursements`, label: "Disbursements", active: pathname.startsWith(`${base}/disbursements`) },
     { href: `${base}/spending`, label: "Spending", active: pathname.startsWith(`${base}/spending`) },

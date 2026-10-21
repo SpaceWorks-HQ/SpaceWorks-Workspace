@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { Hash, Lock } from "lucide-react";
+
 import { searchMessagesAction } from "@/app/actions/chat";
 import { formatDayTime } from "@/lib/format/datetime";
 import type { SearchHit } from "@/lib/chat/types";
@@ -67,7 +67,7 @@ export function SearchResults({ channel, autoFocus, initialQuery = "", onNavigat
               maxLength={200}
             />
           </div>
-          <Button type="submit" variant="primary" loading={pending} loadingLabel="Searching…">
+          <Button type="submit" variant="primary" loading={pending} loadingLabel="Searching">
             Search
           </Button>
         </div>
@@ -106,7 +106,7 @@ export function SearchResults({ channel, autoFocus, initialQuery = "", onNavigat
                 >
                   <span className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-ink-muted">
                     <span className="inline-flex items-center gap-1 font-semibold text-ink">
-                      {hit.channelKind === "PRIVATE" ? <Lock aria-hidden className="size-3.5" /> : hit.channelKind === "PUBLIC" ? <Hash aria-hidden className="size-3.5" /> : null}
+                      {hit.channelKind === "PRIVATE" ? <span className="inline-flex items-center justify-center text-xs font-semibold">Private</span> : hit.channelKind === "PUBLIC" ? <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">#</span> : null}
                       {hit.channelName}
                     </span>
                     {hit.inThread ? <span>in a thread</span> : null}

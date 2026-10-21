@@ -15,7 +15,7 @@ export default async function AuditLogPage({ params }: PageProps<"/w/[workspaceS
   const { workspaceSlug } = await params;
   const { workspace } = await requireWorkspace(workspaceSlug, "ADMIN");
   const events = await listAuditEvents(workspace.id, { take: 200 });
-  if (events.length === 0) return <EmptyState title="Nothing recorded yet.">Changes to members, invitations and settings appear here.</EmptyState>;
+  if (events.length === 0) return <EmptyState patch title="Nothing recorded yet.">Changes to members, invitations and settings appear here.</EmptyState>;
   return (
     <Table label="Audit log">
       <THead>

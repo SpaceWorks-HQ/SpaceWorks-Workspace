@@ -48,7 +48,7 @@ export default async function DecisionsPage({
     >
       <FilterForm label="Search decisions" name="q" value={q} button="Search" />
       {!decisions.length ? (
-        <EmptyState
+        <EmptyState patch
           title="No decisions found. Record one in a meeting."
           action={
             <a

@@ -24,6 +24,7 @@ export const HIDDEN_ACTIVITY_KINDS = new Set(["commented"]);
 export function activityText(kind: string, data: Data, context: { nameOf: (userId: string) => string; timeZone: string }): string {
   const d = (data ?? {}) as Record<string, unknown>;
   switch (kind) {
+    case "plan_updated": return "updated the schedule and blocker";
     case "created":
       return "created this task";
     case "created_recurring":

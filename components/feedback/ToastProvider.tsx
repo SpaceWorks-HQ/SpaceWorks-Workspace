@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, CheckCircle2, Info, X, XCircle } from "lucide-react";
+import { TriangleAlert as AlertTriangle, CircleCheck as CheckCircle2, Info, TriangleAlert as XCircle } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 type Severity = "success" | "error" | "info" | "warning";
@@ -23,7 +23,7 @@ const icons: Record<Severity, React.ReactNode> = {
   // Toasts sit on Deep Ink in both modes: Citron, Warm Yellow, Sky Blue and the
   // spec's light danger red all clear 4.5:1 there.
   success: <CheckCircle2 className="text-sw-citron" />,
-  error: <XCircle className="text-[#FCA5A5]" />,
+  error: <XCircle className="text-on-inverse" />,
   warning: <AlertTriangle className="text-sw-yellow" />,
   info: <Info className="text-sw-sky" />,
 };
@@ -81,13 +81,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                     toast.action?.onClick();
                     dismiss();
                   }}
-                  className="shrink-0 rounded-full px-3 py-1.5 text-sm font-bold underline-offset-4 hover:underline"
+                  className="min-h-11 shrink-0 rounded-md px-3 text-sm font-semibold underline-offset-4 hover:underline"
                 >
                   {toast.action.label}
                 </button>
               ) : null}
-              <button type="button" onClick={dismiss} aria-label="Dismiss" className="inline-flex size-8 shrink-0 items-center justify-center rounded-full opacity-70 hover:opacity-100">
-                <X aria-hidden className="size-4" />
+              <button type="button" onClick={dismiss} aria-label="Dismiss" className="inline-flex size-11 shrink-0 items-center justify-center rounded-md hover:bg-muted hover:text-ink">
+                <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">×</span>
               </button>
             </div>
           ) : null}

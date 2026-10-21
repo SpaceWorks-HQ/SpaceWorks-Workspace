@@ -66,7 +66,7 @@ export async function listRequests(actor: OpsActor) {
 }
 export async function savePolicy(actor: OpsActor, input: unknown) {
  await guard(actor, true);
- const v = parse(z.object({ name: title, subjectType: z.enum(["PURCHASE_REQUEST", "REIMBURSEMENT", "CUSTOM", "FORM_SUBMISSION", "DOC", "ACCESS_CREDENTIAL", "TIME_OFF"]), steps: approvalStepsSchema }), input);
+ const v = parse(z.object({ name: title, subjectType: z.enum(["PURCHASE_REQUEST", "REIMBURSEMENT", "CUSTOM", "FORM_SUBMISSION", "DOC", "ACCESS_CREDENTIAL", "TIME_OFF", "PRODUCT_RELEASE", "PRODUCT_CHANGE"]), steps: approvalStepsSchema }), input);
  for (const step of v.steps) {
   if (step.approverType === "USER" && !await prisma.membership.findFirst({ where: { workspaceId: actor.workspace.id, userId: step.ref, status: "ACTIVE" } })) throw new OpsError("Choose an active member for each person step.");
   if ((step.approverType === "TEAM" || step.approverType === "TEAM_LEAD") && step.ref !== "*" && !await prisma.team.findFirst({ where: { id: step.ref, workspaceId: actor.workspace.id, archivedAt: null } })) throw new OpsError("Choose a team in this workspace.");

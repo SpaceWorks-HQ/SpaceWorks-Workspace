@@ -200,7 +200,7 @@ export function CaseForm({
         <div className="sm:col-span-2">
           <Button type="submit" disabled={pending}>
             {pending
-              ? "Saving…"
+              ? "Saving"
               : mode === "create"
                 ? "Record case"
                 : mode === "appointment"

@@ -19,7 +19,7 @@ export default async function ImportPage({
   });
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader
+      <PageHeader titleAs="h2"
         title="CSV import"
         description="Preview, map and import links for the crew."
       />

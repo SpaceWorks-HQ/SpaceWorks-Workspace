@@ -11,11 +11,12 @@ import { cn } from "@/lib/cn";
  * - with reduced motion the idle frame shows instead of repeating;
  * - Patch is the layout's one bold moment, so use one per screen.
  */
-export type PatchPose = "idle" | "walk";
+export type PatchPose = "idle" | "walk" | "sneeze";
 
 const FILES: Record<PatchPose, { animated: string; still: string; ratio: string }> = {
   idle: { animated: "patch-animated.webp", still: "patch.webp", ratio: "aspect-square" },
   walk: { animated: "patch-walk-animated.webp", still: "patch-walk.webp", ratio: "aspect-[16/11]" },
+  sneeze: { animated: "patch-animated.webp", still: "patch.webp", ratio: "aspect-square" },
 };
 
 const BASE = "/brand/mascot";
@@ -33,18 +34,21 @@ function Art({ pose, dark, animated }: { pose: PatchPose; dark: boolean; animate
   );
 }
 
-export function Patch({ pose = "idle", size = 120, animated = true, className, label }: { pose?: PatchPose; size?: number; animated?: boolean; className?: string; label?: string }) {
+export function Patch({ pose = "idle", size = 120, animated = pose === "walk" || pose === "sneeze", className, label }: { pose?: PatchPose; size?: number; animated?: boolean; className?: string; label?: string }) {
+  const width = Math.min(256, Math.max(48, size));
   return (
     <span
       role={label ? "img" : undefined}
       aria-label={label}
       aria-hidden={label ? undefined : true}
-      // Callers keep the brand's clear space (a quarter of the badge height) around this box.
-      className={cn("inline-block shrink-0 select-none", FILES[pose].ratio, className)}
-      style={{ width: size }}
+      data-patch={pose}
+      className={cn("inline-block shrink-0 select-none", className)}
+      style={{ padding: width / 4 }}
     >
-      <Art pose={pose} dark={false} animated={animated} />
-      <Art pose={pose} dark animated={animated} />
+      <span className={cn("block", FILES[pose].ratio)} style={{ width }}>
+        <Art pose={pose} dark={false} animated={animated} />
+        <Art pose={pose} dark animated={animated} />
+      </span>
     </span>
   );
 }

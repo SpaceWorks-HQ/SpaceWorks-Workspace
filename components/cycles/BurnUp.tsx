@@ -1,3 +1,4 @@
+import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { burnUp, type CycleTask } from "@/lib/cycles/progress";
 import { formatDate } from "@/lib/format/datetime";
 export function BurnUp({
@@ -57,29 +58,29 @@ export function BurnUp({
           View chart data
         </summary>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-body-ui">
+          <Table className="w-full text-left text-body-ui">
             <caption className="sr-only">Burn-up values</caption>
-            <thead>
-              <tr>
-                <th className="p-2" scope="col">
+            <THead>
+              <TR>
+                <TH className="p-2" scope="col">
                   Date
-                </th>
-                <th scope="col">Scope</th>
-                <th scope="col">Completed</th>
-              </tr>
-            </thead>
-            <tbody>
+                </TH>
+                <TH scope="col">Scope</TH>
+                <TH scope="col">Completed</TH>
+              </TR>
+            </THead>
+            <TBody>
               {points.map((p, i) => (
-                <tr key={i} className="border-t border-line">
-                  <th scope="row" className="p-2 font-medium">
+                <TR key={i} className="border-t border-line">
+                  <TH scope="row" className="p-2 font-medium">
                     {formatDate(p.at, timezone)}
-                  </th>
-                  <td>{p.scope}</td>
-                  <td>{p.completed}</td>
-                </tr>
+                  </TH>
+                  <TD>{p.scope}</TD>
+                  <TD>{p.completed}</TD>
+                </TR>
               ))}
-            </tbody>
-          </table>
+            </TBody>
+          </Table>
         </div>
       </details>
     </figure>

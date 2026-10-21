@@ -318,7 +318,7 @@ export function EntryForm(p: Props) {
                 Close
               </Button>
               <Button type="submit" disabled={pending}>
-                {pending ? "Saving…" : "Save date"}
+                {pending ? "Saving" : "Save date"}
               </Button>
             </div>
           </form>

@@ -110,7 +110,7 @@ export function ControlForm({
       ) : null}
       {saved ? <p role="status">Record saved.</p> : null}
       <Button type="submit" disabled={pending}>
-        {pending ? "Saving…" : label}
+        {pending ? "Saving" : label}
       </Button>
     </form>
   );

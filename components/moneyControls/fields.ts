@@ -150,6 +150,7 @@ export function controlFields(
       true,
     );
     add("detail.counterparty", "Counterparty", undefined, true);
+    add("detail.refundable", "Refundable", [{id:"YES",name:"Yes"},{id:"NO",name:"No"}], true);
   }
   if (kind === "ASSET_CATEGORY") {
     add("detail.method", "Method", enumOptions(["SLM", "WDV"]), true);
@@ -296,6 +297,7 @@ export function controlFields(
           : f.type === "checkbox"
             ? Boolean(value)
             : String(value);
+    else if (f.name === "detail.refundable") f.value = "YES";
     else if (f.name === "reminderDays") f.value = "7";
     else if (f.name === "detail.fiscalYear")
       f.value = String(

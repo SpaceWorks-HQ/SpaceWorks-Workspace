@@ -212,3 +212,18 @@ export const canManageItAdministration = (m: RoleHolder) => atLeast(m, "ADMIN");
 /** Application secrets require active membership and explicit environment access. */
 export const canUseSecrets = (m: RoleHolder) => atLeast(m, "MEMBER");
 export const canManageSecrets = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** Internal product tools are for the operating team; funding estimates require finance management. */
+export const canManageProductOps = (m: RoleHolder) => atLeast(m, "MEMBER");
+export const canManageProductEstimates = (m: RoleHolder) => atLeast(m, "ADMIN");
+
+/** Publishing into the existing changelog retains its admin-only permission. */
+export const canPublishProductChangelog = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** Fixed costs are finance-manager tools; staff recovery also permits the person. */
+export const canManageRecurringCosts = canManageFinance;
+export const canReadStaffAdvance = (m: RoleHolder, grant: PayrollGrant, userId: string, personId: string) =>
+  atLeast(m, "MEMBER") && (canManagePayroll(m, grant) || userId === personId);
+/** Project plans and check-ins: project lead or workspace admins; guests read only. */
+export function canManageProjectPlan(m: RoleHolder, userId: string, ownerId: string | null) {
+  return atLeast(m, "ADMIN") || (atLeast(m, "MEMBER") && userId === ownerId);
+}
+export const canEditTaskPlan = (m: RoleHolder) => atLeast(m, "MEMBER");

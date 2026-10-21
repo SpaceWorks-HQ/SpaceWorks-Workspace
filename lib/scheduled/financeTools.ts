@@ -149,6 +149,7 @@ export async function run(now: Date): Promise<void> {
         const bills = await tx.financeBill.findMany({
           where: {
             workspaceId: ws.id,
+            privatePayroll: false,
             dueOn: { lt: dateOnly(day) },
             paidMinor: { lt: tx.financeBill.fields.amountMinor },
           },

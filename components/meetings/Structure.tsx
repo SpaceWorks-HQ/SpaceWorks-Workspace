@@ -1,6 +1,7 @@
+import { ListLayout } from "@/components/ui/layouts";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Card } from "@/components/ui/display";
+import { PageHeader, Card } from "@/components/ui/display";
 
 export function CollaborationShell({
   slug,
@@ -14,13 +15,7 @@ export function CollaborationShell({
   children: ReactNode;
 }) {
   return (
-    <div className="mx-auto w-full min-w-0 max-w-5xl space-y-6 px-4 py-6 sm:px-6">
-      <header>
-        <h1 className="text-h1 text-ink">{title}</h1>
-        <p className="mt-2 max-w-2xl text-body-ui text-ink-muted">
-          {description}
-        </p>
-      </header>
+    <ListLayout header={<PageHeader title={title} description={description} />}>
       <nav
         aria-label="Work collaboration"
         className="flex flex-wrap gap-x-4 gap-y-1 border-b border-line"
@@ -47,7 +42,7 @@ export function CollaborationShell({
         ))}
       </nav>
       {children}
-    </div>
+    </ListLayout>
   );
 }
 export function Section({

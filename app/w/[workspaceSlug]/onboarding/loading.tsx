@@ -1,2 +1,5 @@
-import { PeopleLoading } from "@/components/people/PageStates";
-export default function Loading() { return <PeopleLoading label="checklists" />; }
+import { BrandPageLoader } from "@/components/brand/BrandLoader";
+
+export default function Loading() {
+  return <BrandPageLoader label="Loading checklists" />;
+}

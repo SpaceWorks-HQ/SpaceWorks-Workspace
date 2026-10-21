@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import { createInvoiceAction, updateInvoiceAction } from "@/app/actions/finance";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { Button, IconButton } from "@/components/ui/button";
@@ -113,7 +113,7 @@ export function InvoiceForm({ slug, currency, invoiceId, initial, backHref }: { 
                   <span className="text-body-ui font-semibold tabular-nums text-ink">{item ? money(lineSubtotalMinor(item)) : "—"}</span>
                 </div>
                 <IconButton label={`Remove line ${index + 1}`} onClick={() => set("lines", values.lines.filter((l) => l.key !== line.key))} disabled={values.lines.length === 1}>
-                  <Trash2 />
+                  <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">×</span>
                 </IconButton>
               </li>
             );

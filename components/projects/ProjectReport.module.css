@@ -1,0 +1,8 @@
+@media print {
+  :global(body):has(.report) * { visibility: hidden; }
+  .report, .report * { visibility: visible !important; color: var(--sw-ink) !important; }
+  .report { position: absolute; inset: 0; width: 100%; padding: 12mm; background: var(--sw-cream); }
+  .report li { break-inside: avoid; }
+  .report a { text-decoration: none; }
+  .report button, .report nav { display: none !important; }
+}

@@ -118,6 +118,7 @@ export function isReservedFolder(folder: string): boolean {
   if (folder.startsWith("/org-people")) return true;
   if (folder.startsWith("/marketing-it") || folder.startsWith("/marketing-assets")) return true;
   if (folder === "/safeguarding" || folder.startsWith("/safeguarding/") || folder === "/governance" || folder.startsWith("/governance/")) return true;
+  if (folder === "/product-ops" || folder.startsWith("/product-ops/")) return true;
   if (folder === "/funding" || folder.startsWith("/funding/")) return true;
   if (folder.startsWith("/finance-tools") || folder.startsWith("/money-controls")) return true;
   return folder === "/people-service" || folder.startsWith("/people-service/") || folder === "/calendar" || folder.startsWith("/calendar/") || folder === CHAT_FOLDER || folder.startsWith(`${CHAT_FOLDER}/`);

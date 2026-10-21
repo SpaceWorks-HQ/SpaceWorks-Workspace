@@ -230,6 +230,7 @@ export async function updateTask(actor: TaskActor, input: unknown): Promise<Acti
   if (parsed.data.dueDate !== undefined) {
     const dueAt = parsed.data.dueDate ? fromDateInputValue(parsed.data.dueDate, actor.workspace.timezone) : null;
     if (parsed.data.dueDate && !dueAt) return actionError("Pick a valid date.", { dueDate: ["Pick a valid date."] });
+    if (parsed.data.dueDate && task.startsOn && parsed.data.dueDate < task.startsOn.toISOString().slice(0, 10)) return actionError("Due date must be on or after the start date. Change the start date first.");
     if ((dueAt?.getTime() ?? null) !== (task.dueAt?.getTime() ?? null)) {
       data.dueAt = dueAt;
       history.push(["due", { to: dueAt?.toISOString() ?? null }]);
@@ -277,11 +278,11 @@ async function afterStatusChange(tx: Tx, after: After, actor: TaskActor, task: L
 
   // Unblock: tasks this one was blocking whose last open blocker just closed.
   const blocked = await tx.taskDependency.findMany({
-    where: { blockingTaskId: task.id, type: "BLOCKS", blockedTask: { completedAt: null, archivedAt: null } },
+    where: { workspaceId: actor.workspace.id, blockingTaskId: task.id, type: "BLOCKS", blockedTask: { workspaceId: actor.workspace.id, completedAt: null, archivedAt: null, blockerReason: null } },
     select: { blockedTask: { select: { id: true, number: true, title: true, projectId: true, project: true, assignees: { select: { userId: true } } } } },
   });
   for (const { blockedTask } of blocked) {
-    const open = await tx.taskDependency.count({ where: { blockedTaskId: blockedTask.id, type: "BLOCKS", blockingTask: { completedAt: null, archivedAt: null } } });
+    const open = await tx.taskDependency.count({ where: { workspaceId: actor.workspace.id, blockedTaskId: blockedTask.id, type: "BLOCKS", blockingTask: { completedAt: null, archivedAt: null } } });
     if (open > 0) continue;
     await addHistory(tx, blockedTask.id, actor.user.id, "unblocked", { by: ref });
     const ids = blockedTask.assignees.map((row) => row.userId);

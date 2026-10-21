@@ -72,7 +72,7 @@ export function NewDocDialog({ slug, open, parentId, parentTitle, templates, onO
           </DialogBody>
           <DialogFooter>
             <Button variant="secondary" onClick={() => close(false)} disabled={pending}>Cancel</Button>
-            <Button type="submit" variant="primary" loading={pending} loadingLabel="Creating…">Create page</Button>
+            <Button type="submit" variant="primary" loading={pending} loadingLabel="Creating">Create page</Button>
           </DialogFooter>
         </form>
       </DialogContent>

@@ -90,8 +90,12 @@ async function notifyRequested(
   recipients: string[],
   requesterName: string,
 ): Promise<After> {
-  if (recipients.length === 0) return async () => undefined;
   const hook = approvalHook(request.subjectType);
+  if (hook.canRead) {
+    const readable = await Promise.all(recipients.map(id => hook.canRead!(tx, workspace.id, request.subjectId, id)));
+    recipients = recipients.filter((_, index) => readable[index]);
+  }
+  if (recipients.length === 0) return async () => undefined;
   const base = {
     title: `${requesterName} needs your approval: ${request.title}`.slice(0, 150),
     url: hook.url(workspace.slug, request.subjectId),
@@ -116,6 +120,7 @@ async function notifyDecided(
   comment: string | null,
 ): Promise<After> {
   const hook = approvalHook(request.subjectType);
+  if (hook.canRead && !await hook.canRead(tx, workspace.id, request.subjectId, request.requesterId)) return async () => undefined;
   const verb = decision === "APPROVED" ? "approved" : decision === "REJECTED" ? "rejected" : "asked for changes on";
   const base = {
     title: `${displayName(actor.name)} ${verb} ${request.title}`.slice(0, 150),
@@ -269,6 +274,8 @@ export async function decide(actor: OpsActor, input: unknown, now = new Date()):
       SELECT "id" FROM "ApprovalRequest" WHERE "id" = ${requestId} AND "workspaceId" = ${actor.workspace.id} FOR UPDATE`;
     if (locked.length === 0) return { ok: false, error: "That request no longer exists." };
     const request = await tx.approvalRequest.findUniqueOrThrow({ where: { id: requestId, workspaceId: actor.workspace.id } });
+    const sourceGate = approvalHook(request.subjectType).canRead;
+    if (sourceGate && !await sourceGate(tx, actor.workspace.id, request.subjectId, actor.user.id)) return { ok: false, error: "That request is unavailable." };
     const steps = parseSteps(request.steps);
     const step = steps[request.currentStep] ?? steps[steps.length - 1]!;
     const eligible = new Set(await eligibleApproverIds(tx, actor.workspace.id, step, request.requesterId));
@@ -345,6 +352,8 @@ export async function getApprovalView(actor: OpsActor, subjectType: ApprovalSubj
     include: { decisions: { orderBy: { createdAt: "asc" } } },
   });
   if (!request || (!isAdmin(actor) && request.requesterId !== actor.user.id && !await isApproverOf(actor, request))) return null;
+  const sourceGate = approvalHook(subjectType).canRead;
+  if (sourceGate && !await sourceGate(prisma, actor.workspace.id, subjectId, actor.user.id)) return null;
   const steps = parseSteps(request.steps);
   const pending = request.status === "PENDING";
   const eligible = pending ? await eligibleApproverIds(prisma, actor.workspace.id, steps[request.currentStep] ?? steps[0]!, request.requesterId) : [];
@@ -411,6 +420,7 @@ export async function approvalInbox(actor: OpsActor, take = 100): Promise<InboxI
     if (!memo.has(key)) memo.set(key, (await eligibleApproverIds(prisma, actor.workspace.id, step, request.requesterId)).includes(actor.user.id));
     if (!memo.get(key)) continue;
     const hook = approvalHook(request.subjectType);
+    if (hook.canRead && !await hook.canRead(prisma, actor.workspace.id, request.subjectId, actor.user.id)) continue;
     const access = request.subjectType === "VAULT_ACCESS" ? await prisma.vaultAccessRequest.findFirst({ where: { id: request.subjectId, workspaceId: actor.workspace.id }, select: { reason: true, durationHours: true, item: { select: { title: true } } } }) : null;
     items.push({
       details: access ? `${access.item.title} · ${access.durationHours} hours · ${access.reason ?? "No reason given"}` : undefined,
@@ -461,6 +471,8 @@ export async function commentOnApproval(actor: OpsActor, input: unknown) {
   if (!rows.length) return actionError("That request is unavailable.");
   await guard(actor, false, tx);
   const request = await tx.approvalRequest.findFirstOrThrow({where:{id:requestId,workspaceId:actor.workspace.id}});
+  const sourceGate = approvalHook(request.subjectType).canRead;
+  if (sourceGate && !await sourceGate(tx, actor.workspace.id, request.subjectId, actor.user.id)) return actionError("That request is unavailable.");
   let allowed = isAdmin(actor) || request.requesterId === actor.user.id || !!await tx.approvalDecision.findFirst({where:{requestId,approverId:actor.user.id,request:{workspaceId:actor.workspace.id}}});
   if (!allowed) for (const step of parseSteps(request.steps)) if ((await eligibleApproverIds(tx,actor.workspace.id,step,request.requesterId)).includes(actor.user.id)) { allowed = true; break; }
   if (!allowed) return actionError("You don't have access to this request.");

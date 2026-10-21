@@ -1,4 +1,7 @@
 "use client";
+
+import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { DigestFrequency, PersonalChannel } from "@prisma/client";
@@ -60,20 +63,20 @@ export function Preferences({
         category.
       </p>
       <div className="overflow-x-auto rounded-xl border border-line bg-panel">
-        <table className="w-full text-left text-label">
+        <Table className="w-full text-left text-label">
           <caption className="sr-only">
             Event categories and delivery channels
           </caption>
-          <thead>
-            <tr className="bg-surface">
-              <th className="p-3">Events</th>
-              <th className="p-3">Delivery preferences</th>
-            </tr>
-          </thead>
-          <tbody>
+          <THead>
+            <TR className="bg-surface">
+              <TH className="p-3">Events</TH>
+              <TH className="p-3">Delivery preferences</TH>
+            </TR>
+          </THead>
+          <TBody>
             {rows.map((row) => (
-              <tr className="border-t border-line" key={row.category}>
-                <th scope="row" className="p-3 align-top">
+              <TR className="border-t border-line" key={row.category}>
+                <TH scope="row" className="p-3 align-top">
                   {NOTIFY_CATEGORIES[row.category].label}
                   <details className="mt-2 font-normal">
                     <summary className="min-h-11 cursor-pointer text-caption">
@@ -87,14 +90,14 @@ export function Preferences({
                       ))}
                     </ul>
                   </details>
-                </th>
-                <td className="p-3">
+                </TH>
+                <TD className="p-3">
                   <PreferenceRow slug={slug} row={row} available={available} />
-                </td>
-              </tr>
+                </TD>
+              </TR>
             ))}
-          </tbody>
-        </table>
+          </TBody>
+        </Table>
       </div>
       <form
         className="flex flex-col gap-4 rounded-xl border border-line bg-panel p-5"

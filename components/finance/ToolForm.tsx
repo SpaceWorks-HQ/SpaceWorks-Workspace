@@ -76,7 +76,7 @@ export function ToolFields({
                 defaultValue={String(f.value ?? "")}
                 required={f.required}
               >
-                <option value="">Choose…</option>
+                <option value="">Choose an option</option>
                 {f.options?.map((o) => (
                   <option key={o.id} value={o.id}>
                     {o.name}

@@ -1,6 +1,8 @@
 import "server-only";
 import { run as secrets } from "@/lib/scheduled/secrets";
 import { run as marketingIt } from "@/lib/scheduled/marketingIt";
+import { run as productOps } from "@/lib/scheduled/productOps";
+import { run as recurringCosts } from "@/lib/scheduled/recurringCosts";
 import type { JobDefinition } from "@/lib/queue/definitions";
 import { enqueueDueOutbox } from "@/lib/queue/enqueue";
 import { purgeExpiredOperationalData } from "@/lib/retention";
@@ -15,6 +17,7 @@ import { run as calendar } from "@/lib/scheduled/calendar";
 import { run as opsGaps } from "@/lib/scheduled/opsGaps";
 import { run as appReviews } from "@/lib/scheduled/appReviews";
 import { run as governance } from "@/lib/scheduled/governance";
+import { run as projectsPlus } from "@/lib/scheduled/projectsPlus";
 import { run as tasks } from "@/lib/scheduled/tasks";
 import { run as chat } from "@/lib/scheduled/chat";
 import { run as docsFiles } from "@/lib/scheduled/docsFiles";
@@ -36,6 +39,7 @@ import { run as shell } from "@/lib/scheduled/shell";
 export const SCHEDULED_JOBS: ReadonlyArray<JobDefinition> = [
   { area: "secrets", run: secrets },
   { area: "marketing-it", run: marketingIt },
+  { area: "product-ops", run: productOps },
   { area: "funding-tools", run: funding },
   { area: "money-controls", run: moneyControls },
   { area: "ops-gaps", run: opsGaps },
@@ -45,10 +49,12 @@ export const SCHEDULED_JOBS: ReadonlyArray<JobDefinition> = [
   { area: "govextras", run: govextras },
   { area: "governance-tools", run: governance },
   { area: "tasks", run: tasks },
+  { area: "projects-plus", run: projectsPlus },
   { area: "chat", run: chat },
   { area: "docs-files", queue: "documents", run: docsFiles },
   { area: "community", run: community },
   { area: "finance", run: finance },
+  { area: "recurring-costs", run: recurringCosts },
   { area: "documents", run: documents },
   { area: "assistant", run: assistant },
   { area: "integrations-messaging", queue: "sync", run: integrations },

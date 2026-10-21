@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ClipboardEvent, type DragEvent, type KeyboardEvent } from "react";
-import { FileText, Paperclip, SendHorizontal, X } from "lucide-react";
+
 import { sendTypingAction, uploadChatAttachmentAction } from "@/app/actions/chat";
 import { cn } from "@/lib/cn";
 import { MAX_ATTACHMENTS, MAX_MESSAGE_LENGTH, encodeMentions, triggerAt, type MentionCandidate } from "@/lib/chat/client";
@@ -285,7 +285,7 @@ export function Composer({
         <ul className="flex flex-wrap gap-2 px-3 pt-3" aria-label="Files to send">
           {files.map((file) => (
             <li key={file.key} className="flex min-h-10 max-w-[260px] items-center gap-2 rounded-lg border border-line bg-surface py-1 pl-2.5 pr-1">
-              {file.status === "uploading" ? <Spinner className="size-4" label="Uploading" /> : <FileText aria-hidden className="size-4 shrink-0 text-ink-muted" />}
+              {file.status === "uploading" ? <Spinner className="size-4" label="Uploading" /> : null}
               <span className="min-w-0 flex-1 truncate text-caption text-ink">{file.name}</span>
               {file.attachment ? <span className="text-caption text-ink-muted tabular-nums">{fileSize(file.attachment.size)}</span> : null}
               <button
@@ -293,9 +293,9 @@ export function Composer({
                 aria-label={`Remove ${file.name}`}
                 disabled={file.status === "uploading"}
                 onClick={() => setFiles((current) => current.filter((f) => f.key !== file.key))}
-                className="inline-flex size-8 items-center justify-center rounded-md text-ink-muted hover:bg-muted hover:text-ink disabled:text-ink-disabled"
+                className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-ink-muted hover:bg-muted hover:text-ink disabled:text-ink-disabled"
               >
-                <X aria-hidden className="size-4" />
+                <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">×</span>
               </button>
             </li>
           ))}
@@ -319,12 +319,11 @@ export function Composer({
             />
             <button
               type="button"
-              aria-label="Attach files"
               title="Attach files"
               onClick={() => fileInput.current?.click()}
-              className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-ink-secondary hover:bg-muted hover:text-ink [&_svg]:size-5"
+              className="inline-flex min-h-11 min-w-11 shrink-0 px-3 items-center justify-center rounded-md text-ink-secondary hover:bg-muted hover:text-ink [&_svg]:size-5"
             >
-              <Paperclip />
+              <span className="inline-flex items-center justify-center text-xs font-semibold">Attach</span>
             </button>
           </>
         ) : null}
@@ -345,18 +344,17 @@ export function Composer({
           onSelect={(event) => setCaret(event.currentTarget.selectionStart ?? 0)}
           onKeyDown={onKeyDown}
           onPaste={onPaste}
-          className="max-h-60 min-h-11 flex-1 resize-none bg-transparent px-2 py-2.5 text-base text-ink outline-none placeholder:text-ink-muted"
+          className="max-h-60 min-h-11 min-w-0 flex-1 resize-none bg-transparent px-2 py-2.5 text-base text-ink outline-none placeholder:text-ink-muted"
         />
         {mode === "post" ? (
           <button
             type="button"
-            aria-label="Send message"
             title="Send message"
             disabled={busy || uploading || (!text.trim() && !files.some((f) => f.attachment))}
             onClick={() => void submit()}
-            className="inline-flex size-11 shrink-0 items-center justify-center rounded-md bg-primary text-on-primary transition-colors duration-[120ms] hover:bg-primary-hover disabled:bg-surface disabled:text-ink-muted [&_svg]:size-5"
+            className="inline-flex min-h-11 min-w-11 shrink-0 px-3 items-center justify-center rounded-md bg-primary text-on-primary transition-colors duration-[120ms] hover:bg-primary-hover disabled:bg-surface disabled:text-ink-muted [&_svg]:size-5"
           >
-            <SendHorizontal />
+            <span className="inline-flex items-center justify-center text-xs font-semibold">Send</span>
           </button>
         ) : null}
       </div>
