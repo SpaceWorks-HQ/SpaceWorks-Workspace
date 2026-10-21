@@ -400,7 +400,7 @@ export function PayrollScreen({
         </p>
       ) : null}
       {runs.map((r) => (
-        <Card key={r.id}>
+        <Card key={r.id} id={r.id}>
           <CardHeader
             title={r.profile.name}
             description={r.month}

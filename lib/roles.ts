@@ -227,3 +227,7 @@ export function canManageProjectPlan(m: RoleHolder, userId: string, ownerId: str
   return atLeast(m, "ADMIN") || (atLeast(m, "MEMBER") && userId === ownerId);
 }
 export const canEditTaskPlan = (m: RoleHolder) => atLeast(m, "MEMBER");
+
+/** Analytics retains each source tool’s record access checks. */
+export const canViewAnalytics = (m: RoleHolder) => atLeast(m, "MEMBER");
+export const canManageAnalytics = (m: RoleHolder) => atLeast(m, "ADMIN");

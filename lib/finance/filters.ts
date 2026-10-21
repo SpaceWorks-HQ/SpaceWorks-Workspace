@@ -8,6 +8,7 @@ import { isValidIsoDate } from "@/lib/finance/csv";
 import type { LedgerKindValue } from "@/lib/finance/money";
 
 export type LedgerFilters = {
+  recordId?: string;
   kind: LedgerKindValue | null;
   categoryId: string | null;
   from: string | null;
@@ -35,6 +36,7 @@ export function parseLedgerFilters(params: Params): LedgerFilters {
   if (from && to && from > to) [from, to] = [to, from];
   const page = Number.parseInt(first(params.page), 10);
   return {
+    ...(/^[A-Za-z0-9_-]{1,64}$/.test(first(params.record)) ? {recordId:first(params.record)} : {}),
     kind: kind === "INCOME" || kind === "EXPENSE" ? kind : null,
     categoryId: /^[A-Za-z0-9_-]{1,64}$/.test(categoryId) ? categoryId : null,
     from: from || null,
@@ -48,6 +50,7 @@ export function parseLedgerFilters(params: Params): LedgerFilters {
 /** Back to a query string (page omitted unless > 1). */
 export function ledgerFiltersToQuery(filters: Partial<LedgerFilters>): string {
   const query = new URLSearchParams();
+  if (filters.recordId) query.set("record", filters.recordId);
   if (filters.kind) query.set("kind", filters.kind.toLowerCase());
   if (filters.categoryId) query.set("category", filters.categoryId);
   if (filters.from) query.set("from", filters.from);
@@ -60,5 +63,5 @@ export function ledgerFiltersToQuery(filters: Partial<LedgerFilters>): string {
 }
 
 export function hasActiveFilters(filters: LedgerFilters): boolean {
-  return Boolean(filters.kind || filters.categoryId || filters.from || filters.to || filters.q || filters.includeVoided);
+  return Boolean(filters.recordId || filters.kind || filters.categoryId || filters.from || filters.to || filters.q || filters.includeVoided);
 }

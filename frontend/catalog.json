@@ -111,6 +111,21 @@
       "id": "w-workspaceSlug-activity-page:loadActivityPage"
     },
     {
+      "module": "lib/views/generated/w-workspaceSlug-analytics-drill-metric-page-loadAnalyticsDrillPage",
+      "name": "loadAnalyticsDrillPage",
+      "id": "w-workspaceSlug-analytics-drill-metric-page:loadAnalyticsDrillPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-analytics-page-loadAnalyticsPage",
+      "name": "loadAnalyticsPage",
+      "id": "w-workspaceSlug-analytics-page:loadAnalyticsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-analytics-print-page-loadAnalyticsPrintPage",
+      "name": "loadAnalyticsPrintPage",
+      "id": "w-workspaceSlug-analytics-print-page:loadAnalyticsPrintPage"
+    },
+    {
       "module": "lib/views/generated/w-workspaceSlug-announcements-announcementId-edit-page-loadEditAnnouncementPage",
       "name": "loadEditAnnouncementPage",
       "id": "w-workspaceSlug-announcements-announcementId-edit-page:loadEditAnnouncementPage"
@@ -1176,6 +1191,36 @@
       "module": "app/actions/admin",
       "name": "adminSetWorkspaceArchived",
       "id": "admin:adminSetWorkspaceArchived"
+    },
+    {
+      "module": "app/actions/analytics",
+      "name": "saveAnalyticsPreset",
+      "id": "analytics:saveAnalyticsPreset"
+    },
+    {
+      "module": "app/actions/analytics",
+      "name": "removeAnalyticsPreset",
+      "id": "analytics:removeAnalyticsPreset"
+    },
+    {
+      "module": "app/actions/analytics",
+      "name": "saveAnalyticsAdjustment",
+      "id": "analytics:saveAnalyticsAdjustment"
+    },
+    {
+      "module": "app/actions/analytics",
+      "name": "removeAnalyticsAdjustment",
+      "id": "analytics:removeAnalyticsAdjustment"
+    },
+    {
+      "module": "app/actions/analytics",
+      "name": "uploadAnalyticsProof",
+      "id": "analytics:uploadAnalyticsProof"
+    },
+    {
+      "module": "app/actions/analytics",
+      "name": "generateAnalyticsPack",
+      "id": "analytics:generateAnalyticsPack"
     },
     {
       "module": "app/actions/apiTokens",
