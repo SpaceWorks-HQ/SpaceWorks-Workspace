@@ -93,6 +93,16 @@ messaging + notification routing). Read it before adding anything.
   Errors are short, UI-safe sentences: say what happened, then what to do.
 - Dates: `lib/format/datetime.ts` with the workspace time zone. Money: integer
   minor units, formatted by `lib/format/money.ts` (INR default).
+- **300-line file limit.** Every hand-written file (`.ts`, `.tsx`, `.js`,
+  `.mjs`, `.css`, including tests, scripts and seed modules) stays at or below
+  300 lines. ESLint `max-lines` and `tests/unit/file-size.test.ts` enforce it.
+  Split by responsibility: queries, mutations, validation, mappers, view
+  sections, one test file per behaviour. Turn `lib/area/service.ts` into
+  `lib/area/service/` with an `index.ts` re-export so import paths stay stable.
+  Never meet the limit by joining lines, packing statements together or
+  deleting useful comments. Exempt: generated files (`frontend/` catalog and
+  types, `lib/views/generated/`, `lib/frontend/{registry,resources}.ts`),
+  `prisma/schema.prisma`, migrations and lockfiles.
 - Write "Space Works" in copy, `SpaceWorks` only in code identifiers. No emoji
   in UI chrome. Assistant tools exposed over MCP use the `sw_` prefix
   (e.g. `sw_list_tasks`).
