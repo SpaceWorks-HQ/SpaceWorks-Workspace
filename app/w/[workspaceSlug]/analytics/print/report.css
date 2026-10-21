@@ -30,12 +30,32 @@
   #analytics-print a {
     overflow-wrap: anywhere;
   }
+  #analytics-print table {
+    width: 100%;
+    max-width: 100%;
+    table-layout: fixed;
+  }
+  #analytics-print th,
+  #analytics-print td {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
   #analytics-print details {
     display: block;
   }
-  #analytics-print details > table,
   #analytics-print details > div {
     display: block !important;
+  }
+  #analytics-print [role="region"] {
+    overflow: visible;
+  }
+  /* Paper uses the light chart inks even when the screen is in dark mode. */
+  #analytics-print {
+    --yy-accent-text: var(--sw-teal);
+    --yy-success-solid: color-mix(in srgb, var(--sw-citron) 31%, var(--sw-ink));
+    --yy-warning-solid: color-mix(in srgb, var(--sw-yellow) 36%, var(--sw-ink));
+    --yy-info-solid: color-mix(in srgb, var(--sw-sky) 38%, var(--sw-ink));
+    --yy-danger-solid: var(--sw-ink);
   }
   #analytics-print svg {
     max-height: 50mm;

@@ -110,6 +110,7 @@ export type ForecastBucket = {
   low: boolean;
 };
 export type ForecastResult = {
+  incomplete: boolean;
   asOf: string;
   currency: string;
   openingMinor: number;

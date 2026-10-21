@@ -1,8 +1,7 @@
 import { Field, Input } from "@/components/ui/field";
 import { Dropdown } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Patch } from "@/components/brand/Patch";
-import { PageHeader } from "@/components/ui/display";
+import { Card, Chip, EmptyState, PageHeader } from "@/components/ui/display";
 import { Chart } from "./Chart";
 import {
   SavedReports,
@@ -173,7 +172,7 @@ export function Dashboard({
         {data.sections.map((section) => (
           <a
             key={section}
-            className={`shrink-0 border-b-2 px-1 py-3 text-body-sm ${q.section === section ? "border-primary text-ink" : "border-transparent text-ink-muted"}`}
+            className={`inline-flex min-h-11 shrink-0 items-center border-b-2 px-1 py-3 text-body-sm ${q.section === section ? "border-accent-text text-ink" : "border-transparent text-ink-muted"}`}
             aria-current={q.section === section ? "page" : undefined}
             href={`${base}?${queryString(q, { section, group: undefined, page: undefined })}`}
           >
@@ -181,59 +180,61 @@ export function Dashboard({
           </a>
         ))}
       </nav>
-      <form
-        method="get"
-        className="grid gap-4 rounded-xl border border-line bg-panel p-5 sm:grid-cols-2 lg:grid-cols-4 print:hidden"
-      >
-        <input type="hidden" name="section" value={q.section} />
-        <Field label="Reporting period">
-          <Dropdown name="period" defaultValue={q.period}>
-            <option value="month">This month to date</option>
-            <option value="last-month">Last month</option>
-            <option value="quarter">Quarter to date</option>
-            <option value="fy">Indian financial year to date (Apr–Mar)</option>
-            <option value="custom">Custom dates</option>
-          </Dropdown>
-        </Field>
-        <Field label="From · custom period">
-          <Input name="from" type="date" defaultValue={period.from} />
-        </Field>
-        <Field label="To · custom period">
-          <Input name="to" type="date" defaultValue={period.to} />
-        </Field>
-        <Field label="Currency">
-          <Input
-            name="currency"
-            pattern="[A-Z]{3}"
-            maxLength={3}
-            defaultValue={currency}
-            required
-          />
-        </Field>
-        {fields
-          .filter(([, , items]) => items.length)
-          .map(([key, label, items]) => (
-            <Field key={key} label={label}>
-              <Dropdown name={key} defaultValue={q[key] ?? ""}>
-                <option value="">All</option>
-                {items.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </Dropdown>
-            </Field>
-          ))}
-        <div className="flex items-end gap-3">
-          <Button type="submit">Apply filters</Button>
-          <a
-            className="inline-flex min-h-11 items-center text-accent-text underline"
-            href={`${base}?section=${q.section}`}
-          >
-            Reset
-          </a>
-        </div>
-      </form>
+      <Card padding="none" className="print:hidden">
+        <form
+          method="get"
+          className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4"
+        >
+          <input type="hidden" name="section" value={q.section} />
+          <Field label="Reporting period">
+            <Dropdown name="period" defaultValue={q.period}>
+              <option value="month">This month to date</option>
+              <option value="last-month">Last month</option>
+              <option value="quarter">Quarter to date</option>
+              <option value="fy">Indian financial year to date (Apr–Mar)</option>
+              <option value="custom">Custom dates</option>
+            </Dropdown>
+          </Field>
+          <Field label="From · custom period">
+            <Input name="from" type="date" defaultValue={period.from} />
+          </Field>
+          <Field label="To · custom period">
+            <Input name="to" type="date" defaultValue={period.to} />
+          </Field>
+          <Field label="Currency">
+            <Input
+              name="currency"
+              pattern="[A-Z]{3}"
+              maxLength={3}
+              defaultValue={currency}
+              required
+            />
+          </Field>
+          {fields
+            .filter(([, , items]) => items.length)
+            .map(([key, label, items]) => (
+              <Field key={key} label={label}>
+                <Dropdown name={key} defaultValue={q[key] ?? ""}>
+                  <option value="">All</option>
+                  {items.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </Dropdown>
+              </Field>
+            ))}
+          <div className="flex items-end gap-3">
+            <Button type="submit" variant="primary">Apply filters</Button>
+            <a
+              className="inline-flex min-h-11 min-w-11 items-center text-accent-text underline"
+              href={`${base}?section=${q.section}`}
+            >
+              Reset
+            </a>
+          </div>
+        </form>
+      </Card>
       {q.section === "home" && data.presets.some((p) => p.pinned) ? (
         <section
           aria-label="Pinned reports"
@@ -261,7 +262,7 @@ export function Dashboard({
         matching dimension.
       </p>
       {insights.length ? (
-        <aside className="rounded-xl border border-line bg-panel p-5">
+        <Card as="section" aria-label="What needs attention">
           <h2 className="text-h3">What needs attention</h2>
           <ul className="mt-3 grid gap-3 sm:grid-cols-2">
             {insights.map((i) => (
@@ -275,37 +276,40 @@ export function Dashboard({
               </li>
             ))}
           </ul>
-        </aside>
+        </Card>
       ) : null}
       {!metrics.some((m) => m.count) ? (
-        <div className="flex flex-col items-center gap-3 rounded-xl border border-line bg-panel p-6 text-center">
-          <Patch size={100} />
-          <p>No matching records yet. Start with the team’s source tools.</p>
+        <EmptyState
+          patch
+          title="No matching records yet. Start with the team’s source tools."
+          action={
           <a
             href={`/w/${slug}/${q.section === "finance" ? "finance/ledger" : q.section === "funding" ? "funding/tracker" : q.section === "people" ? "members" : q.section === "operations" ? "helpdesk" : q.section === "marketing" ? "marketing" : "projects"}`}
-            className="inline-flex min-h-11 items-center text-accent-text underline"
+            className="inline-flex min-h-11 min-w-11 items-center text-accent-text underline"
           >
             Open source records
           </a>
-        </div>
+          }
+        />
       ) : null}
       <div className="grid min-w-0 gap-5 md:grid-cols-2">
         {metrics.map((m) => (
-          <section
+          <Card
+            as="section"
             key={m.id}
-            className="min-w-0 break-inside-avoid rounded-xl border border-line bg-panel p-5"
+            className="break-inside-avoid"
           >
             <div className="flex flex-wrap items-start justify-between gap-2">
               <h2 className="text-h3">{m.title}</h2>
               <a
-                className="inline-flex min-h-11 items-center text-body-sm text-accent-text underline"
+                className="inline-flex min-h-11 min-w-11 items-center text-body-sm text-accent-text underline"
                 href={m.csv}
               >
                 Export CSV
               </a>
             </div>
             <a
-              className="inline-block min-h-11 py-1 text-h1 tabular-nums text-accent-text"
+              className="inline-flex min-h-11 min-w-11 items-center py-1 text-stat tabular-nums text-accent-text"
               href={m.drill}
             >
               {displayValue(m.value, m.unit, currency)}
@@ -316,14 +320,14 @@ export function Dashboard({
               ) : (
                 <>
                   <a
-                    className="text-accent-text underline"
+                    className="inline-flex min-h-11 min-w-11 items-center text-accent-text underline"
                     href={comparisonLink(m.id, "previous")}
                   >
                     Previous: {change(m.value, m.previous)}
                   </a>
                   {" · "}
                   <a
-                    className="text-accent-text underline"
+                    className="inline-flex min-h-11 min-w-11 items-center text-accent-text underline"
                     href={comparisonLink(m.id, "lastYear")}
                   >
                     Last year: {change(m.value, m.lastYear)}
@@ -364,27 +368,33 @@ export function Dashboard({
               href={m.drill}
             />
             <a
-              className="mt-2 inline-flex min-h-11 items-center text-body-sm text-accent-text underline"
+              className="mt-2 inline-flex min-h-11 min-w-11 items-center text-body-sm text-accent-text underline"
               href={m.drill}
             >
               Open {m.count} underlying records
             </a>
-          </section>
+          </Card>
         ))}
       </div>
       {forecast ? (
-        <section
+        <Card
+          as="section"
           id="forecast"
-          className="space-y-4 rounded-xl border border-line bg-panel p-5"
+          className="space-y-4"
         >
-          <h2 className="text-h2">Cash-flow forecast</h2>
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="text-h2">Cash-flow forecast</h2>
+            <Chip tone={forecast.incomplete ? "warning" : "info"}>
+              {forecast.incomplete ? "Incomplete forecast" : "Estimate"}
+            </Chip>
+          </div>
           <p>
             {forecast.openingKnown
               ? "Opening cash"
               : "Assumed opening cash · no accounts recorded"}{" "}
             as of {forecast.asOf}:{" "}
             <a
-              className="text-accent-text underline"
+              className="inline-flex min-h-11 min-w-11 items-center text-accent-text underline"
               href={`/w/${slug}/finance/funds?currency=${currency}`}
             >
               {fmt(forecast.openingMinor, "money")}
@@ -454,7 +464,7 @@ export function Dashboard({
             ))}
           </div>
           <a
-            className="inline-flex min-h-11 items-center text-accent-text underline"
+            className="inline-flex min-h-11 min-w-11 items-center text-accent-text underline"
             href={`${base}/export?${queryString({ currency, threshold: q.threshold }, { kind: "forecast" })}`}
           >
             Export forecast CSV
@@ -469,18 +479,18 @@ export function Dashboard({
                   key={`${l.source}:${l.id}`}
                   className="flex flex-wrap justify-between gap-2 py-3"
                 >
-                  <a href={l.path} className="text-accent-text underline">
+                  <a href={l.path} className="inline-flex min-h-11 min-w-11 items-center text-accent-text underline">
                     {l.date} · {l.title} · {l.source}
                   </a>
                   <span>
                     {fmt(l.amountMinor, "money")} ·{" "}
-                    {l.estimated ? "Estimate" : "Recorded balance"}
+                    <Chip tone={l.estimated ? "info" : "neutral"}>{l.estimated ? "Estimate" : "Recorded balance"}</Chip>
                   </span>
                 </li>
               ))}
             </ul>
           </details>
-        </section>
+        </Card>
       ) : null}
       {data.admin && q.section === "finance" ? (
         <Adjustments slug={slug} currency={currency} rows={adjustments} />

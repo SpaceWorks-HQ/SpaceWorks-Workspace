@@ -1,3 +1,4 @@
+import { Card, Chip, EmptyState, PageHeader } from "@/components/ui/display";
 import type {
   MetricResult,
   AnalyticsQuery,
@@ -27,7 +28,7 @@ export function ReportPack({
     <article id="analytics-print" className="mx-auto max-w-5xl space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <a
-          className="min-h-11 py-3 text-accent-text underline"
+          className="inline-flex min-h-11 min-w-11 items-center py-3 text-accent-text underline"
           href={`/w/${data.slug}/analytics`}
         >
           Back to analytics
@@ -38,7 +39,7 @@ export function ReportPack({
         <p className="text-overline text-accent-text">
           Space Works · Private internal report
         </p>
-        <h1 className="mt-3 text-h1">{data.title}</h1>
+        <PageHeader className="mt-3" title={data.title} />
         <p className="mt-2 text-h3">{data.name}</p>
         <p>
           {displayDay(data.period.from)} to {displayDay(data.period.to)} ·{" "}
@@ -63,10 +64,16 @@ export function ReportPack({
         added across registers, currencies or KPI units.
       </p>
       {data.forecast ? (
-        <section className="break-inside-avoid rounded-xl border border-line bg-panel p-5">
+        <Card as="section" className="break-inside-avoid">
           <h2 className="text-h2">
             Cash-flow forecast · as of {displayDay(data.forecast.asOf)}
           </h2>
+          <Chip className="mt-2" tone={data.forecast.incomplete ? "warning" : "info"}>
+            {data.forecast.incomplete ? "Incomplete forecast" : "Estimate"}
+          </Chip>
+          <ul className="mt-3 space-y-1 text-body-sm text-ink-muted">
+            {data.forecast.warnings.map((warning) => <li key={warning}>{warning}</li>)}
+          </ul>
           <p className="mt-2">
             {data.forecast.openingKnown
               ? "Opening cash"
@@ -119,18 +126,30 @@ export function ReportPack({
               projections.
             </p>
           )}
-        </section>
+        </Card>
+      ) : null}
+      {!data.metrics.some((m) => m.count) ? (
+        <EmptyState
+          patch
+          title="No matching records. Review the report filters."
+          action={
+            <a className="inline-flex min-h-11 min-w-11 items-center text-accent-text underline" href={`/w/${data.slug}/analytics`}>
+              Review filters
+            </a>
+          }
+        />
       ) : null}
       <div className="grid gap-6 md:grid-cols-2 print:grid-cols-2">
         {data.metrics.map((m) => (
-          <section
+          <Card
+            as="section"
             key={m.id}
-            className="min-w-0 break-inside-avoid rounded-xl border border-line bg-panel p-5"
+            className="break-inside-avoid"
           >
             <h2 className="text-h3">{m.title}</h2>
             <a
               href={m.csv}
-              className="inline-flex min-h-11 items-center text-accent-text underline print:hidden"
+              className="inline-flex min-h-11 min-w-11 items-center text-accent-text underline print:hidden"
             >
               Export CSV
             </a>
@@ -162,7 +181,7 @@ export function ReportPack({
               currency={currency}
               href={m.drill}
             />
-          </section>
+          </Card>
         ))}
       </div>
       <footer className="border-t border-line py-4 text-body-sm text-ink-muted">

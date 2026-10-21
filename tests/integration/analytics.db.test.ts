@@ -1051,4 +1051,36 @@ describe.sequential("analytics live access and source consistency", () => {
     expect((await drillRecords(owner, "certifications", q)).rows.some((r) => r.id === cert.id)).toBe(false);
   });
 
+  it("counts detection-only security incidents on the workspace-local day", async () => {
+    const ws = owner.workspace.id;
+    const incident = await prisma.marketingItRecord.create({ data: {
+      workspaceId: ws, kind: "INCIDENT", title: "Detection timestamp regression", status: "DETECTED",
+      createdById: owner.user.id, details: { detectedAt: "2026-10-20T20:00:00Z", severity: "HIGH" },
+    } });
+    const onDay = { period: "custom", from: "2026-10-21", to: "2026-10-21" };
+    expect((await drillRecords(owner, "security", onDay)).rows).toContainEqual(expect.objectContaining({ id: incident.id, date: "2026-10-21" }));
+    expect((await result(owner, "security", onDay)).count).toBeGreaterThanOrEqual(1);
+    expect((await drillRecords(owner, "security", { ...onDay, from: "2026-10-20", to: "2026-10-20" })).rows.some((r) => r.id === incident.id)).toBe(false);
+    // An unrelated optional register date must not move the incident.
+    await prisma.marketingItRecord.update({ where: { id: incident.id }, data: { dateOn: new Date("2026-09-01") } });
+    expect((await drillRecords(owner, "security", onDay)).rows.some((r) => r.id === incident.id)).toBe(true);
+  });
+
+  it("counts engagement end dates as leavers and preserves the legacy fallback", async () => {
+    const ws = owner.workspace.id;
+    for (const [name, engagementEnd, leavingAt, date] of [
+      ["engagement", "2026-10-15", null, "2026-10-15"],
+      ["legacy", null, "2026-10-16", "2026-10-16"],
+      ["both", "2026-10-17", "2026-11-01", "2026-10-17"],
+    ] as const) {
+      const user = await createUser(`${name}${domain}`);
+      await addMember(ws, user.id, "MEMBER");
+      await prisma.memberProfile.create({ data: { workspaceId: ws, userId: user.id,
+        engagementEnd: engagementEnd ? new Date(engagementEnd) : null,
+        leavingAt: leavingAt ? new Date(leavingAt) : null,
+      } });
+      expect((await drillRecords(owner, "leavers", q)).rows).toContainEqual(expect.objectContaining({ date, path: `/w/${owner.workspace.slug}/members/${user.id}` }));
+    }
+  });
+
 });

@@ -14,7 +14,7 @@ import {
 } from "./metrics";
 import { localDate } from "@/lib/finance/dates";
 import { nextDue, taxAmounts } from "@/lib/finance/recurring/rules";
-import { pledgeDue, object } from "@/lib/funding/analytics";
+import { object } from "@/lib/funding/analytics";
 import type {
   AnalyticsQuery,
   ForecastLine,
@@ -162,6 +162,7 @@ export async function cashForecast(
     throw new AnalyticsError(
       "Narrow the forecast data before exporting more than 10,000 commitments.",
     );
+  const projectionWarnings: string[] = [];
   const lines: ForecastLine[] = [],
     base = `/w/${a.workspace.slug}`,
     date = (v: Date | null) => (v && day(v) > today ? day(v) : start);
@@ -179,12 +180,18 @@ export async function cashForecast(
   for (const s of schedules) {
     let due = day(s.nextDueOn),
       n = 0;
-    while (due < end && n++ < 120) {
-      if (
-        (s.endsOn && due > day(s.endsOn)) ||
-        (s.kind === "EMI" && s._count.dues + n - 1 >= s.tenure)
-      )
+    while (
+      due < end &&
+      (!s.endsOn || due <= day(s.endsOn)) &&
+      (s.kind !== "EMI" || s._count.dues + n < s.tenure)
+    ) {
+      if (n >= 120) {
+        projectionWarnings.push(
+          `Forecast incomplete: recurring cost “${s.title}” exceeds the projection limit. Review its overdue schedule before relying on closing cash.`,
+        );
         break;
+      }
+      n++;
       if (!generated.has(`${s.id}:${due}`))
         lines.push({
           id: `${s.id}:${due}`,
@@ -203,7 +210,12 @@ export async function cashForecast(
           s.dueDay,
         ),
       );
-      if (next <= due) break;
+      if (next <= due) {
+        projectionWarnings.push(
+          `Forecast incomplete: recurring cost “${s.title}” could not advance. Review its schedule before relying on closing cash.`,
+        );
+        break;
+      }
       due = next;
     }
   }
@@ -235,12 +247,9 @@ export async function cashForecast(
         });
     }
     if (f.kind === "PLEDGE" && f.status === "ACTIVE") {
-      let due = pledgeDue(
-          f,
-          funding.filter((g) => g.kind === "DONATION"),
-        ),
-        n = 0;
       const d = object(f.details),
+        anchor = String(d.nextExpectedOn ?? ""),
+        months = d.frequency === "YEARLY" ? 12 : d.frequency === "QUARTERLY" ? 3 : 1,
         paid = funding
           .filter(
             (g) =>
@@ -251,25 +260,49 @@ export async function cashForecast(
               object(g.details).mode !== "IN_KIND",
           )
           .reduce((sum, g) => sum + g.amountMinor, 0);
-      while (due && due < end && n++ < 24) {
+      if (!anchor || f.amountMinor <= 0) continue;
+      const once = d.frequency === "ONCE",
+        firstUnpaid = Math.floor(paid / f.amountMinor),
+        remainder = paid % f.amountMinor;
+      // Calculate from the original anchor so month-end dates never drift.
+      // Only one day comparison is needed after the arithmetic month jump.
+      const indexAt = (on: string) => {
+        const monthDistance =
+          (Number(on.slice(0, 4)) - Number(anchor.slice(0, 4))) * 12 +
+          Number(on.slice(5, 7)) - Number(anchor.slice(5, 7));
+        const index = Math.max(0, Math.floor(monthDistance / months));
+        return index + (addMonths(anchor, index * months) < on ? 1 : 0);
+      };
+      const stop = Math.min(
+        indexAt(end),
+        d.endOn ? indexAt(addDays(String(d.endOn), 1)) : Infinity,
+        once ? 1 : Infinity,
+      );
+      const futureStart = indexAt(start),
+        overdueEnd = Math.min(futureStart, stop);
+      const push = (id: string, when: string, amount: number, overdue = false) =>
         lines.push({
-          id: `${f.id}:${due}`,
-          title: f.title,
-          date: due > today ? due : start,
-          amountMinor:
-            n === 1 ? f.amountMinor - (paid % f.amountMinor) : f.amountMinor,
+          id: `${f.id}:${id}`,
+          title: overdue ? `${f.title} · Overdue instalments` : f.title,
+          date: when,
+          amountMinor: amount,
           source: "Pledge estimate",
           path: `${base}/funding/donations?edit=${f.id}`,
           estimated: true,
         });
-        if (d.frequency === "ONCE") break;
-        due = addMonths(
-          String(d.nextExpectedOn),
-          (Math.floor(paid / f.amountMinor) + n) *
-            (d.frequency === "YEARLY" ? 12 : d.frequency === "QUARTERLY" ? 3 : 1),
-        );
-        if (d.endOn && due > String(d.endOn)) break;
+      if (overdueEnd > firstUnpaid)
+        push("overdue", start, (overdueEnd - firstUnpaid) * f.amountMinor - remainder, true);
+      // Past instalments cannot consume the future projection budget.
+      let index = Math.max(firstUnpaid, futureStart),
+        n = 0;
+      for (; index < stop && n < 24; index++, n++) {
+        const due = addMonths(anchor, index * months);
+        push(due, due, f.amountMinor - (index === firstUnpaid ? remainder : 0));
       }
+      if (index < stop)
+        projectionWarnings.push(
+          `Forecast incomplete: pledge “${f.title}” exceeds the projection limit. Review its dates before relying on closing cash.`,
+        );
     }
   }
   for (const r of disbursements)
@@ -313,6 +346,7 @@ export async function cashForecast(
     openingKnown = Number(opening[0]?.accounts ?? 0) > 0;
   return {
     asOf: today,
+    incomplete: projectionWarnings.length > 0,
     currency,
     openingMinor,
     openingKnown,
@@ -335,6 +369,7 @@ export async function cashForecast(
     ).map((b) => ({ ...b, low: openingKnown && b.low })),
     lines,
     warnings: [
+      ...projectionWarnings,
       ...(!openingKnown
         ? [
             `No finance accounts have an opening balance for ${currency} by the as-of date. Closing cash is an illustrative change from zero until accounts are recorded.`,
@@ -372,7 +407,7 @@ export async function forecastDrill(
     selected = rows.slice((page - 1) * limit, page * limit);
   return {
     title: "Cash forecast assumptions",
-    description: `Opening cash for this bucket ${f.openingMinor + f.lines.filter((l) => l.date < from).reduce((n, l) => n + l.amountMinor, 0)} ${f.currency} minor units, including earlier forecast lines from the account balance as of ${f.asOf}. These are projected cash lines, not accounting entries. Open each source to review it.`,
+    description: `${f.incomplete ? f.warnings.filter((w) => w.startsWith("Forecast incomplete:")).join(" ") + " " : ""}Opening cash for this bucket ${f.openingMinor + f.lines.filter((l) => l.date < from).reduce((n, l) => n + l.amountMinor, 0)} ${f.currency} minor units, including earlier forecast lines from the account balance as of ${f.asOf}. These are projected cash lines, not accounting entries. Open each source to review it.`,
     unit: "money" as const,
     basisUnit: "money",
     q,

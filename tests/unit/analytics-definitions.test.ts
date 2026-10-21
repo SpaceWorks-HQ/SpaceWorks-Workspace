@@ -38,6 +38,23 @@ describe("analytics source permissions and chart aggregation", () => {
   };
   beforeEach(() => vi.resetAllMocks());
 
+  it.each(["Asia/Kolkata", "America/Los_Angeles"])("dates security incidents by their detection instant in %s", async (timezone) => {
+    const sql = await factSql(DEFINITIONS.find((d) => d.id === "security")!,
+      { ...access, admin: true, workspace: { ...access.workspace, timezone } }, "2026-10-21");
+    expect(sql.sql).toContain("nullif(r.details->>'detectedAt','')::timestamptz AT TIME ZONE 'UTC'");
+    expect(sql.sql).toContain("AT TIME ZONE 'UTC' AT TIME ZONE ?)::date AS date");
+    expect(sql.sql).not.toContain('r."dateOn"');
+    expect(sql.values).toContain(timezone);
+  });
+
+  it("uses the engagement workflow's end date before the legacy leaving date", async () => {
+    const sql = await factSql(DEFINITIONS.find((d) => d.id === "leavers")!, access, "2026-10-21");
+    expect(sql.sql).toContain('coalesce(mp."engagementEnd",mp."leavingAt") AS "leavingAt"');
+    expect(sql.sql).toContain('r."leavingAt"::date AS date');
+    expect(sql.sql).toContain('mp."workspaceId"=mb."workspaceId"');
+    expect(sql.values).toContain("workspace");
+  });
+
   it("does not count future SLA deadlines as missed after a later resolution", async () => {
     const sql = await factSql(DEFINITIONS.find((d) => d.id === "help-sla")!, access, "2026-09-21");
     expect(sql.sql).toContain('r."slaDueAt"<=?::timestamp');

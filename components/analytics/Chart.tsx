@@ -1,3 +1,5 @@
+import { EmptyState, Chip } from "@/components/ui/display";
+import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import type { ChartKind, Point, Unit } from "@/lib/analytics/types";
 import { displayValue } from "@/lib/analytics/metrics";
 export function Chart({
@@ -26,7 +28,7 @@ export function Chart({
   const data = points,
     display = data.slice(0, 40),
     width = 640,
-    height = compact ? 64 : 200,
+    height = compact ? 64 : kind === "funnel" ? Math.max(200, 24 + display.length * 28) : 200,
     pad = 12,
     max = Math.max(
       unit === "percent" ? 100 : 1,
@@ -48,6 +50,7 @@ export function Chart({
     .join(" ");
   const radial = kind === "donut",
     total = display.reduce((s, p) => s + Math.max(0, p.value), 0);
+  const seriesFills = ["bg-accent-text", "bg-info-solid", "bg-success-solid", "bg-warning-solid"];
   let offset = 0;
   return (
     <figure className="min-w-0" aria-label={title}>
@@ -71,28 +74,24 @@ export function Chart({
             <>
               <path
                 d={line}
-                className="stroke-primary"
+                className="stroke-accent-text"
                 strokeWidth={compact ? 3 : 2}
                 fill="none"
               />
               {display.map((p, i) => (
-                <a
-                  key={p.label}
-                  href={link(p.label)}
-                  aria-label={`${p.label}: ${fmt(p.value)}. Open records.`}
-                >
+                <g key={p.label}>
                   <circle
                     cx={x(i)}
                     cy={y(p.value)}
                     r={compact ? 5 : 7}
-                    className="fill-primary stroke-panel focus:stroke-ink"
+                    className="fill-accent-text stroke-panel"
                     strokeWidth="2"
                   >
                     <title>
                       {p.label}: {fmt(p.value)}
                     </title>
                   </circle>
-                </a>
+                </g>
               ))}
             </>
           ) : radial ? (
@@ -102,11 +101,7 @@ export function Chart({
                 at = offset;
               offset += length;
               return (
-                <a
-                  key={p.label}
-                  href={link(p.label)}
-                  aria-label={`${p.label}: ${fmt(p.value)}. Open records.`}
-                >
+                <g key={p.label}>
                   <circle
                     cx={width / 2}
                     cy={height / 2}
@@ -119,10 +114,10 @@ export function Chart({
                     transform={`rotate(-90 ${width / 2} ${height / 2})`}
                     className={
                       [
-                        "stroke-primary",
-                        "stroke-info-fg",
-                        "stroke-ink-secondary",
-                        "stroke-ink-muted",
+                        "stroke-accent-text",
+                        "stroke-info-solid",
+                        "stroke-success-solid",
+                        "stroke-warning-solid",
                       ][i % 4]
                     }
                   >
@@ -130,7 +125,7 @@ export function Chart({
                       {p.label}: {fmt(p.value)}
                     </title>
                   </circle>
-                </a>
+                </g>
               );
             })
           ) : kind === "funnel" ? (
@@ -138,16 +133,11 @@ export function Chart({
               const row = (height - pad * 2) / display.length,
                 w = ((width - 200) * Math.max(0, p.value)) / max;
               return (
-                <a
-                  key={p.label}
-                  href={link(p.label)}
-                  aria-label={`${p.label}: ${fmt(p.value)}. Open records.`}
-                >
+                <g key={p.label}>
                   <text
                     x={pad}
                     y={pad + i * row + row * 0.65}
-                    className="fill-ink"
-                    fontSize={Math.min(14, row * 0.65)}
+                    className="fill-ink text-body-ui"
                   >
                     {p.label.slice(0, 24)}
                   </text>
@@ -157,22 +147,18 @@ export function Chart({
                     width={Math.max(2, w)}
                     height={Math.max(2, row - 5)}
                     rx="3"
-                    className="fill-primary"
+                    className="fill-accent-text"
                   >
                     <title>
                       {p.label}: {fmt(p.value)}
                     </title>
                   </rect>
-                </a>
+                </g>
               );
             })
           ) : kind === "calendar" ? (
             display.map((p, i) => (
-              <a
-                key={p.label}
-                href={link(p.label)}
-                aria-label={`${p.label}: ${fmt(p.value)}. Open records.`}
-              >
+              <g key={p.label}>
                 <rect
                   x={pad + (i % 14) * 44}
                   y={pad + Math.floor(i / 14) * 50}
@@ -181,7 +167,7 @@ export function Chart({
                   rx="5"
                   className={
                     p.value >= 90
-                      ? "fill-primary"
+                      ? "fill-success-solid"
                       : p.value >= 50
                         ? "fill-warning-solid"
                         : "fill-danger-solid"
@@ -191,18 +177,14 @@ export function Chart({
                     {p.label}: {fmt(p.value)}
                   </title>
                 </rect>
-              </a>
+              </g>
             ))
           ) : (
             display.map((p, i) => {
               const bar = (width - pad * 2) / display.length,
                 bh = Math.max(2, Math.abs(y(p.value) - y(0)));
               return (
-                <a
-                  key={p.label}
-                  href={link(p.label)}
-                  aria-label={`${p.label}: ${fmt(p.value)}. Open records.`}
-                >
+                <g key={p.label}>
                   {kind === "stacked" ? (
                     <rect
                       x={pad + i * bar}
@@ -220,100 +202,128 @@ export function Chart({
                     height={bh}
                     rx="3"
                     className={
-                      p.value < 0 ? "fill-danger-solid" : "fill-primary"
+                      p.value < 0 ? "fill-danger-solid" : "fill-accent-text"
                     }
                   >
                     <title>
                       {p.label}: {fmt(p.value)}
                     </title>
                   </rect>
-                </a>
+                </g>
               );
             })
           )}
         </svg>
       ) : (
-        <p className="py-6 text-ink-muted">No matching records.</p>
+        <EmptyState
+          className="border-0 px-0"
+          title="No matching records."
+          action={
+            <a className="inline-flex min-h-11 min-w-11 items-center text-accent-text underline" href={href}>
+              Review source records
+            </a>
+          }
+        />
       )}
-      <details
-        open={openTable}
-        className={compact ? "sr-only focus-within:not-sr-only" : "mt-3"}
-      >
+      {radial && display.length ? (
+        <figcaption className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-body-sm">
+          {display.map((p, i) => (
+            <span key={p.label} className="inline-flex items-center gap-2">
+              <span aria-hidden className={`size-3 shrink-0 rounded-full ${seriesFills[i % 4]}`} />
+              {p.label}: {fmt(p.value)}
+            </span>
+          ))}
+        </figcaption>
+      ) : null}
+      {kind === "calendar" && display.length ? (
+        <figcaption className="mt-3 flex flex-wrap gap-2 text-body-sm">
+          <Chip tone="success">High: {fmt(90)} or more</Chip>
+          <Chip tone="warning">Medium: {fmt(50)} to below {fmt(90)}</Chip>
+          <Chip tone="danger">Low: below {fmt(50)}</Chip>
+        </figcaption>
+      ) : null}
+      <details open={openTable} className="mt-3">
         <summary className="min-h-11 cursor-pointer py-3 text-accent-text">
           View chart data ({data.length} groups)
         </summary>
-        <div className="max-w-full overflow-x-auto">
-          <table className="w-full text-left text-body-sm">
-            <caption className="sr-only">{title} data</caption>
-            <thead>
-              <tr className="border-b border-line">
-                <th scope="col" className="p-2">
-                  Group
-                </th>
-                <th scope="col" className="p-2">
-                  Value
-                </th>
-                <th scope="col" className="p-2">
-                  Records
-                </th>
+        <Table label={`${title} data`}>
+          <caption className="sr-only">{title} data</caption>
+          <THead>
+            <TR>
+              <TH scope="col">
+                Group
+              </TH>
+              <TH scope="col">
+                Value
+              </TH>
+              <TH scope="col">
+                Records
+              </TH>
+              {kind === "calendar" ? <TH scope="col">Recorded level</TH> : null}
+              {unit === "percent" ? (
+                <>
+                  <TH scope="col">
+                    Numerator
+                  </TH>
+                  <TH scope="col">
+                    Denominator
+                  </TH>
+                  {basisUnit === "money" ? (
+                    <TH scope="col">
+                      Remaining
+                    </TH>
+                  ) : null}
+                </>
+              ) : null}
+            </TR>
+          </THead>
+          <TBody>
+            {data.map((p) => (
+              <TR key={p.label}>
+                <TH scope="row" className="whitespace-normal break-words font-normal">
+                  <a
+                    className="inline-flex min-h-11 min-w-11 items-center text-accent-text underline"
+                    href={link(p.label)}
+                  >
+                    {p.label}
+                  </a>
+                </TH>
+                <TD className="tabular-nums">
+                  <a className="inline-flex min-h-11 min-w-11 items-center text-accent-text underline" href={link(p.label)}>{fmt(p.value)}</a>
+                </TD>
+                <TD>
+                  <a className="inline-flex min-h-11 min-w-11 items-center text-accent-text underline" href={link(p.label)}>{p.count}</a>
+                </TD>
+                {kind === "calendar" ? (
+                  <TD>
+                    <Chip tone={p.value >= 90 ? "success" : p.value >= 50 ? "warning" : "danger"}>
+                      {p.value >= 90 ? "High" : p.value >= 50 ? "Medium" : "Low"}
+                    </Chip>
+                  </TD>
+                ) : null}
                 {unit === "percent" ? (
                   <>
-                    <th scope="col" className="p-2">
-                      Numerator
-                    </th>
-                    <th scope="col" className="p-2">
-                      Denominator
-                    </th>
+                    <TD>
+                      {displayValue(p.numerator ?? 0, basisUnit, currency)}
+                    </TD>
+                    <TD>
+                      {displayValue(p.base, basisUnit, currency)}
+                    </TD>
                     {basisUnit === "money" ? (
-                      <th scope="col" className="p-2">
-                        Remaining
-                      </th>
+                      <TD>
+                        {displayValue(
+                          p.base - (p.numerator ?? 0),
+                          basisUnit,
+                          currency,
+                        )}
+                      </TD>
                     ) : null}
                   </>
                 ) : null}
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((p) => (
-                <tr key={p.label} className="border-b border-line">
-                  <th scope="row" className="p-2 font-normal">
-                    <a
-                      className="text-accent-text underline"
-                      href={link(p.label)}
-                    >
-                      {p.label}
-                    </a>
-                  </th>
-                  <td className="p-2 tabular-nums">
-                    <a href={link(p.label)}>{fmt(p.value)}</a>
-                  </td>
-                  <td className="p-2">
-                    <a href={link(p.label)}>{p.count}</a>
-                  </td>
-                  {unit === "percent" ? (
-                    <>
-                      <td className="p-2">
-                        {displayValue(p.numerator ?? 0, basisUnit, currency)}
-                      </td>
-                      <td className="p-2">
-                        {displayValue(p.base, basisUnit, currency)}
-                      </td>
-                      {basisUnit === "money" ? (
-                        <td className="p-2">
-                          {displayValue(
-                            p.base - (p.numerator ?? 0),
-                            basisUnit,
-                            currency,
-                          )}
-                        </td>
-                      ) : null}
-                    </>
-                  ) : null}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </TR>
+            ))}
+          </TBody>
+        </Table>
         {data.length > 40 ? (
           <p className="text-ink-muted">
             The chart shows the first 40 groups. The table and CSV include every

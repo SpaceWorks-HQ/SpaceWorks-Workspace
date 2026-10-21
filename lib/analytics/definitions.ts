@@ -80,7 +80,7 @@ const funding = {
   },
 };
 const people = {
-  table: `(SELECT mb.id,mb."workspaceId",mb."userId",mp."engagementStart",mp."leavingAt",mp."departmentId",coalesce(mp."membershipType"::text,'Not recorded') AS "membershipType",coalesce(mp."engagementType",'Not recorded') AS "engagementType",mb."joinedAt" AS "createdAt" FROM "Membership" mb LEFT JOIN "MemberProfile" mp ON mp."workspaceId"=mb."workspaceId" AND mp."userId"=mb."userId") r`,
+  table: `(SELECT mb.id,mb."workspaceId",mb."userId",mp."engagementStart",coalesce(mp."engagementEnd",mp."leavingAt") AS "leavingAt",mp."departmentId",coalesce(mp."membershipType"::text,'Not recorded') AS "membershipType",coalesce(mp."engagementType",'Not recorded') AS "engagementType",mb."joinedAt" AS "createdAt" FROM "Membership" mb LEFT JOIN "MemberProfile" mp ON mp."workspaceId"=mb."workspaceId" AND mp."userId"=mb."userId") r`,
   join: 'JOIN "Membership" m ON m."workspaceId"=r."workspaceId" AND m."userId"=r."userId" JOIN "User" u ON u.id=r."userId" LEFT JOIN "Department" dep ON dep.id=r."departmentId" AND dep."workspaceId"=r."workspaceId"',
   date: 'r."engagementStart"',
   dateOnly: true,
@@ -557,7 +557,7 @@ add(
   "leavers",
   "people",
   "Leavers",
-  "Recorded leaving date. Deleted membership histories cannot be reconstructed.",
+  "Engagement end date, falling back to the legacy leaving date. Deleted membership histories cannot be reconstructed.",
   {
     ...people,
     date: 'r."leavingAt"',
@@ -929,11 +929,15 @@ for (const [id, title, kind, label] of [
     id,
     "operations",
     title,
-    "Current internal register; private incident details stay in their source tool.",
+    id === "security"
+      ? "Incidents by detection date in the workspace time zone; private details stay in the source tool."
+      : "Current internal register; private incident details stay in their source tool.",
     {
       ...marketing,
       gate: "admin",
-      date: id === "access-reviews" ? 'r."completedAt"' : 'r."dateOn"',
+      // INCIDENT requires detectedAt in marketingIt/schema.ts; dateOn is unrelated and optional.
+      date: id === "access-reviews" ? 'r."completedAt"' : "(nullif(r.details->>'detectedAt','')::timestamptz AT TIME ZONE 'UTC')",
+      dateOnly: id !== "security",
       where: `${marketing.where} AND r.kind='${kind}'${id === "access-reviews" ? " AND r.status='COMPLETED'" : ""}`,
       label,
     },

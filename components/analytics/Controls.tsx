@@ -2,6 +2,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ConfirmDialog } from "@/components/ui/dialog";
+import { Card, Chip } from "@/components/ui/display";
+import { CheckboxField } from "@/components/ui/choice";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import {
@@ -75,11 +77,11 @@ export function SavedReports({
     });
   }
   return (
-    <section className="rounded-xl border border-line bg-panel p-5 print:hidden">
+    <Card as="section" className="print:hidden">
       <h2 className="text-h3">Saved reports and packs</h2>
       <a
         href={`/w/${slug}/analytics/export?kind=presets`}
-        className="inline-flex min-h-11 items-center text-accent-text underline"
+        className="inline-flex min-h-11 min-w-11 items-center text-accent-text underline"
       >
         Export saved views CSV
       </a>
@@ -102,40 +104,30 @@ export function SavedReports({
           ) : (
             <input name="commentary" type="hidden" value="" />
           )}
-          <label className="flex min-h-11 items-center gap-2">
-            <input type="checkbox" name="pinned" /> Pin to overview
-          </label>
+          <CheckboxField name="pinned" label="Pin to overview" />
           {admin ? (
-            <label className="flex min-h-11 items-center gap-2">
-              <input type="checkbox" name="shared" /> Share this view with
-              admins
-            </label>
+            <CheckboxField name="shared" label="Share this view with admins" />
           ) : null}
           {admin ? (
             <fieldset className="grid gap-2">
               <legend className="text-label">
                 Monthly management PDF email · Optional
               </legend>
-              <label className="flex min-h-11 items-center gap-2">
-                <input type="checkbox" name="monthlyEmail" /> Email the previous
-                month’s management report
-              </label>
+              <CheckboxField name="monthlyEmail" label="Email the previous month’s management report" />
               <p className="text-caption text-ink-muted">
                 Choose Last month and Share with admins to enable this.
               </p>
               {admins.map((a) => (
-                <label key={a.id} className="flex min-h-11 items-center gap-2">
-                  <input type="checkbox" name="emailTo" value={a.id} />
-                  {a.name}
-                </label>
+                <CheckboxField name="emailTo" value={a.id} label={a.name} key={a.id} />
               ))}
             </fieldset>
           ) : null}
-          <Button type="submit" disabled={pending}>
+          <Button type="submit" variant="primary" disabled={pending}>
             Save report
           </Button>
         </form>
       </details>
+      {!presets.length ? <p className="mt-3 text-body-sm text-ink-muted">No saved reports yet. Save this view to return to it.</p> : null}
       <ul className="mt-3 divide-y divide-line">
         {presets.map((p) => (
           <li
@@ -144,16 +136,14 @@ export function SavedReports({
           >
             <div>
               <a
-                className="text-accent-text underline"
+                className="inline-flex min-h-11 min-w-11 items-center text-accent-text underline"
                 href={`/w/${slug}/analytics?${queryString(p.query)}`}
               >
                 {p.name}
-                {p.pinned ? " · Pinned" : ""}
+                {p.pinned ? <Chip className="ml-2" tone="accent">Pinned</Chip> : null}
               </a>
               {p.shared ? (
-                <span className="ml-2 text-caption text-ink-muted">
-                  Shared with admins
-                </span>
+                <Chip className="ml-2" tone="info">Shared with admins</Chip>
               ) : null}
               {p.ownerId === viewerId ? (
                 <details className="mt-2">
@@ -180,54 +170,22 @@ export function SavedReports({
                         rows={4}
                       />
                     </Field>
-                    <label className="flex min-h-11 items-center gap-2">
-                      <input
-                        name="pinned"
-                        type="checkbox"
-                        defaultChecked={p.pinned}
-                      />{" "}
-                      Pin to overview
-                    </label>
+                    <CheckboxField name="pinned" defaultChecked={p.pinned} label="Pin to overview" />
                     {admin ? (
-                      <label className="flex min-h-11 items-center gap-2">
-                        <input
-                          name="shared"
-                          type="checkbox"
-                          defaultChecked={p.shared}
-                        />{" "}
-                        Share the view with admins
-                      </label>
+                      <CheckboxField name="shared" defaultChecked={p.shared} label="Share the view with admins" />
                     ) : null}
                     {admin ? (
                       <fieldset>
                         <legend className="text-label">
                           Monthly management PDF email · Optional
                         </legend>
-                        <label className="flex min-h-11 items-center gap-2">
-                          <input
-                            name="monthlyEmail"
-                            type="checkbox"
-                            defaultChecked={p.query.monthlyEmail}
-                          />{" "}
-                          Email last month’s report
-                        </label>
+                        <CheckboxField name="monthlyEmail" defaultChecked={p.query.monthlyEmail} label="Email last month’s report" />
                         {admins.map((a) => (
-                          <label
-                            key={a.id}
-                            className="flex min-h-11 items-center gap-2"
-                          >
-                            <input
-                              name="emailTo"
-                              type="checkbox"
-                              value={a.id}
-                              defaultChecked={p.query.emailTo?.includes(a.id)}
-                            />
-                            {a.name}
-                          </label>
+                          <CheckboxField key={a.id} name="emailTo" value={a.id} defaultChecked={p.query.emailTo?.includes(a.id)} label={a.name} />
                         ))}
                       </fieldset>
                     ) : null}
-                    <Button type="submit" disabled={pending}>
+                    <Button type="submit" variant="primary" disabled={pending}>
                       Update saved report
                     </Button>
                   </form>
@@ -321,7 +279,7 @@ export function SavedReports({
       <p role="status" className="mt-3 text-body-sm">
         {message}
       </p>
-    </section>
+    </Card>
   );
 }
 export type AdjustmentRow = {
@@ -395,14 +353,14 @@ export function Adjustments({
     });
   }
   return (
-    <section
+    <Card as="section"
       id="adjustments"
-      className="rounded-xl border border-line bg-panel p-5 print:hidden"
+      className="print:hidden"
     >
       <h2 className="text-h3">One-off forecast adjustments</h2>
       <a
         href={`/w/${slug}/analytics/export?kind=adjustments&currency=${currency}`}
-        className="inline-flex min-h-11 items-center text-accent-text underline"
+        className="inline-flex min-h-11 min-w-11 items-center text-accent-text underline"
       >
         Export adjustments CSV
       </a>
@@ -474,12 +432,13 @@ export function Adjustments({
             </p>
           </div>
           <div>
-            <Button type="submit" disabled={pending}>
+            <Button type="submit" variant="primary" disabled={pending}>
               Add adjustment
             </Button>
           </div>
         </form>
       </details>
+      {!rows.length ? <p className="mt-3 text-body-sm text-ink-muted">No adjustments yet. Add one for a planned cash movement.</p> : null}
       <ul className="divide-y divide-line">
         {rows.map((r) => (
           <li key={r.id} className="py-4">
@@ -514,7 +473,7 @@ export function Adjustments({
               {r.files.map((f) => (
                 <li key={f.id}>
                   <a
-                    className="inline-flex min-h-11 items-center text-accent-text underline"
+                    className="inline-flex min-h-11 min-w-11 items-center text-accent-text underline"
                     href={`/api/files/${f.id}`}
                     target="_blank"
                     rel="noreferrer"
@@ -547,7 +506,7 @@ export function Adjustments({
         }}
       />
       <p role="status">{message}</p>
-    </section>
+    </Card>
   );
 }
 

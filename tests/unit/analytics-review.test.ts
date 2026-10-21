@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Dashboard } from "@/components/analytics/Dashboard";
+import { ReportPack } from "@/components/analytics/ReportPack";
 import { Drill } from "@/components/analytics/Drill";
 import { forecastBuckets } from "@/lib/analytics/metrics";
 import { formatMoney } from "@/lib/format/money";
@@ -23,7 +24,7 @@ const data: DashboardData = {
 const lines = ["2026-01-30", "2026-01-31", "2026-02-07", "2026-02-28", "2026-03-30", "2026-03-31"]
   .map((date, i) => ({ id: String(i), title: `Commitment ${i}`, date, amountMinor: -100, source: "Test", path: "/source", estimated: true }));
 const forecast: ForecastResult = {
-  asOf: "2026-01-30", currency: "INR", openingMinor: 12500, openingKnown: true,
+  incomplete: false, asOf: "2026-01-30", currency: "INR", openingMinor: 12500, openingKnown: true,
   thresholdMinor: 12345, lines, warnings: [],
   weekly: forecastBuckets(lines, 12500, "2026-01-31", 12, "week", 12345),
   monthly: forecastBuckets(lines, 12500, "2026-01-31", 6, "month", 12345),
@@ -31,6 +32,30 @@ const forecast: ForecastResult = {
 const renderDashboard = () => renderToStaticMarkup(createElement(Dashboard, { data, slug: "workspace", forecast, adjustments: [] }));
 
 describe("analytics review regressions", () => {
+  it("shows Patch once in the main dashboard and drill empty states", () => {
+    expect(renderDashboard().match(/data-patch="idle"/g)).toHaveLength(1);
+    const html = renderToStaticMarkup(createElement(Drill, { slug: "workspace", metric: "income", data: {
+      title: "Income", description: "Source records", unit: "money", basisUnit: "money", q: data.q,
+      period: data.period, rows: [], page: 1, more: false,
+    } }));
+    expect(html.match(/data-patch="idle"/g)).toHaveLength(1);
+    expect(html).toContain("Reset filters");
+  });
+
+  it("discloses incomplete forecasts in both the dashboard and printable pack", () => {
+    const incomplete = { ...forecast, incomplete: true, warnings: ["Forecast incomplete: review overdue schedules."] };
+    const dashboard = renderToStaticMarkup(createElement(Dashboard, { data, slug: "workspace", forecast: incomplete, adjustments: [] }));
+    const report = renderToStaticMarkup(createElement(ReportPack, { data: {
+      title: "Management report", name: "Workspace", kind: "management", preset: { name: "Monthly", commentary: "" },
+      q: data.q, metrics: [], forecast: incomplete, slug: "workspace", period: data.period,
+    } }));
+    for (const html of [dashboard, report]) {
+      expect(html).toContain("Incomplete forecast");
+      expect(html).toContain("Forecast incomplete: review overdue schedules.");
+    }
+    expect(report.match(/<h1\b/g)).toHaveLength(1);
+  });
+
   it.each(["INR", "JPY", "KWD"])("formats both ratio amounts using %s minor units", (currency) => {
     const drill: DrillData = {
       title: "Budget utilisation", description: "Actual / budget", unit: "percent", basisUnit: "money",
@@ -60,7 +85,7 @@ describe("analytics review regressions", () => {
     };
     const html = renderToStaticMarkup(createElement(Drill, { data: drill, slug: "workspace", metric: "average-gift" }));
     expect(html).toContain(formatMoney(12500, "INR"));
-    expect(html).toContain('<td class="p-3 tabular-nums">1</td>');
+    expect(html).toMatch(/<td\b[^>]*>1<\/td>/);
   });
 
   it.each([
@@ -70,7 +95,7 @@ describe("analytics review regressions", () => {
     const html = renderDashboard();
     const figure = html.split(`<figure class="min-w-0" aria-label="${title}">`)[1]?.split("</figure>")[0];
     expect(figure).toBeDefined();
-    const recordCounts = [...figure!.matchAll(/<td class="p-2"><a href="[^"]+">(\d+)<\/a><\/td>/g)].map((m) => Number(m[1]));
+    const recordCounts = [...figure!.matchAll(/<td\b[^>]*><a\b[^>]*>(\d+)<\/a><\/td>/g)].map((m) => Number(m[1]));
     expect(recordCounts).toEqual(counts);
   });
 });
