@@ -15,6 +15,10 @@ for (const directory of ["app", "components", "lib", "public"]) {
     filter: (file) => directory !== "app" || !path.relative(path.join(root, "app"), file).startsWith(`api${path.sep}`) && file !== path.join(root, "app", "api"),
   });
 }
+// Shared cryptography remains source-compatible in the rendering-only copy.
+// Copy the pure helper only; the operator command and database access stay on the backend.
+mkdirSync(path.join(target, "scripts"), { recursive: true });
+cpSync(path.join(root, "scripts/vault-root-crypto.mjs"), path.join(target, "scripts/vault-root-crypto.mjs"));
 mkdirSync(path.join(target, "app/api/[...path]"), { recursive: true });
 cpSync(path.join(target, "api-route.ts"), path.join(target, "app/api/[...path]/route.ts"));
 cpSync(path.join(root, "postcss.config.mjs"), path.join(target, "postcss.config.mjs"));

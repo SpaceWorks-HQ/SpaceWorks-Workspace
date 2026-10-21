@@ -1,6 +1,7 @@
 // Generated from app/account/page.tsx; regenerate with npm run frontend:catalog.
 import "server-only";
 import { viewDto } from "@/lib/frontend/view";
+import { listCliSessions } from "@/lib/secrets/device";
 import { prisma } from "@/lib/db";
 import { remainingRecoveryCodes } from "@/lib/mfa";
 import { requireAuth } from "@/lib/permissions";
@@ -16,6 +17,7 @@ const [user, workspaces, remaining] = await Promise.all([
     listUserWorkspaces(sessionUser.id),
     remainingRecoveryCodes(sessionUser.id),
   ]);
+const cliSessions = await listCliSessions(sessionUser.id);
 const hasPassword = Boolean(user.passwordHash);
-return viewDto({ user, workspaces, remaining, hasPassword } as const);
+return viewDto({ user, workspaces, remaining, cliSessions, hasPassword } as const);
 }

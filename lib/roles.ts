@@ -208,3 +208,7 @@ export const canUseMarketingOperations = (m: RoleHolder) => atLeast(m, "MEMBER")
 export const canManageMarketingOperations = (m: RoleHolder) => atLeast(m, "ADMIN");
 /** Device assignments, incident details and access reviews are admin records. */
 export const canManageItAdministration = (m: RoleHolder) => atLeast(m, "ADMIN");
+
+/** Application secrets require active membership and explicit environment access. */
+export const canUseSecrets = (m: RoleHolder) => atLeast(m, "MEMBER");
+export const canManageSecrets = (m: RoleHolder) => atLeast(m, "ADMIN");

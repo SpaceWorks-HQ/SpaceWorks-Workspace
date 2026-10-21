@@ -1,4 +1,5 @@
 import "server-only";
+import { escapeHtml } from "@/lib/email/templates";
 import { templateWhere } from "@/lib/templates/service";
 import { z } from "zod";
 import { type Tx } from "@/lib/db";
@@ -115,7 +116,7 @@ export async function notifyMeeting(
           0,
           300,
         ),
-        html: "<p>A Space Works team meeting invitation is attached.</p>",
+        html: "<p>A Space Works team meeting invitation is attached.</p>" + (meeting.videoUrl ? `<p><a href="${escapeHtml(meeting.videoUrl)}">Join ${meeting.videoUrl.startsWith("https://meet.google.com/") ? "Google Meet" : "video meeting"}</a><br>${escapeHtml(meeting.videoUrl)}</p>` : meeting.meetPending ? "<p>Meet link being created…</p>" : ""),
         text: `${meeting.title}\n${meeting.startsAt.toISOString()}\n${meeting.location ?? ""}\n${meeting.videoUrl ?? ""}`,
         calendarInvite: {
           method: cancelled ? "CANCEL" : "REQUEST",

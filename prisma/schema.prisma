@@ -155,6 +155,7 @@ enum BoardroomTurnRole {
 // ──────────────────────── Auth and instance ────────────────────────
 
 model User {
+  cliSessions        CliSession[]
   personalNotes      PersonalNote[]
   personalTodos      PersonalTodo[]
   id                 String         @id @default(cuid())
@@ -409,42 +410,56 @@ model Notification {
 // ──────────────────────────── Tenancy ────────────────────────────
 
 model Workspace {
-  businessDocuments       BusinessDocument[]
-  documentSeries          DocumentSeries[]
-  documentReferences      DocumentReference[]
-  documentFiles           DocumentFile[]
-  documentAllocations     DocumentAllocation[]
-  documentDeliveries      DocumentDelivery[]
-  socialAccounts          SocialAccount[]
-  socialMetrics           SocialMetricDaily[]
-  socialPosts             SocialPost[]
-  socialComments          SocialComment[]
-  socialSyncLogs          SocialSyncLog[]
-  socialDrafts            SocialConnectionDraft[]
-  id                      String                  @id @default(cuid())
-  personalNotes           PersonalNote[]
-  personalTodos           PersonalTodo[]
-  slug                    String                  @unique
-  name                    String
-  tagline                 String?
-  description             String?
-  timezone                String                  @default("Asia/Kolkata")
-  currency                String                  @default("INR")
-  financeVisibleToMembers Boolean                 @default(false)
+  secretIdentities             SecretIdentity[]
+  vaultKeys                    VaultKey[]
+  secretKeyRotations           SecretKeyRotation[]
+  secretProjectRows            SecretProject[]
+  secretEnvironmentRows        SecretEnvironment[]
+  secretGrantRows              SecretGrant[]
+  secretFolderRows             SecretFolder[]
+  applicationSecretRows        ApplicationSecret[]
+  applicationSecretVersionRows ApplicationSecretVersion[]
+  secretSnapshotRows           SecretSnapshot[]
+  secretChangeRows             SecretChange[]
+  secretServiceTokenRows       SecretServiceToken[]
+  secretShareRows              SecretShare[]
+  secretAuditRows              SecretAudit[]
+  businessDocuments            BusinessDocument[]
+  documentSeries               DocumentSeries[]
+  documentReferences           DocumentReference[]
+  documentFiles                DocumentFile[]
+  documentAllocations          DocumentAllocation[]
+  documentDeliveries           DocumentDelivery[]
+  socialAccounts               SocialAccount[]
+  socialMetrics                SocialMetricDaily[]
+  socialPosts                  SocialPost[]
+  socialComments               SocialComment[]
+  socialSyncLogs               SocialSyncLog[]
+  socialDrafts                 SocialConnectionDraft[]
+  id                           String                     @id @default(cuid())
+  personalNotes                PersonalNote[]
+  personalTodos                PersonalTodo[]
+  slug                         String                     @unique
+  name                         String
+  tagline                      String?
+  description                  String?
+  timezone                     String                     @default("Asia/Kolkata")
+  currency                     String                     @default("INR")
+  financeVisibleToMembers      Boolean                    @default(false)
   /// Channel (id) that receives assistant digests by default.
-  digestChannelId         String?
+  digestChannelId              String?
   /// Members may see Services costs (cloud spend, service costs).
-  costsVisibleToMembers   Boolean                 @default(false)
+  costsVisibleToMembers        Boolean                    @default(false)
   /// Members (not only admins) may acknowledge Services incidents.
-  membersCanAckIncidents  Boolean                 @default(false)
+  membersCanAckIncidents       Boolean                    @default(false)
   /// Pauses retention purges (legal hold).
-  legalHold               Boolean                 @default(false)
-  defaultLocale           String                  @default("en-IN")
+  legalHold                    Boolean                    @default(false)
+  defaultLocale                String                     @default("en-IN")
   /// Raw monitor check retention in days (7–30).
-  monitorRetentionDays    Int                     @default(14)
-  archivedAt              DateTime?
-  createdAt               DateTime                @default(now())
-  updatedAt               DateTime                @updatedAt
+  monitorRetentionDays         Int                        @default(14)
+  archivedAt                   DateTime?
+  createdAt                    DateTime                   @default(now())
+  updatedAt                    DateTime                   @updatedAt
 
   memberships       Membership[]
   invitations       Invitation[]
@@ -1521,6 +1536,7 @@ enum ApprovalSubjectType {
   ACCESS_CREDENTIAL
   TIME_OFF
   CUSTOM
+  SECRET_CHANGE
 }
 
 enum ApprovalStatus {
@@ -3340,6 +3356,7 @@ model Template {
 // ─────────────────────── Collaboration ───────────────────────
 
 model Meeting {
+  meetPending        Boolean       @default(false)
   id                 String        @id @default(cuid())
   workspaceId        String
   title              String
@@ -5061,18 +5078,20 @@ model CalendarEntry {
 }
 
 model CalendarMeetingSync {
-  id           String    @id @default(cuid())
-  workspaceId  String
-  meetingId    String
-  userId       String
-  connectionId String
-  externalId   String
-  sequence     Int       @default(-1)
-  etag         String?
-  lastSyncedAt DateTime?
-  lastError    String?
-  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  meeting      Meeting   @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  meetRequestedAt DateTime?
+  meetPending     Boolean   @default(false)
+  id              String    @id @default(cuid())
+  workspaceId     String
+  meetingId       String
+  userId          String
+  connectionId    String
+  externalId      String
+  sequence        Int       @default(-1)
+  etag            String?
+  lastSyncedAt    DateTime?
+  lastError       String?
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  meeting         Meeting   @relation(fields: [meetingId], references: [id], onDelete: Cascade)
 
   @@unique([workspaceId, meetingId, userId])
   @@index([workspaceId, userId])
@@ -6210,4 +6229,352 @@ model MarketingItReviewItem {
   @@unique([workspaceId, recordId, userId, sourceType, sourceId])
   @@index([workspaceId, recordId])
   @@index([workspaceId, userId])
+}
+
+// Application secrets. All tenant references use compound tenant keys.
+model SecretProject {
+  identities     SecretIdentity[]
+  encryptionKeys VaultKey[]
+  rotations      SecretKeyRotation[]
+  id             String              @id @default(cuid())
+  workspaceId    String
+  name           String
+  slug           String
+  createdById    String
+  createdAt      DateTime            @default(now())
+  workspace      Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  environments   SecretEnvironment[]
+  grants         SecretGrant[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, slug])
+}
+
+model SecretEnvironment {
+  id                  String                     @id @default(cuid())
+  workspaceId         String
+  projectId           String
+  name                String
+  slug                String
+  position            Int                        @default(0)
+  production          Boolean                    @default(false)
+  protected           Boolean                    @default(false)
+  revision            Int                        @default(0)
+  workspace           Workspace                  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project             SecretProject              @relation(fields: [workspaceId, projectId], references: [workspaceId, id], onDelete: Cascade)
+  folders             SecretFolder[]
+  secrets             ApplicationSecret[]
+  snapshots           SecretSnapshot[]
+  changes             SecretChange[]
+  identityPermissions SecretIdentityPermission[]
+  tokens              SecretServiceToken[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, projectId, slug])
+  @@index([workspaceId, projectId, position])
+}
+
+model SecretGrant {
+  id            String        @id @default(cuid())
+  workspaceId   String
+  projectId     String
+  // Empty means project-level; an environment grant overrides it, including NONE.
+  environmentId String        @default("")
+  userId        String
+  role          String
+  workspace     Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project       SecretProject @relation(fields: [workspaceId, projectId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, projectId, environmentId, userId])
+  @@index([workspaceId, userId])
+}
+
+model SecretFolder {
+  id            String            @id @default(cuid())
+  workspaceId   String
+  environmentId String
+  path          String
+  workspace     Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  environment   SecretEnvironment @relation(fields: [workspaceId, environmentId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, environmentId, path])
+}
+
+model ApplicationSecret {
+  id              String                     @id @default(cuid())
+  workspaceId     String
+  environmentId   String
+  path            String                     @default("/")
+  key             String
+  secretEnc       String
+  dataKeyEnc      String
+  comment         String                     @default("")
+  tags            String[]                   @default([])
+  ownerId         String
+  rotateEveryDays Int?
+  rotatedAt       DateTime                   @default(now())
+  deletedAt       DateTime?
+  updatedAt       DateTime                   @updatedAt
+  workspace       Workspace                  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  environment     SecretEnvironment          @relation(fields: [workspaceId, environmentId], references: [workspaceId, id], onDelete: Cascade)
+  versions        ApplicationSecretVersion[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, environmentId, path, key])
+  @@index([workspaceId, ownerId, rotatedAt])
+}
+
+model ApplicationSecretVersion {
+  id          String            @id @default(cuid())
+  workspaceId String
+  secretId    String
+  secretEnc   String
+  dataKeyEnc  String
+  metadata    Json
+  deleted     Boolean           @default(false)
+  createdById String
+  createdAt   DateTime          @default(now())
+  workspace   Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  secret      ApplicationSecret @relation(fields: [workspaceId, secretId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, secretId, createdAt])
+}
+
+model SecretSnapshot {
+  id            String            @id @default(cuid())
+  workspaceId   String
+  environmentId String
+  revision      Int
+  label         String
+  secretEnc     String
+  dataKeyEnc    String
+  createdById   String
+  createdAt     DateTime          @default(now())
+  workspace     Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  environment   SecretEnvironment @relation(fields: [workspaceId, environmentId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, environmentId, createdAt])
+}
+
+model SecretChange {
+  id            String            @id @default(cuid())
+  workspaceId   String
+  environmentId String
+  revision      Int
+  secretEnc     String
+  dataKeyEnc    String
+  // Key names and operation only; never values or comments.
+  diff          Json
+  status        String            @default("PENDING")
+  createdById   String
+  createdAt     DateTime          @default(now())
+  workspace     Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  environment   SecretEnvironment @relation(fields: [workspaceId, environmentId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, environmentId, status])
+}
+
+model SecretServiceToken {
+  id            String            @id @default(cuid())
+  workspaceId   String
+  environmentId String
+  name          String
+  prefix        String            @unique
+  secretHash    String
+  path          String            @default("/")
+  writable      Boolean           @default(false)
+  ipAllowlist   String[]          @default([])
+  expiresAt     DateTime?
+  lastUsedAt    DateTime?
+  revokedAt     DateTime?
+  createdById   String
+  createdAt     DateTime          @default(now())
+  workspace     Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  environment   SecretEnvironment @relation(fields: [workspaceId, environmentId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, environmentId, revokedAt])
+}
+
+model SecretShare {
+  id             String    @id @default(cuid())
+  workspaceId    String
+  projectId      String
+  capabilityHash String    @unique
+  // Browser-encrypted AES-GCM ciphertext. Fragment key is never transmitted.
+  ciphertext     String
+  remainingViews Int       @default(1)
+  expiresAt      DateTime
+  createdById    String
+  createdAt      DateTime  @default(now())
+  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, projectId, expiresAt])
+}
+
+model SecretAudit {
+  secretKey     String?
+  id            String    @id @default(cuid())
+  workspaceId   String
+  projectId     String
+  environmentId String?
+  actorId       String?
+  action        String
+  targetId      String?
+  createdAt     DateTime  @default(now())
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, projectId, createdAt])
+  @@index([workspaceId, environmentId, action])
+}
+
+// Device and CLI sessions are user authentication records, independent of tenants.
+model CliDeviceCode {
+  id             String    @id @default(cuid())
+  deviceHash     String    @unique
+  userCodeHash   String    @unique
+  deviceName     String
+  scope          String    @default("secrets")
+  expiresAt      DateTime
+  lastPolledAt   DateTime?
+  status         String    @default("PENDING")
+  userId         String?
+  mfaAt          DateTime?
+  sessionVersion Int?
+  createdAt      DateTime  @default(now())
+
+  @@index([expiresAt])
+}
+
+model CliSession {
+  id               String    @id @default(cuid())
+  userId           String
+  name             String
+  accessHash       String    @unique
+  refreshHash      String    @unique
+  accessExpiresAt  DateTime
+  refreshExpiresAt DateTime
+  sessionVersion   Int
+  mfaAt            DateTime?
+  lastUsedAt       DateTime?
+  revokedAt        DateTime?
+  createdAt        DateTime  @default(now())
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+}
+
+// Universal authentication credentials and access leases are always stored hashed.
+model SecretIdentity {
+  id             String                     @id @default(cuid())
+  workspaceId    String
+  projectId      String
+  name           String
+  clientId       String                     @unique
+  createdById    String
+  accessTtl      Int                        @default(7200)
+  maxTtl         Int                        @default(2592000)
+  tokenUses      Int?
+  secretUses     Int?
+  secretTtl      Int?
+  loginIps       String[]                   @default([])
+  tokenIps       String[]                   @default([])
+  failureLimit   Int                        @default(3)
+  lockoutSeconds Int                        @default(300)
+  failures       Int                        @default(0)
+  lockedUntil    DateTime?
+  revokedAt      DateTime?
+  createdAt      DateTime                   @default(now())
+  workspace      Workspace                  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project        SecretProject              @relation(fields: [workspaceId, projectId], references: [workspaceId, id], onDelete: Cascade)
+  credentials    SecretIdentityCredential[]
+  tokens         SecretIdentityToken[]
+  permissions    SecretIdentityPermission[]
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId, projectId])
+}
+
+model SecretIdentityPermission {
+  id            String            @id @default(cuid())
+  workspaceId   String
+  identityId    String
+  environmentId String
+  path          String            @default("/")
+  role          String            @default("READ")
+  identity      SecretIdentity    @relation(fields: [workspaceId, identityId], references: [workspaceId, id], onDelete: Cascade)
+  environment   SecretEnvironment @relation(fields: [workspaceId, environmentId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, identityId, environmentId, path])
+}
+
+model SecretIdentityCredential {
+  id            String                @id @default(cuid())
+  workspaceId   String
+  identityId    String
+  secretHash    String
+  remainingUses Int?
+  expiresAt     DateTime?
+  revokedAt     DateTime?
+  createdAt     DateTime              @default(now())
+  identity      SecretIdentity        @relation(fields: [workspaceId, identityId], references: [workspaceId, id], onDelete: Cascade)
+  tokens        SecretIdentityToken[]
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId, identityId])
+}
+
+model SecretIdentityToken {
+  id            String                   @id @default(cuid())
+  workspaceId   String
+  identityId    String
+  credentialId  String
+  tokenHash     String                   @unique
+  expiresAt     DateTime
+  maxExpiresAt  DateTime
+  remainingUses Int?
+  revokedAt     DateTime?
+  createdAt     DateTime                 @default(now())
+  identity      SecretIdentity           @relation(fields: [workspaceId, identityId], references: [workspaceId, id], onDelete: Cascade)
+  credential    SecretIdentityCredential @relation(fields: [workspaceId, credentialId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, identityId, revokedAt])
+}
+
+// Wrapped internal keys. Database rows contain no unwrapped key material.
+model VaultKey {
+  id          String         @id @default(cuid())
+  workspaceId String
+  projectId   String?
+  scope       String
+  version     Int
+  wrappedKey  String
+  parentId    String?
+  rootVersion Int?
+  fingerprint String
+  active      Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  retiredAt   DateTime?
+  workspace   Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project     SecretProject? @relation(fields: [workspaceId, projectId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, scope, version])
+  @@index([workspaceId, projectId, active])
+}
+
+model SecretKeyRotation {
+  id          String        @id @default(cuid())
+  workspaceId String
+  projectId   String
+  kind        String
+  status      String        @default("PENDING")
+  processed   Int           @default(0)
+  total       Int           @default(0)
+  cursor      String?
+  createdById String
+  createdAt   DateTime      @default(now())
+  finishedAt  DateTime?
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project     SecretProject @relation(fields: [workspaceId, projectId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, projectId, createdAt])
 }

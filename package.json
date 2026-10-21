@@ -129,6 +129,7 @@
     "fsevents@2.3.3": true
   },
   "workspaces": [
-    "frontend"
+    "frontend",
+    "packages/cli"
   ]
 }

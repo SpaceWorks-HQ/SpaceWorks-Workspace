@@ -17,6 +17,7 @@ const actor = await requireWorkspace(workspaceSlug, "GUEST");
 const meeting = await prisma.meeting.findFirst({
     where: { ...(await meetingWhere(actor)), id: meetingId },
     include: {
+      calendarSyncs: { where: { userId: actor.user.id }, select: { lastError: true } },
       agenda: { orderBy: { sortOrder: "asc" } },
       decisions: {
         where: { workspaceId: actor.workspace.id },

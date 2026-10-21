@@ -18,6 +18,7 @@ import {
   Section,
   TextBody,
 } from "@/components/meetings/Structure";
+import { MeetLink } from "@/components/calendar/MeetLink";
 import { Chip } from "@/components/ui/display";
 export const metadata = { title: "Meeting" };
 export default async function MeetingPage({
@@ -28,6 +29,7 @@ export default async function MeetingPage({
   const meeting = await prisma.meeting.findFirst({
     where: { ...(await meetingWhere(actor)), id: meetingId },
     include: {
+      calendarSyncs: { where: { userId: actor.user.id }, select: { lastError: true } },
       agenda: { orderBy: { sortOrder: "asc" } },
       decisions: {
         where: { workspaceId: actor.workspace.id },
@@ -76,6 +78,7 @@ export default async function MeetingPage({
         {meeting.location || "No location set"} · Facilitated by{" "}
         {name(meeting.facilitatorId)}
       </p>
+      <MeetLink url={meeting.videoUrl} pending={meeting.meetPending} error={meeting.calendarSyncs[0]?.lastError} />
       {manage ? (
         <Disclosure title="Edit meeting and link notes">
           <ActionForm

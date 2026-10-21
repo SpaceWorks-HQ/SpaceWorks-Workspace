@@ -1,3 +1,5 @@
+import { CliSessions } from "@/components/secrets/CliSessions";
+import { listCliSessions } from "@/lib/secrets/device";
 import type { Metadata } from "next";
 import { SimpleShell } from "@/components/chrome/SimpleShell";
 import { AppearanceCard } from "@/components/account/AppearanceCard";
@@ -25,6 +27,7 @@ export default async function AccountPage() {
     listUserWorkspaces(sessionUser.id),
     remainingRecoveryCodes(sessionUser.id),
   ]);
+  const cliSessions = await listCliSessions(sessionUser.id);
   const hasPassword = Boolean(user.passwordHash);
   return (
     <SimpleShell>
@@ -45,6 +48,9 @@ export default async function AccountPage() {
           </SettingsRow>
           <SettingsRow title="Sessions" description="Lost a device? Sign out of every session at once.">
             <SessionsCard />
+          </SettingsRow>
+          <SettingsRow title="CLI devices" description="Devices authorised to use application Secrets. Revocation takes effect immediately.">
+            <CliSessions sessions={cliSessions} timezone={user.timezone ?? "Asia/Kolkata"} />
           </SettingsRow>
           <SettingsRow title="Your data" description="A JSON copy of your profile, memberships, tasks, messages, docs.">
             <Button asChild variant="secondary">

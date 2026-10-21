@@ -2,9 +2,10 @@ import "server-only";
 import { prisma } from "@/lib/db";
 import { serial } from "@/lib/meetings/core";
 import { notifyMeeting } from "@/lib/calendar/service";
-import { syncGoogle } from "@/lib/calendar/google";
+import { syncGoogle, resumeMeetLinks } from "@/lib/calendar/google";
 import { dispatch } from "@/lib/notify";
 export async function run(now: Date) {
+  await resumeMeetLinks();
   const meetings = await prisma.meeting.findMany({
     where: {
       status: "SCHEDULED",
