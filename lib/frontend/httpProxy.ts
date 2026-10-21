@@ -19,10 +19,12 @@ async function proxyRequest(request: Request, resource: boolean) {
   // These endpoints authenticate signed provider payloads or hashed heartbeat
   // capabilities on the backend. They never inherit browser session authority.
   const provider = /^\/api\/(?:integrations\/(?:github\/webhook|(?:slack|discord|telegram|whatsapp|mattermost)\/[^/]+\/.+)|app-reviews\/slack\/events|hb\/[^/]+(?:\/[^/]+)?)$/.test(url.pathname);
-  const machine = provider || (url.pathname.startsWith("/api/v1/") || url.pathname === "/api/mcp") && request.headers.get("authorization")?.startsWith("Bearer ");
+  // CLI endpoints authenticate device codes or bearer tokens, never browser cookies.
+  const cli = url.pathname.startsWith("/api/cli/") || url.pathname.startsWith("/api/v1/auth/universal/");
+  const machine = provider || cli || (url.pathname.startsWith("/api/v1/") || url.pathname === "/api/mcp") && request.headers.get("authorization")?.startsWith("Bearer ");
   if (!safe && !machine && request.headers.get("origin") !== frontendOrigin()) return new NextResponse("Not found", { status: 404, headers: { "Cache-Control": "no-store" } });
   const outgoing = await backendHeaders(request.headers);
-  if (provider) outgoing.delete("cookie");
+  if (provider || cli) outgoing.delete("cookie");
   for (const name of forwardedRequestHeaders) {
     const value = request.headers.get(name);
     if (value) outgoing.set(name, value);

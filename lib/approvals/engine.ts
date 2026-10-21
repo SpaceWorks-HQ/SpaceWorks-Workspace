@@ -124,7 +124,7 @@ async function notifyDecided(
   const verb = decision === "APPROVED" ? "approved" : decision === "REJECTED" ? "rejected" : "asked for changes on";
   const base = {
     title: `${displayName(actor.name)} ${verb} ${request.title}`.slice(0, 150),
-    body: request.subjectType === "VAULT_ACCESS" ? undefined : comment ?? undefined,
+    body: ["VAULT_ACCESS", "SECRET_CHANGE"].includes(request.subjectType) ? undefined : comment ?? undefined,
     url: hook.url(workspace.slug, request.subjectId),
     actorId: actor.id,
     recipients: [request.requesterId],
@@ -321,7 +321,7 @@ export async function decide(actor: OpsActor, input: unknown, now = new Date()):
       after.push(await notifyRequested(tx, actor.workspace, request, nextApprovers, displayName(requester?.name)));
     }
     return { ok: true, status: next.status, after };
-  });
+  }, { timeout: 60_000 });
 
   if (!outcome.ok) return actionError(outcome.error);
   for (const run of outcome.after) await run();

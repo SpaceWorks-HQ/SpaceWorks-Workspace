@@ -61,6 +61,11 @@
       "id": "admin-workspaces-page:loadAdminWorkspacesPage"
     },
     {
+      "module": "lib/views/generated/device-page-loadDevicePage",
+      "name": "loadDevicePage",
+      "id": "device-page:loadDevicePage"
+    },
+    {
       "module": "lib/views/generated/f-publicSlug-page-loadPublicFormPage",
       "name": "loadPublicFormPage",
       "id": "f-publicSlug-page:loadPublicFormPage"
@@ -874,6 +879,11 @@
       "module": "lib/views/generated/w-workspaceSlug-search-page-loadSearchPage",
       "name": "loadSearchPage",
       "id": "w-workspaceSlug-search-page:loadSearchPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-secrets-page-loadSecretsPage",
+      "name": "loadSecretsPage",
+      "id": "w-workspaceSlug-secrets-page:loadSecretsPage"
     },
     {
       "module": "lib/views/generated/w-workspaceSlug-seo-page-loadSeoPage",
@@ -2451,6 +2461,21 @@
       "module": "app/actions/search",
       "name": "loadWorkspaceTools",
       "id": "search:loadWorkspaceTools"
+    },
+    {
+      "module": "app/actions/secrets",
+      "name": "secretsAction",
+      "id": "secrets:secretsAction"
+    },
+    {
+      "module": "app/actions/secrets",
+      "name": "approveSecretsDevice",
+      "id": "secrets:approveSecretsDevice"
+    },
+    {
+      "module": "app/actions/secrets",
+      "name": "revokeSecretsCliSession",
+      "id": "secrets:revokeSecretsCliSession"
     },
     {
       "module": "app/actions/seo",

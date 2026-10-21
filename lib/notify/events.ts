@@ -51,6 +51,7 @@ type GithubRef = { repoId: Id; number: number; url: string };
 
 /** Typed `data` payload per event type. */
 export interface EventPayloads {
+  "secrets.rotation_due": { secretId: Id; environmentId: Id };
   "people.responsibility_review_due": { responsibilityId: Id; reviewOn: Iso };
   "marketing.publish_due": { recordId: Id; dueOn: Iso };
   "marketing.follow_up_due": { recordId: Id; dueOn: Iso };
@@ -309,6 +310,7 @@ export const EVENT_CATALOG = {
   "form.submitted": s("operations", "Form submitted", "both", "info", "MEMBER"),
   "vault.access.requested": s("security", "Vault access requested", "personal", "info", "MEMBER"),
   "vault.item_revealed": s("security", "Vault secret revealed", "both", "warning", "ADMIN"),
+  "secrets.rotation_due": s("security", "Application secret rotation due", "personal", "warning", "MEMBER"),
   "vault.rotation_due": s("security", "Credential rotation due", "both", "warning", "MEMBER"),
   "catalogue.gap": s("operations", "Service catalogue gaps", "both", "info", "ADMIN"),
   "contact.follow_up_due": s("operations", "Contact follow-up due", "personal", "info", "MEMBER"),

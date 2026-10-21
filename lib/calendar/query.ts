@@ -69,6 +69,7 @@ export async function loadCalendar(actor: Actor, start: Date, end: Date) {
         ],
       },
       include: {
+        calendarSyncs: { where: { userId: actor.user.id }, select: { lastError: true } },
         attendees: { select: { userId: true, rsvp: true } },
         agenda: {
           select: { id: true, title: true },

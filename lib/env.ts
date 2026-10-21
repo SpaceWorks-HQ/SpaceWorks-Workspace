@@ -50,6 +50,10 @@ export const envSchema = z.object({
   MFA_ENCRYPTION_KEY: optionalString(aes256Key),
   INTEGRATION_ENCRYPTION_KEY: optionalString(aes256Key),
   VAULT_MASTER_KEY: optionalString(aes256Key),
+  VAULT_MASTER_KEYS: optionalString(z.string().refine(value => {
+    const entries = value.split(","); const versions = new Set<string>();
+    return entries.length > 0 && entries.every(entry => { const [version, key, extra] = entry.split(":"); if (!/^[1-9]\d*$/.test(version) || !Number.isSafeInteger(Number(version)) || extra || versions.has(version) || !isBase64Key(key ?? "", [32])) return false; versions.add(version); return true; });
+  }, "must contain unique version:base64 key entries")),
   S3_BUCKET: optionalString(z.string().min(1)),
   S3_REGION: optionalString(z.string().min(1)),
   S3_ENDPOINT: optionalString(z.string().url()),

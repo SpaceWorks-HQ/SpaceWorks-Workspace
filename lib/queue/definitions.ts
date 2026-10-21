@@ -4,7 +4,7 @@ import type { JobsOptions } from "bullmq";
 export const QUEUE_NAMES = ["outbox", "scheduled", "sync", "monitor", "documents"] as const;
 export type QueueName = (typeof QUEUE_NAMES)[number];
 export type RepeatSchedule = { every: number } | { pattern: string; tz?: string };
-export type QueueJob = { kind: "registered"; area: string } | { kind: "outbox"; outboxId: string };
+export type QueueJob = { kind: "secrets-rotation"; rotationId: string } | { kind: "google-meet"; bindingId: string } | { kind: "registered"; area: string } | { kind: "outbox"; outboxId: string };
 export type JobDefinition = { area: string; queue?: QueueName; schedule?: RepeatSchedule; run: (now: Date) => Promise<void> };
 export const JOB_OPTIONS: JobsOptions = {
   attempts: 8,

@@ -208,6 +208,10 @@ export const canUseMarketingOperations = (m: RoleHolder) => atLeast(m, "MEMBER")
 export const canManageMarketingOperations = (m: RoleHolder) => atLeast(m, "ADMIN");
 /** Device assignments, incident details and access reviews are admin records. */
 export const canManageItAdministration = (m: RoleHolder) => atLeast(m, "ADMIN");
+
+/** Application secrets require active membership and explicit environment access. */
+export const canUseSecrets = (m: RoleHolder) => atLeast(m, "MEMBER");
+export const canManageSecrets = (m: RoleHolder) => atLeast(m, "ADMIN");
 /** Internal product tools are for the operating team; funding estimates require finance management. */
 export const canManageProductOps = (m: RoleHolder) => atLeast(m, "MEMBER");
 export const canManageProductEstimates = (m: RoleHolder) => atLeast(m, "ADMIN");

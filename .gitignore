@@ -112,6 +112,7 @@ prisma/.env
 /frontend/app/
 /frontend/components/
 /frontend/lib/
+/frontend/scripts/
 /frontend/public/
 /frontend/postcss.config.mjs
 /frontend/.next/
@@ -119,3 +120,7 @@ prisma/.env
 
 # Bundled background processes
 /dist/
+
+# Local CLI package output
+/packages/cli/dist/
+/packages/cli/*.tgz

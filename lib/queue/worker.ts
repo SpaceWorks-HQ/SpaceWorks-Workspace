@@ -10,6 +10,12 @@ import { QUEUE_NAMES, queueConcurrency, type QueueJob } from "./definitions";
 
 export async function processQueueJob(job: Job<QueueJob>, token?: string) {
   const data = job.data;
+  if (data.kind === "secrets-rotation") {
+    await (await import("@/lib/secrets/rotation")).runKeyRotation(data.rotationId); return;
+  }
+  if (data.kind === "google-meet") {
+    await (await import("@/lib/calendar/google")).finishMeetLink(data.bindingId); return;
+  }
   if (data.kind === "registered") {
     const definition = SCHEDULED_JOBS.find(item => item.area === data.area);
     if (!definition) throw new UnrecoverableError("Job registration removed. Remove this job.");

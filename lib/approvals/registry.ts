@@ -1,4 +1,5 @@
 import "server-only";
+import { secretsApprovalHook } from "@/lib/secrets/approvalHook";
 import { releaseApprovalHook, changeApprovalHook } from "@/lib/productOps/approvalHooks";
 
 import type { ApprovalSubjectType } from "@prisma/client";
@@ -14,6 +15,7 @@ import { vaultAccessApprovalHook } from "@/lib/vault/approvalHooks";
  * owning area reads `ApprovalRequest.status`.
  */
 const HOOKS: Partial<Record<ApprovalSubjectType, ApprovalHook>> = {
+  SECRET_CHANGE: secretsApprovalHook,
   PRODUCT_RELEASE: releaseApprovalHook,
   PRODUCT_CHANGE: changeApprovalHook,
   PURCHASE_REQUEST: purchaseRequestApprovalHook,

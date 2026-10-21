@@ -1,4 +1,5 @@
 "use client";
+import { MeetLink } from "./MeetLink";
 import { useMemo, useState, useTransition, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -702,16 +703,7 @@ export function CalendarScreen(p: Props) {
                 {editMeeting && (
                   <>
                     <p>{editMeeting.location}</p>
-                    {editMeeting.videoUrl && (
-                      <a
-                        href={editMeeting.videoUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-accent-text underline"
-                      >
-                        Join video meeting
-                      </a>
-                    )}
+                    <MeetLink url={editMeeting.videoUrl} pending={editMeeting.meetPending} error={editMeeting.calendarSyncs[0]?.lastError} />
                     <p className="text-ink-muted">
                       {editMeeting.attendees.length} attendees ·{" "}
                       {editMeeting.status.toLowerCase().replaceAll("_", " ")}
