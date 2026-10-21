@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { hostname, constants } from "node:os";
 import { spawn } from "node:child_process";
+import spawnCommand from "cross-spawn";
 import { scanCommand } from "./scanner.js";
 import { readFile, writeFile } from "node:fs/promises";
 import { realpathSync } from "node:fs";
@@ -98,7 +99,8 @@ export async function runChild(
   values: Record<string, string>,
 ) {
   if (!command.length) throw new Error("Put a command after --.");
-  const child = spawn(command[0], command.slice(1), {
+  // cross-spawn resolves PATHEXT and safely escapes cmd/bat shims on Windows.
+  const child = spawnCommand(command[0], command.slice(1), {
     stdio: "inherit",
     env: injectedEnvironment(values),
     shell: false,

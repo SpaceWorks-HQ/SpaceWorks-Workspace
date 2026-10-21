@@ -34,6 +34,7 @@ describe("Secrets CLI and SDK", () => {
         platform: "node",
         format: "esm",
         target: "node20",
+        banner: { js: 'import { createRequire } from "node:module"; const require = createRequire(import.meta.url);' },
         outfile: executable,
       });
       await symlink(executable, link);

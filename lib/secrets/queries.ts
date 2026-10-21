@@ -144,15 +144,14 @@ export async function loadSecrets(
       take: 2001,
       ...(keysCursor ? { cursor: { id: keysCursor }, skip: 1 } : {}),
     }),
-    prisma.applicationSecret.findMany({
+    prisma.applicationSecret.groupBy({
+      by: ["key", "environmentId"],
       where: {
         workspaceId: actor.workspace.id,
         environmentId: { in: envIds },
         path,
         deletedAt: null,
       },
-      select: { key: true, environmentId: true },
-      take: 10000,
     }),
     prisma.secretFolder.findMany({
       where: { workspaceId: actor.workspace.id, environmentId: environment.id },
@@ -237,12 +236,13 @@ export async function loadSecrets(
         })
       : [],
   ]);
-  const comparison = [...new Set(keys.map((k) => k.key))].sort().map((key) => ({
-    key,
-    environmentIds: keys
-      .filter((k) => k.key === key)
-      .map((k) => k.environmentId),
-  }));
+  const presence = new Map<string, string[]>();
+  for (const { key, environmentId } of keys) {
+    const environments = presence.get(key) ?? [];
+    environments.push(environmentId);
+    presence.set(key, environments);
+  }
+  const comparison = [...presence].sort(([a], [b]) => a.localeCompare(b)).map(([key, environmentIds]) => ({ key, environmentIds }));
   const now = Date.now();
   const administeredIds = project.environments
     .filter((e) => e.accessRole === "ADMIN")

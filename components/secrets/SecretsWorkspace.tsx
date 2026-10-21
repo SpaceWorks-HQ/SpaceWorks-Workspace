@@ -1,6 +1,5 @@
 "use client";
 import { IdentitySettings } from "./IdentitySettings";
-import { Eye, EyeOff, Copy } from "lucide-react";
 import { useEffect, useState, useRef, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { secretsAction } from "@/app/actions/secrets";
@@ -8,6 +7,9 @@ import { CheckboxCard } from "@/components/ui/choice";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea, Dropdown } from "@/components/ui/field";
 import { Card, Chip, EmptyState, PageHeader } from "@/components/ui/display";
+import { ListLayout } from "@/components/ui/layouts";
+import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { zonedInputToIso } from "@/lib/timeZone";
 import { formatDayTime, formatDate } from "@/lib/format/datetime";
@@ -93,6 +95,12 @@ export function SecretsWorkspace({
     [filter, setFilter] = useState(""),
     [auditFrom, setAuditFrom] = useState(""),
     [auditUntil, setAuditUntil] = useState("");
+  const [now, setNow] = useState(() => Date.now());
+  // Keep token expiry labels current while the page stays open.
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(t);
+  }, []);
   const revealEpoch = useRef(0);
   const [editorVisible, setEditorVisible] = useState(false);
   const [versionDiff, setVersionDiff] = useState<{ before: string; after: string } | null>(null);
@@ -310,36 +318,29 @@ export function SecretsWorkspace({
     );
   }
   function table(headers: string[], body: ReactNode) {
+    if (Array.isArray(body) && !body.length) {
+      return section === "Compare"
+        ? <EmptyState patch title="No keys in this folder yet. Add one for the application." action={writable ? <Button variant="secondary" onClick={() => setSection("Keys")}>Add a key</Button> : undefined} />
+        : <EmptyState patch title="No audit events match this view." action={filter || auditFrom || auditUntil ? <Button variant="secondary" onClick={() => { setFilter(""); setAuditFrom(""); setAuditUntil(""); }}>Clear filters</Button> : undefined} />;
+    }
     return (
-      <div className="overflow-x-auto rounded-xl border border-line">
-        <table className="w-full text-left text-body-ui">
-          <thead className="bg-surface text-accent-text">
-            <tr>
-              {headers.map((h) => (
-                <th key={h} className="p-3 font-semibold">
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-line">{body}</tbody>
-        </table>
-      </div>
+      <Table label={`${section} in ${env?.name ?? "Secrets"}`}>
+        <THead><TR>{headers.map(h => <TH key={h} scope="col">{h}</TH>)}</TR></THead>
+        <TBody>{body}</TBody>
+      </Table>
     );
   }
   return (
-    <div className="flex min-w-0 flex-col gap-6">
-      <PageHeader
-        title="Secrets"
-        description="Application keys for your team's projects and environments."
-      />
+    <ListLayout header={
+      <PageHeader title="Secrets" description="Application keys for your team's projects and environments." />
+    }>
       <p className="text-caption text-ink-muted">
         Values stay hidden until you reveal them. Production reveals and every
         member export need a fresh two-step code.
       </p>
       <div aria-live="polite" role="status">
         {busy ? (
-          <p>Working…</p>
+          <p>Working</p>
         ) : message ? (
           <p className="text-success-fg">{message}</p>
         ) : null}
@@ -441,35 +442,21 @@ export function SecretsWorkspace({
                 Verify code
               </Button>
             </Form>
-            <a className="text-accent-text underline" href="/account">
+            <a className="inline-flex min-h-11 items-center text-accent-text underline" href="/account">
               Manage two-step verification
             </a>
           </details>
-          <nav
-            aria-label="Secrets sections"
-            className="flex max-w-full gap-2 overflow-x-auto border-b border-line"
-          >
-            {sections
-              .filter(
-                (s) =>
-                  (!["Access", "Machine identities", "Encryption", "Service tokens", "Security", "Audit"].includes(s) || admin) && (!["Machine identities", "Encryption"].includes(s) || view.canManage),
-              )
-              .map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  aria-current={section === s ? "page" : undefined}
-                  onClick={() => {
-                    revealEpoch.current++; setRevealed({}); setEditing(null); setVersionDiff(null);
-                    setSection(s);
-                    setFilter("");
-                  }}
-                  className={`min-h-11 shrink-0 border-b-2 px-3 text-label ${section === s ? "border-accent text-ink" : "border-transparent text-ink-muted"}`}
-                >
-                  {s}
-                </button>
-              ))}
-          </nav>
+          <Tabs value={section} onValueChange={s => {
+            revealEpoch.current++; setRevealed({}); setEditing(null); setVersionDiff(null);
+            setSection(s); setFilter("");
+          }}>
+            <TabsList aria-label="Secrets sections">
+              {sections.filter(s =>
+                (!["Access", "Machine identities", "Encryption", "Service tokens", "Security", "Audit"].includes(s) || admin) &&
+                (!["Machine identities", "Encryption"].includes(s) || view.canManage)
+              ).map(s => <TabsTrigger key={s} value={s}>{s}</TabsTrigger>)}
+            </TabsList>
+            <TabsContent value={section} className="space-y-6">
           {section === "Keys" ? (
             <>
               <Field label="Filter keys, tags or owner">
@@ -502,6 +489,8 @@ export function SecretsWorkspace({
                     ) : undefined
                   }
                 />
+              ) : !view.rows.some(r => `${r.key} ${r.tags.join(" ")} ${memberName(r.ownerId)}`.toLowerCase().includes(filter.toLowerCase())) ? (
+                <EmptyState patch title="No keys match. Try another filter." action={<Button variant="secondary" onClick={() => setFilter("")}>Clear filter</Button>} />
               ) : (
                 <div className="grid gap-3">
                   {view.rows
@@ -513,7 +502,7 @@ export function SecretsWorkspace({
                     .map((row) => (
                       <Card key={row.id}>
                         <div className="flex flex-wrap items-center justify-between gap-3">
-                          <h2 className="break-all font-mono text-title">
+                          <h2 className="break-all code-text text-title">
                             {row.key}{" "}
                             {row.deletedAt ? <Chip>Deleted</Chip> : null}
                           </h2>
@@ -525,10 +514,9 @@ export function SecretsWorkspace({
                                   disabled={busy}
                                   onClick={() => void reveal(row.key)}
                                 >
-                                  {Object.hasOwn(revealed, row.key) ? <EyeOff aria-hidden size={18} /> : <Eye aria-hidden size={18} />}
                                   {Object.hasOwn(revealed, row.key) ? "Hide" : "Reveal"}
                                 </Button>
-                                <Button variant="quiet" disabled={busy} onClick={() => void copy(row.key)} aria-label={`Copy ${row.key}`}><Copy aria-hidden size={18} />Copy</Button>
+                                <Button variant="quiet" disabled={busy} onClick={() => void copy(row.key)} aria-label={`Copy ${row.key}`}>Copy</Button>
                                 {writable ? (
                                   <Button
                                     variant="quiet"
@@ -583,7 +571,7 @@ export function SecretsWorkspace({
                         </div>
                         {Object.hasOwn(revealed, row.key) ? (
                           <div className="mt-3">
-                            <pre className="whitespace-pre-wrap break-all font-mono">
+                            <pre className="whitespace-pre-wrap break-all code-text">
                               {revealed[row.key]}
                             </pre>
                             <Button
@@ -601,7 +589,7 @@ export function SecretsWorkspace({
                           </div>
                         ) : (
                           <p
-                            className="font-mono text-ink-muted"
+                            className="code-text text-ink-muted"
                             aria-label="Value hidden"
                           >
                             ••••••••
@@ -637,13 +625,13 @@ export function SecretsWorkspace({
               {history ? (
                 <Card>
                   <h2 className="text-title">{history.key} history</h2>
-                  <p className="my-3 font-mono" aria-label="Version values hidden">{versionDiff ? "Versions revealed" : "••••••••"}</p>
+                  <p className="my-3 code-text" aria-label="Version values hidden">{versionDiff ? "Versions revealed" : "••••••••"}</p>
                   <Form onSave={async v => {
                     const before = await valueRequest({ operation: "version", secretId: history.id, versionId: v.before });
                     const after = await valueRequest({ operation: "version", secretId: history.id, versionId: v.after });
                     if (before && after) setVersionDiff({ before: before.value, after: after.value });
                   }}><Field label="Earlier version"><Dropdown name="before">{history.versions.map(v => <option key={v.id} value={v.id}>{formatDayTime(v.createdAt, timezone)}</option>)}</Dropdown></Field><Field label="Later version"><Dropdown name="after">{history.versions.map(v => <option key={v.id} value={v.id}>{formatDayTime(v.createdAt, timezone)}</option>)}</Dropdown></Field><Button type="submit" variant="secondary" disabled={busy || history.versions.length < 2}>Reveal version diff</Button></Form>
-                  {versionDiff ? <div className="my-4"><pre className="whitespace-pre-wrap break-all font-mono">{lineDiff(versionDiff.before, versionDiff.after).map(l => `${l.kind === "add" ? "+" : l.kind === "remove" ? "−" : " "} ${l.text}`).join("\n")}</pre><Button variant="quiet" onClick={() => setVersionDiff(null)}>Hide diff</Button></div> : null}
+                  {versionDiff ? <div className="my-4"><pre className="whitespace-pre-wrap break-all code-text">{lineDiff(versionDiff.before, versionDiff.after).map(l => `${l.kind === "add" ? "+" : l.kind === "remove" ? "−" : " "} ${l.text}`).join("\n")}</pre><Button variant="quiet" onClick={() => setVersionDiff(null)}>Hide diff</Button></div> : null}
                   {history.versions.map((v) => (
                     <div
                       key={v.id}
@@ -770,7 +758,7 @@ export function SecretsWorkspace({
                         autoComplete="off"
                       />
                     </Field>
-                    {!editorVisible ? <p className="font-mono" aria-label="Editor value hidden">••••••••</p> : null}
+                    {!editorVisible ? <p className="code-text" aria-label="Editor value hidden">••••••••</p> : null}
                     <Button type="button" variant="quiet" aria-pressed={editorVisible} disabled={busy} onClick={() => void toggleEditor()}>{editorVisible ? "Hide editor value" : "Show editor value"}</Button>
                     <Field
                       label="Value"
@@ -781,7 +769,7 @@ export function SecretsWorkspace({
                       <Textarea
                         key={editing ? `${editing.id}:${editing.loaded}` : "new"}
                         name="value"
-                        className="font-mono"
+                        className="code-text"
                         maxLength={20000}
                         defaultValue={editing?.value}
                         hidden={!editorVisible}
@@ -850,7 +838,7 @@ export function SecretsWorkspace({
                 </Card>
               ) : null}
               {writable ? (
-                <details className="rounded-xl border border-line p-4">
+                <details className="rounded-xl border border-line bg-panel p-4">
                   <summary className="min-h-11 cursor-pointer">
                     Add a folder
                   </summary>
@@ -876,11 +864,11 @@ export function SecretsWorkspace({
               {table(
                 ["Key", ...project.environments.map((e) => e.name)],
                 view.comparison.map((r) => (
-                  <tr key={r.key}>
-                    <th className="p-3 font-mono">{r.key}</th>
+                  <TR key={r.key}>
+                    <TH scope="row" className="code-text text-ink">{r.key}</TH>
                     {project.environments.map((e) => (
-                      <td key={e.id} className="p-3">
-                        {r.environmentIds.includes(e.id) && ["READ", "WRITE", "ADMIN"].includes(e.accessRole) ? <div className="grid gap-2"><pre className="max-w-64 whitespace-pre-wrap break-all font-mono">{revealed[e.id === environmentId ? r.key : e.id + ":" + r.key] ?? "••••••••"}</pre><Button variant="quiet" disabled={busy} aria-label={`Reveal ${r.key} in ${e.name}`} onClick={() => void reveal(r.key, e.id)}>Show / hide</Button></div> : null}
+                      <TD key={e.id}>
+                        {r.environmentIds.includes(e.id) && ["READ", "WRITE", "ADMIN"].includes(e.accessRole) ? <div className="grid gap-2"><pre className="max-w-64 whitespace-pre-wrap break-all code-text">{revealed[e.id === environmentId ? r.key : e.id + ":" + r.key] ?? "••••••••"}</pre><Button variant="quiet" disabled={busy} aria-label={`Reveal ${r.key} in ${e.name}`} onClick={() => void reveal(r.key, e.id)}>Show / hide</Button></div> : null}
                         <Chip
                           tone={
                             r.environmentIds.includes(e.id)
@@ -892,9 +880,9 @@ export function SecretsWorkspace({
                             ? "Defined"
                             : "Missing"}
                         </Chip>
-                      </td>
+                      </TD>
                     ))}
-                  </tr>
+                  </TR>
                 )),
               )}
             </>
@@ -905,6 +893,7 @@ export function SecretsWorkspace({
                 <Form onSave={async (v) => act("snapshot", { label: v.label })}>
                   <Field label="Snapshot name">
                     <Input
+                      id="snapshot-name"
                       name="label"
                       maxLength={100}
                       required
@@ -963,7 +952,7 @@ export function SecretsWorkspace({
                   </Card>
                 ))
               ) : (
-                <EmptyState title="No snapshots yet. Save a key or take a snapshot." />
+                <EmptyState patch title="No snapshots yet. Take one before your next deployment." action={writable ? <Button asChild variant="secondary"><a href="#snapshot-name">Take a snapshot</a></Button> : undefined} />
               )}
               <div className="flex flex-wrap gap-2">
                 {view.snapshotCursor ? (
@@ -1004,7 +993,7 @@ export function SecretsWorkspace({
               ) : null}
               <h2 className="text-h3">Protected changes</h2>
               <a
-                className="text-accent-text underline"
+                className="inline-flex min-h-11 items-center text-accent-text underline"
                 href={`/w/${slug}/requests/approvals`}
               >
                 Open approvals
@@ -1016,7 +1005,7 @@ export function SecretsWorkspace({
                       {c.status.toLowerCase()} · Revision {c.revision} ·{" "}
                       {memberName(c.createdById)}
                     </p>
-                    <pre className="overflow-x-auto whitespace-pre-wrap break-all text-caption">
+                    <pre className="code-text overflow-x-auto whitespace-pre-wrap break-all text-caption">
                       {JSON.stringify(c.diff, null, 2)}
                     </pre>
                   </Card>
@@ -1196,7 +1185,7 @@ export function SecretsWorkspace({
                   {g.role.toLowerCase()}
                 </p>
               ))}
-              <details className="rounded-xl border border-line p-4">
+              <details className="rounded-xl border border-line bg-panel p-4">
                 <summary className="min-h-11 cursor-pointer">
                   Edit this environment
                 </summary>
@@ -1252,7 +1241,7 @@ export function SecretsWorkspace({
                   </Button>
                 </Form>
               </details>
-              <details className="rounded-xl border border-line p-4">
+              <details className="rounded-xl border border-line bg-panel p-4">
                 <summary className="min-h-11 cursor-pointer">
                   Add an environment
                 </summary>
@@ -1343,7 +1332,7 @@ export function SecretsWorkspace({
                 {issued ? (
                   <div className="mt-4">
                     <p>Copy this token now. It is shown only once.</p>
-                    <pre className="whitespace-pre-wrap break-all">
+                    <pre className="code-text whitespace-pre-wrap break-all">
                       {issued}
                     </pre>
                     <Button variant="quiet" onClick={() => setIssued("")}>
@@ -1369,7 +1358,7 @@ export function SecretsWorkspace({
                     {t.revokedAt
                       ? "Revoked"
                       : t.expiresAt &&
-                          new Date(t.expiresAt).getTime() <= Date.now()
+                          new Date(t.expiresAt).getTime() <= now
                         ? "Expired"
                         : "Active"}
                   </Chip>
@@ -1389,7 +1378,7 @@ export function SecretsWorkspace({
                   ) : null}
                 </Card>
               ))}
-              <pre className="overflow-x-auto rounded-xl bg-surface p-4 text-caption">
+              <pre className="code-text overflow-x-auto rounded-lg bg-surface p-4 text-caption">
                 {'curl -fsSL -H "Authorization: Bearer $SWW_SECRETS_TOKEN" \\\n  "https://workspace.example.org/api/v1/secrets?project=' +
                   project.id +
                   "&environment=" +
@@ -1486,7 +1475,7 @@ export function SecretsWorkspace({
               {shareLink ? (
                 <div className="mt-4">
                   <p>Copy the whole link now.</p>
-                  <pre className="whitespace-pre-wrap break-all">
+                  <pre className="code-text whitespace-pre-wrap break-all">
                     {shareLink}
                   </pre>
                 </div>
@@ -1600,17 +1589,19 @@ export function SecretsWorkspace({
                           new Date(auditEnd).getTime() + 60000),
                   )
                   .map((a) => (
-                    <tr key={a.id}>
-                      <td className="p-3">
+                    <TR key={a.id}>
+                      <TD>
                         {formatDayTime(a.createdAt, timezone)}
-                      </td>
-                      <td className="p-3">{a.action}</td>
-                      <td className="p-3">{memberName(a.actorId)}</td>
-                    </tr>
+                      </TD>
+                      <TD>{a.action}</TD>
+                      <TD>{memberName(a.actorId)}</TD>
+                    </TR>
                   )),
               )}
             </>
           ) : null}
+            </TabsContent>
+          </Tabs>
         </>
       ) : null}
       {view.canManage ? (
@@ -1642,7 +1633,7 @@ export function SecretsWorkspace({
                 maxLength={50}
               />
             </Field>
-            <Button variant="primary" type="submit" disabled={busy}>Create project</Button>
+            <Button variant={view.projects.length ? "secondary" : "primary"} type="submit" disabled={busy}>Create project</Button>
           </Form>
         </details>
       ) : null}
@@ -1665,6 +1656,6 @@ export function SecretsWorkspace({
           }
         }}
       />
-    </div>
+    </ListLayout>
   );
 }

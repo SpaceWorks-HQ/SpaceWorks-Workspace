@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/display";
+import { FormPageLayout } from "@/components/ui/layouts";
+import { Card, PageHeader } from "@/components/ui/display";
 export function ShareViewer() {
   const fragment = useRef("");
   const revealGeneration = useRef(0);
@@ -81,33 +82,34 @@ export function ShareViewer() {
     }
   }
   return (
-    <Card className="mx-auto mt-8 grid max-w-xl gap-4">
-      <h1 className="text-h2">A private share</h1>
-      <p>
-        Open this only when you are ready. A one-time link is removed as it is
-        viewed.
-      </p>
-      {error ? (
-        <p role="alert" className="text-danger-fg">
-          {error}
+    <FormPageLayout className="max-w-xl" header={<PageHeader title="A private share" />}>
+      <Card className="grid gap-4">
+        <p>
+          Open this only when you are ready. A one-time link is removed as it is
+          viewed.
         </p>
-      ) : null}
-      {value !== null ? (
-        <>
-          <pre className="whitespace-pre-wrap break-all font-mono">{value}</pre>
-          <Button variant="secondary" onClick={() => setValue(null)}>
-            Hide text
+        {error ? (
+          <p role="alert" className="text-danger-fg">
+            {error}
+          </p>
+        ) : null}
+        {value !== null ? (
+          <>
+            <pre className="whitespace-pre-wrap break-all code-text">{value}</pre>
+            <Button variant="secondary" onClick={() => setValue(null)}>
+              Hide text
+            </Button>
+          </>
+        ) : consumed ? (
+          <p role="status">
+            The text is hidden. Ask the sender for a new link if needed.
+          </p>
+        ) : (
+          <Button variant="primary" loading={busy} disabled={busy} onClick={() => void view()}>
+            {busy ? "Opening" : "View shared text"}
           </Button>
-        </>
-      ) : consumed ? (
-        <p role="status">
-          The text is hidden. Ask the sender for a new link if needed.
-        </p>
-      ) : (
-        <Button disabled={busy} onClick={() => void view()}>
-          {busy ? "Opening…" : "View shared text"}
-        </Button>
-      )}
-    </Card>
+        )}
+      </Card>
+    </FormPageLayout>
   );
 }

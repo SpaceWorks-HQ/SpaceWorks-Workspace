@@ -41,9 +41,9 @@ export function IdentitySettings({ view, act, busy }: { view: SecretsView; act: 
         <Button type="submit" variant="primary">Create identity</Button>
       </form>
       <p className="mt-4 text-body-ui">Log in at /api/v1/auth/universal/login with the client ID and a client secret. Use the returned short-lived bearer token as SWW_TOKEN.</p>
-      <pre className="mt-3 overflow-x-auto rounded-xl bg-surface p-3 text-caption">sww login --method=universal-auth --client-id ID --client-secret SECRET --plain --silent</pre>
+      <pre className="code-text mt-3 overflow-x-auto rounded-lg bg-surface p-3 text-caption">sww login --method=universal-auth --client-id ID --client-secret SECRET --plain --silent</pre>
     </Card>
-    {issued && <Card><p>Copy this client secret now. It is shown only once.</p><pre className="whitespace-pre-wrap break-all font-mono">{issued}</pre><Button variant="quiet" onClick={() => setIssued("")}>Hide client secret</Button></Card>}
+    {issued && <Card><p>Copy this client secret now. It is shown only once.</p><pre className="whitespace-pre-wrap break-all code-text">{issued}</pre><Button variant="quiet" onClick={() => setIssued("")}>Hide client secret</Button></Card>}
     {view.identities.map(identity => <Card key={identity.id}>
       <h3 className="text-title">{identity.name}</h3><Chip>{identity.revokedAt ? "Revoked" : identity.lockedUntil && new Date(identity.lockedUntil).getTime() > now ? "Locked" : "Active"}</Chip>
       <p className="break-all">Client ID: {identity.clientId}</p><p>Tokens last {identity.accessTtl / 3600} hours, renewable for {identity.maxTtl / 86400} days.</p>

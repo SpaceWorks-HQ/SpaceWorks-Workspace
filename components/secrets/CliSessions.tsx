@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { revokeSecretsCliSession } from "@/app/actions/secrets";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/display";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { formatDate } from "@/lib/format/datetime";
 export function CliSessions({
@@ -24,12 +25,12 @@ export function CliSessions({
     [busy, setBusy] = useState(false);
   return (
     <div className="grid gap-3">
-      {error ? <p role="alert">{error}</p> : null}
+      {error ? <p role="alert" className="text-danger-fg">{error}</p> : null}
       {sessions.length ? (
         sessions.map((s) => (
           <div
             key={s.id}
-            className="flex flex-wrap items-center justify-between gap-3"
+            className="flex min-h-14 flex-wrap items-center justify-between gap-3 border-b border-line py-3 last:border-b-0"
           >
             <div>
               <p className="break-all font-semibold">{s.name}</p>
@@ -46,7 +47,7 @@ export function CliSessions({
           </div>
         ))
       ) : (
-        <p>No authorised CLI devices.</p>
+        <EmptyState title="No authorised CLI devices. Run sww login in your terminal to add one." />
       )}
       <ConfirmDialog
         open={!!selected}
