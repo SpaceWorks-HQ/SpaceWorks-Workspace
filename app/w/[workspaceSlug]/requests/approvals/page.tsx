@@ -1,3 +1,5 @@
+import { loadApprovalInbox } from "@/lib/views/components";
+import { Suspense } from "react";
 import { requireWorkspace } from "@/lib/permissions";
 import { prisma } from "@/lib/db";
 import { getApprovalView } from "@/lib/approvals/engine";
@@ -8,13 +10,19 @@ import { OpsLayout, Editor, words } from "@/components/requests/OpsLayout";
 import { Card, Chip } from "@/components/ui/display";
 import { formatDayTime } from "@/lib/format/datetime";
 export const metadata = { title: "Approvals" };
+// Keep the guarded read in the page, inside the streamed section.
+async function InboxSection({ workspaceSlug }: { workspaceSlug: string }) {
+ const { rows } = await loadApprovalInbox({ params: { workspaceSlug } });
+ return <ApprovalInbox workspaceSlug={workspaceSlug} rows={rows} />;
+}
+
 export default async function ApprovalsPage({ params }: PageProps<"/w/[workspaceSlug]/requests/approvals">) {
  const { workspaceSlug } = await params;
  const actor = await requireWorkspace(workspaceSlug, "MEMBER");
  const requests = await prisma.approvalRequest.findMany({ where: { workspaceId: actor.workspace.id, requesterId: actor.user.id, subjectType: { in: ["CUSTOM", "VAULT_ACCESS"] } }, orderBy: { createdAt: "desc" }, take: 100 });
  const views = new Map(await Promise.all(requests.map(async r => [r.id, await getApprovalView(actor, r.subjectType, r.subjectId)] as const)));
  return <OpsLayout slug={workspaceSlug} title="Approvals" description="Review requests and keep a record of each decision.">
-  <ApprovalInbox actor={actor} />
+  <Suspense fallback={<p role="status">Loading approvals</p>}><InboxSection workspaceSlug={workspaceSlug} /></Suspense>
   <Editor title="Request a decision"><OpsForm action={submitGenericRequest.bind(null, workspaceSlug)} label="Request approval" fields={[{name:"title",label:"What needs a decision?",required:true,helper:"Give reviewers enough context in one sentence. Keep credentials and personal details in the vault."}]} /></Editor>
   <section className="space-y-4"><h2 className="text-h3">Your approval requests</h2>{!requests.length && <p className="text-body-ui text-ink-muted">No requests yet. Request a decision above.</p>}
   {requests.map(r => {

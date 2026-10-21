@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Hash, Lock, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { browseChannelsAction, joinChannelAction } from "@/app/actions/chat";
 import { canAdministerChannel, canCreateChannel, canJoinPublic } from "@/lib/chat/client";
 import { formatRelativeTime } from "@/lib/format/datetime";
@@ -81,7 +81,7 @@ export function ChannelBrowser({ initial, teams }: { initial: BrowseChannel[]; t
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
         {list.length === 0 ? (
-          <EmptyState
+          <EmptyState patch
             title={q ? "No channels match that search." : "No channels yet."}
             action={
               !q && canCreateChannel(viewer, "PRIVATE") ? (
@@ -99,7 +99,7 @@ export function ChannelBrowser({ initial, teams }: { initial: BrowseChannel[]; t
               <li key={channel.id} className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center">
                 <Link href={channel.href} className="group min-w-0 flex-1 rounded-md">
                   <span className="flex items-center gap-1.5 text-title text-ink group-hover:underline group-hover:underline-offset-4">
-                    {channel.kind === "PRIVATE" ? <Lock aria-hidden className="size-4 text-ink-secondary" /> : <Hash aria-hidden className="size-4 text-ink-secondary" />}
+                    {channel.kind === "PUBLIC" ? <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">#</span> : null}
                     {channel.name}
                   </span>
                   <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-ink-muted">

@@ -132,7 +132,7 @@ export default async function MeetingsPage({
         </Disclosure>
       ) : null}
       {!meetings.length ? (
-        <EmptyState title="No meetings yet. Schedule time for the next conversation." />
+        <EmptyState patch title="No meetings yet. Schedule time for the next conversation." />
       ) : (
         <ul className="space-y-3">
           {meetings.map((m) => (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useMemo, useState } from "react";
-import { Check, X } from "lucide-react";
+
 import { cn } from "@/lib/cn";
 import { Avatar } from "@/components/ui/display";
 import { SearchInput } from "@/components/ui/field";
@@ -51,12 +51,12 @@ export function PersonPicker({
                 <button
                   type="button"
                   onClick={() => toggle(id)}
-                  className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-line bg-surface py-1 pl-1 pr-2.5 text-label text-ink hover:bg-muted"
+                  className="inline-flex min-h-11 min-w-11 items-center gap-1.5 rounded-full border border-line bg-surface py-1 pl-1 pr-2.5 text-label text-ink hover:bg-muted"
                   aria-label={`Remove ${person?.name ?? "person"}`}
                 >
                   <Avatar name={person?.name} src={person?.image} size="xs" />
                   <span className="max-w-[160px] truncate">{person?.name ?? "Former member"}</span>
-                  <X aria-hidden className="size-3.5 text-ink-muted" />
+                  <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">×</span>
                 </button>
               </li>
             );
@@ -83,8 +83,8 @@ export function PersonPicker({
                   <span className="block truncate text-body-ui font-semibold text-ink">{person.name}</span>
                   {person.role && isWorkspaceRole(person.role) ? <span className="block text-caption text-ink-muted">{roleLabel(person.role)}</span> : null}
                 </span>
-                <span aria-hidden className={cn("inline-flex size-5 items-center justify-center rounded-sm border", checked ? "border-primary bg-primary text-on-primary" : "border-line-strong bg-panel")}>
-                  {checked ? <Check className="size-3.5" strokeWidth={3} /> : null}
+                <span aria-hidden className={cn("inline-flex size-5 items-center justify-center rounded-sm border", checked ? "border-accent-text bg-primary text-on-primary" : "border-line-strong bg-panel")}>
+                  {checked ? <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">✓</span> : null}
                 </span>
               </button>
             </li>

@@ -5,7 +5,7 @@ import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
 import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
 import * as SwitchPrimitive from "@radix-ui/react-switch";
 import * as ToggleGroupPrimitive from "@radix-ui/react-toggle-group";
-import { Check, Minus } from "lucide-react";
+
 import { cn } from "@/lib/cn";
 
 /* ---------- Checkbox ---------- */
@@ -18,13 +18,13 @@ export const Checkbox = forwardRef<ElementRef<typeof CheckboxPrimitive.Root>, Co
     <CheckboxPrimitive.Root
       ref={ref}
       className={cn(
-        "peer inline-flex size-5 shrink-0 items-center justify-center rounded-[6px] border-[1.5px] border-line-strong bg-panel transition-colors duration-[120ms] ease-yy hover:border-ink disabled:cursor-not-allowed disabled:border-line disabled:bg-surface data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-on-primary data-[state=indeterminate]:border-primary data-[state=indeterminate]:bg-primary data-[state=indeterminate]:text-on-primary",
+        "peer relative inline-flex size-5 after:absolute after:-inset-3 after:content-[''] shrink-0 items-center justify-center rounded-sm border border-line-strong bg-panel transition-colors duration-[120ms] ease-yy hover:border-ink disabled:cursor-not-allowed disabled:border-line disabled:bg-surface data-[state=checked]:border-accent-text data-[state=checked]:bg-primary data-[state=checked]:text-on-primary data-[state=indeterminate]:border-accent-text data-[state=indeterminate]:bg-primary data-[state=indeterminate]:text-on-primary",
         className,
       )}
       {...props}
     >
       <CheckboxPrimitive.Indicator className="flex items-center justify-center">
-        {props.checked === "indeterminate" ? <Minus aria-hidden className="size-3.5" strokeWidth={3} /> : <Check aria-hidden className="size-3.5" strokeWidth={3} />}
+        {props.checked === "indeterminate" ? <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">−</span> : <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">✓</span>}
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
   );
@@ -41,9 +41,9 @@ export function CheckboxField({
   const generatedId = useId();
   const controlId = id ?? generatedId;
   return (
-    <div className={cn("flex items-start gap-3", className)}>
+    <div className={cn("flex min-h-11 items-center gap-3", className)}>
       <Checkbox id={controlId} aria-describedby={description ? `${controlId}-desc` : undefined} className="mt-0.5" {...props} />
-      <label htmlFor={controlId} className="min-w-0 cursor-pointer select-none text-body-ui text-ink">
+      <label htmlFor={controlId} className="flex min-h-11 min-w-0 cursor-pointer flex-col justify-center select-none text-body-ui text-ink">
         {label}
         {description ? <span id={`${controlId}-desc`} className="block text-caption text-ink-muted">{description}</span> : null}
       </label>
@@ -65,7 +65,7 @@ export function CheckboxCard({
     <label
       htmlFor={controlId}
       className={cn(
-        "flex cursor-pointer items-start gap-3 rounded-lg border border-line bg-panel p-4 transition-colors duration-[120ms] ease-yy hover:bg-subtle has-[[data-state=checked]]:border-[1.5px] has-[[data-state=checked]]:border-primary has-[:disabled]:cursor-not-allowed has-[:disabled]:bg-surface",
+        "flex cursor-pointer items-start gap-3 rounded-lg border border-line bg-panel p-4 transition-colors duration-[120ms] ease-yy hover:bg-subtle has-[[data-state=checked]]:border has-[[data-state=checked]]:border-accent-text has-[:disabled]:cursor-not-allowed has-[:disabled]:bg-surface",
         className,
       )}
     >
@@ -105,16 +105,16 @@ export function Radio({
   const generatedId = useId();
   const controlId = id ?? generatedId;
   return (
-    <div className={cn("flex items-start gap-3", className)}>
+    <div className={cn("flex min-h-11 items-center gap-3", className)}>
       <RadioGroupPrimitive.Item
         id={controlId}
         value={value}
         disabled={disabled}
-        className="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full border-[1.5px] border-line-strong bg-panel hover:border-ink disabled:cursor-not-allowed disabled:border-line disabled:bg-surface data-[state=checked]:border-primary"
+        className="relative inline-flex size-5 after:absolute after:-inset-3 after:content-[''] shrink-0 items-center justify-center rounded-full border border-line-strong bg-panel hover:border-ink disabled:cursor-not-allowed disabled:border-line disabled:bg-surface data-[state=checked]:border-accent-text"
       >
-        <RadioGroupPrimitive.Indicator className="block size-2.5 rounded-full bg-primary" />
+        <RadioGroupPrimitive.Indicator className="block size-2.5 rounded-full bg-accent-text" />
       </RadioGroupPrimitive.Item>
-      <label htmlFor={controlId} className="min-w-0 cursor-pointer select-none text-body-ui text-ink">
+      <label htmlFor={controlId} className="flex min-h-11 min-w-0 cursor-pointer flex-col justify-center select-none text-body-ui text-ink">
         {label}
         {description ? <span className="block text-caption text-ink-muted">{description}</span> : null}
       </label>
@@ -129,11 +129,11 @@ export function RadioCard({ value, label, description, disabled, className }: { 
       value={value}
       disabled={disabled}
       className={cn(
-        "flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg border border-line bg-panel px-3 py-3 text-center transition-colors duration-[120ms] ease-yy hover:bg-subtle disabled:cursor-not-allowed disabled:border-line disabled:bg-surface disabled:[&_span]:text-ink-muted data-[state=checked]:border-[1.5px] data-[state=checked]:border-accent data-[state=checked]:bg-accent-soft",
+        "flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg border border-line bg-panel px-3 py-3 text-center transition-colors duration-[120ms] ease-yy hover:bg-subtle disabled:cursor-not-allowed disabled:border-line disabled:bg-surface disabled:[&_span]:text-ink-muted data-[state=checked]:border data-[state=checked]:border-accent data-[state=checked]:bg-accent-soft",
         className,
       )}
     >
-      <span className="break-words text-[17px] font-semibold leading-tight tabular-nums text-ink">{label}</span>
+      <span className="break-words text-base font-semibold leading-tight tabular-nums text-ink">{label}</span>
       {description ? <span className="text-caption text-ink-muted">{description}</span> : null}
     </RadioGroupPrimitive.Item>
   );
@@ -149,12 +149,12 @@ export const Switch = forwardRef<ElementRef<typeof SwitchPrimitive.Root>, Compon
     <SwitchPrimitive.Root
       ref={ref}
       className={cn(
-        "relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full bg-line-strong transition-colors duration-[180ms] ease-yy disabled:cursor-not-allowed disabled:bg-line data-[state=checked]:bg-primary",
+        "relative inline-flex h-11 w-12 shrink-0 cursor-pointer items-center rounded-full before:absolute before:inset-x-0 before:h-7 before:rounded-full before:bg-line-strong transition-colors duration-[200ms] ease-yy disabled:cursor-not-allowed disabled:before:bg-line data-[state=checked]:before:bg-primary",
         className,
       )}
       {...props}
     >
-      <SwitchPrimitive.Thumb className="block size-[22px] translate-x-[3px] rounded-full bg-panel shadow-segment transition-transform duration-[180ms] ease-yy data-[state=checked]:translate-x-[23px]" />
+      <SwitchPrimitive.Thumb className="relative block size-[22px] translate-x-[3px] rounded-full bg-panel shadow-segment transition-transform duration-[200ms] ease-yy data-[state=checked]:translate-x-[23px]" />
     </SwitchPrimitive.Root>
   );
 });
@@ -214,7 +214,7 @@ export function SegmentedControl<T extends string>({
           aria-label={option.ariaLabel}
           className={cn(
             "inline-flex items-center justify-center gap-1.5 rounded-md font-semibold text-ink-muted transition-[background-color,color,box-shadow] duration-[120ms] ease-yy hover:text-ink data-[state=on]:bg-panel data-[state=on]:text-ink data-[state=on]:shadow-segment [&_svg]:size-4",
-            size === "sm" ? "min-h-8 px-3 text-[13px]" : "min-h-9 px-4 text-sm",
+            size === "sm" ? "min-h-11 px-3 text-xs" : "min-h-11 px-4 text-sm",
           )}
         >
           {option.icon}
@@ -237,8 +237,8 @@ export const FilterChip = forwardRef<HTMLButtonElement, React.ButtonHTMLAttribut
       type={type ?? "button"}
       aria-pressed={selected}
       className={cn(
-        "inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm font-semibold transition-colors duration-[180ms] ease-yy [&_svg]:size-4",
-        selected ? "border-[1.5px] border-primary bg-primary text-on-primary" : "border-line-strong bg-panel text-ink-secondary hover:bg-subtle hover:text-ink",
+        "inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3.5 text-sm font-semibold transition-colors duration-[200ms] ease-yy [&_svg]:size-4",
+        selected ? "border border-accent-text bg-primary text-on-primary" : "border-line-strong bg-panel text-ink-secondary hover:bg-subtle hover:text-ink",
         className,
       )}
       {...props}

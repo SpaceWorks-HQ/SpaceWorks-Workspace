@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Repeat } from "lucide-react";
+
 import { setRecurrenceAction, skipNextOccurrenceAction, stopRecurrenceAction } from "@/app/actions/tasks";
 import { Button } from "@/components/ui/button";
 import { Radio, RadioGroup } from "@/components/ui/choice";
@@ -75,7 +75,7 @@ export function RepeatControl({ slug, task, run }: { slug: string; task: TaskDet
     <div className="flex flex-col gap-1.5">
       {active ? (
         <p className="flex items-start gap-1.5 text-body-ui text-ink">
-          <Repeat aria-hidden className="mt-0.5 size-4 shrink-0 text-accent-text" />
+          {null}
           <span>
             {current.description}
             {current.createMode === "ON_COMPLETION" ? ", after each one is done" : ""}
@@ -162,7 +162,7 @@ export function RepeatControl({ slug, task, run }: { slug: string; task: TaskDet
                               const next = on ? (custom.byDay ?? []).filter((value) => value !== day) : [...(custom.byDay ?? []), day];
                               if (next.length) setCustom({ ...custom, byDay: WEEKDAYS.filter((value) => next.includes(value)) });
                             }}
-                            className={cn("min-h-11 min-w-12 rounded-md border px-2 text-sm font-semibold transition-colors duration-[120ms]", on ? "border-primary bg-primary text-on-primary" : "border-line-strong bg-panel text-ink hover:bg-muted")}
+                            className={cn("min-h-11 min-w-12 rounded-md border px-2 text-sm font-semibold transition-colors duration-[120ms]", on ? "border-accent-text bg-primary text-on-primary" : "border-line-strong bg-panel text-ink hover:bg-muted")}
                           >
                             {WEEKDAY_SHORT[day]}
                           </button>

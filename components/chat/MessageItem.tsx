@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useState } from "react";
-import { Bot, Download, Ellipsis, FileText, Link as LinkIcon, MessageSquareText, Pencil, Pin, PinOff, SmilePlus, Trash2 } from "lucide-react";
+import { Cpu, Ellipsis } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { formatDayTime, formatRelativeTime } from "@/lib/format/datetime";
 import { REACTIONS } from "@/lib/chat/client";
@@ -63,18 +63,18 @@ export const MessageItem = memo(function MessageItem({
       className={cn(
         "group relative flex gap-3 px-4 transition-colors duration-[120ms] hover:bg-subtle focus-within:bg-subtle",
         compact ? "py-0.5" : "pt-2.5 pb-1",
-        message.mentionsMe && "bg-highlight-soft hover:bg-highlight-soft",
+        message.mentionsMe && "bg-accent-soft hover:bg-accent-soft",
         highlighted && "bg-warning-bg hover:bg-warning-bg",
       )}
     >
       <div className="w-9 shrink-0">
         {compact ? (
-          <time dateTime={message.createdAt} title={fullTime} className="invisible block pt-0.5 text-right text-[11px] leading-5 text-ink-muted tabular-nums group-hover:visible group-focus-within:visible">
+          <time dateTime={message.createdAt} title={fullTime} className="invisible block pt-0.5 text-right text-xs leading-5 text-ink-muted tabular-nums group-hover:visible group-focus-within:visible">
             {time.replace(/ (AM|PM)$/, "")}
           </time>
         ) : message.authorKind === "ASSISTANT" ? (
           <span className="inline-flex size-9 items-center justify-center rounded-full bg-primary text-on-primary">
-            <Bot aria-hidden className="size-5" />
+            <Cpu aria-hidden className="size-5" />
           </span>
         ) : (
           <Avatar name={name} src={message.author?.image} size="sm" tone={isCard ? "ink" : "neutral"} className="size-9" />
@@ -84,7 +84,7 @@ export const MessageItem = memo(function MessageItem({
       <div className="min-w-0 flex-1">
         {!compact ? (
           <header className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            <span className="text-[15px] font-semibold text-ink">{name}</span>
+            <span className="text-sm font-semibold text-ink">{name}</span>
             {message.authorKind === "ASSISTANT" ? <Chip tone="accent" size="sm">Assistant</Chip> : null}
             {message.origin?.kind === "bridge" ? <Chip tone="info" size="sm">{`via ${message.origin.label}`}</Chip> : null}
             {isCard ? <Chip tone="neutral" size="sm">Routing card</Chip> : null}
@@ -121,12 +121,12 @@ export const MessageItem = memo(function MessageItem({
                     href={file.downloadUrl}
                     className="flex min-h-12 max-w-[320px] items-center gap-3 rounded-lg border border-line bg-panel px-3 py-2 transition-colors duration-[120ms] hover:bg-subtle"
                   >
-                    <FileText aria-hidden className="size-5 shrink-0 text-ink-muted" />
+                    {null}
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-label text-ink">{file.filename}</span>
                       <span className="block text-caption text-ink-muted tabular-nums">{fileSize(file.size)}</span>
                     </span>
-                    <Download aria-hidden className="size-4 shrink-0 text-ink-muted" />
+                    {null}
                     <span className="sr-only">Download</span>
                   </a>
                 </li>
@@ -161,7 +161,7 @@ export const MessageItem = memo(function MessageItem({
 
         {message.pinned ? (
           <p className="mt-1 flex items-center gap-1 text-caption text-ink-muted">
-            <Pin aria-hidden className="size-3.5" />
+            {null}
             {message.pinnedByName ? `Pinned by ${message.pinnedByName}` : "Pinned"}
           </p>
         ) : null}
@@ -197,33 +197,33 @@ export const MessageItem = memo(function MessageItem({
           {canReact ? <ReactionPicker onPick={(emoji) => actions.onReact(message, emoji)} /> : null}
           {actions.onReply ? (
             <ToolbarButton label="Reply in thread" onClick={() => actions.onReply?.(message)}>
-              <MessageSquareText />
+              <span className="inline-flex items-center justify-center text-xs font-semibold">Reply</span>
             </ToolbarButton>
           ) : null}
           {message.canPin ? (
             <ToolbarButton label={message.pinned ? "Unpin" : "Pin to channel"} onClick={() => actions.onPin(message, !message.pinned)}>
-              {message.pinned ? <PinOff /> : <Pin />}
+              {message.pinned ? <span className="inline-flex items-center justify-center text-xs font-semibold">Unpin</span> : <span className="inline-flex items-center justify-center text-xs font-semibold">Pin</span>}
             </ToolbarButton>
           ) : null}
           <Menu>
             <MenuTrigger asChild>
-              <button type="button" aria-label="More actions" title="More actions" className="inline-flex size-9 items-center justify-center rounded-md text-ink-secondary hover:bg-muted hover:text-ink [&_svg]:size-[18px]">
+              <button type="button" aria-label="More actions" title="More actions" className="inline-flex min-h-11 min-w-11 px-2 items-center justify-center rounded-md text-ink-secondary hover:bg-muted hover:text-ink [&_svg]:size-5">
                 <Ellipsis />
               </button>
             </MenuTrigger>
             <MenuContent>
-              <MenuItem icon={<LinkIcon />} onSelect={() => actions.onCopyLink(message)}>
+              <MenuItem icon={null} onSelect={() => actions.onCopyLink(message)}>
                 Copy link
               </MenuItem>
               {message.canEdit ? (
-                <MenuItem icon={<Pencil />} onSelect={() => actions.onEdit(message)}>
+                <MenuItem icon={null} onSelect={() => actions.onEdit(message)}>
                   Edit message
                 </MenuItem>
               ) : null}
               {message.canDelete ? (
                 <>
                   <MenuSeparator />
-                  <MenuItem danger icon={<Trash2 />} onSelect={() => actions.onDelete(message)}>
+                  <MenuItem danger icon={null} onSelect={() => actions.onDelete(message)}>
                     Delete message…
                   </MenuItem>
                 </>
@@ -238,7 +238,7 @@ export const MessageItem = memo(function MessageItem({
 
 function ToolbarButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" aria-label={label} title={label} onClick={onClick} className="inline-flex size-9 items-center justify-center rounded-md text-ink-secondary hover:bg-muted hover:text-ink [&_svg]:size-[18px]">
+    <button type="button" title={label} onClick={onClick} className="inline-flex min-h-11 min-w-11 px-2 items-center justify-center rounded-md text-ink-secondary hover:bg-muted hover:text-ink [&_svg]:size-5">
       {children}
     </button>
   );
@@ -249,8 +249,8 @@ function ReactionPicker({ onPick }: { onPick: (emoji: string) => void }) {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button type="button" aria-label="Add reaction" title="Add reaction" className="inline-flex size-9 items-center justify-center rounded-md text-ink-secondary hover:bg-muted hover:text-ink [&_svg]:size-[18px]">
-          <SmilePlus />
+        <button type="button" title="Add reaction" className="inline-flex min-h-11 min-w-11 px-2 items-center justify-center rounded-md text-ink-secondary hover:bg-muted hover:text-ink [&_svg]:size-5">
+          <span className="inline-flex items-center justify-center text-xs font-semibold">React</span>
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-auto p-1.5">

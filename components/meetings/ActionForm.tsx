@@ -291,7 +291,7 @@ export function ActionForm({
           variant={destructive ? "danger" : primary ? "primary" : "secondary"}
           disabled={pending}
         >
-          {pending ? "Saving…" : label}
+          {pending ? "Saving" : label}
         </Button>
       </fieldset>
       {error ? (

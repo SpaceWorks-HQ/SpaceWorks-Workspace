@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { CATEGORIES, human, type EstimateLine } from "@/lib/productOps/schema";
 import { estimateTotals } from "@/lib/productOps/costs";
 import { formatMoney, parseMoneyToMinor, currencyMinorDigits } from "@/lib/format/money";
-const control = "block min-h-11 w-full min-w-0 rounded-control border border-line-strong bg-panel px-3 py-2 text-ink focus-visible:outline-2 focus-visible:outline-primary";
+const control = "block min-h-11 w-full min-w-0 rounded-control border border-line-strong bg-panel px-3 py-2 text-ink focus-visible:outline-2 focus-visible:outline-[var(--yy-focus)]";
 export const blankLine = (): EstimateLine => ({ item: "", specification: "", category: "OTHER", quantityMilli: 1000, unit: "each", unitCostMinor: 0, supplier: "", quoteUrl: "", quoteFileId: "", gstBps: 0 });
 export function CostEditor({ initial, currency, quotes, initialContingency }: { initial: EstimateLine[]; initialContingency: number; currency: string; quotes: Array<{ id: string; filename: string }> }) {
  const [lines, setLines] = useState(initial.length ? initial : [blankLine()]);

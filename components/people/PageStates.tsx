@@ -8,7 +8,7 @@ import { EmptyState, Skeleton } from "@/components/ui/display";
 export function PeopleLoading({ label }: { label: string }) {
   return (
     <div className="flex flex-col gap-6" aria-busy="true" aria-live="polite">
-      <span className="sr-only">Loading {label}…</span>
+      <span className="sr-only">Loading {label}</span>
       <div className="flex flex-col gap-2">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-5 w-72 max-w-full" />

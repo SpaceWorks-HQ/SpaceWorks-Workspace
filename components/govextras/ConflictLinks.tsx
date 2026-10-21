@@ -125,7 +125,7 @@ export function FreezePack({ slug, id }: { slug: string; id: string }) {
           })
         }
       >
-        {pending ? "Freezing…" : "Freeze saved pack"}
+        {pending ? "Freezing" : "Freeze saved pack"}
       </Button>
       <p role="status">{message}</p>
     </div>

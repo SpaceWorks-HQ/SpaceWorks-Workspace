@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Ellipsis, Plus, Star } from "lucide-react";
+import { ArrowUpRight, Ellipsis, Plus } from "lucide-react";
 import {
   clearDoneTodosAction,
   createTodoAction,
@@ -143,7 +143,7 @@ export function TodoList({ slug, today, todos, canSendToTasks, onChange, onReloa
             value={draft}
             maxLength={500}
             autoComplete="off"
-            placeholder="Add a to-do… try “tomorrow”, “fri” or “!”"
+            placeholder="Add a to-do. Try “tomorrow”, “fri” or “!”"
             onChange={(event) => setDraft(event.target.value)}
           />
           <Button type="submit" variant="primary" disabled={adding || !preview?.text} aria-label="Add to-do">
@@ -316,10 +316,9 @@ function TodoRow({
           type="button"
           onClick={onStar}
           aria-pressed={todo.starred}
-          aria-label={todo.starred ? "Unstar" : "Star"}
-          className={cn("grid size-8 shrink-0 place-items-center rounded-md transition-colors duration-[120ms] hover:bg-panel", todo.starred ? "text-ink" : "text-ink-muted opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100")}
+          className={cn("grid min-h-11 min-w-11 px-2 shrink-0 place-items-center rounded-md transition-colors duration-[120ms] hover:bg-panel", todo.starred ? "text-ink" : "text-ink-muted opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100")}
         >
-          <Star aria-hidden className={cn("size-4", todo.starred && "fill-current")} />
+          <span className="inline-flex items-center justify-center text-xs font-semibold">{todo.starred ? "Unstar" : "Star"}</span>
         </button>
       ) : null}
       <Menu>

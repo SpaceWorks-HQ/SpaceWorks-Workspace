@@ -35,7 +35,7 @@ function SaveForm({ children, save, label = "Save changes", clearSecrets = false
     });
   }} className="space-y-4">
     <fieldset disabled={pending} className="min-w-0 space-y-4">{children}</fieldset>
-    <Button type="submit" variant="primary" disabled={pending}>{pending ? "Saving…" : label}</Button>
+    <Button type="submit" variant="primary" disabled={pending}>{pending ? "Saving" : label}</Button>
     {result ? <p role={result.ok ? "status" : "alert"} className={result.ok ? "text-caption text-ink-secondary" : "text-caption text-danger-fg"}>{result.ok ? "Saved." : result.error}</p> : null}
   </form>;
 }
@@ -88,7 +88,7 @@ function AppForm({ slug, app, data }: { slug: string; app?: App; data: Settings 
 }
 function TestConnection({ slug, appId }: { slug: string; appId: string }) {
   const [pending, start] = useTransition(); const [result, setResult] = useState<ActionResult | null>(null);
-  return <div className="mt-4 space-y-2"><Button disabled={pending} onClick={() => start(async () => { try { setResult(await testAppReviewConnectionAction(slug, appId)); } catch { setResult({ ok: false, error: "Couldn't test the connection. Try again." }); } })}>{pending ? "Testing…" : "Test connection"}</Button>{result ? <p role={result.ok ? "status" : "alert"} className={result.ok ? "text-caption text-ink-secondary" : "text-caption text-danger-fg"}>{result.ok ? "Connected. Review access confirmed." : result.error}</p> : null}</div>;
+  return <div className="mt-4 space-y-2"><Button disabled={pending} onClick={() => start(async () => { try { setResult(await testAppReviewConnectionAction(slug, appId)); } catch { setResult({ ok: false, error: "Couldn't test the connection. Try again." }); } })}>{pending ? "Testing" : "Test connection"}</Button>{result ? <p role={result.ok ? "status" : "alert"} className={result.ok ? "text-caption text-ink-secondary" : "text-caption text-danger-fg"}>{result.ok ? "Connected. Review access confirmed." : result.error}</p> : null}</div>;
 }
 export function ReviewSettings({ slug, data, timezone, eventUrl }: { slug: string; data: Settings; timezone: string; eventUrl: string }) {
   return <div className="space-y-6">

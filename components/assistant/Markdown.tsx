@@ -18,7 +18,7 @@ function renderInline(nodes: Inline[]): ReactNode {
       case "em":
         return <em key={index}>{renderInline(node.children)}</em>;
       case "code":
-        return <code key={index} className="rounded-[6px] bg-muted px-1.5 py-0.5 text-[0.92em]">{node.text}</code>;
+        return <code key={index} className="rounded-sm bg-muted px-1.5 py-0.5 text-[0.92em]">{node.text}</code>;
       case "link":
         return node.external ? (
           <a key={index} href={node.href} target="_blank" rel="noopener noreferrer nofollow" className="font-semibold text-accent-text underline underline-offset-2">
@@ -52,7 +52,7 @@ function renderBlock(block: Block, index: number): ReactNode {
     case "quote":
       return <blockquote key={index} className="border-l-2 border-line-strong pl-3 text-ink-secondary">{renderInline(block.children)}</blockquote>;
     case "code":
-      return <pre key={index} className="overflow-x-auto rounded-md bg-muted p-3 text-[13px] leading-5"><code>{block.text}</code></pre>;
+      return <pre key={index} className="overflow-x-auto rounded-md bg-muted p-3 text-xs leading-5"><code>{block.text}</code></pre>;
     case "rule":
       return <hr key={index} className="border-line" />;
   }

@@ -30,7 +30,7 @@ export default async function AnnouncementsPage({ params }: PageProps<"/w/[works
           manage ? (
             <Button asChild variant="primary">
               <Link href={`${base}/new`}>
-                <Plus aria-hidden className="size-[18px]" />
+                <Plus aria-hidden className="size-5" />
                 New announcement
               </Link>
             </Button>
@@ -38,7 +38,7 @@ export default async function AnnouncementsPage({ params }: PageProps<"/w/[works
         }
       />
       {announcements.length === 0 ? (
-        <EmptyState
+        <EmptyState patch
           title="No announcements yet."
           action={
             manage ? (
@@ -57,7 +57,7 @@ export default async function AnnouncementsPage({ params }: PageProps<"/w/[works
               <Card as="article" className="flex gap-4">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    {item.pinned ? <Chip tone="highlight" size="sm">Pinned</Chip> : null}
+                    {item.pinned ? <Chip tone="accent" size="sm">Pinned</Chip> : null}
                     {item.status === "scheduled" ? (
                       <Chip tone="info" size="sm">Scheduled · {formatDayTime(item.publishedAt!, tz)} {formatTimeZoneName(item.publishedAt!, tz)}</Chip>
                     ) : null}

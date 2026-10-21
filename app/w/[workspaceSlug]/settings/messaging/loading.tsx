@@ -1,1 +1,5 @@
-export default function Loading() { return <p role="status" className="p-6 text-ink-secondary">Loading workspace settings…</p>; }
+import { BrandPageLoader } from "@/components/brand/BrandLoader";
+
+export default function Loading() {
+  return <BrandPageLoader label="Loading workspace settings" />;
+}

@@ -1,3 +1,5 @@
+@import "./palette.css";
+
 /*
  * Space Works Workspace design tokens (docs/DESIGN.md §2). Every colour, radius,
  * shadow, and motion value used by components comes from here; components
@@ -30,82 +32,84 @@
   color-scheme: light;
 
   /* Neutrals: Warm Cream page, white panels, cream-darker surface steps. */
-  --yy-bg-canvas: #fff4e8;
-  --yy-bg-panel: #ffffff;
-  --yy-bg-surface: #f6ece0;
-  --yy-bg-subtle: #f6ece0;
-  --yy-bg-muted: #efe6db;
-  --yy-bg-emphasis: #eae2d7;
-  --yy-bg-track: #eae2d7;
-  --yy-border: #d5d0c6;
-  --yy-border-strong: #828a83;
-  --yy-text: #142c2a;
-  --yy-text-secondary: #374a47;
-  --yy-text-muted: #5b6863;
-  --yy-text-disabled: #828a83;
+  --yy-bg-canvas: rgb(var(--sw-color-bg));
+  --yy-bg-panel: rgb(var(--sw-color-panel));
+  --yy-bg-surface: rgb(var(--sw-color-surface));
+  --yy-bg-subtle: rgb(var(--sw-color-hover));
+  --yy-bg-muted: rgb(var(--sw-color-hover));
+  --yy-bg-emphasis: rgb(var(--sw-color-line));
+  --yy-bg-track: rgb(var(--sw-color-line));
+  --yy-border: rgb(var(--sw-color-line));
+  --yy-border-strong: rgb(var(--sw-color-outline));
+  --yy-text: rgb(var(--sw-color-ink));
+  --yy-text-secondary: rgb(var(--sw-color-ink));
+  --yy-text-muted: rgb(var(--sw-color-muted));
+  --yy-text-disabled: rgb(var(--sw-color-outline));
 
   /* Primary actions: Maker Teal with cream labels. Inverse: Deep Ink. */
-  --yy-primary: #006e63;
-  --yy-primary-hover: #02675d;
-  --yy-primary-active: #046158;
-  --yy-on-primary: #fff4e8;
-  --yy-inverse-surface: #142c2a;
-  --yy-on-inverse: #fff4e8;
+  --yy-primary: rgb(var(--sw-color-accent));
+  --yy-primary-hover: rgb(var(--sw-color-accent-hover));
+  --yy-primary-active: rgb(var(--sw-color-accent-active));
+  --yy-on-primary: rgb(var(--sw-color-on-accent));
+  --yy-inverse-surface: var(--sw-ink);
+  --yy-on-inverse: var(--sw-cream);
 
   /* Emphasis: Workshop Orange fill with an ink label. Never used as text. */
-  --yy-highlight: #ff7447;
-  --yy-highlight-hover: #ff8157;
-  --yy-on-highlight: #142c2a;
-  --yy-highlight-soft: #ffeee9;
+  --yy-highlight: rgb(var(--sw-color-emphasis));
+  --yy-highlight-hover: rgb(var(--sw-color-emphasis-hover));
+  --yy-on-highlight: rgb(var(--sw-color-on-emphasis));
+  --yy-highlight-soft: rgb(var(--sw-color-emphasis-soft));
 
   /* Dashboard sidebar: Citron field, teal active item. */
-  --yy-sidebar: #dfff8f;
-  --yy-sidebar-hover: #f2ffd2;
-  --yy-sidebar-active: #006e63;
-  --yy-on-sidebar-active: #fff4e8;
+  --yy-sidebar: rgb(var(--sw-color-sidebar));
+  --yy-sidebar-hover: rgb(var(--sw-color-sidebar-hover));
+  --yy-sidebar-active: rgb(var(--sw-color-sidebar-active));
+  --yy-on-sidebar-active: rgb(var(--sw-color-on-accent));
 
   /* Legacy brand aliases, mapped onto Space Works colours. */
-  --yy-brand-marigold: #ff7447;
-  --yy-brand-marigold-deep: #ff7447;
-  --yy-brand-marigold-small: #ff7447;
-  --yy-brand-dot-base: #142c2a;
-  --yy-brand-dot-off: #d5d0c6;
-  --yy-highlight-peach: #dfff8f;
-  --yy-tint-peach: #ffeee9;
+  --yy-brand-marigold: rgb(var(--sw-color-emphasis));
+  --yy-brand-marigold-deep: rgb(var(--sw-color-emphasis));
+  --yy-brand-marigold-small: rgb(var(--sw-color-emphasis));
+  --yy-brand-dot-base: rgb(var(--sw-color-ink));
+  --yy-brand-dot-off: rgb(var(--sw-color-line));
+  --yy-highlight-peach: rgb(var(--sw-color-success));
+  --yy-tint-peach: rgb(var(--sw-color-emphasis-soft));
 
   /* Status. Light mode uses the brand's solid pastel + ink pairs. */
-  --yy-success-bg: #dfff8f;
-  --yy-success-fg: #536d49;
-  --yy-success-solid: #536d49;
-  --yy-on-success: #fff4e8;
-  --yy-warning-bg: #ffd447;
-  --yy-warning-fg: #142c2a;
-  --yy-warning-solid: #696834;
-  --yy-on-warning: #fff4e8;
-  --yy-info-bg: #b5cdff;
-  --yy-info-fg: #142c2a;
-  --yy-info-solid: #51697b;
-  --yy-on-info: #fff4e8;
-  --yy-danger-bg: #f7e4e4;
-  --yy-danger-fg: #b91c1c;
-  --yy-danger-solid: #b91c1c;
-  --yy-danger-hover: #991b1b;
-  --yy-on-danger: #fff4e8;
-  --yy-danger-border: #fca5a5;
+  --yy-success-bg: rgb(var(--sw-color-success));
+  --yy-success-fg: rgb(var(--sw-color-on-success));
+  --yy-success-solid: rgb(var(--sw-color-success-ink));
+  --yy-on-success: var(--sw-cream);
+  --yy-warning-bg: rgb(var(--sw-color-warn));
+  --yy-warning-fg: rgb(var(--sw-color-on-warn));
+  --yy-warning-solid: rgb(var(--sw-color-warn-ink));
+  --yy-on-warning: var(--sw-cream);
+  --yy-info-bg: rgb(var(--sw-color-info));
+  --yy-info-fg: rgb(var(--sw-color-on-info));
+  --yy-info-solid: rgb(var(--sw-color-info-ink));
+  --yy-on-info: var(--sw-cream);
+  --yy-danger-bg: rgb(var(--sw-color-panel));
+  --yy-danger-fg: rgb(var(--sw-color-danger));
+  --yy-danger-solid: rgb(var(--sw-color-danger));
+  --yy-danger-hover: rgb(var(--sw-color-danger-hover));
+  --yy-on-danger: rgb(var(--sw-color-on-danger));
+  --yy-danger-border: rgb(var(--sw-color-danger-line));
 
   /* Accent defaults: Maker Teal. */
-  --yy-accent: #006e63;
-  --yy-accent-soft: #e0eeec;
-  --yy-on-accent: #fff4e8;
-  --yy-accent-text: #006e63;
+  --yy-accent: rgb(var(--sw-color-accent));
+  --yy-accent-soft: rgb(var(--sw-color-accent-soft));
+  --yy-on-accent: rgb(var(--sw-color-on-accent));
+  --yy-accent-text: rgb(var(--sw-color-accent-ink));
 
   /* Elevation: cards and panels are flat; only overlays get a shadow. */
   --yy-shadow-raised: none;
-  --yy-shadow-float: 0 2px 6px rgb(20 44 42 / 0.06), 0 12px 32px rgb(20 44 42 / 0.1);
+  --yy-shadow-float: 0 2px 6px rgb(var(--sw-shadow-color) / 0.06), 0 12px 32px rgb(var(--sw-shadow-color) / 0.1);
   --yy-shadow-segment: 0 0 0 1px var(--yy-border-strong);
 
+  --yy-overlay: rgb(var(--sw-shadow-color) / 0.48);
+
   /* Focus ring colour */
-  --yy-focus: #006e63;
+  --yy-focus: rgb(var(--sw-color-focus));
 }
 
 /* `.yy-dark-band` keeps a section dark on light pages (landing "At the door", closing CTA). */
@@ -113,75 +117,75 @@
 .yy-dark-band {
   color-scheme: dark;
 
-  --yy-bg-canvas: #142c2a;
-  --yy-bg-panel: #1f433f;
-  --yy-bg-surface: #193935;
-  --yy-bg-subtle: #193935;
-  --yy-bg-muted: #254d48;
-  --yy-bg-emphasis: #2b5751;
-  --yy-bg-track: #2b5751;
-  --yy-border: #4d6d67;
-  --yy-border-strong: #93a198;
-  --yy-text: #fff4e8;
-  --yy-text-secondary: #e3dcd1;
-  --yy-text-muted: #c7c4ba;
-  --yy-text-disabled: #93a198;
+  --yy-bg-canvas: rgb(var(--sw-color-bg));
+  --yy-bg-panel: rgb(var(--sw-color-panel));
+  --yy-bg-surface: rgb(var(--sw-color-surface));
+  --yy-bg-subtle: rgb(var(--sw-color-hover));
+  --yy-bg-muted: rgb(var(--sw-color-hover));
+  --yy-bg-emphasis: rgb(var(--sw-color-line));
+  --yy-bg-track: rgb(var(--sw-color-line));
+  --yy-border: rgb(var(--sw-color-line));
+  --yy-border-strong: rgb(var(--sw-color-outline));
+  --yy-text: rgb(var(--sw-color-ink));
+  --yy-text-secondary: rgb(var(--sw-color-ink));
+  --yy-text-muted: rgb(var(--sw-color-muted));
+  --yy-text-disabled: rgb(var(--sw-color-outline));
 
-  --yy-primary: #006e63;
-  --yy-primary-hover: #02675d;
-  --yy-primary-active: #046158;
-  --yy-on-primary: #fff4e8;
-  --yy-inverse-surface: #254d48;
-  --yy-on-inverse: #fff4e8;
+  --yy-primary: rgb(var(--sw-color-accent));
+  --yy-primary-hover: rgb(var(--sw-color-accent-hover));
+  --yy-primary-active: rgb(var(--sw-color-accent-active));
+  --yy-on-primary: rgb(var(--sw-color-on-accent));
+  --yy-inverse-surface: var(--sw-ink);
+  --yy-on-inverse: var(--sw-cream);
 
-  --yy-highlight: #ff7447;
-  --yy-highlight-hover: #ff8157;
-  --yy-on-highlight: #142c2a;
-  --yy-highlight-soft: #2f4640;
+  --yy-highlight: rgb(var(--sw-color-emphasis));
+  --yy-highlight-hover: rgb(var(--sw-color-emphasis-hover));
+  --yy-on-highlight: rgb(var(--sw-color-on-emphasis));
+  --yy-highlight-soft: rgb(var(--sw-color-emphasis-soft));
 
-  --yy-sidebar: #113532;
-  --yy-sidebar-hover: #254d48;
-  --yy-sidebar-active: #006e63;
-  --yy-on-sidebar-active: #fff4e8;
+  --yy-sidebar: rgb(var(--sw-color-sidebar));
+  --yy-sidebar-hover: rgb(var(--sw-color-sidebar-hover));
+  --yy-sidebar-active: rgb(var(--sw-color-sidebar-active));
+  --yy-on-sidebar-active: rgb(var(--sw-color-on-accent));
 
-  --yy-brand-marigold: #ff7447;
-  --yy-brand-marigold-deep: #ff7447;
-  --yy-brand-marigold-small: #ff7447;
-  --yy-brand-dot-base: #fff4e8;
-  --yy-brand-dot-off: #4d6d67;
-  --yy-highlight-peach: #2f4640;
-  --yy-tint-peach: #2f4640;
+  --yy-brand-marigold: rgb(var(--sw-color-emphasis));
+  --yy-brand-marigold-deep: rgb(var(--sw-color-emphasis));
+  --yy-brand-marigold-small: rgb(var(--sw-color-emphasis));
+  --yy-brand-dot-base: rgb(var(--sw-color-ink));
+  --yy-brand-dot-off: rgb(var(--sw-color-line));
+  --yy-highlight-peach: rgb(var(--sw-color-emphasis-soft));
+  --yy-tint-peach: rgb(var(--sw-color-emphasis-soft));
 
   /* Status. Dark mode uses soft fills with the brand colour as text. */
-  --yy-success-bg: #2c5045;
-  --yy-success-fg: #dfff8f;
-  --yy-success-solid: #dfff8f;
-  --yy-on-success: #142c2a;
-  --yy-warning-bg: #2f4d40;
-  --yy-warning-fg: #ffd447;
-  --yy-warning-solid: #ffd447;
-  --yy-on-warning: #142c2a;
-  --yy-info-bg: #2a4d4c;
-  --yy-info-fg: #b5cdff;
-  --yy-info-solid: #b5cdff;
-  --yy-on-info: #142c2a;
-  --yy-danger-bg: #3a4f4b;
-  --yy-danger-fg: #fca5a5;
-  --yy-danger-solid: #fca5a5;
-  --yy-danger-hover: #fdb9b6;
-  --yy-on-danger: #142c2a;
-  --yy-danger-border: #7c6261;
+  --yy-success-bg: rgb(var(--sw-color-success-soft));
+  --yy-success-fg: rgb(var(--sw-color-success-ink));
+  --yy-success-solid: rgb(var(--sw-color-success-ink));
+  --yy-on-success: var(--sw-ink);
+  --yy-warning-bg: rgb(var(--sw-color-warn-soft));
+  --yy-warning-fg: rgb(var(--sw-color-warn-ink));
+  --yy-warning-solid: rgb(var(--sw-color-warn-ink));
+  --yy-on-warning: var(--sw-ink);
+  --yy-info-bg: rgb(var(--sw-color-info-soft));
+  --yy-info-fg: rgb(var(--sw-color-info-ink));
+  --yy-info-solid: rgb(var(--sw-color-info-ink));
+  --yy-on-info: var(--sw-ink);
+  --yy-danger-bg: rgb(var(--sw-color-panel));
+  --yy-danger-fg: rgb(var(--sw-color-danger));
+  --yy-danger-solid: rgb(var(--sw-color-danger));
+  --yy-danger-hover: rgb(var(--sw-color-danger-hover));
+  --yy-on-danger: rgb(var(--sw-color-on-danger));
+  --yy-danger-border: rgb(var(--sw-color-danger-line));
 
-  --yy-accent: #006e63;
-  --yy-accent-soft: #1a4a45;
-  --yy-on-accent: #fff4e8;
-  --yy-accent-text: #abc8bc;
+  --yy-accent: rgb(var(--sw-color-accent));
+  --yy-accent-soft: rgb(var(--sw-color-accent-soft));
+  --yy-on-accent: rgb(var(--sw-color-on-accent));
+  --yy-accent-text: rgb(var(--sw-color-accent-ink));
 
   --yy-shadow-raised: none;
-  --yy-shadow-float: 0 2px 6px rgb(20 44 42 / 0.06), 0 12px 32px rgb(20 44 42 / 0.1);
+  --yy-shadow-float: 0 2px 6px rgb(var(--sw-shadow-color) / 0.06), 0 12px 32px rgb(var(--sw-shadow-color) / 0.1);
   --yy-shadow-segment: 0 0 0 1px var(--yy-border-strong);
 
-  --yy-focus: #dfff8f;
+  --yy-focus: rgb(var(--sw-color-focus));
 }
 
 /* No explicit choice: follow the operating system. Mirrors the dark block above. */
@@ -189,73 +193,73 @@
   :root:not([data-color-mode]) {
     color-scheme: dark;
 
-    --yy-bg-canvas: #142c2a;
-    --yy-bg-panel: #1f433f;
-    --yy-bg-surface: #193935;
-    --yy-bg-subtle: #193935;
-    --yy-bg-muted: #254d48;
-    --yy-bg-emphasis: #2b5751;
-    --yy-bg-track: #2b5751;
-    --yy-border: #4d6d67;
-    --yy-border-strong: #93a198;
-    --yy-text: #fff4e8;
-    --yy-text-secondary: #e3dcd1;
-    --yy-text-muted: #c7c4ba;
-    --yy-text-disabled: #93a198;
+    --yy-bg-canvas: rgb(var(--sw-color-bg));
+    --yy-bg-panel: rgb(var(--sw-color-panel));
+    --yy-bg-surface: rgb(var(--sw-color-surface));
+    --yy-bg-subtle: rgb(var(--sw-color-hover));
+    --yy-bg-muted: rgb(var(--sw-color-hover));
+    --yy-bg-emphasis: rgb(var(--sw-color-line));
+    --yy-bg-track: rgb(var(--sw-color-line));
+    --yy-border: rgb(var(--sw-color-line));
+    --yy-border-strong: rgb(var(--sw-color-outline));
+    --yy-text: rgb(var(--sw-color-ink));
+    --yy-text-secondary: rgb(var(--sw-color-ink));
+    --yy-text-muted: rgb(var(--sw-color-muted));
+    --yy-text-disabled: rgb(var(--sw-color-outline));
 
-    --yy-primary: #006e63;
-    --yy-primary-hover: #02675d;
-    --yy-primary-active: #046158;
-    --yy-on-primary: #fff4e8;
-    --yy-inverse-surface: #254d48;
-    --yy-on-inverse: #fff4e8;
+    --yy-primary: rgb(var(--sw-color-accent));
+    --yy-primary-hover: rgb(var(--sw-color-accent-hover));
+    --yy-primary-active: rgb(var(--sw-color-accent-active));
+    --yy-on-primary: rgb(var(--sw-color-on-accent));
+    --yy-inverse-surface: var(--sw-ink);
+    --yy-on-inverse: var(--sw-cream);
 
-    --yy-highlight: #ff7447;
-    --yy-highlight-hover: #ff8157;
-    --yy-on-highlight: #142c2a;
-    --yy-highlight-soft: #2f4640;
+    --yy-highlight: rgb(var(--sw-color-emphasis));
+    --yy-highlight-hover: rgb(var(--sw-color-emphasis-hover));
+    --yy-on-highlight: rgb(var(--sw-color-on-emphasis));
+    --yy-highlight-soft: rgb(var(--sw-color-emphasis-soft));
 
-    --yy-sidebar: #113532;
-    --yy-sidebar-hover: #254d48;
-    --yy-sidebar-active: #006e63;
-    --yy-on-sidebar-active: #fff4e8;
+    --yy-sidebar: rgb(var(--sw-color-sidebar));
+    --yy-sidebar-hover: rgb(var(--sw-color-sidebar-hover));
+    --yy-sidebar-active: rgb(var(--sw-color-sidebar-active));
+    --yy-on-sidebar-active: rgb(var(--sw-color-on-accent));
 
-    --yy-brand-marigold: #ff7447;
-    --yy-brand-marigold-deep: #ff7447;
-    --yy-brand-marigold-small: #ff7447;
-    --yy-brand-dot-base: #fff4e8;
-    --yy-brand-dot-off: #4d6d67;
-    --yy-highlight-peach: #2f4640;
-    --yy-tint-peach: #2f4640;
+    --yy-brand-marigold: rgb(var(--sw-color-emphasis));
+    --yy-brand-marigold-deep: rgb(var(--sw-color-emphasis));
+    --yy-brand-marigold-small: rgb(var(--sw-color-emphasis));
+    --yy-brand-dot-base: rgb(var(--sw-color-ink));
+    --yy-brand-dot-off: rgb(var(--sw-color-line));
+    --yy-highlight-peach: rgb(var(--sw-color-emphasis-soft));
+    --yy-tint-peach: rgb(var(--sw-color-emphasis-soft));
 
-    --yy-success-bg: #2c5045;
-    --yy-success-fg: #dfff8f;
-    --yy-success-solid: #dfff8f;
-    --yy-on-success: #142c2a;
-    --yy-warning-bg: #2f4d40;
-    --yy-warning-fg: #ffd447;
-    --yy-warning-solid: #ffd447;
-    --yy-on-warning: #142c2a;
-    --yy-info-bg: #2a4d4c;
-    --yy-info-fg: #b5cdff;
-    --yy-info-solid: #b5cdff;
-    --yy-on-info: #142c2a;
-    --yy-danger-bg: #3a4f4b;
-    --yy-danger-fg: #fca5a5;
-    --yy-danger-solid: #fca5a5;
-    --yy-danger-hover: #fdb9b6;
-    --yy-on-danger: #142c2a;
-    --yy-danger-border: #7c6261;
+    --yy-success-bg: rgb(var(--sw-color-success-soft));
+    --yy-success-fg: rgb(var(--sw-color-success-ink));
+    --yy-success-solid: rgb(var(--sw-color-success-ink));
+    --yy-on-success: var(--sw-ink);
+    --yy-warning-bg: rgb(var(--sw-color-warn-soft));
+    --yy-warning-fg: rgb(var(--sw-color-warn-ink));
+    --yy-warning-solid: rgb(var(--sw-color-warn-ink));
+    --yy-on-warning: var(--sw-ink);
+    --yy-info-bg: rgb(var(--sw-color-info-soft));
+    --yy-info-fg: rgb(var(--sw-color-info-ink));
+    --yy-info-solid: rgb(var(--sw-color-info-ink));
+    --yy-on-info: var(--sw-ink);
+    --yy-danger-bg: rgb(var(--sw-color-panel));
+    --yy-danger-fg: rgb(var(--sw-color-danger));
+    --yy-danger-solid: rgb(var(--sw-color-danger));
+    --yy-danger-hover: rgb(var(--sw-color-danger-hover));
+    --yy-on-danger: rgb(var(--sw-color-on-danger));
+    --yy-danger-border: rgb(var(--sw-color-danger-line));
 
-    --yy-accent: #006e63;
-    --yy-accent-soft: #1a4a45;
-    --yy-on-accent: #fff4e8;
-    --yy-accent-text: #abc8bc;
+    --yy-accent: rgb(var(--sw-color-accent));
+    --yy-accent-soft: rgb(var(--sw-color-accent-soft));
+    --yy-on-accent: rgb(var(--sw-color-on-accent));
+    --yy-accent-text: rgb(var(--sw-color-accent-ink));
 
     --yy-shadow-raised: none;
-    --yy-shadow-float: 0 2px 6px rgb(20 44 42 / 0.06), 0 12px 32px rgb(20 44 42 / 0.1);
+    --yy-shadow-float: 0 2px 6px rgb(var(--sw-shadow-color) / 0.06), 0 12px 32px rgb(var(--sw-shadow-color) / 0.1);
     --yy-shadow-segment: 0 0 0 1px var(--yy-border-strong);
 
-    --yy-focus: #dfff8f;
+    --yy-focus: rgb(var(--sw-color-focus));
   }
 }

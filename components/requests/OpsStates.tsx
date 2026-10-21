@@ -1,9 +1,10 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/display";
+import { EmptyState } from "@/components/ui/display";
+import { BrandPageLoader } from "@/components/brand/BrandLoader";
 export function OpsLoading() {
- return <Card><p role="status" className="text-body-ui text-ink-muted">Loading operations…</p></Card>;
+ return <BrandPageLoader label="Loading operations" />;
 }
 export function OpsErrorState({ retry }: { error: unknown; retry: () => void }) {
- return <Card><h2 className="text-h3">Couldn&apos;t load this page.</h2><p className="my-4 text-body-ui text-ink-muted">Try again to fetch the latest records.</p><Button onClick={retry}>Try again</Button></Card>;
+ return <EmptyState patch title="Couldn't load this page. Try again." action={<Button onClick={retry}>Try again</Button>} />;
 }

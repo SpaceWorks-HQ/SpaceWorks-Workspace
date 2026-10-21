@@ -32,7 +32,7 @@ export function AdvancesScreen({
 }) {
   return (
     <div className="mx-auto flex max-w-5xl min-w-0 flex-col gap-6 p-4 sm:p-6">
-      <PageHeader
+      <PageHeader titleAs="h2"
         title="Staff advances and loans"
         description="Private advances, independent approval and dated recoveries. Cash stays in the existing Money controls accounts."
       />
@@ -42,7 +42,7 @@ export function AdvancesScreen({
         payroll={view.payrollView}
       />
       <a
-        className="min-h-11 py-3 text-primary underline"
+        className="min-h-11 py-3 text-accent-text underline"
         href={`/w/${slug}/finance/recurring/export?${new URLSearchParams({ ...query, export: "advances" })}`}
       >
         Export advances CSV
@@ -165,7 +165,7 @@ export function AdvancesScreen({
                 ) : null}
                 {r.approvalId ? (
                   <Link
-                    className="inline-flex min-h-11 items-center text-primary underline"
+                    className="inline-flex min-h-11 items-center text-accent-text underline"
                     href={`/w/${slug}/requests/approvals`}
                   >
                     Review approval in Requests

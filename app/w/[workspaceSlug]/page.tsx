@@ -1,9 +1,11 @@
+import { DashboardLayout } from "@/components/ui/layouts";
 import Link from "next/link";
 import { QuickCreateButtons } from "@/components/command-palette/QuickCreate";
 import {
   Card,
   CardHeader,
   Chip,
+  EmptyState,
   PageHeader,
   StatTile,
 } from "@/components/ui/display";
@@ -44,13 +46,13 @@ export default async function WorkspaceHome({
     .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime())
     .slice(0, 8);
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
+    <DashboardLayout
+      header={<PageHeader
         kicker={workspace.name}
         title={shellMessage(workspace.defaultLocale, "home")}
         description={`${user.name ? `Hello, ${user.name.split(" ")[0]}. ` : ""}${workspace.tagline ?? "Make room for your next good build."}`}
-      />
-      <section
+      />}
+      stats={<section
         aria-label="Overview"
         className="grid grid-cols-2 gap-3 lg:grid-cols-4"
       >
@@ -82,8 +84,8 @@ export default async function WorkspaceHome({
             href={`${base}/notifications?tab=mentions`}
           />
         )}
-      </section>
-      <nav aria-label="Quick actions" className="flex flex-wrap gap-3">
+      </section>}
+      actions={<nav aria-label="Quick actions" className="flex flex-wrap gap-3">
         {canContribute(membership) ? (
           <QuickCreateButtons slug={workspaceSlug} userId={user.id} />
         ) : null}
@@ -99,10 +101,47 @@ export default async function WorkspaceHome({
         >
           Links
         </Link>
-      </nav>
-      <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_260px]">
-        <div className="flex min-w-0 flex-col gap-5">
-          {canContribute(membership) ? (
+      </nav>}
+      rail={<Card>
+            <CardHeader
+              title="Activity"
+              action={
+                <Link
+                  className="inline-flex min-h-11 items-center underline"
+                  href={`${base}/activity`}
+                >
+                  See all
+                </Link>
+              }
+            />
+            {d.activity.length ? (
+              <ul className="divide-y divide-line">
+                {d.activity.map((a) => (
+                  <li className="py-3" key={a.id}>
+                    <p className="break-words text-body-ui">{a.summary}</p>
+                    <time
+                      className="text-caption text-ink-muted"
+                      dateTime={a.createdAt.toISOString()}
+                    >
+                      {formatRelativeTime(a.createdAt, tz)}
+                    </time>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>
+                It’s quiet here.{" "}
+                <Link className="underline" href={`${base}/activity`}>
+                  Open activity
+                </Link>
+              </p>
+            )}
+          </Card>}
+    >
+      {!d.myTasks.length && !upcoming.length && !d.announcements.length && !d.activity.length ? (
+        <EmptyState patch title="No plans yet. Find a project for the next build night." action={<Link href={`${base}/projects`} className="inline-flex min-h-11 items-center font-semibold text-accent-text underline">Browse projects →</Link>} />
+      ) : null}
+      {canContribute(membership) ? (
             <Card>
               <CardHeader
                 title="My tasks"
@@ -287,45 +326,6 @@ export default async function WorkspaceHome({
               </div>
             </Card>
           ) : null}
-        </div>
-        <aside aria-label="Recent activity" className="min-w-0">
-          <Card>
-            <CardHeader
-              title="Activity"
-              action={
-                <Link
-                  className="inline-flex min-h-11 items-center underline"
-                  href={`${base}/activity`}
-                >
-                  See all
-                </Link>
-              }
-            />
-            {d.activity.length ? (
-              <ul className="divide-y divide-line">
-                {d.activity.map((a) => (
-                  <li className="py-3" key={a.id}>
-                    <p className="break-words text-body-ui">{a.summary}</p>
-                    <time
-                      className="text-caption text-ink-muted"
-                      dateTime={a.createdAt.toISOString()}
-                    >
-                      {formatRelativeTime(a.createdAt, tz)}
-                    </time>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>
-                It’s quiet here.{" "}
-                <Link className="underline" href={`${base}/activity`}>
-                  Open activity
-                </Link>
-              </p>
-            )}
-          </Card>
-        </aside>
-      </div>
-    </div>
+    </DashboardLayout>
   );
 }

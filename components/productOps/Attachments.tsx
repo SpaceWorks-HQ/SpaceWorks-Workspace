@@ -50,7 +50,7 @@ export function Attachments({
     start(async () => {
       try {
         for (const [index, file] of selected.entries()) {
-          setMessage(`Uploading ${index + 1} of ${selected.length}…`);
+          setMessage(`Uploading ${index + 1} of ${selected.length}`);
           const form = new FormData();
           form.set("recordId", recordId);
           form.set("file", file);

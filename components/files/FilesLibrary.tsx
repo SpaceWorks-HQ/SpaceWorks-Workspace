@@ -3,7 +3,7 @@
 import { useCallback, useRef, useState, type DragEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Ellipsis, Folder, FolderPlus, Upload } from "lucide-react";
+import { Ellipsis } from "lucide-react";
 import { useRealtime } from "@/components/realtime/useRealtime";
 import { Button, IconButton } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/choice";
@@ -127,8 +127,8 @@ export function FilesLibrary({ slug, folder, query, subfolders, allFolders, file
         <div className="flex flex-wrap items-center gap-2.5">
           {canUpload ? (
             <>
-              <Button variant="secondary" startIcon={<FolderPlus />} onClick={() => setNewFolder(true)}>New folder</Button>
-              <Button variant="primary" startIcon={<Upload />} onClick={() => input.current?.click()} disabled={uploads.busy}>Upload files</Button>
+              <Button variant="secondary" startIcon={null} onClick={() => setNewFolder(true)}>New folder</Button>
+              <Button variant="primary" startIcon={null} onClick={() => input.current?.click()} disabled={uploads.busy}>Upload files</Button>
               <input
                 ref={input}
                 type="file"
@@ -184,9 +184,9 @@ export function FilesLibrary({ slug, folder, query, subfolders, allFolders, file
         ) : null}
 
         {empty ? (
-          <EmptyState
+          <EmptyState patch
             title={query ? `No files match “${query}”.` : folder === "/" ? "No files yet." : "This folder is empty."}
-            action={canUpload && !query ? <Button variant="primary" startIcon={<Upload />} onClick={() => input.current?.click()}>Upload files</Button> : undefined}
+            action={canUpload && !query ? <Button variant="primary" startIcon={null} onClick={() => input.current?.click()}>Upload files</Button> : undefined}
           >
             {query ? "Try part of the name, or look in another folder." : canUpload ? `Drag files here or upload them. Up to ${maxUploadLabel} each.` : "Files the crew uploads show up here."}
           </EmptyState>
@@ -197,7 +197,7 @@ export function FilesLibrary({ slug, folder, query, subfolders, allFolders, file
                 {subfolders.map((name) => (
                   <li key={name}>
                     <Link href={libraryHref(joinFolder(folder, name))} className="flex min-h-12 items-center gap-3 rounded-xl border border-line bg-panel px-4 text-body-ui font-semibold text-ink transition-colors duration-[120ms] hover:bg-subtle">
-                      <Folder aria-hidden className="size-[18px] shrink-0 text-ink-muted" />
+                      {null}
                       <span className="truncate">{name}</span>
                     </Link>
                   </li>

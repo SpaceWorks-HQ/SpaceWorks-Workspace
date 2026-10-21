@@ -64,7 +64,7 @@ export function DocumentFields({
                 defaultValue={String(f.value ?? "")}
                 required={f.required}
               >
-                <option value="">Choose…</option>
+                <option value="">Choose an option</option>
                 {f.options?.map((o) => (
                   <option key={o.id} value={o.id}>
                     {o.name}
@@ -185,7 +185,7 @@ export function DocumentForm({
         disabled={pending}
         variant={operation === "cancel" ? "dangerSolid" : "primary"}
       >
-        {pending ? "Saving…" : label}
+        {pending ? "Saving" : label}
       </Button>
     </form>
   );
@@ -289,7 +289,7 @@ export function DocumentUpload({
           })
         }
       >
-        {pending ? "Uploading…" : "Upload files"}
+        {pending ? "Uploading" : "Upload files"}
       </Button>
     </div>
   );

@@ -83,7 +83,7 @@ export default async function SignaturesPage({
         </Disclosure>
       ) : null}
       {!requests.length ? (
-        <EmptyState
+        <EmptyState patch
           title="No acknowledgements yet. Request one for a shared document."
           action={
             <a

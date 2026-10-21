@@ -4,18 +4,18 @@ import { useEffect, useRef, useState } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { TaskItem, TaskList } from "@tiptap/extension-list";
-import { Bold, Heading2, Italic, List, ListChecks, Pin, PinOff } from "lucide-react";
+
 import { deleteNoteAction, setNoteArchivedAction, updateNoteAction } from "@/app/actions/notepad";
 import prose from "@/components/docs/DocProse.module.css";
 import { useToast } from "@/components/feedback/ToastProvider";
-import { Button, IconButton } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { ConfirmDialog, Dialog, DialogContent } from "@/components/ui/dialog";
 import { cn } from "@/lib/cn";
 import { createNoteSaveSession, type NoteChanges, type NoteSaveState } from "@/lib/notepad/saving";
 import type { NoteDTO } from "@/lib/notepad/service";
 import { NOTE_TONE_OPTIONS, toneClasses } from "./tones";
 
-const SAVE_LABEL: Record<NoteSaveState, string> = { saved: "Saved", saving: "Saving…", unsaved: "Unsaved changes", error: "Couldn't save", conflict: "Not saved" };
+const SAVE_LABEL: Record<NoteSaveState, string> = { saved: "Saved", saving: "Saving", unsaved: "Unsaved changes", error: "Couldn't save", conflict: "Not saved" };
 
 /**
  * One note, edited in a dialog. Title and body autosave after a short pause;
@@ -95,7 +95,7 @@ export function NoteEditor({ slug, note, onClose, onSaved, onRemoved }: { slug: 
   }
 
   const active = (name: string, attrs?: Record<string, unknown>) => Boolean(editor?.isActive(name, attrs));
-  const tool = "grid size-9 place-items-center rounded-md text-ink-secondary transition-colors duration-[120ms] hover:bg-muted hover:text-ink aria-pressed:bg-accent-soft aria-pressed:text-accent-text";
+  const tool = "grid min-h-11 min-w-11 px-2 place-items-center rounded-md text-ink-secondary transition-colors duration-[120ms] hover:bg-muted hover:text-ink aria-pressed:bg-accent-soft aria-pressed:text-accent-text";
 
   return (
     <Dialog open onOpenChange={(open) => (open ? undefined : void close())}>
@@ -103,9 +103,9 @@ export function NoteEditor({ slug, note, onClose, onSaved, onRemoved }: { slug: 
         <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-3">
           <span className={cn("text-caption", state === "error" || state === "conflict" ? "text-danger-fg" : "text-ink-muted")} aria-live="polite">{SAVE_LABEL[state]}</span>
           <div className="flex items-center gap-1 pr-8">
-            <IconButton label={pinned ? "Unpin note" : "Pin note"} variant="quiet" size="sm" aria-pressed={pinned} onClick={() => { setPinned(!pinned); queue({ pinned: !pinned }, true); }}>
-              {pinned ? <PinOff aria-hidden className="size-4" /> : <Pin aria-hidden className="size-4" />}
-            </IconButton>
+            <Button variant="quiet" className="min-w-11 px-2" size="sm" aria-pressed={pinned} onClick={() => { setPinned(!pinned); queue({ pinned: !pinned }, true); }}>
+              {pinned ? "Unpin" : "Pin"}
+            </Button>
           </div>
         </div>
         {state === "error" || state === "conflict" ? (
@@ -129,11 +129,11 @@ export function NoteEditor({ slug, note, onClose, onSaved, onRemoved }: { slug: 
             className="w-full bg-transparent text-h3 text-ink outline-none placeholder:text-ink-muted"
           />
           <div role="toolbar" aria-label="Formatting" className="flex flex-wrap items-center gap-1">
-            <button type="button" className={tool} aria-label="Heading" aria-pressed={active("heading", { level: 2 })} onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}><Heading2 aria-hidden className="size-4" /></button>
-            <button type="button" className={tool} aria-label="Bold" aria-pressed={active("bold")} onClick={() => editor?.chain().focus().toggleBold().run()}><Bold aria-hidden className="size-4" /></button>
-            <button type="button" className={tool} aria-label="Italic" aria-pressed={active("italic")} onClick={() => editor?.chain().focus().toggleItalic().run()}><Italic aria-hidden className="size-4" /></button>
-            <button type="button" className={tool} aria-label="Bulleted list" aria-pressed={active("bulletList")} onClick={() => editor?.chain().focus().toggleBulletList().run()}><List aria-hidden className="size-4" /></button>
-            <button type="button" className={tool} aria-label="Checklist" aria-pressed={active("taskList")} onClick={() => editor?.chain().focus().toggleTaskList().run()}><ListChecks aria-hidden className="size-4" /></button>
+            <button type="button" className={tool} aria-label="Heading" aria-pressed={active("heading", { level: 2 })} onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}><span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">H2</span></button>
+            <button type="button" className={tool} aria-label="Bold" aria-pressed={active("bold")} onClick={() => editor?.chain().focus().toggleBold().run()}><span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">B</span></button>
+            <button type="button" className={tool} aria-label="Italic" aria-pressed={active("italic")} onClick={() => editor?.chain().focus().toggleItalic().run()}><span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">I</span></button>
+            <button type="button" className={tool} aria-pressed={active("bulletList")} onClick={() => editor?.chain().focus().toggleBulletList().run()}><span className="inline-flex items-center justify-center text-xs font-semibold">List</span></button>
+            <button type="button" className={tool} aria-pressed={active("taskList")} onClick={() => editor?.chain().focus().toggleTaskList().run()}><span className="inline-flex items-center justify-center text-xs font-semibold">Checklist</span></button>
           </div>
           <EditorContent editor={editor} />
         </div>
