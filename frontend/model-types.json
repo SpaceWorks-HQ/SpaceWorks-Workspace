@@ -145,19 +145,19 @@
   },
   {
     "module": "lib/finance/recurring/queries",
-    "name": "LeaseFinanceView",
+    "name": "UpcomingView",
     "id": "Shared24",
     "value": false
   },
   {
     "module": "lib/finance/recurring/queries",
-    "name": "ScheduleView",
+    "name": "LeaseFinanceView",
     "id": "Shared25",
     "value": false
   },
   {
     "module": "lib/finance/recurring/queries",
-    "name": "UpcomingView",
+    "name": "ScheduleView",
     "id": "Shared26",
     "value": false
   },
