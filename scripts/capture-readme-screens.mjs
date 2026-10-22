@@ -25,7 +25,12 @@ try {
   if (!projectResponse?.ok()) throw new Error('Demo projects could not be loaded.');
   const board = await page.locator(`a[href^="${workspace}/projects/"]`).first().getAttribute('href');
   if (!board) throw new Error('Seed a demo project before capturing screenshots.');
-  const screens = [ ['home', workspace], ['project-board', board], ['chat', `${workspace}/chat`], ['docs', `${workspace}/docs`], ['notepad', `${workspace}/notepad`], ['services', `${workspace}/services`], ['app-reviews', `${workspace}/app-reviews`], ['assistant', `${workspace}/assistant`], ['calendar', `${workspace}/calendar`], ['finance-dark', `${workspace}/finance`] ];
+  const screens = [
+    ['home', workspace], ['project-board', board], ['calendar', `${workspace}/calendar`], ['chat', `${workspace}/chat`],
+    ['docs', `${workspace}/docs`], ['notepad', `${workspace}/notepad`], ['finance-dark', `${workspace}/finance`], ['finance-dues', `${workspace}/finance/dues`],
+    ['funding', `${workspace}/funding`], ['analytics', `${workspace}/analytics`], ['secrets', `${workspace}/secrets`], ['bom-estimates', `${workspace}/product-ops/estimates`],
+    ['governance', `${workspace}/governance`], ['organisation', `${workspace}/organisation`], ['services', `${workspace}/services`], ['assistant', `${workspace}/assistant`],
+  ];
   for (const [name, route] of screens) {
     const mode = name.endsWith('-dark') ? 'dark' : 'light';
     await context.addCookies([{ name: 'sww.color-mode', value: mode, url: base.origin }]);

@@ -20,86 +20,91 @@
   <a href="#credits">Credits</a>
 </p>
 
-**Space Works Workspace is the free, open-source, invite-only home for your
-community team.** Plan builds, talk, keep shared knowledge, look after people,
-track the kitty and run your services in one self-hosted workspace. It started
-with the Space Works maker community at TinkerSpace Kochi. Your members, files
-and conversations stay in infrastructure you control, with separate workspaces,
-roles and an audit trail.
+**Space Works Workspace is the free, open-source, self-hosted operations tool
+for the team that runs an organisation.** Non-profits, NGOs, community offices,
+makerspace operating teams and small startups plan work, run money, look after
+people, keep governance in order and manage application secrets in one place.
+It started with the Space Works maker community at TinkerSpace Kochi. Every
+record, file and secret stays on infrastructure you control, with separate
+workspaces, roles and an audit trail.
+
+Member-facing work lives in the sibling apps: [Space Works](https://github.com/SpaceWorks-HQ/SpaceWorks)
+for the makerspace itself, [Space Works Events](https://github.com/SpaceWorks-HQ/SpaceWorks-Events)
+for events and tickets, and [Space Works Organization](https://github.com/SpaceWorks-HQ/SpaceWorks-Organization)
+for memberships.
 
 ## What you can do
 
-Grouped the way a community team works.
+Simple tools with manual entry, grouped the way an operating team works.
 
-### Work
+### Work and projects
 
-- Projects and kanban boards, task assignees, labels, priorities, checklists, comments and short task links.
-- Recurring tasks, dependencies, cycles, personal tasks and saved views.
-- Meetings with agendas, decisions and action items; goals, key results and check-ins.
-- Polls, ideas and votes, reusable templates, changelog drafts and lightweight sign-offs.
+- Projects with kanban boards, a timeline, milestones, dependencies, blockers and weekly status updates.
+- Tasks with assignees, priorities, subtasks, recurrence, checklists and short task links; printable project reports.
+- Meetings with agendas, decisions and action items; goals, key results, polls and ideas.
+- A team calendar with recurring meetings, invitations, RSVPs, Google Calendar sync and Google Meet links.
 
 ### Chat and knowledge
 
-- Public and private channels, direct messages, threads, reactions, pins, mentions and live updates.
-- Nested rich-text docs, revisions, restore, verification, export and presence.
-- Private files, versions, folders, controlled downloads and a workspace link library.
-- Global search and a keyboard command palette with live permission checks.
+- Channels, direct messages, threads, reactions, mentions and live updates.
+- Rich-text docs with revisions, SOP review reminders and controlled access; private files with versions in Silo.
+- Global search and a command palette that only show what each member can open.
 
-### Community and people
+### People and organisation
 
-- Announcements, shoutouts, community events, RSVPs, waitlists and calendar subscriptions.
-- Member profiles and skills, private teams, onboarding checklists and certifications.
-- Availability, rota and shift swaps; contacts, organisations, interactions and a relationship pipeline.
-- My day, recent activity, bookmarks and notifications that follow each member's access.
+- Member profiles, departments, reporting lines and an org chart; a responsibilities register with backups.
+- Onboarding and offboarding, skills, training sign-offs, leave balances, attendance and volunteer hours.
+- Hiring openings and candidates, rota and shift swaps, escalation paths, a confidential help desk and a safety log.
 
-### Operations and money
+### Money
 
-- The community kitty, income and expenses, categories, receipts, CSV import/export and invoices.
-- Budgets, purchases, reimbursements and approval policies with discussion and decision history.
-- A service catalogue and dependencies, subscriptions, ownership and renewal reminders.
-- An encrypted vault with grants, fresh-MFA reveal, rotation and access logs.
-- Equipment inventory, QR labels, bookings, checkouts and maintenance records.
-- Forms and submissions, controlled exports, imports, retention policies and legal hold.
-- A public blog with drafts, previews, publishing, feeds and private cover delivery.
+- Income and expenses, funds and restricted funds, cost centres, budgets and month-end close.
+- Supplier bills, purchase requests with approvals, reimbursements, receipt uploads and spend review.
+- Rent, utilities and other recurring costs; PF, ESI, PT and TDS remittances; staff advances, loan EMIs and insurance premiums, all on one upcoming-dues list.
+- Payroll records and disbursements, petty cash, deposits, depreciation and TDS registers.
+- Funding: grants, CSR, donations, campaigns, pledges, donor receipts and impact reports.
+- Documents: GST invoices and notes, receipts, 80G and utilisation certificates, and letters.
 
-### Services monitor
+### Governance
 
-- HTTP, TCP, DNS, TLS, database, heartbeat and other service checks with incident history.
-- Incidents, maintenance, on-call schedules, escalations and public status pages.
-- Cloud accounts, inventory, metrics, costs and budgets, including VPS providers.
-- Service relationships and task follow-ups for incident work.
+- A compliance calendar, board meetings and resolutions, vendors and contracts.
+- Insurance and statutory registers, risks and drills, conflict-of-interest links and frozen board packs.
+- Restricted safeguarding and POSH cases with explicit case access.
 
-### Integrations and messaging
+### Product, marketing and IT
 
-- Google Calendar, Gmail, Drive and Search Console; GitHub App repositories, issues and pull requests.
-- Slack, Discord, Mattermost, Telegram and WhatsApp connections, verified account linking and channel bridges.
-- Notification rules, destinations, quiet hours, snooze, mutes and personal digests.
-- Signed webhooks, scoped machine APIs and MCP tools for approved integrations.
+- A roadmap, releases with approvals, an issue and QA tracker, prototype tests and a change log.
+- BOM cost estimates for funding proposals, with GST, contingency and a printable budget sheet.
+- A content calendar, a brand asset library, and proposals and outreach with follow-ups.
+- Device and licence registers, a security incident log, access reviews and restore-test records.
 
-### App reviews
+### Secrets
 
-- Apple App Store and Google Play review inboxes, replies, translation, assignment and tags.
-- Rating and response insights, task links and Slack-assisted replies with explicit member mapping.
+- Application secrets by project, environment and folder, in the spirit of [Infisical](https://github.com/Infisical/infisical).
+- Envelope encryption under a rotatable root key, version history, snapshots and point-in-time rollback.
+- Masked values with audited reveal and copy, fresh-MFA access to production and change approvals.
+- Machine identities with short-lived access tokens, one-time share links and a security overview.
+- The `sww` command line and Node SDK, installed from npm (see [Secrets CLI](#secrets-cli)).
 
-### Space Works Assistant
+### Reports and analytics
 
-- Conversations with permission-checked workspace tools, memory, skills and scheduled jobs.
-- A boardroom for several assistant perspectives, summaries and follow-up work.
-- Optional provider keys configured by the instance admin; access stays scoped to the signed-in member.
+- One report desk across money, funding, people, work and operations, with period comparisons.
+- Drill-down from every number, CSV exports, a cash-flow forecast and printable management and board packs.
 
-### Notepad
+### Services, alerts and integrations
 
-- Private notes with rich text, checklists, colours, pinning and archive.
-- Personal to-dos, due days, stars, ordering and sending a to-do to workspace tasks.
-- Notes remain private to their author, including from workspace admins.
+- HTTP, TCP, DNS, TLS and heartbeat checks; incidents, maintenance, on-call and public status pages.
+- Cloud accounts and costs for DigitalOcean, AWS, Vercel, Contabo and other providers.
+- Reminders and alerts by email, WhatsApp, Telegram, Slack, Discord and Mattermost, sent by the background worker.
+- Social analytics and comments, app store reviews, GitHub, and the Space Works Assistant.
+- A private notepad with to-dos for every member.
 
 ### Run it safely
 
 - Strict workspace isolation and OWNER, ADMIN, MEMBER and GUEST roles.
 - Invite-only membership, password and optional Google/OIDC sign-in, MFA and session revocation.
-- Super-admin controls behind a fresh TOTP step-up; audit, rate limits, CSP nonces and private storage.
-- Personal account export, controlled tenant exports, accessible controls and light/dark modes.
-- Two release images, guided VPS operations, encrypted off-site backups and deliberate recovery.
+- Audit, rate limits, CSP nonces and private object storage in Silo.
+- Background jobs on a BullMQ worker and beat, two release images, guided VPS operations and encrypted off-site backups.
 
 See the [area guides](docs/README.md#feature-areas) for implemented contracts and limits.
 
@@ -110,27 +115,73 @@ Screenshots of every area arrive with the 0.6.5 release.
 <!-- Restored by the release screenshot capture (scripts/capture-readme-screens.mjs).
 <table>
   <tr>
-    <td width="50%" valign="top"><img src="docs/readme/screens/home.webp" alt="My day in Space Works Workspace" /><p><strong>My day.</strong> Tasks, upcoming plans, announcements and recent activity.</p></td>
-    <td width="50%" valign="top"><img src="docs/readme/screens/project-board.webp" alt="Project board in Space Works Workspace" /><p><strong>Project board.</strong> Keep the next build moving.</p></td>
+    <td width="50%" valign="top"><img src="docs/readme/screens/home.webp" alt="My day in Space Works Workspace" /><p><strong>My day.</strong> Tasks, meetings, dues and recent activity in one place.</p></td>
+    <td width="50%" valign="top"><img src="docs/readme/screens/project-board.webp" alt="Project board in Space Works Workspace" /><p><strong>Project board.</strong> Milestones, blockers and the next build.</p></td>
   </tr>
   <tr>
-    <td width="50%" valign="top"><img src="docs/readme/screens/chat.webp" alt="Chat in Space Works Workspace" /><p><strong>Chat.</strong> Channels, threads and the crew’s conversations.</p></td>
-    <td width="50%" valign="top"><img src="docs/readme/screens/docs.webp" alt="Docs in Space Works Workspace" /><p><strong>Docs.</strong> Shared knowledge with history and controlled access.</p></td>
+    <td width="50%" valign="top"><img src="docs/readme/screens/calendar.webp" alt="Calendar in Space Works Workspace" /><p><strong>Calendar.</strong> Meetings, deadlines and Google Meet links together.</p></td>
+    <td width="50%" valign="top"><img src="docs/readme/screens/chat.webp" alt="Chat in Space Works Workspace" /><p><strong>Chat.</strong> Channels, threads and the team’s conversations.</p></td>
   </tr>
   <tr>
+    <td width="50%" valign="top"><img src="docs/readme/screens/docs.webp" alt="Docs in Space Works Workspace" /><p><strong>Docs.</strong> SOPs and shared knowledge with history and controlled access.</p></td>
     <td width="50%" valign="top"><img src="docs/readme/screens/notepad.webp" alt="Notepad in Space Works Workspace" /><p><strong>Notepad.</strong> Your private notes and to-dos.</p></td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><img src="docs/readme/screens/finance-dark.webp" alt="Finance, dark mode in Space Works Workspace" /><p><strong>Finance, dark mode.</strong> Funds, bills and recent spending.</p></td>
+    <td width="50%" valign="top"><img src="docs/readme/screens/finance-dues.webp" alt="Upcoming dues in Space Works Workspace" /><p><strong>Upcoming dues.</strong> Rent, utilities, remittances, EMIs and premiums on one list.</p></td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><img src="docs/readme/screens/funding.webp" alt="Funding in Space Works Workspace" /><p><strong>Funding.</strong> Grants, CSR, donations and the reports funders expect.</p></td>
+    <td width="50%" valign="top"><img src="docs/readme/screens/analytics.webp" alt="Reports in Space Works Workspace" /><p><strong>Reports.</strong> Period comparisons, drill-downs and board packs.</p></td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><img src="docs/readme/screens/secrets.webp" alt="Secrets in Space Works Workspace" /><p><strong>Secrets.</strong> Environments, masked values and audited reveal.</p></td>
+    <td width="50%" valign="top"><img src="docs/readme/screens/bom-estimates.webp" alt="BOM estimates in Space Works Workspace" /><p><strong>BOM estimates.</strong> Cost a project for a funding proposal.</p></td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><img src="docs/readme/screens/governance.webp" alt="Governance in Space Works Workspace" /><p><strong>Governance.</strong> Compliance dates, board decisions and registers.</p></td>
+    <td width="50%" valign="top"><img src="docs/readme/screens/organisation.webp" alt="Organisation in Space Works Workspace" /><p><strong>Organisation.</strong> Departments, reporting lines and responsibilities.</p></td>
+  </tr>
+  <tr>
     <td width="50%" valign="top"><img src="docs/readme/screens/services.webp" alt="Services in Space Works Workspace" /><p><strong>Services.</strong> Checks, incidents and uptime in one place.</p></td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top"><img src="docs/readme/screens/app-reviews.webp" alt="App reviews in Space Works Workspace" /><p><strong>App reviews.</strong> Triage and reply to store feedback.</p></td>
     <td width="50%" valign="top"><img src="docs/readme/screens/assistant.webp" alt="Assistant in Space Works Workspace" /><p><strong>Assistant.</strong> Ask about the work you can access.</p></td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top"><img src="docs/readme/screens/calendar.webp" alt="Calendar in Space Works Workspace" /><p><strong>Calendar.</strong> Events, meetings and shifts together.</p></td>
-    <td width="50%" valign="top"><img src="docs/readme/screens/finance-dark.webp" alt="Finance, dark mode in Space Works Workspace" /><p><strong>Finance, dark mode.</strong> The kitty, invoices and recent expenses.</p></td>
   </tr>
 </table>
 -->
+
+## Secrets CLI
+
+Install the `sww` command line, link a repository and run your app with its
+secrets injected. Nothing is written to disk.
+
+```bash
+npm install -g @spaceworks-hq/workspace-cli
+sww login --host https://workspace.example.org
+sww init --project PROJECT_ID --env dev
+sww run --env dev -- npm run dev
+```
+
+Export a file when you need one (production needs a fresh MFA code), or log
+in as a machine identity in CI:
+
+```bash
+sww export --env production --format dotenv --mfa 123456 > .env
+export SWW_TOKEN="$(sww login --method=universal-auth --client-id "$CLIENT_ID" --client-secret "$CLIENT_SECRET" --plain --silent)"
+sww scan --staged
+```
+
+Every release publishes the package at the same version as the images: to
+npm when the repository has an `NPM_TOKEN` secret, and always to GitHub
+Packages. To install from GitHub Packages, point the scope at it with a token
+that can read packages:
+
+```bash
+npm config set @spaceworks-hq:registry https://npm.pkg.github.com
+npm config set //npm.pkg.github.com/:_authToken "$GITHUB_TOKEN"
+```
+
+The [CLI guide](packages/cli/README.md) covers the SDK, keychain storage and
+secret scanning.
 
 ## Host it on a VPS with Docker
 
