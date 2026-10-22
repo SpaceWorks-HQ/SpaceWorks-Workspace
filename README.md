@@ -110,9 +110,8 @@ See the [area guides](docs/README.md#feature-areas) for implemented contracts an
 
 ## A look around
 
-Screenshots of every area arrive with the 0.6.5 release.
+Taken on the seeded demo workspace with `scripts/capture-readme-screens.mjs`.
 
-<!-- Restored by the release screenshot capture (scripts/capture-readme-screens.mjs).
 <table>
   <tr>
     <td width="50%" valign="top"><img src="docs/readme/screens/home.webp" alt="My day in Space Works Workspace" /><p><strong>My day.</strong> Tasks, meetings, dues and recent activity in one place.</p></td>
@@ -144,10 +143,9 @@ Screenshots of every area arrive with the 0.6.5 release.
   </tr>
   <tr>
     <td width="50%" valign="top"><img src="docs/readme/screens/services.webp" alt="Services in Space Works Workspace" /><p><strong>Services.</strong> Checks, incidents and uptime in one place.</p></td>
-    <td width="50%" valign="top"><img src="docs/readme/screens/assistant.webp" alt="Assistant in Space Works Workspace" /><p><strong>Assistant.</strong> Ask about the work you can access.</p></td>
+    <td width="50%" valign="top"><img src="docs/readme/screens/helpdesk.webp" alt="Help desk in Space Works Workspace" /><p><strong>Help desk.</strong> Internal requests with owners, targets and confidential handling.</p></td>
   </tr>
 </table>
--->
 
 ## Secrets CLI
 

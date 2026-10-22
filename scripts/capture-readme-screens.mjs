@@ -23,13 +23,13 @@ try {
   const workspace = `/w/${match[1]}`;
   const projectResponse = await page.goto(new URL(`${workspace}/projects`, base).href);
   if (!projectResponse?.ok()) throw new Error('Demo projects could not be loaded.');
-  const board = await page.locator(`a[href^="${workspace}/projects/"]`).first().getAttribute('href');
+  const board = await page.locator(`a[href^="${workspace}/projects/"]:not([href*="/blockers"])`).first().getAttribute('href');
   if (!board) throw new Error('Seed a demo project before capturing screenshots.');
   const screens = [
-    ['home', workspace], ['project-board', board], ['calendar', `${workspace}/calendar`], ['chat', `${workspace}/chat`],
+    ['home', workspace], ['project-board', board], ['calendar', `${workspace}/calendar?view=week`], ['chat', `${workspace}/chat/general`],
     ['docs', `${workspace}/docs`], ['notepad', `${workspace}/notepad`], ['finance-dark', `${workspace}/finance`], ['finance-dues', `${workspace}/finance/dues`],
     ['funding', `${workspace}/funding`], ['analytics', `${workspace}/analytics`], ['secrets', `${workspace}/secrets`], ['bom-estimates', `${workspace}/product-ops/estimates`],
-    ['governance', `${workspace}/governance`], ['organisation', `${workspace}/organisation`], ['services', `${workspace}/services`], ['assistant', `${workspace}/assistant`],
+    ['governance', `${workspace}/governance`], ['organisation', `${workspace}/organisation`], ['services', `${workspace}/services`], ['helpdesk', `${workspace}/helpdesk`],
   ];
   for (const [name, route] of screens) {
     const mode = name.endsWith('-dark') ? 'dark' : 'light';
@@ -38,6 +38,9 @@ try {
     const response = await page.goto(new URL(route, base).href, { waitUntil: 'load' });
     if (!response?.ok() || new URL(page.url()).pathname === '/login') throw new Error(`Could not capture ${name}: the page did not load. `);
     await page.locator('main').waitFor({ state: 'visible' });
+    // Streamed pages show a loading state first; wait until it has been replaced.
+    await page.waitForLoadState('networkidle');
+    await page.waitForFunction(() => !/^\s*Loading\b/m.test(document.querySelector('main')?.innerText ?? ''), null, { timeout: 30_000 });
     await page.evaluate(mode => { document.documentElement.dataset.colorMode = mode; localStorage.setItem('sww:color-mode', mode); }, mode);
     await page.evaluate(() => document.fonts.ready);
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
