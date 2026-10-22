@@ -16,6 +16,8 @@ import { Button } from "@/components/ui/button";
 import { Callout } from "@/components/ui/display";
 import { zonedDatetimeLocalValue, zonedInputToIso } from "@/lib/timeZone";
 import type { CalendarData } from "./CalendarScreen";
+import { EntryAttachments } from "./EntryAttachments";
+
 type Props = {
   slug: string;
   zone: string;
@@ -215,104 +217,13 @@ export function EntryForm(p: Props) {
                 defaultValue={entry?.reminderMinutes ?? 30}
               />
             </Field>
-            <div
-              className="space-y-3 rounded-lg border border-dashed border-line-strong p-3"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                setFiles(
-                  [...files, ...Array.from(e.dataTransfer.files)].slice(0, 20),
-                );
-              }}
-            >
-              <Field
-                label="Files"
-                optional
-                helperText="Drop images or PDFs here, or choose files. Up to 20 files per record; 25 MB per file unless your instance sets a lower limit."
-              >
-                <Input
-                  type="file"
-                  multiple
-                  accept="image/*,application/pdf"
-                  onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
-                />
-              </Field>
-              <Field label="Take a photo" optional>
-                <Input
-                  type="file"
-                  accept="image/*,application/pdf"
-                  capture="environment"
-                  onChange={(e) =>
-                    setFiles(
-                      [...files, ...Array.from(e.target.files ?? [])].slice(
-                        0,
-                        20,
-                      ),
-                    )
-                  }
-                />
-              </Field>
-              <ul>
-                {files.map((file, i) => (
-                  <li
-                    key={i}
-                    className="flex flex-wrap items-center justify-between gap-2"
-                  >
-                    <span className="break-all text-caption">{file.name}</span>
-                    <Button
-                      type="button"
-                      variant="quiet"
-                      onClick={() =>
-                        setFiles(files.filter((_, index) => index !== i))
-                      }
-                    >
-                      Remove
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            {entry?.fileIds.length ? (
-              <div className="space-y-2">
-                <h3 className="text-label">Attached files</h3>
-                {entry.fileIds.map((id, i) => (
-                  <div key={id} className="flex flex-wrap gap-3">
-                    <Button
-                      type="button"
-                      variant="quiet"
-                      onClick={() => setPreview(id)}
-                    >
-                      Preview file {i + 1}
-                    </Button>
-                    <a
-                      href={`/api/files/${id}?download=1`}
-                      className="inline-flex min-h-11 items-center text-accent-text underline"
-                    >
-                      Download file {i + 1}
-                    </a>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-            {preview && (
-              <div>
-                <a
-                  href={`/api/files/${preview}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex min-h-11 items-center text-accent-text underline"
-                >
-                  Open image or PDF preview
-                </a>
-                <Button
-                  type="button"
-                  variant="quiet"
-                  onClick={() => setPreview(null)}
-                >
-                  Close preview
-                </Button>
-              </div>
-            )}
+            <EntryAttachments
+              files={files}
+              setFiles={setFiles}
+              preview={preview}
+              setPreview={setPreview}
+              entry={entry}
+            />
             <div className="flex flex-wrap justify-end gap-2 pb-3">
               <Button type="button" variant="secondary" onClick={p.onClose}>
                 Close

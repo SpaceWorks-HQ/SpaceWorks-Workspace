@@ -1,33 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, CircleCheck, Ellipsis, Plus, TriangleAlert } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { createConversationAction, deleteConversationAction, renameConversationAction } from "@/app/actions/assistant";
 import { Button, IconButton } from "@/components/ui/button";
-import { Callout, Card, EmptyState } from "@/components/ui/display";
+import { Card } from "@/components/ui/display";
 import { ConfirmDialog, Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader } from "@/components/ui/dialog";
 import { Field, Input, Textarea } from "@/components/ui/field";
-import { Menu, MenuContent, MenuItem, MenuTrigger } from "@/components/ui/menu";
-import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/feedback/ToastProvider";
-import { Markdown } from "@/components/assistant/Markdown";
 import { cn } from "@/lib/cn";
 import type { ChatItem, ChatStreamEvent, PendingCall } from "@/lib/assistant/chat";
 
-export type ConversationSummary = { id: string; title: string; updatedLabel: string };
+import type { ConversationSummary, LiveItem } from "./AssistantChatTypes";
+import { ConversationList } from "./ConversationList";
+import { AssistantMessages } from "./AssistantMessages";
 
-type LiveItem = ChatItem | { kind: "tool"; id: string; title: string; summary: string; error: boolean; running?: boolean };
-
-const SUGGESTIONS = ["What's due this week?", "Who can help with soldering?", "Summarise the latest announcements", "What happened in #general today?"];
-
-function previewInput(input: unknown): Array<[string, string]> {
-  if (!input || typeof input !== "object") return [];
-  return Object.entries(input as Record<string, unknown>)
-    .filter(([, value]) => value !== undefined && value !== null && value !== "")
-    .map(([key, value]) => [key, typeof value === "string" ? value : JSON.stringify(value)]);
-}
+export type { ConversationSummary } from "./AssistantChatTypes";
 
 async function readEvents(response: Response, onEvent: (event: ChatStreamEvent) => void) {
   const reader = response.body!.getReader();
@@ -183,42 +172,6 @@ export function AssistantChat({
       }
     });
 
-  const list = (
-    <nav aria-label="Conversations" className="flex flex-col gap-2">
-      <Button variant="primary" startIcon={<Plus />} fullWidth asChild>
-        <Link href={`/w/${slug}/assistant`}>New conversation</Link>
-      </Button>
-      {conversations.length === 0 ? (
-        <p className="px-1 py-3 text-caption text-ink-muted">Your conversations show up here.</p>
-      ) : (
-        <ul className="flex flex-col gap-0.5">
-          {conversations.map((conversation) => {
-            const current = conversation.id === conversationId;
-            return (
-              <li key={conversation.id} className={cn("group flex items-center gap-1 rounded-md", current ? "bg-accent-soft" : "hover:bg-subtle")}>
-                <Link href={`/w/${slug}/assistant/c/${conversation.id}`} aria-current={current ? "page" : undefined} className="min-w-0 flex-1 px-3 py-2.5">
-                  <span className={cn("block truncate text-body-ui", current ? "font-semibold text-accent-text" : "text-ink")}>{conversation.title}</span>
-                  <span className="block text-caption text-ink-muted">{conversation.updatedLabel}</span>
-                </Link>
-                <Menu>
-                  <MenuTrigger asChild>
-                    <IconButton label={`Options for ${conversation.title}`} size="sm">
-                      <Ellipsis />
-                    </IconButton>
-                  </MenuTrigger>
-                  <MenuContent>
-                    <MenuItem onSelect={() => setRenaming(conversation)}>Rename</MenuItem>
-                    <MenuItem danger onSelect={() => setDeleting(conversation)}>Delete…</MenuItem>
-                  </MenuContent>
-                </Menu>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </nav>
-  );
-
   const composer = (
     <form
       className="flex flex-col gap-2 border-t border-line bg-panel p-3 sm:p-4"
@@ -257,7 +210,15 @@ export function AssistantChat({
 
   return (
     <div className="grid gap-6 md:grid-cols-[256px_minmax(0,1fr)]">
-      <aside className={cn("md:block", conversationId ? "hidden" : "block")}>{list}</aside>
+      <aside className={cn("md:block", conversationId ? "hidden" : "block")}>
+        <ConversationList
+          slug={slug}
+          conversations={conversations}
+          conversationId={conversationId}
+          setRenaming={setRenaming}
+          setDeleting={setDeleting}
+        />
+      </aside>
       <Card padding="none" className="flex min-h-[560px] flex-col overflow-hidden md:h-[calc(100dvh-260px)]">
         <header className="flex items-center gap-2 border-b border-line px-4 py-3">
           {conversationId ? (
@@ -268,83 +229,16 @@ export function AssistantChat({
           <h2 className="min-w-0 flex-1 truncate text-title text-ink">{conversationId ? title : "Space Works Assistant"}</h2>
           {active && active.tokens > 0 ? <span className="shrink-0 text-caption tabular-nums text-ink-muted">{active.tokens.toLocaleString("en-IN")} tokens</span> : null}
         </header>
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5" aria-live="polite" aria-busy={streaming}>
-          {!configured ? (
-            <Callout tone="warning" title="The assistant isn't set up yet." className="mb-4">
-              {setupHref ? (
-                <>Add an Anthropic API key in <Link href={setupHref} className="font-semibold underline">instance settings</Link> to switch it on.</>
-              ) : (
-                "Ask your instance admin to add an AI key in instance settings."
-              )}
-            </Callout>
-          ) : null}
-          {items.length === 0 ? (
-            configured ? (
-            <EmptyState patch title="Ask the assistant about the workspace." className="border-none" action={
-              <Menu>
-                <MenuTrigger asChild><Button variant="secondary" disabled={streaming}>Choose a prompt</Button></MenuTrigger>
-                <MenuContent align="center">
-                {SUGGESTIONS.map((suggestion) => (
-                  <MenuItem key={suggestion} onSelect={() => void send({ text: suggestion })} disabled={streaming}>
-                    {suggestion}
-                  </MenuItem>
-                ))}
-                </MenuContent>
-              </Menu>
-            } />
-            ) : null
-          ) : (
-            <ol className="flex flex-col gap-4">
-              {items.map((item) => (
-                <li key={item.id} className={cn("flex", item.kind === "user" ? "justify-end" : "justify-start")}>
-                  {item.kind === "user" ? (
-                    <div className="max-w-[85%] whitespace-pre-wrap rounded-lg bg-primary px-4 py-2.5 text-body-ui text-on-primary [overflow-wrap:anywhere]">{item.text}</div>
-                  ) : item.kind === "assistant" ? (
-                    <div className="max-w-[92%]">
-                      <span className="mb-1 block text-caption font-semibold text-ink-muted">Assistant</span>
-                      <Markdown source={item.text} />
-                    </div>
-                  ) : (
-                    <div className={cn("inline-flex max-w-full items-center gap-2 rounded-md border px-3 py-2 text-caption", item.error ? "border-danger-border text-danger-fg" : "border-line bg-surface text-ink-secondary")}>
-                      {"running" in item && item.running ? <Spinner className="size-3.5" /> : item.error ? <TriangleAlert aria-hidden className="size-3.5" /> : <CircleCheck aria-hidden className="size-3.5 text-accent-text" />}
-                      <span className="font-semibold text-ink">{item.title}</span>
-                      <span className="truncate">{item.summary}</span>
-                    </div>
-                  )}
-                </li>
-              ))}
-              {streaming && items.at(-1)?.kind === "user" ? (
-                <li className="flex items-center gap-2 text-caption text-ink-muted"><Spinner className="size-4" /> Thinking</li>
-              ) : null}
-            </ol>
-          )}
-          {pending.length > 0 && !streaming ? (
-            <section aria-label="Confirm changes" className="mt-4 rounded-lg border-[1.5px] border-accent-text bg-panel p-4">
-              <h3 className="text-label text-ink">Confirm {pending.length === 1 ? "this change" : "these changes"}</h3>
-              <ul className="mt-2 flex flex-col gap-3">
-                {pending.map((call) => (
-                  <li key={call.id}>
-                    <p className="text-body-ui font-semibold text-ink">{call.title}</p>
-                    <dl className="mt-1 grid gap-x-3 gap-y-0.5 text-caption sm:grid-cols-[max-content_minmax(0,1fr)]">
-                      {previewInput(call.input).map(([key, value]) => (
-                        <div key={key} className="contents">
-                          <dt className="text-ink-muted">{key}</dt>
-                          <dd className="whitespace-pre-wrap text-ink [overflow-wrap:anywhere]">{value}</dd>
-                        </div>
-                      ))}
-                    </dl>
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Button variant="primary" onClick={() => void send({ decision: "approve" })}>Confirm</Button>
-                <Button variant="secondary" onClick={() => void send({ decision: "decline" })}>Cancel</Button>
-              </div>
-            </section>
-          ) : null}
-          {error ? <Callout tone="danger" role="alert" className="mt-4">{error}</Callout> : null}
-          <div ref={bottom} />
-        </div>
+        <AssistantMessages
+          configured={configured}
+          setupHref={setupHref}
+          items={items}
+          streaming={streaming}
+          pending={pending}
+          error={error}
+          bottom={bottom}
+          send={send}
+        />
         {composer}
       </Card>
 

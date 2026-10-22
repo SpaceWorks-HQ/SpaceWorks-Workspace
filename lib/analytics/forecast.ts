@@ -1,11 +1,9 @@
 import "server-only";
-import { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/db";
-import { DEFINITIONS, factSql } from "./definitions";
+import { forecastSources } from "./forecast/sources";
+import { forecastLines } from "./forecast/lines";
 import { context } from "./queries";
 import { AnalyticsError, type Actor } from "./access";
 import {
-  day,
   addMonths,
   forecastBuckets,
   forecastBucketPeriod,
@@ -13,11 +11,8 @@ import {
   addDays,
 } from "./metrics";
 import { localDate } from "@/lib/finance/dates";
-import { nextDue, taxAmounts } from "@/lib/finance/recurring/rules";
-import { object } from "@/lib/funding/analytics";
 import type {
   AnalyticsQuery,
-  ForecastLine,
   ForecastResult,
   DrillData,
 } from "./types";
@@ -35,312 +30,26 @@ export async function cashForecast(
       "Clear the area filters for the account-level cash forecast. Account opening balances are not allocated to funds or projects.",
     );
   const showPayroll = a.payroll && includePayroll;
-  const ws = a.workspace.id,
-    currency = q.currency!,
+  const currency = q.currency!,
     today = localDate(now, a.workspace.timezone),
     start = addDays(today, 1),
     end = addMonths(start, 6),
     threshold = Number(q.threshold ?? 10000000);
-  const [
-    opening,
-    bills,
-    schedules,
-    dues,
-    pay,
-    funding,
-    adjustments,
-    budgets,
-    disbursements,
-    receivables,
-  ] = await Promise.all([
-    prisma.$queryRaw<{ amount: Prisma.Decimal; accounts: bigint }[]>(
-      Prisma.sql`SELECT count(*)::bigint AS accounts,coalesce(sum(a."openingMinor" + coalesce((SELECT sum(CASE WHEN e.kind='INCOME' THEN e."amountMinor"::bigint ELSE -e."amountMinor"::bigint END) FROM "LedgerEntry" e WHERE e."workspaceId"=${ws} AND e."accountId"=a.id AND e.currency=a.currency AND e."voidedAt" IS NULL AND e."occurredOn" BETWEEN a."openingOn" AND ${today}::date),0) + coalesce((SELECT sum(m."amountMinor"::bigint) FROM "MoneyControlMovement" m WHERE m."workspaceId"=${ws} AND m."accountId"=a.id AND m.currency=a.currency AND m."occurredOn" BETWEEN a."openingOn" AND ${today}::date),0)),0)::numeric AS amount FROM "FinanceAccount" a WHERE a."workspaceId"=${ws} AND a.currency=${currency} AND a."openingOn"<=${today}::date`,
-    ),
-    prisma.financeBill.findMany({
-      where: {
-        workspaceId: ws,
-        currency,
-        dueOn: { lt: new Date(end) },
-        paidMinor: { lt: prisma.financeBill.fields.amountMinor },
-        ...(showPayroll ? {} : { privatePayroll: false }),
-      },
-      select: {
-        id: true,
-        vendor: true,
-        dueOn: true,
-        amountMinor: true,
-        paidMinor: true,
-        privatePayroll: true,
-        needsActual: true,
-      },
-      take: 10001,
-    }),
-    prisma.recurringCostSchedule.findMany({
-      where: {
-        workspaceId: ws,
-        currency,
-        status: "ACTIVE",
-        startsOn: { lt: new Date(end) },
-      },
-      include: { _count: { select: { dues: true } } },
-      take: 10001,
-    }),
-    prisma.recurringCostDue.findMany({
-      where: { workspaceId: ws, dueOn: { lt: new Date(end) } },
-      select: { scheduleId: true, dueOn: true },
-      take: 20001,
-    }),
-    showPayroll
-      ? prisma.financePayRun.findMany({
-          where: {
-            workspaceId: ws,
-            currency,
-            status: { in: ["DRAFT", "APPROVED"] },
-          },
-          select: { id: true, month: true, netMinor: true },
-          take: 10001,
-        })
-      : [],
-    prisma.fundingRecord.findMany({
-      where: {
-        workspaceId: ws,
-        currency,
-        archivedAt: null,
-        kind: { in: ["INSTALMENT", "PLEDGE", "DONATION"] },
-      },
-      take: 10001,
-    }),
-    prisma.analyticsAdjustment.findMany({
-      where: {
-        workspaceId: ws,
-        currency,
-        dueOn: { gte: new Date(start), lt: new Date(end) },
-      },
-      take: 10001,
-    }),
-    prisma.budget.findMany({
-      where: {
-        workspaceId: ws,
-        currency,
-        periodEnd: { gte: new Date(start) },
-        periodStart: { lt: new Date(end) },
-      },
-      select: { id: true, name: true, amountMinor: true },
-      take: 10001,
-    }),
-    prisma.$queryRaw<
-      { id: string; payee: string; amountMinor: number; dueOn: Date | null }[]
-    >(Prisma.sql`SELECT r.id,r.payee,r."amountMinor",r."dueOn" FROM "FinanceDisbursement" r
-      WHERE r."workspaceId"=${ws} AND r.currency=${currency} AND r.status<>'PAID'
-      AND r."dueOn"<${end}::date AND EXISTS(SELECT 1 FROM "ApprovalRequest" approval
-        WHERE approval.id=r."approvalId" AND approval."workspaceId"=r."workspaceId"
-        AND approval."subjectType"='CUSTOM' AND approval."subjectId"=r.id AND approval.status='APPROVED') LIMIT 10001`),
-    prisma.$queryRaw<
-      {
-        id: string;
-        title: string;
-        date: Date;
-        value: Prisma.Decimal;
-        path: string;
-      }[]
-    >(Prisma.sql`WITH invoices AS (${await factSql(DEFINITIONS.find((d) => d.id === "document-receivables")!, a, today)}) SELECT id,title,date,value,path FROM invoices WHERE currency=${currency} AND date<${end}::date
- UNION ALL SELECT r.id,r.number||' · '||r."clientName",coalesce(r."dueOn",r."issuedOn"),r."totalMinor"::numeric,'/finance/invoices/'||r.id FROM "Invoice" r WHERE r."workspaceId"=${ws} AND r.currency=${currency} AND r.status='SENT' AND coalesce(r."dueOn",r."issuedOn")<${end}::date AND NOT EXISTS(SELECT 1 FROM "BusinessDocument" copy WHERE copy."workspaceId"=${ws} AND copy."sourceType"='INVOICE' AND copy."sourceId"=r.id AND copy.status='ISSUED') LIMIT 10001`),
-  ]);
-  if (
-    [
-      bills,
-      schedules,
-      pay,
-      funding,
-      adjustments,
-      budgets,
-      disbursements,
-      receivables,
-    ].some((rows) => rows.length > 10000) ||
-    dues.length > 20000
-  )
-    throw new AnalyticsError(
-      "Narrow the forecast data before exporting more than 10,000 commitments.",
-    );
-  const projectionWarnings: string[] = [];
-  const lines: ForecastLine[] = [],
-    base = `/w/${a.workspace.slug}`,
-    date = (v: Date | null) => (v && day(v) > today ? day(v) : start);
-  for (const b of bills)
-    lines.push({
-      id: b.id,
-      title: b.privatePayroll ? "Statutory payroll remittance" : b.vendor,
-      date: date(b.dueOn),
-      amountMinor: -(b.amountMinor - b.paidMinor),
-      source: "Supplier bill",
-      path: `${base}/finance/${b.privatePayroll ? "payroll/dues" : `bills?record=${b.id}`}`,
-      estimated: b.needsActual,
-    });
-  const generated = new Set(dues.map((d) => `${d.scheduleId}:${day(d.dueOn)}`));
-  for (const s of schedules) {
-    let due = day(s.nextDueOn),
-      n = 0;
-    while (
-      due < end &&
-      (!s.endsOn || due <= day(s.endsOn)) &&
-      (s.kind !== "EMI" || s._count.dues + n < s.tenure)
-    ) {
-      if (n >= 120) {
-        projectionWarnings.push(
-          `Forecast incomplete: recurring cost “${s.title}” exceeds the projection limit. Review its overdue schedule before relying on closing cash.`,
-        );
-        break;
-      }
-      n++;
-      if (!generated.has(`${s.id}:${due}`))
-        lines.push({
-          id: `${s.id}:${due}`,
-          title: s.title,
-          date: due > today ? due : start,
-          amountMinor: -taxAmounts(s.amountMinor, s.gstPercent, s.tdsPercent)
-            .cashMinor,
-          source: "Projected recurring cost",
-          path: `${base}/finance/recurring?edit=${s.id}`,
-          estimated: true,
-        });
-      const next = day(
-        nextDue(
-          new Date(due),
-          s.frequency as "MONTHLY" | "QUARTERLY" | "YEARLY",
-          s.dueDay,
-        ),
-      );
-      if (next <= due) {
-        projectionWarnings.push(
-          `Forecast incomplete: recurring cost “${s.title}” could not advance. Review its schedule before relying on closing cash.`,
-        );
-        break;
-      }
-      due = next;
-    }
-  }
-  for (const r of pay) {
-    const due = `${r.month}-28`;
-    if (due < end)
-      lines.push({
-        id: r.id,
-        title: "Planned payroll",
-        date: due > today ? due : start,
-        amountMinor: -r.netMinor,
-        source: "Payroll estimate",
-        path: `${base}/finance/payroll?month=${r.month}#${r.id}`,
-        estimated: true,
-      });
-  }
-  for (const f of funding) {
-    if (f.kind === "INSTALMENT" && f.status === "EXPECTED") {
-      const when = date(f.dueOn);
-      if (when < end)
-        lines.push({
-          id: f.id,
-          title: f.title,
-          date: when,
-          amountMinor: f.amountMinor,
-          source: "Grant instalment",
-          path: `${base}/funding/grants?edit=${f.id}`,
-          estimated: true,
-        });
-    }
-    if (f.kind === "PLEDGE" && f.status === "ACTIVE") {
-      const d = object(f.details),
-        anchor = String(d.nextExpectedOn ?? ""),
-        months = d.frequency === "YEARLY" ? 12 : d.frequency === "QUARTERLY" ? 3 : 1,
-        paid = funding
-          .filter(
-            (g) =>
-              g.kind === "DONATION" &&
-              g.status === "RECEIVED" &&
-              g.currency === f.currency &&
-              object(g.details).pledgeId === f.id &&
-              object(g.details).mode !== "IN_KIND",
-          )
-          .reduce((sum, g) => sum + g.amountMinor, 0);
-      if (!anchor || f.amountMinor <= 0) continue;
-      const once = d.frequency === "ONCE",
-        firstUnpaid = Math.floor(paid / f.amountMinor),
-        remainder = paid % f.amountMinor;
-      // Calculate from the original anchor so month-end dates never drift.
-      // Only one day comparison is needed after the arithmetic month jump.
-      const indexAt = (on: string) => {
-        const monthDistance =
-          (Number(on.slice(0, 4)) - Number(anchor.slice(0, 4))) * 12 +
-          Number(on.slice(5, 7)) - Number(anchor.slice(5, 7));
-        const index = Math.max(0, Math.floor(monthDistance / months));
-        return index + (addMonths(anchor, index * months) < on ? 1 : 0);
-      };
-      const stop = Math.min(
-        indexAt(end),
-        d.endOn ? indexAt(addDays(String(d.endOn), 1)) : Infinity,
-        once ? 1 : Infinity,
-      );
-      const futureStart = indexAt(start),
-        overdueEnd = Math.min(futureStart, stop);
-      const push = (id: string, when: string, amount: number, overdue = false) =>
-        lines.push({
-          id: `${f.id}:${id}`,
-          title: overdue ? `${f.title} · Overdue instalments` : f.title,
-          date: when,
-          amountMinor: amount,
-          source: "Pledge estimate",
-          path: `${base}/funding/donations?edit=${f.id}`,
-          estimated: true,
-        });
-      if (overdueEnd > firstUnpaid)
-        push("overdue", start, (overdueEnd - firstUnpaid) * f.amountMinor - remainder, true);
-      // Past instalments cannot consume the future projection budget.
-      let index = Math.max(firstUnpaid, futureStart),
-        n = 0;
-      for (; index < stop && n < 24; index++, n++) {
-        const due = addMonths(anchor, index * months);
-        push(due, due, f.amountMinor - (index === firstUnpaid ? remainder : 0));
-      }
-      if (index < stop)
-        projectionWarnings.push(
-          `Forecast incomplete: pledge “${f.title}” exceeds the projection limit. Review its dates before relying on closing cash.`,
-        );
-    }
-  }
-  for (const r of disbursements)
-    lines.push({
-      id: r.id,
-      title: r.payee,
-      date: date(r.dueOn),
-      amountMinor: -r.amountMinor,
-      source: "Approved disbursement",
-      path: `${base}/finance/disbursements?record=${r.id}#${r.id}`,
-      estimated: true,
-    });
-  for (const r of receivables)
-    lines.push({
-      id: r.id,
-      title: r.title,
-      date: date(r.date),
-      amountMinor: safeNumber(r.value),
-      source: "Receivable estimate",
-      path: `${base}${r.path}`,
-      estimated: true,
-    });
-  for (const r of adjustments)
-    lines.push({
-      id: r.id,
-      title: r.title,
-      date: day(r.dueOn),
-      amountMinor: r.amountMinor,
-      source: "Manual one-off",
-      path: `${base}/analytics?section=finance#adjustments`,
-      estimated: true,
-    });
-  if (lines.length > 10000)
-    throw new AnalyticsError(
-      "The forecast has more than 10,000 lines. Review overdue items and inactive schedules, or choose another currency.",
-    );
-  lines.sort(
-    (a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id),
+  const sources = await forecastSources(
+    a,
+    currency,
+    today,
+    start,
+    end,
+    showPayroll,
+  );
+  const { opening, budgets } = sources;
+  const { lines, projectionWarnings } = forecastLines(
+    sources,
+    today,
+    start,
+    end,
+    `/w/${a.workspace.slug}`,
   );
   const openingMinor = safeNumber(opening[0]?.amount ?? 0),
     openingKnown = Number(opening[0]?.accounts ?? 0) > 0;

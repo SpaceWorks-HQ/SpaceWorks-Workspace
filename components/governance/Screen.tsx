@@ -1,9 +1,3 @@
-import { RecurringForm } from "@/components/finance/recurring/Forms";
-import {
-  ConflictLinks,
-  FreezePack,
-} from "@/components/govextras/ConflictLinks";
-import { riskScore } from "@/lib/govextras/rules";
 import Link from "next/link";
 import type { GovernanceData, Actor, Filters } from "@/lib/governance/service";
 import {
@@ -12,23 +6,19 @@ import {
   SECTIONS,
   label,
   sectionPath,
-  dayInZone,
   type Section,
 } from "@/lib/governance/schemas";
-import { type Choices, recordFields } from "@/lib/governance/fields";
+import { type Choices } from "@/lib/governance/fields";
 import {
   RecordForm,
-  OperationButton,
   AgmForm,
-  BankForm,
   type EditRecord,
 } from "./Forms";
-import { Attachments } from "./Attachments";
 import { Field, Input, Dropdown } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
-import { Card, Chip, EmptyState, Callout } from "@/components/ui/display";
-import { formatDate, formatDayTime } from "@/lib/format/datetime";
-import { formatMoney } from "@/lib/format/money";
+import { Card, Callout } from "@/components/ui/display";
+import { SelectedRecord } from "./SelectedRecord";
+import { RecordList } from "./RecordList";
 const TITLES = {
   compliance: "Compliance calendar",
   board: "Board and committees",
@@ -188,181 +178,15 @@ export function GovernanceScreen({
         </Card>
       ) : null}
       {r && selected ? (
-        <Card key={r.id} as="section" id="record-form" className="space-y-6">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <h2 className="min-w-0 break-words text-h2">
-              {r.number ? `Resolution ${r.number} · ` : ""}
-              {r.title}
-            </h2>
-            <Button asChild variant="quiet">
-              <Link href={base}>Close record</Link>
-            </Button>
-          </div>
-          <Chip>{label(r.status)}</Chip>
-          {r.meetingId ? (
-            <Link
-              href={`/w/${slug}/meetings/${r.meetingId}`}
-              className="block min-h-11 py-3 text-accent-text underline"
-            >
-              Open linked meeting
-            </Link>
-          ) : null}
-          {r.organisationId ? (
-            <Link
-              href={`/w/${slug}/contacts/organisations/${r.organisationId}`}
-              className="block min-h-11 py-3 text-accent-text underline"
-            >
-              Open CRM organisation
-            </Link>
-          ) : null}
-          {r.parentId ? (
-            <Link
-              href={`${base}?edit=${r.parentId}`}
-              className="block min-h-11 py-3 text-accent-text underline"
-            >
-              Open board or committee
-            </Link>
-          ) : null}
-          {r.kind === "CONTRACT" && details?.vendorId ? (
-            <Link
-              href={`${base}?edit=${String(details.vendorId)}`}
-              className="block min-h-11 py-3 text-accent-text underline"
-            >
-              Open vendor
-            </Link>
-          ) : null}
-          {r.approvedAt || r.archivedAt ? (
-            <div className="space-y-3">
-              <p className="text-ink-muted">
-                {r.approvedAt ? (
-                  <>
-                    {r.kind === "BOARD_PACK" ? "Frozen" : "Approved"}{" "}
-                    {formatDayTime(r.approvedAt, actor.workspace.timezone)} by{" "}
-                    {choices.owners.find((o) => o.value === r.approvedById)
-                      ?.label ?? "Former member"}
-                    . Add a new record for a correction.
-                  </>
-                ) : (
-                  <>
-                    Archived{" "}
-                    {formatDayTime(r.archivedAt!, actor.workspace.timezone)}.
-                    Restore this record to edit it.
-                  </>
-                )}
-              </p>
-              <dl className="space-y-3">
-                {recordFields(r.kind, choices)
-                  .filter((f) => !["status", "title"].includes(f.name))
-                  .map((f) => {
-                    const value = f.name.startsWith("details.")
-                      ? details?.[f.name.slice(8)]
-                      : selected[f.name as keyof EditRecord];
-                    return value ? (
-                      <div key={f.name}>
-                        <dt className="text-label">{f.label}</dt>
-                        <dd className="whitespace-pre-wrap break-words">
-                          {f.options?.find((o) => o.value === value)?.label ??
-                            String(value)}
-                        </dd>
-                      </div>
-                    ) : null;
-                  })}
-              </dl>
-            </div>
-          ) : (
-            <RecordForm
-              key={`${r.id}:${r.updatedAt.toISOString()}`}
-              slug={slug}
-              section={section}
-              choices={choices}
-              record={selected}
-            />
-          )}
-          {typeof details?.docId === "string" ? (
-            <Link
-              className="inline-flex min-h-11 items-center text-accent-text underline"
-              href={`/w/${slug}/docs/${details.docId}`}
-            >
-              Open document
-            </Link>
-          ) : null}
-          {typeof details?.obligationId === "string" && details.obligationId ? (
-            <Link
-              className="inline-flex min-h-11 items-center text-accent-text underline"
-              href={`/w/${slug}/governance?edit=${details.obligationId}`}
-            >
-              Open compliance calendar item
-            </Link>
-          ) : null}
-          {r.kind === "INSURANCE" && !r.archivedAt ? <RecurringForm slug={slug} operation="source" fields={[{name:"source",label:"Source",type:"hidden",value:"INSURANCE"},{name:"sourceId",label:"Source id",type:"hidden",value:r.id}]} button="Create premium schedule"/> : null}
-          {r.kind === "CONFLICT" && !r.archivedAt ? (
-            <ConflictLinks slug={slug} id={r.id} data={data.conflict} />
-          ) : null}
-          {r.kind === "BOARD_PACK" && !r.approvedAt && !r.archivedAt ? (
-            <FreezePack slug={slug} id={r.id} />
-          ) : null}
-          <Attachments
-            slug={slug}
-            recordId={r.id}
-            locked={Boolean(r.approvedAt || r.archivedAt)}
-            files={r.attachments.map((a) => a.file)}
-          />
-          <div className="flex flex-wrap gap-3">
-            {r.archivedAt ? (
-              <OperationButton slug={slug} input={{ op: "restore", id: r.id }}>
-                Restore record
-              </OperationButton>
-            ) : null}
-            {r.kind === "MINUTES" && !r.approvedAt && !r.archivedAt ? (
-              <OperationButton
-                slug={slug}
-                input={{ op: "approve", id: r.id }}
-                confirm="Approve the saved minutes and lock their text and attachments? Save any form changes first."
-              >
-                Approve minutes
-              </OperationButton>
-            ) : null}
-            {r.kind === "OBLIGATION" &&
-            !r.archivedAt &&
-            ["FILED", "DONE"].includes(r.status) &&
-            details?.recurrence !== "NONE" ? (
-              <OperationButton slug={slug} input={{ op: "next", id: r.id }}>
-                Add next occurrence
-              </OperationButton>
-            ) : null}
-            {!r.approvedAt && !r.archivedAt ? (
-              <OperationButton
-                slug={slug}
-                input={{ op: "archive", id: r.id }}
-                confirm="Archive this record? It will leave the active list; proof remains private."
-              >
-                Archive record
-              </OperationButton>
-            ) : null}
-          </div>
-          {r.kind === "VENDOR" ? (
-            <>
-              {!r.archivedAt ? <BankForm slug={slug} vendorId={r.id} /> : null}
-              <h3 className="text-title">Bank change log</h3>
-              {!r.bankChanges.length ? (
-                <p>No changes recorded.</p>
-              ) : (
-                <ul className="space-y-3">
-                  {r.bankChanges.map((c) => (
-                    <li key={c.id} className="break-words">
-                      <p>
-                        {formatDayTime(c.createdAt, actor.workspace.timezone)} ·{" "}
-                        {choices.owners.find((o) => o.value === c.actorId)
-                          ?.label ?? "Former member"}
-                      </p>
-                      <p>{c.reason}</p>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </>
-          ) : null}
-        </Card>
+        <SelectedRecord
+          key={r.id}
+          actor={actor}
+          data={data}
+          section={section}
+          choices={choices}
+          selected={selected}
+          base={base}
+        />
       ) : null}
       {section === "board" ? (
         <details className="rounded-xl border border-line bg-panel p-4">
@@ -447,103 +271,7 @@ export function GovernanceScreen({
           </Link>
         </div>
       </form>
-      {!data.records.length ? (
-        <EmptyState
-          patch
-          title="No records here yet."
-          action={
-            <Button asChild>
-              <Link href={`${base}?new=1#record-form`}>Add record</Link>
-            </Button>
-          }
-        />
-      ) : (
-        <>
-          <p className="text-caption text-ink-muted">
-            {data.total} records · Page {data.page}
-          </p>
-          <ul className="space-y-3">
-            {data.records.map((row) => {
-              const overdue =
-                !["DONE", "REVIEWED", "CLOSED", "FROZEN"].includes(
-                  row.status,
-                ) &&
-                row.dueOn &&
-                row.dueOn.toISOString().slice(0, 10) <
-                  dayInZone(new Date(), actor.workspace.timezone);
-              const d = row.details as Record<string, unknown>;
-              return (
-                <li key={row.id}>
-                  <Link
-                    href={`${base}?edit=${row.id}${row.archivedAt ? "&archived=1" : ""}`}
-                    className="block space-y-2 rounded-xl border border-line bg-panel p-4 hover:border-accent focus-visible:outline-2 focus-visible:outline-accent"
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <h2 className="min-w-0 break-words text-title">
-                        {row.number ? `#${row.number} · ` : ""}
-                        {row.title}
-                      </h2>
-                      <Chip
-                        tone={
-                          overdue
-                            ? "danger"
-                            : row.status === "APPROVED" || row.status === "DONE"
-                              ? "success"
-                              : "neutral"
-                        }
-                      >
-                        {row.archivedAt
-                          ? "Archived"
-                          : overdue
-                            ? "Overdue"
-                            : label(row.status)}
-                      </Chip>
-                    </div>
-                    <p className="text-caption text-ink-muted">
-                      {LABELS[row.kind]} ·{" "}
-                      {choices.owners.find((o) => o.value === row.ownerId)
-                        ?.label ?? "Unassigned"}
-                      {row.parentId
-                        ? ` · ${choices.committees.find((c) => c.value === row.parentId)?.label ?? "Committee"}`
-                        : ""}
-                    </p>
-                    {row.dueOn ? (
-                      <p>
-                        {" "}
-                        {row.kind === "CONFLICT" ? "Declared" : "Due"}{" "}
-                        {formatDate(row.dueOn, "UTC")}
-                      </p>
-                    ) : null}
-                    {row.startsOn ? (
-                      <p>
-                        {formatDate(row.startsOn, "UTC")} –{" "}
-                        {formatDate(row.endsOn!, "UTC")}
-                      </p>
-                    ) : null}
-                    {row.kind === "RISK" ? (
-                      <p>
-                        {
-                          riskScore(Number(d.likelihood), Number(d.impact))
-                            .level
-                        }{" "}
-                        risk · Score {Number(d.likelihood) * Number(d.impact)} /
-                        25 · Likelihood {String(d.likelihood)} × impact{" "}
-                        {String(d.impact)}
-                      </p>
-                    ) : null}
-                    {row.kind === "CONTRACT" ? (
-                      <p>
-                        {formatMoney(Number(d.amountMinor), String(d.currency))}{" "}
-                        · {String(d.noticeDays)} days’ notice
-                      </p>
-                    ) : null}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </>
-      )}
+      <RecordList actor={actor} data={data} choices={choices} base={base} />
       <nav aria-label="Record pages" className="flex gap-4">
         {data.page > 1 ? (
           <Link

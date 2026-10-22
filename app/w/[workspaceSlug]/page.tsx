@@ -1,3 +1,4 @@
+import { HomeActivity } from "./HomeActivity";
 import { DashboardLayout } from "@/components/ui/layouts";
 import Link from "next/link";
 import { QuickCreateButtons } from "@/components/command-palette/QuickCreate";
@@ -12,7 +13,6 @@ import {
 import { getDashboardData } from "@/lib/dashboard";
 import {
   formatDayTime,
-  formatRelativeTime,
   formatTimeZoneName,
 } from "@/lib/format/datetime";
 import { formatMoney } from "@/lib/format/money";
@@ -102,41 +102,7 @@ export default async function WorkspaceHome({
           Links
         </Link>
       </nav>}
-      rail={<Card>
-            <CardHeader
-              title="Activity"
-              action={
-                <Link
-                  className="inline-flex min-h-11 items-center underline"
-                  href={`${base}/activity`}
-                >
-                  See all
-                </Link>
-              }
-            />
-            {d.activity.length ? (
-              <ul className="divide-y divide-line">
-                {d.activity.map((a) => (
-                  <li className="py-3" key={a.id}>
-                    <p className="break-words text-body-ui">{a.summary}</p>
-                    <time
-                      className="text-caption text-ink-muted"
-                      dateTime={a.createdAt.toISOString()}
-                    >
-                      {formatRelativeTime(a.createdAt, tz)}
-                    </time>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>
-                It’s quiet here.{" "}
-                <Link className="underline" href={`${base}/activity`}>
-                  Open activity
-                </Link>
-              </p>
-            )}
-          </Card>}
+      rail={<HomeActivity activity={d.activity} base={base} tz={tz} />}
     >
       {!d.myTasks.length && !upcoming.length && !d.announcements.length && !d.activity.length ? (
         <EmptyState patch title="No plans yet. Find a project for the next build night." action={<Link href={`${base}/projects`} className="inline-flex min-h-11 items-center font-semibold text-accent-text underline">Browse projects →</Link>} />

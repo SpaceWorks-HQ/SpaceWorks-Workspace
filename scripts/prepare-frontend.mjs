@@ -1,7 +1,7 @@
 // Build a rendering-only workspace from the shared UI and fixed API contracts.
 import ts from "typescript";
 import { Prisma } from "@prisma/client";
-import { cpSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -43,8 +43,30 @@ writeFileSync(path.join(target, "lib/db.ts"), `import type { PrismaClient } from
 // Only named pure exports and their local dependencies are copied. The build
 // trace check remains a separate defence against introducing persistence here.
 const pureExports = JSON.parse(readFileSync(path.join(target, 'pure-exports.json'), 'utf8'));
+const moduleFile = (modulePath) => existsSync(path.join(root, modulePath + '.ts')) ? modulePath + '.ts' : modulePath + '/index.ts';
+const pureFacade = (modulePath) => `@/lib/frontend/pure/${modulePath.replaceAll('/','-')}`;
+// Split modules re-export helpers from sibling files (AGENTS.md 300-line limit).
+// Follow `export { name } from "./file"` to the defining module and facade it too.
+const pureReexports = {};
+for (const queue = Object.keys(pureExports); queue.length;) {
+  const modulePath = queue.shift();
+  const syntax = ts.createSourceFile(modulePath+'.ts', readFileSync(path.join(root, moduleFile(modulePath)), 'utf8'), 99, true);
+  for (const statement of syntax.statements) {
+    if (!ts.isExportDeclaration(statement) || !statement.moduleSpecifier || !statement.exportClause || !ts.isNamedExports(statement.exportClause)) continue;
+    const specifier = statement.moduleSpecifier.text;
+    if (!specifier.startsWith('.') && !specifier.startsWith('@/')) continue;
+    const resolved = specifier.startsWith('@/') ? specifier.slice(2) : path.posix.normalize(path.posix.join(path.posix.dirname(modulePath), specifier)).replace(/\.tsx?$/, '');
+    for (const element of statement.exportClause.elements) {
+      if (!pureExports[modulePath].includes(element.name.text)) continue;
+      const original = element.propertyName?.text ?? element.name.text;
+      (pureReexports[modulePath] ??= new Map()).set(element.name.text, `export { ${original === element.name.text ? original : `${original} as ${element.name.text}`} } from ${JSON.stringify(pureFacade(resolved))};`);
+      if (!pureExports[resolved]) { pureExports[resolved] = []; queue.push(resolved); }
+      if (!pureExports[resolved].includes(original)) pureExports[resolved].push(original);
+    }
+  }
+}
 for (const [module, names] of Object.entries(pureExports)) {
-  const source = readFileSync(path.join(root, module+'.ts'), 'utf8');
+  const source = readFileSync(path.join(root, moduleFile(module)), 'utf8');
   const syntax = ts.createSourceFile(module+'.ts', source, 99, true);
   const definitions = new Map();
   for (const statement of syntax.statements) {
@@ -59,7 +81,7 @@ for (const [module, names] of Object.entries(pureExports)) {
     const visit = node => { if(ts.isIdentifier(node)) needed.add(node.text); ts.forEachChild(node,visit); };
     visit(declaration);
   }
-  for (const name of names) if (!definitions.has(name)) throw new Error(`Missing pure rendering export: ${module}:${name}`);
+  for (const name of names) if (!definitions.has(name) && !pureReexports[module]?.has(name)) throw new Error(`Missing pure rendering export: ${module}:${name}`);
   const imports = [];
   for (const statement of syntax.statements.filter(ts.isImportDeclaration)) {
     const clause = statement.importClause;
@@ -78,7 +100,7 @@ for (const [module, names] of Object.entries(pureExports)) {
     imports.push(`import ${clause.isTypeOnly?'type ':''}${parts.join(', ')} from ${JSON.stringify(imported)};`);
   }
   const directory=path.join(target,'lib/frontend/pure'); mkdirSync(directory,{recursive:true});
-  writeFileSync(path.join(directory,module.replaceAll('/','-')+'.ts'), imports.join('\n')+'\n'+syntax.statements.filter(node=>selected.has(node)).map(node=>node.getText(syntax)).join('\n')+'\n');
+  writeFileSync(path.join(directory,module.replaceAll('/','-')+'.ts'), imports.join('\n')+'\n'+syntax.statements.filter(node=>selected.has(node)).map(node=>node.getText(syntax)).join('\n')+'\n'+[...(pureReexports[module]?.values() ?? [])].join('\n')+'\n');
 }
 
 cpSync(path.join(target,'storage.ts'),path.join(target,'lib/frontend/storage.ts'));

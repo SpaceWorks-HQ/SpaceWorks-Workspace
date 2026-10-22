@@ -1,0 +1,158 @@
+/* Opt into class-based dark variants that follow the same attribute as the tokens. */
+@custom-variant dark {
+  &:where([data-color-mode="dark"], [data-color-mode="dark"] *, .yy-dark-band, .yy-dark-band *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-color-mode]), :root:not([data-color-mode]) *) {
+      @slot;
+    }
+  }
+}
+
+/*
+ * Space Works type: Gilroy 400–700 for everything, Unbounded 500 for one
+ * short accent phrase per public layout (`.font-accent`). Self-hosted from
+ * public/brand/fonts (licences in public/brand/fonts/LICENSES).
+ */
+@font-face {
+  font-family: "Gilroy";
+  src: url("/brand/fonts/Gilroy-Regular.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Gilroy";
+  src: url("/brand/fonts/Gilroy-Medium.woff") format("woff");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Gilroy";
+  src: url("/brand/fonts/Gilroy-SemiBold.woff") format("woff");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Gilroy";
+  src: url("/brand/fonts/Gilroy-Bold.woff") format("woff");
+  /* Bold also answers legacy 800/900 requests so nothing is synthesised. */
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Unbounded";
+  src: url("/brand/fonts/Unbounded-Variable.woff2") format("woff2");
+  font-weight: 500 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/*
+ * Tailwind theme mapped onto the design tokens (docs/DESIGN.md §9.1).
+ * `inline` keeps the utilities pointing at the live CSS variables so light,
+ * dark, and accents switch without regenerating classes.
+ */
+@theme inline {
+  --color-canvas: var(--yy-bg-canvas);
+  --color-panel: var(--yy-bg-panel);
+  --color-surface: var(--yy-bg-surface);
+  --color-subtle: var(--yy-bg-subtle);
+  --color-muted: var(--yy-bg-muted);
+  --color-emphasis: var(--yy-bg-emphasis);
+  --color-track: var(--yy-bg-track);
+  --color-line: var(--yy-border);
+  --color-line-strong: var(--yy-border-strong);
+  --color-ink: var(--yy-text);
+  --color-ink-secondary: var(--yy-text-secondary);
+  --color-ink-muted: var(--yy-text-muted);
+  --color-ink-disabled: var(--yy-text-disabled);
+
+  --color-primary: var(--yy-primary);
+  --color-primary-hover: var(--yy-primary-hover);
+  --color-primary-active: var(--yy-primary-active);
+  --color-on-primary: var(--yy-on-primary);
+  --color-inverse: var(--yy-inverse-surface);
+  --color-on-inverse: var(--yy-on-inverse);
+
+  /* Workshop Orange emphasis: a fill with an ink label, never text. */
+  --color-highlight: var(--yy-highlight);
+  --color-highlight-hover: var(--yy-highlight-hover);
+  --color-on-highlight: var(--yy-on-highlight);
+  --color-highlight-soft: var(--yy-highlight-soft);
+
+  --color-sidebar: var(--yy-sidebar);
+  --color-sidebar-hover: var(--yy-sidebar-hover);
+  --color-sidebar-active: var(--yy-sidebar-active);
+  --color-on-sidebar-active: var(--yy-on-sidebar-active);
+
+  /* Raw brand colours, for decoration. */
+  --color-sw-ink: var(--sw-ink);
+  --color-sw-teal: var(--sw-teal);
+  --color-sw-orange: var(--sw-orange);
+  --color-sw-citron: var(--sw-citron);
+  --color-sw-sky: var(--sw-sky);
+  --color-sw-yellow: var(--sw-yellow);
+  --color-sw-cream: var(--sw-cream);
+
+  --color-brand-marigold: var(--yy-brand-marigold);
+  --color-brand-marigold-deep: var(--yy-brand-marigold-deep);
+  --color-brand-dot-base: var(--yy-brand-dot-base);
+  --color-brand-dot-off: var(--yy-brand-dot-off);
+  --color-highlight-peach: var(--yy-highlight-peach);
+  --color-tint-peach: var(--yy-tint-peach);
+
+  --color-success-bg: var(--yy-success-bg);
+  --color-success-fg: var(--yy-success-fg);
+  --color-success-solid: var(--yy-success-solid);
+  --color-on-success: var(--yy-on-success);
+  --color-warning-bg: var(--yy-warning-bg);
+  --color-warning-fg: var(--yy-warning-fg);
+  --color-warning-solid: var(--yy-warning-solid);
+  --color-on-warning: var(--yy-on-warning);
+  --color-info-bg: var(--yy-info-bg);
+  --color-info-fg: var(--yy-info-fg);
+  --color-info-solid: var(--yy-info-solid);
+  --color-on-info: var(--yy-on-info);
+  --color-danger-bg: var(--yy-danger-bg);
+  --color-danger-fg: var(--yy-danger-fg);
+  --color-danger-solid: var(--yy-danger-solid);
+  --color-danger-hover: var(--yy-danger-hover);
+  --color-on-danger: var(--yy-on-danger);
+  --color-danger-border: var(--yy-danger-border);
+
+  --color-accent: var(--yy-accent);
+  --color-accent-soft: var(--yy-accent-soft);
+  --color-on-accent: var(--yy-on-accent);
+  --color-accent-text: var(--yy-accent-text);
+
+  --font-display: "Gilroy", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Gilroy", ui-sans-serif, system-ui, sans-serif;
+  --font-accent: "Unbounded", "Gilroy", ui-sans-serif, sans-serif;
+  /* Compatibility alias; all text uses Gilroy, including code and secrets. */
+  --font-mono: var(--font-sans);
+
+  /* Controls 10px (`rounded-control`), cards and panels 16px (`rounded-xl`). */
+  --radius-control: 10px;
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-3xl: 24px;
+
+  --shadow-raised: var(--yy-shadow-raised);
+  --shadow-float: var(--yy-shadow-float);
+  --shadow-segment: var(--yy-shadow-segment);
+
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 960px;
+  --breakpoint-lg: 1200px;
+
+  --ease-yy: cubic-bezier(0.2, 0.8, 0.2, 1);
+}

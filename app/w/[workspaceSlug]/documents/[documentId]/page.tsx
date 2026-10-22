@@ -1,7 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { randomUUID } from "node:crypto";
 import { requireWorkspace } from "@/lib/permissions";
 import { documentDetail, editorOptions } from "@/lib/documents/queries";
 import { DocumentsError } from "@/lib/documents/access";
@@ -21,6 +20,10 @@ import { PageHeader, Chip, Callout } from "@/components/ui/display";
 import { formatMoney } from "@/lib/format/money";
 import { formatDayTime } from "@/lib/format/datetime";
 import { fileUrl } from "@/lib/storage";
+import { DocumentAuditHistory, DocumentCorrections } from "@/components/documents/DocumentHistory";
+import { FrozenIssueRecord } from "@/components/documents/FrozenIssueRecord";
+import { DocumentAllocations } from "@/components/documents/DocumentAllocations";
+
 export default async function Page({
   params,
 }: PageProps<"/w/[workspaceSlug]/documents/[documentId]">) {
@@ -88,38 +91,7 @@ export default async function Page({
           options={options}
         />
       ) : snapshot ? (
-        <section className="space-y-4 rounded-xl border border-line bg-panel p-5">
-          <h2 className="text-h3">Frozen issue record</h2>
-          <p>
-            {String(snapshot.identity.name)} → {snapshot.input.partyName}
-          </p>
-          <p>{snapshot.input.partyAddress}</p>
-          {snapshot.letter ? (
-            <p className="whitespace-pre-wrap">{snapshot.letter}</p>
-          ) : (
-            snapshot.calculation.rows.map((l, i) => (
-              <p key={i}>
-                {l.description} · {l.quantity} ×{" "}
-                {formatMoney(l.unitMinor, row.currency)} · Taxable{" "}
-                {formatMoney(l.taxableMinor, row.currency)}
-              </p>
-            ))
-          )}
-          <p className="font-semibold">
-            Total {formatMoney(snapshot.calculation.totalMinor, row.currency)}
-          </p>
-          <p>
-            CGST {formatMoney(snapshot.calculation.cgstMinor, row.currency)} ·
-            SGST/UTGST{" "}
-            {formatMoney(snapshot.calculation.sgstMinor, row.currency)} · IGST{" "}
-            {formatMoney(snapshot.calculation.igstMinor, row.currency)} · Cess{" "}
-            {formatMoney(snapshot.calculation.cessMinor, row.currency)}
-          </p>
-          <p className="text-caption text-ink-muted">
-            Template {snapshot.templateVersion}. Identity, wording and
-            calculations are frozen.
-          </p>
-        </section>
+        <FrozenIssueRecord snapshot={snapshot} currency={row.currency} />
       ) : null}
       {row.status === "RESERVED" ? (
         <section className="space-y-4 rounded-xl border border-line bg-panel p-5">
@@ -271,63 +243,12 @@ export default async function Page({
       {row.status === "ISSUED" &&
       (INVOICES.includes(row.type) ||
         ALLOCATABLE_RECEIPTS.includes(row.type)) ? (
-        <section className="space-y-4 rounded-xl border border-line bg-panel p-5">
-          <h2 className="text-h3">Payment allocations</h2>
-          <p>
-            Allocate cash and TDS separately. This does not create or duplicate
-            a ledger payment.
-          </p>
-          <DocumentForm
-            slug={workspaceSlug}
-            operation="allocation"
-            hidden={{
-              currency: row.currency,
-              key: randomUUID(),
-              ...(INVOICES.includes(row.type)
-                ? { invoiceId: row.id }
-                : { receiptId: row.id }),
-            }}
-            fields={[
-              {
-                name: INVOICES.includes(row.type) ? "receiptId" : "invoiceId",
-                label: INVOICES.includes(row.type)
-                  ? "Issued receipt"
-                  : "Issued invoice",
-                type: "select",
-                options: options.originals.filter(
-                  (o) =>
-                    o.status === "ISSUED" &&
-                    (INVOICES.includes(row.type)
-                      ? ALLOCATABLE_RECEIPTS.includes(o.type)
-                      : INVOICES.includes(o.type)),
-                ),
-                required: true,
-              },
-              {
-                name: "cashMinor",
-                label: `Cash allocation (${row.currency})`,
-                type: "money",
-                value: 0,
-              },
-              {
-                name: "tdsMinor",
-                label: `TDS allocation (${row.currency})`,
-                type: "money",
-                value: 0,
-              },
-            ]}
-            label="Allocate payment"
-          />
-          <ul>
-            {allocations.map((a) => (
-              <li key={a.id} className="py-2">
-                {a.receipt.number} → {a.invoice.number}:{" "}
-                {formatMoney(a.cashMinor, row.currency)} cash +{" "}
-                {formatMoney(a.tdsMinor, row.currency)} TDS
-              </li>
-            ))}
-          </ul>
-        </section>
+        <DocumentAllocations
+          workspaceSlug={workspaceSlug}
+          row={row}
+          options={options}
+          allocations={allocations}
+        />
       ) : null}
       {!LETTERS.includes(row.type) ? (
         <p className="text-caption text-ink-muted">
@@ -335,21 +256,7 @@ export default async function Page({
           classifications.
         </p>
       ) : null}
-      <section className="space-y-3">
-        <h2 className="text-h3">Corrections</h2>
-        {corrections.map((c) => (
-          <p key={c.id}>
-            <Link className="underline" href={`${base}/${c.id}`}>
-              {c.number ?? c.title}
-            </Link>{" "}
-            · {label(c.status)}
-          </p>
-        ))}
-        <p>
-          Create a new draft and link this document as the original to retain
-          correction history.
-        </p>
-      </section>
+      <DocumentCorrections corrections={corrections} base={base} />
       {row.status === "ISSUED" || row.status === "RESERVED" ? (
         <details className="rounded-xl border border-danger-border bg-panel p-5">
           <summary className="min-h-11 cursor-pointer py-2 text-danger-fg">
@@ -375,19 +282,10 @@ export default async function Page({
           />
         </details>
       ) : null}
-      <details className="rounded-xl border border-line bg-panel p-5">
-        <summary className="min-h-11 cursor-pointer py-2 font-semibold">
-          Audit history
-        </summary>
-        <ul>
-          {history.map((h) => (
-            <li key={h.id} className="py-2">
-              {h.action.replace("documents.", "").replaceAll("_", " ")} ·{" "}
-              {formatDayTime(h.createdAt, actor.workspace.timezone)}
-            </li>
-          ))}
-        </ul>
-      </details>
+      <DocumentAuditHistory
+        history={history}
+        timezone={actor.workspace.timezone}
+      />
     </div>
   );
 }

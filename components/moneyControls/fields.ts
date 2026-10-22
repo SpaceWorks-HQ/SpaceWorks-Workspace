@@ -1,7 +1,8 @@
 import type { FormField } from "@/components/finance/ToolForm";
 import type { Kind, EditableControl } from "@/lib/moneyControls/rules";
-import { currencyMinorDigits } from "@/lib/format/money";
 import type { ControlPickers } from "@/lib/moneyControls/types";
+import { applyControlFieldValues } from "./fieldValues";
+
 export type Pickers = ControlPickers;
 export type EditableRecord = EditableControl;
 const enumOptions = (v: string[]) =>
@@ -13,11 +14,6 @@ export function controlFields(
   today: string,
   row?: EditableRecord,
 ): FormField[] {
-  const d = (row?.details ?? {}) as Record<string, unknown>,
-    money = (n: number) =>
-      (n / 10 ** currencyMinorDigits(row?.currency ?? currency)).toFixed(
-        currencyMinorDigits(row?.currency ?? currency),
-      );
   const fields: FormField[] = [
     { name: "title", label: "Title", required: true },
     {
@@ -287,28 +283,6 @@ export function controlFields(
   );
   add("reminderDays", "Remind days before due", undefined, false, "text");
   add("notes", "Notes / difference explanation", undefined, false, "textarea");
-  for (const f of fields) {
-    const key = f.name.replace(/^detail\./, ""),
-      value = f.name.startsWith("detail.") ? d[key] : row?.[key];
-    if (value !== undefined && value !== null)
-      f.value =
-        f.type === "money"
-          ? money(Number(value))
-          : f.type === "checkbox"
-            ? Boolean(value)
-            : String(value);
-    else if (f.name === "detail.refundable") f.value = "YES";
-    else if (f.name === "reminderDays") f.value = "7";
-    else if (f.name === "detail.fiscalYear")
-      f.value = String(
-        new Date(today).getUTCFullYear() -
-          (new Date(today).getUTCMonth() < 3 ? 1 : 0),
-      );
-    else if (f.name === "detail.lifeYears") f.value = "5";
-    else if (f.name === "detail.ratePercent")
-      f.value = String(Number(d.rateBps ?? 2000) / 100);
-    else if (f.name === "detail.residualMinor") f.value = "0";
-    else if (f.name.endsWith("Mode")) f.value = "BLOCK";
-  }
+  applyControlFieldValues(fields, currency, today, row);
   return fields;
 }

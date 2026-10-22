@@ -3,18 +3,19 @@
 import { useCallback, useRef, useState, type DragEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Ellipsis } from "lucide-react";
 import { useRealtime } from "@/components/realtime/useRealtime";
-import { Button, IconButton } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/choice";
 import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader } from "@/components/ui/dialog";
 import { Chip, EmptyState } from "@/components/ui/display";
 import { Field, Input, SearchInput } from "@/components/ui/field";
-import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from "@/components/ui/menu";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { cn } from "@/lib/cn";
-import { FILE_KIND_LABEL, fileKind, folderCrumbs, formatBytes, joinFolder } from "@/lib/files/versions";
+import { FILE_KIND_LABEL, fileKind, formatBytes, joinFolder } from "@/lib/files/versions";
 import { DeleteFileDialog, MoveFilesDialog, RenameFileDialog } from "./FileDialogs";
+import { FileFolderBreadcrumbs } from "./FileFolderBreadcrumbs";
+import { LibraryFileMenu } from "./LibraryFileMenu";
+import { UploadConflictDialog } from "./UploadConflictDialog";
 import { UploadQueue } from "./UploadQueue";
 import { useUploads, type UploadJob } from "./useUploads";
 
@@ -113,17 +114,7 @@ export function FilesLibrary({ slug, folder, query, subfolders, allFolders, file
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <nav aria-label="Folder" className="min-w-0">
-          <ol className="flex flex-wrap items-center gap-1 text-body-ui">
-            <li><Link href={libraryHref("/")} className={cn("hover:underline", folder === "/" ? "font-semibold text-ink" : "text-ink-muted")}>All files</Link></li>
-            {folderCrumbs(folder).map((crumb, index, list) => (
-              <li key={crumb.path} className="flex items-center gap-1">
-                <span aria-hidden className="text-ink-muted">/</span>
-                <Link href={libraryHref(crumb.path)} aria-current={index === list.length - 1 ? "page" : undefined} className={cn("hover:underline", index === list.length - 1 ? "font-semibold text-ink" : "text-ink-muted")}>{crumb.name}</Link>
-              </li>
-            ))}
-          </ol>
-        </nav>
+        <FileFolderBreadcrumbs folder={folder} libraryHref={libraryHref} />
         <div className="flex flex-wrap items-center gap-2.5">
           {canUpload ? (
             <>
@@ -248,23 +239,14 @@ export function FilesLibrary({ slug, folder, query, subfolders, allFolders, file
                       <TD className="hidden whitespace-nowrap tabular-nums text-ink-muted sm:table-cell">{formatBytes(file.size)}</TD>
                       <TD className="hidden whitespace-nowrap text-ink-muted md:table-cell">{file.updated} · {file.uploadedBy}</TD>
                       <TD className="w-12 text-right">
-                        <Menu>
-                          <MenuTrigger asChild>
-                            <IconButton label={`Actions for ${file.filename}`} size="sm"><Ellipsis /></IconButton>
-                          </MenuTrigger>
-                          <MenuContent align="end">
-                            <MenuItem asChild><Link href={`/w/${slug}/files/${file.id}`}>Open</Link></MenuItem>
-                            <MenuItem asChild><a href={`/api/files/${file.id}?download=1`}>Download</a></MenuItem>
-                            {canUpload ? <MenuItem onSelect={() => setRenaming(file)}>Rename…</MenuItem> : null}
-                            {canUpload ? <MenuItem onSelect={() => setMoving([file.id])}>Move…</MenuItem> : null}
-                            {file.canDelete ? (
-                              <>
-                                <MenuSeparator />
-                                <MenuItem danger onSelect={() => setDeleting(file)}>Delete…</MenuItem>
-                              </>
-                            ) : null}
-                          </MenuContent>
-                        </Menu>
+                        <LibraryFileMenu
+                          slug={slug}
+                          file={file}
+                          canUpload={canUpload}
+                          setRenaming={setRenaming}
+                          setMoving={setMoving}
+                          setDeleting={setDeleting}
+                        />
                       </TD>
                     </TR>
                   ))}
@@ -279,18 +261,11 @@ export function FilesLibrary({ slug, folder, query, subfolders, allFolders, file
       <MoveFilesDialog slug={slug} fileIds={moving} folders={allFolders} currentFolder={folder} onClose={() => setMoving(null)} onDone={() => { setSelected(new Set()); refresh(); }} />
       <DeleteFileDialog slug={slug} file={deleting} onClose={() => setDeleting(null)} onDone={refresh} />
 
-      <Dialog open={conflicts !== null} onOpenChange={(open) => !open && setConflicts(null)}>
-        <DialogContent size="sm">
-          <DialogHeader
-            title={conflicts?.matches.size === 1 ? `${[...conflicts.matches.keys()][0]} is already here` : `${conflicts?.matches.size ?? 0} files are already here`}
-            description={conflicts?.matches.size === 1 ? "Add it as a new version to keep one file with its history, or keep both copies side by side." : "Add them as new versions to keep one file each with its history, or keep both copies side by side."}
-          />
-          <DialogFooter>
-            <Button variant="secondary" onClick={() => resolveConflicts(false)}>Keep both</Button>
-            <Button variant="primary" onClick={() => resolveConflicts(true)}>{conflicts?.matches.size === 1 ? "Add as a new version" : "Add as new versions"}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <UploadConflictDialog
+        conflicts={conflicts}
+        onClose={() => setConflicts(null)}
+        resolveConflicts={resolveConflicts}
+      />
 
       <Dialog open={newFolder} onOpenChange={setNewFolder}>
         <DialogContent size="sm">

@@ -1,3 +1,4 @@
+import { seedLedgerEntries } from "./finance-tools/ledger-entries.mjs";
 import { createHash } from "node:crypto";
 
 /** Manual office finance examples for an Indian community organisation. */
@@ -99,85 +100,20 @@ export default async function seedFinanceTools(
       "Additional tools may be needed for the second training group.",
     createdById: owner.id,
   });
-  const entries = [
-    [
-      "grant-income",
-      "INCOME",
-      5000000,
-      "First grant instalment",
-      "Kerala Community Foundation",
-      3,
-      restricted.id,
-      "GRANT",
-    ],
-    [
-      "donation-income",
-      "INCOME",
-      800000,
-      "Office donation",
-      "Neighbourhood supporters",
-      4,
-      unrestricted.id,
-      "DONATION",
-    ],
-    [
-      "supplies-expense",
-      "EXPENSE",
-      1860000,
-      "Training kits",
-      "Kochi Workshop Supplies",
-      8,
-      restricted.id,
-      "OTHER",
-    ],
-    [
-      "transport-expense",
-      "EXPENSE",
-      150000,
-      "Programme transport",
-      "Local transport cooperative",
-      10,
-      restricted.id,
-      "OTHER",
-    ],
-    [
-      "duplicate-expense",
-      "EXPENSE",
-      150000,
-      "Transport receipt to review",
-      "Local transport cooperative",
-      12,
-      restricted.id,
-      "OTHER",
-    ],
-  ];
-  for (const [
-    key,
-    kind,
-    amountMinor,
-    description,
-    counterparty,
-    day,
-    fundId,
-    incomeSource,
-  ] of entries)
-    await put(prisma.ledgerEntry, key, {
-      workspaceId,
-      kind,
-      amountMinor,
-      currency,
-      description,
-      counterparty,
-      occurredOn: on(day),
-      fundId,
-      costCentreId: centre.id,
-      accountId: account.id,
-      categoryId: kind === "INCOME" ? income.id : category.id,
-      incomeSource,
-      purpose: "Repair skills programme",
-      budgetId: kind === "EXPENSE" ? budget.id : null,
-      createdById: owner.id,
-    });
+  await seedLedgerEntries(prisma, {
+    workspaceId,
+    owner,
+    put,
+    on,
+    currency,
+    restricted,
+    unrestricted,
+    centre,
+    account,
+    category,
+    income,
+    budget,
+  });
   await put(prisma.financeBill, "bill-unpaid", {
     workspaceId,
     vendor: "Kochi Stationery Cooperative",

@@ -1,3 +1,6 @@
+import { MeetingNotes } from "./MeetingNotes";
+import { MeetingAgenda } from "./MeetingAgenda";
+import { MeetingAttendance } from "./MeetingAttendance";
 import { notFound } from "next/navigation";
 import { requireWorkspace, canContribute } from "@/lib/permissions";
 import { prisma } from "@/lib/db";
@@ -79,237 +82,27 @@ export default async function MeetingPage({
         {name(meeting.facilitatorId)}
       </p>
       <MeetLink url={meeting.videoUrl} pending={meeting.meetPending} error={meeting.calendarSyncs[0]?.lastError} />
-      {manage ? (
-        <Disclosure title="Edit meeting and link notes">
-          <ActionForm
-            slug={workspaceSlug}
-            action={meetingAction}
-            hidden={{
-              op: "details",
-              meetingId,
-              startsAt: meeting.startsAt.toISOString(),
-              endsAt: (
-                meeting.endsAt ?? new Date(meeting.startsAt.getTime() + 3600000)
-              ).toISOString(),
-            }}
-            label="Save meeting"
-            fields={[
-              {
-                name: "title",
-                label: "Title",
-                value: meeting.title,
-                required: true,
-              },
-              {
-                name: "startsAt",
-                label: "Starts at",
-                type: "datetime-local",
-                help: "Leave blank to keep the current time. New times use your device’s time zone.",
-              },
-              {
-                name: "endsAt",
-                label: "Ends at",
-                type: "datetime-local",
-                help: "Leave blank to keep the current end time.",
-              },
-              {
-                name: "location",
-                label: "Location",
-                value: meeting.location ?? "",
-              },
-              {
-                name: "notesDocId",
-                label: "Notes document",
-                type: "select",
-                value: meeting.notesDocId ?? "",
-                options: [
-                  optionalChoice(),
-                  ...choices.docs
-                    .filter((d) => d.visibility === "WORKSPACE")
-                    .map((d) => ({ value: d.id, label: d.title })),
-                ],
-              },
-              {
-                name: "status",
-                label: "Status",
-                type: "select",
-                value: meeting.status,
-                options: options([
-                  "SCHEDULED",
-                  "IN_PROGRESS",
-                  "DONE",
-                  "CANCELLED",
-                ]),
-                required: true,
-              },
-            ]}
-          />
-        </Disclosure>
-      ) : null}
-      <Section title="Notes">
-        {doc ? (
-          <a
-            className="inline-flex min-h-11 items-center text-accent-text underline"
-            href={`/w/${workspaceSlug}/docs/${doc.id}`}
-          >
-            {doc.title}
-          </a>
-        ) : (
-          <p className="text-ink-muted">
-            No notes document linked. The facilitator can link one above.
-          </p>
-        )}
-      </Section>
-      <Section
-        title={`Agenda · ${meeting.agenda.reduce((n, a) => n + (a.durationMin ?? 0), 0)} minutes`}
-      >
-        {!meeting.agenda.length ? (
-          <p className="text-ink-muted">
-            No agenda items yet. Add the first topic below.
-          </p>
-        ) : (
-          <ol className="space-y-5">
-            {meeting.agenda.map((item, index) => (
-              <li key={item.id} className="space-y-3 border-b border-line pb-4">
-                <h3 className="text-title">
-                  {index + 1}. {item.title}
-                </h3>
-                <p className="text-caption text-ink-muted">
-                  {name(item.ownerId)} · {item.durationMin ?? 0} min ·{" "}
-                  {item.status.toLowerCase().replaceAll("_", " ")}
-                </p>
-                <TextBody>{item.notesMd}</TextBody>
-                {manage ? (
-                  <>
-                    <div className="flex flex-wrap gap-3">
-                      {index > 0 ? (
-                        <ActionForm
-                          slug={workspaceSlug}
-                          action={meetingAction}
-                          hidden={{
-                            op: "reorder",
-                            meetingId,
-                            agendaIds: agendaIds.toSpliced(
-                              index - 1,
-                              2,
-                              item.id,
-                              agendaIds[index - 1],
-                            ),
-                          }}
-                          label={`Move topic ${index + 1} up`}
-                        />
-                      ) : null}
-                      {index < agendaIds.length - 1 ? (
-                        <ActionForm
-                          slug={workspaceSlug}
-                          action={meetingAction}
-                          hidden={{
-                            op: "reorder",
-                            meetingId,
-                            agendaIds: agendaIds.toSpliced(
-                              index,
-                              2,
-                              agendaIds[index + 1],
-                              item.id,
-                            ),
-                          }}
-                          label={`Move topic ${index + 1} down`}
-                        />
-                      ) : null}
-                    </div>
-                    <details>
-                      <summary className="min-h-11 cursor-pointer text-accent-text">
-                        Edit topic {index + 1}
-                      </summary>
-                      <ActionForm
-                        slug={workspaceSlug}
-                        action={meetingAction}
-                        hidden={{
-                          op: "agendaUpdate",
-                          meetingId,
-                          agendaId: item.id,
-                        }}
-                        label="Save topic"
-                        fields={[
-                          {
-                            name: "title",
-                            label: "Topic",
-                            value: item.title,
-                            required: true,
-                          },
-                          {
-                            name: "ownerId",
-                            label: "Owner",
-                            type: "select",
-                            value: item.ownerId ?? "",
-                            options: [optionalChoice(), ...choices.members],
-                          },
-                          {
-                            name: "durationMin",
-                            label: "Time box in minutes",
-                            type: "number",
-                            value: item.durationMin ?? 10,
-                            min: 1,
-                            max: 480,
-                            required: true,
-                          },
-                          {
-                            name: "notesMd",
-                            label: "Topic notes",
-                            type: "textarea",
-                            value: item.notesMd ?? "",
-                          },
-                          {
-                            name: "status",
-                            label: "Status",
-                            type: "select",
-                            value: item.status,
-                            options: options([
-                              "OPEN",
-                              "DISCUSSED",
-                              "CARRIED_OVER",
-                            ]),
-                          },
-                        ]}
-                      />
-                    </details>
-                  </>
-                ) : null}
-              </li>
-            ))}
-          </ol>
-        )}
-      </Section>
-      {canContribute(actor.membership) ? (
-        <Disclosure title="Add an agenda topic">
-          <ActionForm
-            slug={workspaceSlug}
-            action={meetingAction}
-            hidden={{ op: "agenda", meetingId }}
-            label="Add topic"
-            reset
-            fields={[
-              { name: "title", label: "Topic", required: true },
-              {
-                name: "ownerId",
-                label: "Owner",
-                type: "select",
-                options: [optionalChoice(), ...choices.members],
-              },
-              {
-                name: "durationMin",
-                label: "Time box in minutes",
-                type: "number",
-                value: 10,
-                min: 1,
-                max: 480,
-                required: true,
-              },
-              { name: "notesMd", label: "Notes", type: "textarea" },
-            ]}
-          />
-        </Disclosure>
-      ) : null}
+      <MeetingNotes
+        meeting={meeting}
+        workspaceSlug={workspaceSlug}
+        meetingId={meetingId}
+        manage={manage}
+        docs={choices.docs}
+        doc={doc}
+        optionalChoice={optionalChoice}
+        options={options}
+      />
+      <MeetingAgenda
+        agenda={meeting.agenda}
+        agendaIds={agendaIds}
+        workspaceSlug={workspaceSlug}
+        meetingId={meetingId}
+        members={choices.members}
+        manage={manage}
+        contribute={canContribute(actor.membership)}
+        optionalChoice={optionalChoice}
+        options={options}
+      />
       <Section title="Decisions">
         {meeting.decisions.length ? (
           meeting.decisions.map((d) => (
@@ -429,116 +222,16 @@ export default async function MeetingPage({
           />
         </Disclosure>
       ) : null}
-      <Section title="Attendees">
-        <ul>
-          {meeting.attendees.map((a) => (
-            <li
-              key={a.id}
-              className="flex flex-wrap items-center justify-between gap-3 border-b border-line py-3"
-            >
-              <span>
-                {a.user?.name ?? "Former member"} · {a.rsvp.toLowerCase()}
-                {a.attended === true
-                  ? " · Attended"
-                  : a.attended === false
-                    ? " · Absent"
-                    : ""}
-              </span>
-              {manage && a.userId ? (
-                <ActionForm
-                  slug={workspaceSlug}
-                  action={meetingAction}
-                  hidden={{
-                    op: "attendance",
-                    meetingId,
-                    userId: a.userId,
-                    attended: !a.attended,
-                  }}
-                  label={a.attended ? "Mark absent" : "Mark attended"}
-                />
-              ) : null}
-            </li>
-          ))}
-        </ul>
-        {meeting.attendees.some((a) => a.userId === actor.user.id) ? (
-          <ActionForm
-            slug={workspaceSlug}
-            action={meetingAction}
-            hidden={{ op: "rsvp", meetingId }}
-            label="Save your RSVP"
-            fields={[
-              {
-                name: "rsvp",
-                label: "Your response",
-                type: "select",
-                options: [
-                  { value: "YES", label: "Going" },
-                  { value: "MAYBE", label: "Maybe" },
-                  { value: "NO", label: "Not going" },
-                ],
-              },
-            ]}
-          />
-        ) : null}
-      </Section>
-      {manage ? (
-        <>
-          <Disclosure title="Add an attendee">
-            <ActionForm
-              slug={workspaceSlug}
-              action={meetingAction}
-              hidden={{ op: "attendee", meetingId }}
-              label="Add attendee"
-              fields={[
-                {
-                  name: "userId",
-                  label: "Member",
-                  type: "select",
-                  options: choices.members,
-                  required: true,
-                },
-              ]}
-            />
-          </Disclosure>
-          <Disclosure
-            title={meeting.summaryPublishedAt ? "Notes sent" : "Send notes to"}
-          >
-            {meeting.summaryPublishedAt ? (
-              <p className="text-ink-muted">
-                Notes were sent on{" "}
-                {formatDayTime(
-                  meeting.summaryPublishedAt,
-                  actor.workspace.timezone,
-                )}
-                .
-              </p>
-            ) : (
-              <ActionForm
-                slug={workspaceSlug}
-                action={meetingAction}
-                hidden={{ op: "publish", meetingId }}
-                label="Send notes"
-                fields={
-                  meeting.visibility === "WORKSPACE" && !meeting.teamId
-                    ? [
-                        {
-                          name: "destinationIds",
-                          label: "Send to",
-                          type: "multi",
-                          options: destinations.map((d) => ({
-                            value: d.id,
-                            label: d.name,
-                          })),
-                          help: "Attendees also receive a personal notification.",
-                        },
-                      ]
-                    : []
-                }
-              />
-            )}
-          </Disclosure>
-        </>
-      ) : null}
+      <MeetingAttendance
+        meeting={meeting}
+        workspaceSlug={workspaceSlug}
+        meetingId={meetingId}
+        members={choices.members}
+        manage={manage}
+        viewerId={actor.user.id}
+        timezone={actor.workspace.timezone}
+        destinations={destinations}
+      />
     </CollaborationShell>
   );
 }

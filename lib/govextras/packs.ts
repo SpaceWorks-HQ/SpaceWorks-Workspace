@@ -7,10 +7,10 @@ import {
 } from "@/lib/governance/service";
 import { detailSchemas, LABELS, label } from "@/lib/governance/schemas";
 import { recordAuditEvent } from "@/lib/audit";
-import { uploadWorkspaceFile, getObject, deleteObjects } from "@/lib/storage";
+import { uploadWorkspaceFile, deleteObjects } from "@/lib/storage";
 import { formatMoney } from "@/lib/format/money";
 import { formatDate, formatDayTime } from "@/lib/format/datetime";
-import { createHash } from "node:crypto";
+import { collectPackEvidence } from "./packs/evidence";
 import { packPdf } from "./pack-pdf";
 import { bundleZip } from "./bundle";
 import { validateExtraReferences } from "./references";
@@ -141,37 +141,7 @@ export async function freezePack(actor: Actor, id: string) {
             ].map((a) => [a.fileId, a.file]),
           ).values(),
         ];
-        if (
-          files.length > 100 ||
-          files.reduce((n, f) => n + f.size, 0) > 18 * 1024 * 1024
-        )
-          throw new GovernanceError(
-            "Choose evidence totalling at most 18 MB and 100 files for one pack.",
-          );
-        const entries: Array<{ name: string; body: Buffer }> = [];
-        const manifestFiles = [];
-        for (const f of files) {
-          const object = await getObject(f.storageKey);
-          if (!object)
-            throw new GovernanceError(
-              "A selected evidence file is unavailable. Restore it or update the pack selection.",
-            );
-          const body = Buffer.from(object.body),
-            checksum = createHash("sha256").update(body).digest("hex"),
-            name = `evidence/${f.id}-${f.filename.replace(/[^A-Za-z0-9._ -]/g, "_")}`;
-          if (f.checksum && checksum !== f.checksum)
-            throw new GovernanceError(
-              "An evidence file failed verification. Restore the original before freezing.",
-            );
-          entries.push({ name, body });
-          manifestFiles.push({
-            id: f.id,
-            name,
-            checksum,
-            size: body.length,
-            url: `/api/files/${f.id}`,
-          });
-        }
+        const { entries, manifestFiles } = await collectPackEvidence(files);
         const frozenAt = new Date();
         const snapshot = {
           version: 1,
