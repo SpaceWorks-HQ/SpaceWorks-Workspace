@@ -43,23 +43,23 @@ writeFileSync(path.join(target, "lib/db.ts"), `import type { PrismaClient } from
 // Only named pure exports and their local dependencies are copied. The build
 // trace check remains a separate defence against introducing persistence here.
 const pureExports = JSON.parse(readFileSync(path.join(target, 'pure-exports.json'), 'utf8'));
-const moduleFile = (module) => existsSync(path.join(root, module + '.ts')) ? module + '.ts' : module + '/index.ts';
-const pureFacade = (module) => `@/lib/frontend/pure/${module.replaceAll('/','-')}`;
+const moduleFile = (modulePath) => existsSync(path.join(root, modulePath + '.ts')) ? modulePath + '.ts' : modulePath + '/index.ts';
+const pureFacade = (modulePath) => `@/lib/frontend/pure/${modulePath.replaceAll('/','-')}`;
 // Split modules re-export helpers from sibling files (AGENTS.md 300-line limit).
 // Follow `export { name } from "./file"` to the defining module and facade it too.
 const pureReexports = {};
 for (const queue = Object.keys(pureExports); queue.length;) {
-  const module = queue.shift();
-  const syntax = ts.createSourceFile(module+'.ts', readFileSync(path.join(root, moduleFile(module)), 'utf8'), 99, true);
+  const modulePath = queue.shift();
+  const syntax = ts.createSourceFile(modulePath+'.ts', readFileSync(path.join(root, moduleFile(modulePath)), 'utf8'), 99, true);
   for (const statement of syntax.statements) {
     if (!ts.isExportDeclaration(statement) || !statement.moduleSpecifier || !statement.exportClause || !ts.isNamedExports(statement.exportClause)) continue;
     const specifier = statement.moduleSpecifier.text;
     if (!specifier.startsWith('.') && !specifier.startsWith('@/')) continue;
-    const resolved = specifier.startsWith('@/') ? specifier.slice(2) : path.posix.normalize(path.posix.join(path.posix.dirname(module), specifier)).replace(/\.tsx?$/, '');
+    const resolved = specifier.startsWith('@/') ? specifier.slice(2) : path.posix.normalize(path.posix.join(path.posix.dirname(modulePath), specifier)).replace(/\.tsx?$/, '');
     for (const element of statement.exportClause.elements) {
-      if (!pureExports[module].includes(element.name.text)) continue;
+      if (!pureExports[modulePath].includes(element.name.text)) continue;
       const original = element.propertyName?.text ?? element.name.text;
-      (pureReexports[module] ??= new Map()).set(element.name.text, `export { ${original === element.name.text ? original : `${original} as ${element.name.text}`} } from ${JSON.stringify(pureFacade(resolved))};`);
+      (pureReexports[modulePath] ??= new Map()).set(element.name.text, `export { ${original === element.name.text ? original : `${original} as ${element.name.text}`} } from ${JSON.stringify(pureFacade(resolved))};`);
       if (!pureExports[resolved]) { pureExports[resolved] = []; queue.push(resolved); }
       if (!pureExports[resolved].includes(original)) pureExports[resolved].push(original);
     }
