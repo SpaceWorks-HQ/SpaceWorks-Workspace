@@ -277,12 +277,67 @@ jobs:
           - \`ghcr.io/$OWNER/spaceworks-workspace-backend:$VERSION\`: application and API; also runs migrations (\`migrate\`) and the VPS tools
           - \`ghcr.io/$OWNER/spaceworks-workspace-frontend:$VERSION\`: the website, for the split layout
 
+          Secrets CLI and Node SDK (\`sww\`), same version:
+
+          \`\`\`bash
+          npm install -g @spaceworks-hq/workspace-cli@$BASE
+          \`\`\`
+
           Built from \`$SHA\`.
           EOF
           )
           gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --target "$SHA" \
             --title "$title" --notes "$notes" --generate-notes "${flags[@]}"
           echo "created=true" >> "$GITHUB_OUTPUT"
+
+  # The secrets CLI and SDK (packages/cli) ship with every main release, at the
+  # release's VERSION: always to GitHub Packages, and to npmjs.com when the
+  # repository has an NPM_TOKEN secret. A version that already exists is skipped.
+  cli-package:
+    needs: [prepare, github-release]
+    if: needs.prepare.outputs.release == 'true' && needs.prepare.outputs.prerelease == 'false'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with: {node-version: 22, cache: npm}
+      - name: Build the CLI at the release version
+        env:
+          BASE: ${{ needs.prepare.outputs.base }}
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npm version "$BASE" --no-git-tag-version --allow-same-version --workspace packages/cli
+          npm run build --workspace packages/cli
+          npm pack --dry-run --workspace packages/cli
+      - name: Publish to GitHub Packages
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BASE: ${{ needs.prepare.outputs.base }}
+        run: |
+          set -euo pipefail
+          printf '@spaceworks-hq:registry=https://npm.pkg.github.com\n//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}\n' > "$RUNNER_TEMP/.npmrc"
+          export NPM_CONFIG_USERCONFIG="$RUNNER_TEMP/.npmrc"
+          if npm view "@spaceworks-hq/workspace-cli@$BASE" version >/dev/null 2>&1; then echo "Already on GitHub Packages."; exit 0; fi
+          npm publish --workspace packages/cli --ignore-scripts
+      - name: Publish to npmjs.com
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          BASE: ${{ needs.prepare.outputs.base }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$NODE_AUTH_TOKEN" ]]; then echo "No NPM_TOKEN secret; skipping npmjs.com."; exit 0; fi
+          printf '//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}\n' > "$RUNNER_TEMP/.npmrc-public"
+          export NPM_CONFIG_USERCONFIG="$RUNNER_TEMP/.npmrc-public"
+          if npm view "@spaceworks-hq/workspace-cli@$BASE" version --registry https://registry.npmjs.org >/dev/null 2>&1; then echo "Already on npmjs.com."; exit 0; fi
+          npm publish --workspace packages/cli --ignore-scripts --provenance --access public --registry https://registry.npmjs.org
 
   # Automatic deploys, for this workspace: a self-hosted runner on the VPS (see
   # scripts/install-runner.sh) updates it to each published release. Opt-in with
