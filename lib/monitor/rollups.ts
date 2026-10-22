@@ -92,7 +92,7 @@ export async function runRetention(now: Date, options: { force?: boolean } = {})
   const totals = { checks: 0, hourly: 0, daily: 0, metrics: 0, pings: 0 };
   for (const ws of workspaces) {
     const counts = await prisma.$transaction(async tx => {
-      const [locked] = await tx.$queryRaw<Array<{ legalHold: boolean; monitorRetentionDays: number }>>`SELECT "legalHold", "monitorRetentionDays" FROM "Workspace" WHERE id=${ws.id} FOR UPDATE`;
+      const [locked] = await tx.$queryRaw<Array<{ legalHold: boolean; monitorRetentionDays: number }>>`SELECT "legalHold", "monitorRetentionDays" FROM "Workspace" WHERE id=${ws.id} FOR NO KEY UPDATE`;
       if (!locked || locked.legalHold) return null;
       const policy = await tx.retentionPolicy.findUnique({ where: { workspaceId_entityType: { workspaceId: ws.id, entityType: "monitor_results" } } });
       const days = Math.max(locked.monitorRetentionDays, policy?.keepDays ?? 0);

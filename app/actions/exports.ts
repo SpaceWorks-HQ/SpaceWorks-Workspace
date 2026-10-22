@@ -23,7 +23,7 @@ export async function requestWorkspaceExport(
     return actionError("You don't have access to request this export.");
   try {
     await prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${ctx.workspace.id} FOR UPDATE`;
+      await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${ctx.workspace.id} FOR NO KEY UPDATE`;
       if (
         await tx.exportJob.count({
           where: {
@@ -128,7 +128,7 @@ export async function saveWorkspaceShellSettings(
   if (!ctx || !parsed.success)
     return actionError("Enter a valid locale and try again.");
   await prisma.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${ctx.workspace.id} FOR UPDATE`;
+    await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${ctx.workspace.id} FOR NO KEY UPDATE`;
     await tx.workspace.update({
       where: { id: ctx.workspace.id },
       data: parsed.data,

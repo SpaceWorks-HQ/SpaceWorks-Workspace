@@ -28,7 +28,7 @@ export async function purgeWorkspace(workspaceId: string, now: Date) {
     async (tx) => {
       const rows = await tx.$queryRaw<
         Array<{ legalHold: boolean; monitorRetentionDays: number }>
-      >`SELECT "legalHold", "monitorRetentionDays" FROM "Workspace" WHERE id=${workspaceId} FOR UPDATE`;
+      >`SELECT "legalHold", "monitorRetentionDays" FROM "Workspace" WHERE id=${workspaceId} FOR NO KEY UPDATE`;
       if (!rows[0] || rows[0].legalHold) return 0;
       const policies = await tx.retentionPolicy.findMany({
         where: { workspaceId },

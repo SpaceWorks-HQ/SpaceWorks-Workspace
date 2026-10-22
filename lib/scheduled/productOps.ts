@@ -10,7 +10,7 @@ export async function run(now = new Date()) {
   if (!workspaces.length) break;
   for (const workspace of workspaces) {
    const results = await prisma.$transaction(async tx => {
-    await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${workspace.id} FOR UPDATE`;
+    await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${workspace.id} FOR NO KEY UPDATE`;
     if (!await tx.workspace.findFirst({ where: { id: workspace.id, archivedAt: null } })) return [];
     const today = new Intl.DateTimeFormat("en-CA", { timeZone: workspace.timezone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
     const records = await tx.productRecord.findMany({ where: { workspaceId: workspace.id, archivedAt: null, dueOn: { not: null }, status: { notIn: ["DONE", "SHIPPED", "CLOSED", "RESOLVED", "PASSED", "PASS", "FAIL", "COMPLETE", "APPLIED", "ROLLED_BACK", "READY"] } }, orderBy: { id: "asc" } });

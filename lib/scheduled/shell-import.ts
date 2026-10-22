@@ -24,7 +24,7 @@ export async function processImport(now: Date): Promise<boolean> {
       >`SELECT * FROM "ImportJob" WHERE status='QUEUED' ORDER BY "createdAt" LIMIT 1 FOR UPDATE SKIP LOCKED`;
       const job = jobs[0];
       if (!job) return false;
-      await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${job.workspaceId} FOR UPDATE`;
+      await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${job.workspaceId} FOR NO KEY UPDATE`;
       const member = job.requestedById
         ? await tx.membership.findFirst({
             where: {

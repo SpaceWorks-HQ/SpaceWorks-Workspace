@@ -58,7 +58,7 @@ export async function run(now = new Date()) {
         }
       }
       const events = await prisma.$transaction(async (tx) => {
-        await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${ws.id} AND "archivedAt" IS NULL FOR UPDATE`;
+        await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${ws.id} AND "archivedAt" IS NULL FOR NO KEY UPDATE`;
         if (
           !(await tx.workspace.count({
             where: { id: ws.id, archivedAt: null },

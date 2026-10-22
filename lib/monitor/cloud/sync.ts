@@ -24,7 +24,7 @@ export async function syncConnection(connection: CloudConnection, now: Date, ada
       if (resource.status === "UNHEALTHY" && previous?.status !== "UNHEALTHY") await dispatch(workspaceId, { type: "cloud.resource_unhealthy", title: `${resource.name} is unhealthy`, scope: { cloudConnectionId: connection.id }, resource: { type: "cloud_resource", id: row.id }, dedupeKey: `resource:${row.id}:${now.toISOString()}`, data: { connectionId: connection.id, resourceId: row.id, status: resource.status } });
       await refreshCatalogueStatus(workspaceId, row.id, "CLOUD_RESOURCE");
       if (ctx.config.autoCreateMonitors === true) await prisma.$transaction(async tx => {
-        await tx.$queryRaw`SELECT "id" FROM "Workspace" WHERE "id" = ${workspaceId} FOR UPDATE`;
+        await tx.$queryRaw`SELECT "id" FROM "Workspace" WHERE "id" = ${workspaceId} FOR NO KEY UPDATE`;
         if (await tx.monitor.findFirst({ where: { workspaceId, cloudResourceId: row.id } })) return;
         const cap = Math.max(1, Number.parseInt(process.env.MONITOR_MAX_PER_WORKSPACE ?? "100", 10) || 100);
         if (await tx.monitor.count({ where: { workspaceId } }) >= cap) return;

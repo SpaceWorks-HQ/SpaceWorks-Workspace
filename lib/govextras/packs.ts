@@ -21,7 +21,7 @@ export async function freezePack(actor: Actor, id: string) {
   try {
     return await prisma.$transaction(
       async (tx) => {
-        await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${actor.workspace.id} FOR UPDATE`;
+        await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${actor.workspace.id} FOR NO KEY UPDATE`;
         await assertActor(actor, tx);
         const row = await tx.governanceRecord.findFirst({
           where: {

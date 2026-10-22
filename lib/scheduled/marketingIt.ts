@@ -10,7 +10,7 @@ export async function run(now: Date) {
   if (!workspaces.length) break;
   for (const ws of workspaces) {
    const events = await prisma.$transaction(async tx => {
-    await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${ws.id} AND "archivedAt" IS NULL FOR UPDATE`;
+    await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${ws.id} AND "archivedAt" IS NULL FOR NO KEY UPDATE`;
     if (!await tx.workspace.findFirst({ where: { id: ws.id, archivedAt: null } })) return [];
     const members = await tx.membership.findMany({ where: { workspaceId: ws.id, status: "ACTIVE", user: { disabledAt: null }, role: { in: ["OWNER", "ADMIN", "MEMBER"] } }, select: { userId: true, role: true } });
     const admins = members.filter(m => m.role !== "MEMBER").map(m => m.userId);

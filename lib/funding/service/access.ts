@@ -35,6 +35,6 @@ export async function assertActor(actor: Actor, tx: Tx = prisma) {
   );
 }
 export async function lock(actor: Actor, tx: Tx) {
-  await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${actor.workspace.id} FOR UPDATE`;
+  await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${actor.workspace.id} FOR NO KEY UPDATE`;
   await assertActor(actor, tx);
 }

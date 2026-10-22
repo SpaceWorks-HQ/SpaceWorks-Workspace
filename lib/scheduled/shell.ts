@@ -25,7 +25,7 @@ export async function run(now: Date): Promise<void> {
     await prisma.$transaction(async (tx) => {
       const rows = await tx.$queryRaw<
         Array<{ legalHold: boolean }>
-      >`SELECT "legalHold" FROM "Workspace" WHERE id=${job.workspaceId} FOR UPDATE`;
+      >`SELECT "legalHold" FROM "Workspace" WHERE id=${job.workspaceId} FOR NO KEY UPDATE`;
       if (rows[0]?.legalHold) return;
       await deleteObjects([job.storageKey!]);
       await tx.exportJob.updateMany({

@@ -12,7 +12,7 @@ export async function currentActor(actor: Actor, tx: Tx = prisma): Promise<Actor
  return { ...actor, membership: member };
 }
 export async function lock(actor: Actor, tx: Tx) {
- await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${actor.workspace.id} FOR UPDATE`;
+ await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${actor.workspace.id} FOR NO KEY UPDATE`;
  return currentActor(actor, tx);
 }
 export async function projectWhere(actor: Actor): Promise<Prisma.ProjectWhereInput> {

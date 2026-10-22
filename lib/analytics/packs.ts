@@ -140,7 +140,7 @@ export async function generatePack(
   try {
     return await prisma.$transaction(
       async (tx) => {
-        await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${actor.workspace.id} FOR UPDATE`;
+        await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${actor.workspace.id} FOR NO KEY UPDATE`;
         const a = await analyticsAccess(actor, tx);
         if (!a.admin) throw new AnalyticsError("That report is unavailable.");
         const preset = await tx.analyticsPreset.findFirst({

@@ -11,7 +11,7 @@ export async function run(now: Date) {
     if (!workspaces.length) break;
     for (const workspace of workspaces) {
       const results = await prisma.$transaction(async tx => {
-        await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${workspace.id} AND "archivedAt" IS NULL FOR UPDATE`;
+        await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${workspace.id} AND "archivedAt" IS NULL FOR NO KEY UPDATE`;
         if (!await tx.workspace.findFirst({ where: { id: workspace.id, archivedAt: null }, select: { id: true } })) return [];
         const rows = await tx.fundingRecord.findMany({ where: { workspaceId: workspace.id, archivedAt: null } });
         const gifts = rows.filter(r => r.kind === "DONATION");

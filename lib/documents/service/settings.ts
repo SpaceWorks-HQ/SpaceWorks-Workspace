@@ -48,7 +48,7 @@ export async function saveSettings(actor: DocumentsActor, raw: unknown) {
   const profile = profileSchema.parse(raw);
   return prisma.$transaction(async (tx) => {
     await lockDocuments(tx, actor.workspace.id);
-    await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${actor.workspace.id} FOR UPDATE`;
+    await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${actor.workspace.id} FOR NO KEY UPDATE`;
     await documentsAccess(actor, undefined, tx);
     const { entity, details } = await getSettings(actor, tx);
     if (!entity)

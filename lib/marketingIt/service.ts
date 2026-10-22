@@ -14,7 +14,7 @@ export async function currentActor(actor: Actor, tx: Tx = prisma): Promise<Actor
  ensure(membership && canUseMarketingOperations(membership), "You don't have access to do that.");
  return { ...actor, membership };
 }
-export async function lock(actor: Actor, tx: Tx) { await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${actor.workspace.id} FOR UPDATE`; return currentActor(actor, tx); }
+export async function lock(actor: Actor, tx: Tx) { await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${actor.workspace.id} FOR NO KEY UPDATE`; return currentActor(actor, tx); }
 export function canRead(actor: Actor, row: Pick<MarketingItRecord, "kind" | "status" | "ownerId" | "details" | "archivedAt">) {
  if (!canUseMarketingOperations(actor.membership)) return false;
  if (canManageItAdministration(actor.membership)) return true;

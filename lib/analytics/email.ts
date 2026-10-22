@@ -26,7 +26,7 @@ export async function queueMonthlyReport(
   try {
     return await prisma.$transaction(
       async (tx) => {
-        await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${a.workspace.id} FOR UPDATE`;
+        await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${a.workspace.id} FOR NO KEY UPDATE`;
         const live = await analyticsAccess(actor, tx);
         if (!live.admin)
           throw new AnalyticsError("That report is unavailable.");

@@ -33,7 +33,7 @@ export async function issueDocument(
         select: { sourceType: true },
       });
       if (candidate?.sourceType === "FUNDING")
-        await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${actor.workspace.id} FOR UPDATE`;
+        await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${actor.workspace.id} FOR NO KEY UPDATE`;
       await lockDocuments(tx, actor.workspace.id);
       const row = await getDocument(actor, id, tx);
       if (row.status === "ISSUED") return row.id;
