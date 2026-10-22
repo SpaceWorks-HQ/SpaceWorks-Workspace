@@ -183,10 +183,16 @@ export function buildSearchQuery(
 ) {
   const query = normaliseSearch(input);
   const pattern = `%${query.replace(/[\\%_]/g, "\\$&")}%`;
-  return Prisma.sql`SELECT d.id, d."entityType", d."entityId", d.title, d.url,
+  // Match text first, then authorise only the matches: the per-type access
+  // checks are correlated subqueries and must not run over the whole index.
+  return Prisma.sql`WITH matches AS MATERIALIZED (
+      SELECT * FROM "SearchDocument" m WHERE m."workspaceId"=${actor.workspaceId}
+      AND (${type ? Prisma.sql`m."entityType"=${type}` : Prisma.sql`TRUE`})
+      AND (m."searchVector" @@ websearch_to_tsquery('simple', ${query}) OR m.title ILIKE ${pattern} OR similarity(m.title, ${query}) > 0.2)
+    )
+    SELECT d.id, d."entityType", d."entityId", d.title, d.url,
     (ts_rank(d."searchVector", websearch_to_tsquery('simple', ${query})) + similarity(d.title, ${query}))::float8 AS rank
-    FROM "SearchDocument" d WHERE ${accessSql(actor)} AND (${type ? Prisma.sql`d."entityType"=${type}` : Prisma.sql`TRUE`})
-    AND (d."searchVector" @@ websearch_to_tsquery('simple', ${query}) OR d.title ILIKE ${pattern} OR similarity(d.title, ${query}) > 0.2)
+    FROM matches d WHERE ${accessSql(actor)}
     ORDER BY rank DESC, d."updatedAt" DESC, d.id LIMIT 50 OFFSET ${Math.max(0, Math.min(offset, 500))}`;
 }
 async function readableFile(actor: SearchActor, id: string) {
