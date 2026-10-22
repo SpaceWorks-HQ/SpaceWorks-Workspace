@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.6] - 2026-10-23
+
+### Changed
+
+- Development tooling updated to clear dependency advisories: vitest and its coverage plugin 4.1.12 (with vite 8.3.5), brace-expansion 1.1.21 and 5.0.12, and eslint-config-next 16.4.2 to match Next.js.
+
 ## [0.6.5] - 2026-10-22
 
 ### Added
@@ -29,6 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Workspace row locks no longer block foreign-key inserts in other connections.
 - The demo seed runs on a fresh database and can be re-run.
 - `sanitize-html` updated to clear a moderate advisory.
+- Global search matches text before running per-record access checks, so workspaces with many records and secrets search quickly.
+- Closing a poll while a vote arrives no longer fails: serializable retries back off instead of colliding.
 
 ## [0.1.0] - 2026-10-20
 
