@@ -1,92 +1,286 @@
 #!/usr/bin/env bash
-# Space Works Workspace installer for a Linux VPS.
-#
-#   curl -fsSL https://raw.githubusercontent.com/SpaceWorks-HQ/SpaceWorks-Workspace/<ref>/install.sh -o install.sh
-#   sudo bash install.sh --ref <reviewed-commit-or-tag>
-#
-# Resolves the ref to one commit, downloads that exact source tarball into
-# <directory>/releases/<commit>, then runs its guided setup (first install) or
-# its updater (--update). <directory>/current points at the active release
-# only after setup or the update succeeded.
-#
-# Options:
-#   --ref REF            commit, tag or branch to install (default: main)
-#   --directory DIR      installation directory (default: /opt/spaceworks-workspace)
-#   --update             upgrade an existing installation, keeping its configuration
-#   --repository O/R     GitHub repository (default: SpaceWorks-HQ/SpaceWorks-Workspace)
-# A private repository needs a read-only token in SWW_GITHUB_TOKEN (fine-grained,
-# "Contents: read"); it is sent only to api.github.com and never stored.
-# Unattended (cloud-init): SWW_NONINTERACTIVE=1 plus the answers listed in
-# scripts/setup-vps.sh.
+# Space Works Workspace VPS installer:
+#   curl -fsSL https://raw.githubusercontent.com/SpaceWorks-HQ/SpaceWorks-Workspace/main/install.sh | bash
+# Installs the latest GitHub Release (or --release TAG) with its published
+# container images, or builds a branch or commit from source with --ref. It
+# downloads that source into temporary storage and runs its guided setup, which
+# asks every question first and changes nothing until you confirm. Run it again
+# to update, back up or check the installation. It is fetched alone, so it is
+# self-contained.
 set -euo pipefail
 set +x
-ref=main
-install_dir=/opt/spaceworks-workspace
-repository=SpaceWorks-HQ/SpaceWorks-Workspace
-update=0
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --ref) ref=${2:?Provide a reviewed commit or tag}; shift 2 ;;
-    --directory) install_dir=${2:?Provide an absolute installation directory}; shift 2 ;;
-    --repository) repository=${2:?Provide OWNER/REPOSITORY}; shift 2 ;;
-    --update) update=1; shift ;;
-    --help) sed -n '2,22p' "$0"; exit 0 ;;
-    *) echo "Unknown option: $1" >&2; exit 1 ;;
-  esac
-done
-[[ "$ref" =~ ^[A-Za-z0-9][A-Za-z0-9._/-]{0,150}$ && "$ref" != *..* ]] || { echo 'Invalid release reference.' >&2; exit 1; }
-[[ "$repository" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || { echo 'Invalid repository.' >&2; exit 1; }
-[[ "$install_dir" = /* && "$install_dir" != / && "$install_dir" != *[[:space:]:]* ]] || { echo 'Use an absolute installation directory without spaces or colons.' >&2; exit 1; }
-if [[ "${SWW_NONINTERACTIVE:-0}" != 1 && ! -t 0 ]]; then
-  # Piped into bash: the script arrives on stdin, so prompts read the terminal.
-  exec </dev/tty || { echo 'No terminal available. Set SWW_NONINTERACTIVE=1 for unattended installs.' >&2; exit 1; }
-fi
-for dependency in curl tar sed; do command -v "$dependency" >/dev/null || { echo "Install $dependency first." >&2; exit 1; }; done
-[[ $(uname -s) = Linux ]] || { echo 'Run this installer on the Linux server.' >&2; exit 1; }
-[[ ! -e "$install_dir/current" || "$update" = 1 ]] || { echo 'An installation exists here. Use --update to upgrade it.' >&2; exit 1; }
-[[ -e "$install_dir/current" || "$update" = 0 ]] || { echo "No installation at $install_dir to update." >&2; exit 1; }
 
-token=${SWW_GITHUB_TOKEN:-}
-github() {
-  # The token travels in a curl config on a file descriptor, never in argv.
-  if [[ -n "$token" ]]; then
-    curl --fail --show-error --silent --location --proto '=https' --config <(printf 'header = "Authorization: Bearer %s"\n' "$token") "$@"
-  else
-    curl --fail --show-error --silent --location --proto '=https' "$@"
-  fi
+show_guide() {
+  cat <<'EOF'
+
+Space Works Workspace installer - the private community workspace on one Linux server.
+
+What you need
+  - A 64-bit (x86_64 or arm64) Linux server: Ubuntu/Debian, Fedora/RHEL/Alma/Rocky,
+    Arch or openSUSE, with 2 GB memory (swap is offered on smaller plans; a
+    source build with --ref needs 4 GB) and at least 10 GB free disk.
+  - root, or a user with sudo. Docker and Docker Compose are installed if missing.
+  - A hostname whose DNS A record points at this server, with ports 80 and 443 open.
+  - An SMTP relay on a verified sending domain (Brevo, Amazon SES, Postmark...).
+  - Your super-admin email address.
+
+What it does
+  1. Checks this server and downloads the latest release into temporary storage.
+  2. Asks every question, shows a summary and waits for your confirmation.
+  3. Installs to /opt/spaceworks-workspace with secrets in /etc/spaceworks-workspace,
+     downloads the release's backend and frontend images from GitHub Packages
+     and starts them with PostgreSQL, Redis, Silo object storage and Caddy
+     HTTPS. The backend image also runs the migrations and worker + beat.
+  4. Optionally: nightly encrypted backups with off-site copies, a firewall,
+     automatic security updates and automatic deploys of new releases.
+  Run the same command later to update, back up, check, change settings,
+  recover super-admin access, collect a support bundle or uninstall.
+
+Options
+  --release TAG install or update to this release (default: the latest release)
+  --ref REF     build a branch, tag or commit from source instead of a release
+  --repo O/N    install from a fork (default: SpaceWorks-HQ/SpaceWorks-Workspace)
+  --dir PATH    installation directory (default: /opt/spaceworks-workspace)
+  --update      update an existing installation without the menu
+  --help        show this guide and exit
+EOF
 }
 
-# Resolve once, so the archive and the version label always name one commit.
-revision=$(github --header 'Accept: application/vnd.github.sha' "https://api.github.com/repos/$repository/commits/$ref") \
-  || { echo 'Could not resolve the release. For a private repository, set SWW_GITHUB_TOKEN.' >&2; exit 1; }
-[[ "$revision" =~ ^[a-f0-9]{40}$ ]] || { echo 'Could not resolve the release commit.' >&2; exit 1; }
-printf 'Space Works Workspace release: %s (%s)\nInstall directory: %s\n' "$revision" "$ref" "$install_dir"
-if [[ "${SWW_NONINTERACTIVE:-0}" != 1 ]]; then
-  read -r -p 'Download this release and continue? [y/N]: ' proceed
-  [[ "$proceed" = y || "$proceed" = Y ]] || exit 0
-fi
+say() { printf '[Space Works Workspace] %s\n' "$*"; }
+die() { printf '[Space Works Workspace] ERROR: %s\n' "$*" >&2; exit 1; }
+usage() { die 'Usage: install.sh [--release TAG | --ref REF] [--repo OWNER/NAME] [--dir PATH] [--update] [--help]'; }
+as_root() { ${SUDO[@]+"${SUDO[@]}"} "$@"; }
+# Children never read the curl pipe: their questions come from the terminal.
+run_root() { as_root "${RUN_ENV[@]}" "$@" </dev/null; }
+prompt() {
+  local reply
+  printf '%s' "$1" >/dev/tty
+  IFS= read -r reply </dev/tty || reply=''
+  printf '%s' "${reply%$'\r'}"
+}
+conf_get() {
+  as_root sed -n "s/^$2=//p" "$1/install.conf" 2>/dev/null | tail -n 1 | tr -d "'\r" || true
+}
+# run_tool SCRIPT [ARGS...]: a menu entry, run from the installed release, then exit.
+run_tool() {
+  as_root test -f "$INSTALL_DIR/current/scripts/$1" \
+    || die "This release predates that option. Update first (option 1), then run the installer again."
+  local status=0
+  run_root bash "$INSTALL_DIR/current/scripts/$1" "${@:2}" || status=$?
+  # 2 is a cancellation at a prompt; it already said so.
+  [[ $status = 0 || $status = 2 ]] || exit "$status"
+  exit 0
+}
+github() {
+  if [[ -n "${SWW_GITHUB_TOKEN:-}" ]]; then
+    printf 'header = "Authorization: Bearer %s"\n' "$SWW_GITHUB_TOKEN" | curl --config - --fail --silent --show-error --location --proto '=https' "$@"
+  else curl --fail --silent --show-error --location --proto '=https' "$@"; fi
+}
+commit_of() {
+  github --header 'Accept: application/vnd.github.sha' "https://api.github.com/repos/$1/commits/$2"
+}
 
-release_dir="$install_dir/releases/$revision"
-if [[ ! -e "$release_dir" ]]; then
-  scratch=$(mktemp -d)
-  trap 'rm -rf "$scratch"' EXIT
-  github "https://api.github.com/repos/$repository/tarball/$revision" -o "$scratch/source.tar.gz"
-  mkdir "$scratch/source"
-  tar -xzf "$scratch/source.tar.gz" -C "$scratch/source" --strip-components=1
-  printf '%s\n' "$revision" > "$scratch/source/.release"
-  mkdir -p "$install_dir/releases"
-  mv "$scratch/source" "$release_dir"
-else
-  echo 'This release was downloaded before; reusing it.'
-fi
+# Everything runs from main, so under `curl | bash` the whole script has been
+# read before any child process could consume the rest of the pipe.
+main() {
+  local repository=${SWW_REPOSITORY:-} ref=${SWW_REF:-} release=${SWW_RELEASE_TAG:-} install_dir=${SWW_DIR:-/opt/spaceworks-workspace}
+  local action='' installed='' installed_version='' pending='' config_dir='' choice='' revision='' version='' status=0 file=''
+  while (($# > 0)); do
+    case "$1" in
+      -h|--help) show_guide; exit 0 ;;
+      --ref) (($# > 1)) || usage; ref=$2; shift ;;
+      --ref=*) ref=${1#--ref=} ;;
+      --release) (($# > 1)) || usage; release=$2; shift ;;
+      --release=*) release=${1#--release=} ;;
+      --repo) (($# > 1)) || usage; repository=$2; shift ;;
+      --repo=*) repository=${1#--repo=} ;;
+      --dir) (($# > 1)) || usage; install_dir=$2; shift ;;
+      --dir=*) install_dir=${1#--dir=} ;;
+      --update) action=update ;;
+      *) usage ;;
+    esac
+    shift
+  done
+  [[ -z "$ref" || -z "$release" ]] || die 'Choose either --release or --ref, not both.'
+  [[ -z "$ref" || ( "$ref" =~ ^[A-Za-z0-9][A-Za-z0-9._/-]{0,150}$ && "$ref" != *..* ) ]] || die 'Invalid source reference.'
+  [[ -z "$release" || "$release" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-[a-z0-9-]+\.[0-9]+\.[0-9a-f]{12}$ ]] || die 'Invalid release tag.'
+  install_dir=${install_dir%/}
+  [[ "$install_dir" = /* && -n "${install_dir#/}" && "$install_dir" != *[[:space:]:\'\"]* ]] \
+    || die 'Use an absolute installation directory without spaces, quotes or colons.'
+  INSTALL_DIR=$install_dir
+  if [[ -n "${SWW_CONFIG_DIR:-}" ]]; then
+    [[ "$SWW_CONFIG_DIR" = /* && "$SWW_CONFIG_DIR" != / && "$SWW_CONFIG_DIR" != *[[:space:]:\'\"]* ]] \
+      || die 'SWW_CONFIG_DIR must be an absolute path without spaces, quotes or colons.'
+  fi
 
-export SWW_INSTALL_DIR=$install_dir
-if [[ "$update" = 1 ]]; then
-  SWW_PREVIOUS_RELEASE=$(readlink -f "$install_dir/current") bash "$release_dir/scripts/update-vps.sh"
-else
-  bash "$release_dir/scripts/setup-vps.sh"
-fi
-ln -sfn "$release_dir" "$install_dir/current.new"
-mv -Tf "$install_dir/current.new" "$install_dir/current"
-printf '\nActive release: %s/current -> %s\n' "$install_dir" "$revision"
-echo "Operator commands run from $install_dir/current (scripts/vps-compose.sh, vps-backup.sh, ...)."
+  [[ -z "${SWW_GITHUB_TOKEN:-}" || "$SWW_GITHUB_TOKEN" =~ ^[A-Za-z0-9_]+$ ]] || die 'Invalid SWW_GITHUB_TOKEN.'
+  export SWW_GITHUB_TOKEN
+  show_guide
+  [[ $(uname -s) = Linux ]] || die 'Run this on the Linux server that will host Space Works Workspace.'
+  case $(uname -m) in
+    x86_64|amd64|aarch64|arm64) ;;
+    *) die "Unsupported architecture $(uname -m); use an x86_64 or arm64 server." ;;
+  esac
+  for file in curl tar; do
+    command -v "$file" >/dev/null || die "Install $file first, then rerun."
+  done
+  { : </dev/tty; } 2>/dev/null || die 'An interactive terminal is required (for SSH, use ssh -t).'
+  SUDO=()
+  if [[ $(id -u) != 0 ]]; then
+    command -v sudo >/dev/null || die 'Run this as root, or install sudo.'
+    SUDO=(sudo)
+    [[ -z "${SWW_GITHUB_TOKEN:-}" ]] || SUDO+=("--preserve-env=SWW_GITHUB_TOKEN,SWW_GITHUB_USER")
+    say 'Installation steps run as root; sudo may ask for your password.'
+  fi
+
+  if as_root test -L "$install_dir/current"; then
+    installed=$(basename "$(as_root readlink -f "$install_dir/current")")
+    # compose.env records what actually runs (a failed update leaves it unchanged).
+    config_dir=${SWW_CONFIG_DIR:-$(conf_get "$install_dir" SWW_CONFIG_DIR)}
+    installed_version=$(as_root sed -n "s/^SWW_VERSION=//p" "${config_dir:-/etc/spaceworks-workspace}/compose.env" 2>/dev/null \
+      | tail -n 1 | tr -d "'\r" || true)
+    installed_version=${installed_version:-vps-${installed:0:12}}
+  fi
+  if as_root test -f "$install_dir/install.conf"; then pending=$(conf_get "$install_dir" SWW_PENDING_RELEASE); fi
+  repository=${repository:-$(conf_get "$install_dir" SWW_REPOSITORY)}
+  # A fresh install asks once, so a fork installs without knowing --repo.
+  if [[ -z "$repository" && -z "$installed" && -z "$pending" && "$action" != update ]]; then
+    repository=$(prompt "
+Install from which GitHub repository? Press Enter for the official one.
+Repository [SpaceWorks-HQ/SpaceWorks-Workspace]: ")
+  fi
+  repository=${repository:-SpaceWorks-HQ/SpaceWorks-Workspace}
+  [[ "$repository" =~ ^[A-Za-z0-9]([A-Za-z0-9-]{0,37}[A-Za-z0-9])?/[A-Za-z0-9_.-]{1,100}$ && "$repository" != */. && "$repository" != */.. ]] \
+    || die 'The repository must be a GitHub owner/name.'
+  RUN_ENV=(env "SWW_DIR=$install_dir" "SWW_REPOSITORY=$repository")
+  [[ -z "${SWW_CONFIG_DIR:-}" ]] || RUN_ENV+=("SWW_CONFIG_DIR=$SWW_CONFIG_DIR")
+  # LAN and test installs whose hostnames are not public: Caddy's local CA.
+  [[ "${SWW_CADDY_TLS:-}" != internal ]] || RUN_ENV+=(SWW_CADDY_TLS=internal)
+
+  if [[ -n "$installed" ]]; then
+    if [[ -z "$action" ]]; then
+      choice=$(prompt "
+Space Works Workspace $installed_version is installed in $install_dir.
+What do you want to do?
+  1) Update to the latest release - backs up the database first, keeps your settings and data
+  2) Back up now - database, configuration and uploads
+  3) Check status and health
+  4) Backups - nightly schedule, encryption and off-site copies
+  5) Change settings - hostnames, outgoing email or bucket credentials
+  6) Server security - firewall, automatic security updates and fail2ban
+  7) Automatic deploys - install or remove the GitHub Actions runner
+  8) Recover super-admin access - lost authenticator or password
+  9) Support bundle - collect checks and logs for troubleshooting
+  10) Uninstall
+  0) Cancel - change nothing
+Choose 0-10 [0]: ")
+      case "${choice:-0}" in
+        1) action=update ;;
+        2) run_tool vps-backup.sh ;;
+        3) run_tool vps-status.sh ;;
+        4) run_tool vps-backup-settings.sh ;;
+        5) run_tool vps-reconfigure.sh ;;
+        6) run_tool vps-harden.sh ;;
+        7)
+          choice=$(prompt "Install or re-register the runner (i), or remove it (r)? [i]: ")
+          case "${choice:-i}" in
+            i|I) run_tool install-runner.sh ;;
+            r|R) run_tool install-runner.sh --remove ;;
+            *) die 'Invalid choice. Nothing was changed.' ;;
+          esac ;;
+        8) run_tool vps-recover.sh ;;
+        9) run_tool vps-support.sh ;;
+        10) run_tool vps-uninstall.sh ;;
+        0) say 'Cancelled. Nothing was changed.'; exit 0 ;;
+        *) die 'Invalid choice. Nothing was changed.' ;;
+      esac
+    fi
+  elif [[ -n "$pending" ]]; then
+    if ! [[ "$pending" =~ ^[a-f0-9]{40}$ ]] || ! as_root test -f "$install_dir/releases/$pending/scripts/setup-vps.sh"; then
+      die "$install_dir/install.conf names an unfinished release that is missing. Repair it by hand."
+    fi
+    config_dir=${SWW_CONFIG_DIR:-$(conf_get "$install_dir" SWW_CONFIG_DIR)}
+    if as_root test -f "${config_dir:-/etc/spaceworks-workspace}/compose.env"; then
+      choice=$(prompt "
+A previous setup of commit ${pending:0:12} in $install_dir did not finish; its secrets exist.
+  1) Resume - start it, keeping those secrets
+  2) Cancel - change nothing
+Choose 1-2 [1]: ")
+      case "${choice:-1}" in
+        1) run_root bash "$install_dir/releases/$pending/scripts/setup-vps.sh" --resume; exit 0 ;;
+        2) say 'Cancelled. Nothing was changed.'; exit 0 ;;
+        *) die 'Invalid choice. Nothing was changed.' ;;
+      esac
+    fi
+    choice=$(prompt "
+A previous setup of commit ${pending:0:12} in $install_dir stopped before generating secrets.
+  1) Continue it - answer the questions again for that commit
+  2) Start over - remove the unfinished copy and download again
+  3) Cancel - change nothing
+Choose 1-3 [1]: ")
+    case "${choice:-1}" in
+      1) run_root bash "$install_dir/releases/$pending/scripts/setup-vps.sh" --resume; exit 0 ;;
+      2) as_root rm -rf -- "$install_dir/releases" "$install_dir/install.conf"; action=install ;;
+      3) say 'Cancelled. Nothing was changed.'; exit 0 ;;
+      *) die 'Invalid choice. Nothing was changed.' ;;
+    esac
+  else
+    [[ "$action" != update ]] || die "There is no installation in $install_dir to update."
+    if as_root test -e "$install_dir" && [[ -n "$(as_root find "$install_dir" -mindepth 1 -maxdepth 1 ! -name .lock -print -quit)" ]]; then
+      die "$install_dir has files but no installation record. Choose another --dir or empty it first."
+    fi
+    action=install
+  fi
+
+  if [[ -n "$ref" ]]; then
+    say "Resolving $ref in $repository; it will be built from source on this server."
+    revision=$(commit_of "$repository" "$ref") || die "Could not find $ref in $repository on GitHub."
+    version="vps-${revision:0:12}"
+  else
+    if [[ -z "$release" ]]; then
+      say "Finding the latest release of $repository."
+      release=$(github "https://api.github.com/repos/$repository/releases/latest" \
+        | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1) \
+        || die "$repository has no published release yet. Install from source with --ref main."
+      [[ "$release" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-[a-z0-9-]+\.[0-9]+\.[0-9a-f]{12}$ ]] \
+        || die "Unexpected latest release '${release:-none}' in $repository. Install from source with --ref main."
+    fi
+    version=${release#v}
+    revision=$(commit_of "$repository" "$release") || die "Could not find release $release in $repository."
+    [[ "${revision:0:12}" = "${version: -12}" ]] || die "Release $release does not point at its own commit."
+  fi
+  [[ "$revision" =~ ^[a-f0-9]{40}$ ]] || die 'GitHub returned an unexpected commit id.'
+  if [[ "$action" = update && "$version" = "$installed_version" ]]; then
+    say "Already on $version. Nothing to update."
+    exit 0
+  fi
+  # Root runs the staged scripts, so only root may write the staging directory.
+  STAGE=$(as_root mktemp -d)
+  trap 'as_root rm -rf -- "$STAGE"' EXIT
+  say "Downloading $version (commit ${revision:0:12}) into temporary storage."
+  if [[ -n "${SWW_GITHUB_TOKEN:-}" ]]; then
+    printf 'header = "Authorization: Bearer %s"\n' "$SWW_GITHUB_TOKEN" | as_root curl --config - --fail --silent --show-error --location --proto '=https' \
+      "https://api.github.com/repos/$repository/tarball/$revision" -o "$STAGE/source.tar.gz"
+  else
+    as_root curl --fail --silent --show-error --location --proto '=https' "https://codeload.github.com/$repository/tar.gz/$revision" -o "$STAGE/source.tar.gz"
+  fi
+  as_root mkdir "$STAGE/source"
+  as_root tar -xzf "$STAGE/source.tar.gz" -C "$STAGE/source" --strip-components=1 --no-same-owner
+  as_root rm -f "$STAGE/source.tar.gz"
+  printf '%s\n' "$revision" | as_root tee "$STAGE/source/.release" >/dev/null
+  # Marks a published release: setup and updates pull its images instead of building.
+  if [[ -z "$ref" ]]; then printf '%s\n' "$version" | as_root tee "$STAGE/source/.release-version" >/dev/null; fi
+  for file in scripts/vps-lib.sh scripts/setup-vps.sh scripts/update-vps.sh scripts/vps-compose.sh compose.production.yml; do
+    as_root test -f "$STAGE/source/$file" || die "Commit ${revision:0:12} has no $file; it predates this installer."
+  done
+  RUN_ENV+=(SWW_STAGED=1)
+  if [[ "$action" = update ]]; then
+    run_root bash "$STAGE/source/scripts/update-vps.sh" || status=$?
+  else
+    run_root bash "$STAGE/source/scripts/setup-vps.sh" || status=$?
+  fi
+  # 2 is a cancellation at the confirmation prompt; it already said so.
+  [[ $status = 0 || $status = 2 ]] || die "Stopped with an error (exit $status). Fix the cause above, then run the installer again."
+}
+
+main "$@"

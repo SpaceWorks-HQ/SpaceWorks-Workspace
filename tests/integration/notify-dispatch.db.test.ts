@@ -23,7 +23,7 @@ let slackDest: string;
 
 const notificationsFor = (userId: string, eventId: string) => prisma.notification.findMany({ where: { userId, eventId } });
 const outboxFor = (deliveryIds: string[]) =>
-  prisma.outboxMessage.findMany({ where: { kind: NOTIFY_DELIVER_KIND, OR: deliveryIds.map((id) => ({ payload: { equals: { deliveryId: id } } })) } });
+  prisma.outboxMessage.findMany({ where: { kind: NOTIFY_DELIVER_KIND, OR: deliveryIds.map((id) => ({ payload: { path: ["deliveryId"], equals: id } })) } });
 
 describe.sequential("notification dispatch", () => {
   beforeAll(async () => {
@@ -113,7 +113,7 @@ describe.sequential("notification dispatch", () => {
   it("routes broadcast events by workspace and scoped rules, expanding in-app destinations inline", async () => {
     const result = await dispatch(workspaceId, {
       type: "monitor.down",
-      title: "Laser booking app is down",
+      title: "Equipment monitor is down",
       url: `/w/${slug}/services`,
       scope: { monitorId: "mon_laser", tags: ["web"] },
       dedupeKey: "monitor:mon_laser:down:inc_1",
@@ -137,7 +137,7 @@ describe.sequential("notification dispatch", () => {
     // The same incident again inside the window is dropped entirely.
     const again = await dispatch(workspaceId, {
       type: "monitor.down",
-      title: "Laser booking app is down",
+      title: "Equipment monitor is down",
       scope: { monitorId: "mon_laser" },
       dedupeKey: "monitor:mon_laser:down:inc_1",
       data: { monitorId: "mon_laser", incidentId: "inc_1", statusCode: 504, error: "TIMEOUT" },
@@ -148,7 +148,7 @@ describe.sequential("notification dispatch", () => {
     // A reminder bypasses dedupe.
     const reminder = await dispatch(workspaceId, {
       type: "monitor.down",
-      title: "Still down: laser booking app",
+      title: "Still down: equipment monitor",
       scope: { monitorId: "mon_laser" },
       dedupeKey: "monitor:mon_laser:down:inc_1",
       reminderOf: result.eventId,
@@ -160,7 +160,7 @@ describe.sequential("notification dispatch", () => {
   it("applies only the scoped rule when the entity opts out of workspace rules", async () => {
     const result = await dispatch(workspaceId, {
       type: "monitor.up",
-      title: "Laser booking app recovered",
+      title: "Equipment monitor recovered",
       scope: { monitorId: "mon_laser" },
       useWorkspaceRules: false,
       data: { monitorId: "mon_laser", incidentId: "inc_1", downtimeSec: 300 },
@@ -209,7 +209,7 @@ describe.sequential("notification dispatch", () => {
     const result = await prisma.$transaction((tx) =>
       dispatch(
         workspaceId,
-        { type: "shoutout.received", title: "Owner gave you a shoutout", actorId: owner, recipients: [member], data: { shoutoutId: "s1", fromUserId: owner } },
+        { type: "task.assigned", title: "Owner assigned a task", actorId: owner, recipients: [member], data: { taskId: "t1", taskNumber: 1, projectId: null } },
         { tx },
       ),
     );
@@ -280,14 +280,13 @@ describe.sequential("notification dispatch", () => {
   });
 
   it("runs notify jobs from the shared outbox worker", async () => {
-    await prisma.outboxMessage.deleteMany({ where: { kind: { not: NOTIFY_DELIVER_KIND } } });
-    await prisma.outboxMessage.updateMany({ where: { kind: NOTIFY_DELIVER_KIND, status: "PENDING" }, data: { availableAt: new Date(Date.now() + 86_400_000) } });
     const test = await sendTest(workspaceId, channelDest, owner);
     const delivery = test.deliveries[0]!;
     expect(delivery.status).toBe("PENDING");
     expect(await prisma.notificationDelivery.findUniqueOrThrow({ where: { id: delivery.id! } })).toMatchObject({ isTest: true });
 
-    await deliverOutboxBatch(100);
+    const jobs = await outboxFor([delivery.id!]);
+    await deliverOutboxBatch(100, { ids: jobs.map(job => job.id) });
     expect(await prisma.notificationDelivery.findUniqueOrThrow({ where: { id: delivery.id! } })).toMatchObject({ status: "SENT" });
     const [job] = await outboxFor([delivery.id!]);
     expect(job!.status).toBe("SENT");

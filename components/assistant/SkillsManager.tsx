@@ -56,7 +56,7 @@ export function SkillsManager({ slug, skills, missingBuiltins }: { slug: string;
       ) : null}
 
       {skills.length === 0 ? (
-        <EmptyState title="No skills yet.">Add the built-in ones above, or write a playbook for something your crew asks often.</EmptyState>
+        <EmptyState patch title="No skills yet.">Add the built-in ones above, or write a playbook for something your crew asks often.</EmptyState>
       ) : (
         <Card padding="none">
           <ul className="divide-y divide-line">

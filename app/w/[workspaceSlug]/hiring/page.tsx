@@ -1,0 +1,20 @@
+import Link from "next/link";
+import { randomUUID } from "node:crypto";
+import { requireWorkspace } from "@/lib/permissions";
+import { hiringData } from "@/lib/opsGaps/hiring";
+import { members } from "@/lib/opsGaps/context";
+import { CANDIDATE_STAGES,ENGAGEMENT_TYPES,pageNumber } from "@/lib/opsGaps/rules";
+import { newHiringOpening,newHiringCandidate } from "@/app/actions/opsGaps";
+import { OpsForm,TextField,LongField,ChoiceField } from "@/components/ops-gaps/Form";
+import { Frame,Panel,Empty,RecordRow,Pager,options,type ListParams } from "@/components/ops-gaps/Shared";
+export default async function HiringPage({params,searchParams}:{params:Promise<{workspaceSlug:string}>;searchParams:ListParams}){
+ const {workspaceSlug}=await params;const actor=await requireWorkspace(workspaceSlug,"ADMIN");const q=await searchParams;const page=pageNumber(q.page);
+ const data=await hiringData(actor,q.status??"",q.q??"",page);const people=(await members(actor)).filter(m=>["OWNER","ADMIN"].includes(m.role)).map(m=>({value:m.userId,label:m.user.name??"Admin"}));const base=`/w/${workspaceSlug}/hiring`;
+ return <Frame title="Hiring" description="Keep openings, candidates and interview decisions together. Only workspace admins can open hiring records.">
+ <a className="inline-flex min-h-11 items-center text-accent-text underline" href={`/w/${workspaceSlug}/people-tools/export/hiring`}>Export candidates CSV</a>
+ <Panel title="Candidates"><form className="mb-5 grid gap-3 sm:grid-cols-3"><TextField name="q" label="Find a candidate" required={false} defaultValue={q.q??""}/><ChoiceField name="status" label="Stage" defaultValue={q.status??""} options={[{value:"",label:"All stages"},...options(CANDIDATE_STAGES)]}/><button className="min-h-11 self-end rounded-control border border-line px-4">Apply filters</button></form>{data.candidates.length?<ul>{data.candidates.map(r=><RecordRow key={r.id} href={`${base}/${r.id}`} title={r.name} status={r.stage}><span>{r.opening.title}</span><span>{r.source||"Source not recorded"}</span><span>{r.dueOn?`Next follow-up ${r.dueOn.toISOString().slice(0,10)}`:"No follow-up date"}</span></RecordRow>)}</ul>:<Empty patch line="No candidates match this view." href="#add-candidate" action="Add a candidate"/>}<Pager base={base} page={page} total={data.total} query={{status:q.status??"",q:q.q??""}}/></Panel>
+ <Panel title="Openings">{data.openings.length?<ul className="space-y-3">{data.openings.map(r=><li key={r.id}><Link className="inline-flex min-h-11 items-center text-accent-text underline" href={`${base}/openings/${r.id}`}>{r.title} · {r.status.toLowerCase()}</Link></li>)}</ul>:<Empty line="No openings yet." href="#add-opening" action="Add an opening"/>}</Panel>
+ <div id="add-candidate"><Panel title="Add a candidate"><OpsForm action={newHiringCandidate.bind(null,workspaceSlug)} submit="Add candidate" hidden={{requestKey:randomUUID()}}><ChoiceField name="openingId" label="Opening" options={data.openings.filter(r=>r.status==="OPEN").map(r=>({value:r.id,label:r.title}))}/><TextField name="name" label="Name"/><TextField name="email" label="Email" type="email" maxLength={254}/><TextField name="phone" label="Phone" type="tel" required={false} maxLength={80}/><TextField name="source" label="Source" required={false}/><ChoiceField name="ownerId" label="Owner" options={people}/><TextField name="dueOn" label="Next follow-up" type="date" required={false}/><LongField name="notes" label="Notes" required={false} maxLength={2000}/><p className="text-sm text-ink-muted">Attach the CV and supporting files after saving.</p></OpsForm></Panel></div>
+ <div id="add-opening"><Panel title="Add an opening"><OpsForm action={newHiringOpening.bind(null,workspaceSlug)} submit="Add opening" hidden={{requestKey:randomUUID()}}><TextField name="title" label="Title"/><LongField name="description" label="Description"/><ChoiceField name="engagementType" label="Engagement" options={options(ENGAGEMENT_TYPES)}/><ChoiceField name="ownerId" label="Owner" options={people}/><TextField name="dueOn" label="Closing date" type="date" required={false}/></OpsForm></Panel></div>
+ </Frame>;
+}

@@ -1,94 +1,35 @@
-# Deploy on Kubernetes (Helm)
+# Kubernetes deployment
 
-[Container images](CONTAINER_IMAGES.md) · [Configuration](CONFIGURATION.md) · [Operations](production-operations.md)
-
-The chart in [`charts/spaceworks-workspace`](../charts/spaceworks-workspace)
-runs the application; PostgreSQL 16, Redis, S3-compatible storage and SMTP are
-external (managed services or operators such as CloudNativePG). It renders:
-
-| Resource | Notes |
-| --- | --- |
-| Deployment `web` | 2 replicas, non-root uid 1001, read-only root filesystem, `/tmp` and `/app/.next/cache` as `emptyDir`, startup/liveness on `/api/health`, readiness on bearer-protected `/api/health/db` |
-| Service, optional Ingress | ClusterIP on port 80 |
-| Job `migrate` | Helm `pre-install,pre-upgrade` hook running the migrator image; a failure blocks the rollout |
-| CronJob `scheduler` | Every minute, `scheduler.mjs --once` from the app image; gets only `CRON_SECRET` |
-| PodDisruptionBudget, optional HPA, ServiceAccount | Token automount off |
-| Optional Secret | Only with `secret.create=true` (evaluation) |
-
-## 1. Images
-
-Use the GHCR images published by CI with an immutable tag (`sha-<12 chars>` or
-a release version), or build and push your own: see
-[Container images](CONTAINER_IMAGES.md). Private registries need an
-`imagePullSecrets` entry.
-
-## 2. Runtime Secret
-
-Create one Secret with every production variable ([Configuration](CONFIGURATION.md));
-`CRON_SECRET` and `HEALTHCHECK_SECRET` must be keys in it. Validate the file
-first, then create the Secret (or manage it with External Secrets / Sealed Secrets):
+Use [the Helm chart](../charts/spaceworks-workspace/README.md). It runs the
+backend image as the whole application, with a one-shot `migrate` Job and a
+worker Deployment and single-replica beat Deployment. Supply external TLS PostgreSQL,
+persistent no-eviction TLS Redis, private S3 and authenticated SMTP. Runtime secrets stay outside Helm.
 
 ```bash
-node --env-file=/secure/sww.env scripts/check-production-env.mjs
-kubectl create namespace sww
-kubectl -n sww create secret generic sww-runtime --from-env-file=/secure/sww.env
+helm upgrade --install sww charts/spaceworks-workspace \
+  --set existingSecret=sww-runtime \
+  --set image.tag=<immutable-release> \
+  --set ingress.enabled=true
 ```
 
-Behind a transaction pooler include `DIRECT_URL` (the migration Job uses it).
-For client IPs behind ingress-nginx use `TRUSTED_PROXY_IP_HEADER=x-forwarded-for`
-with `TRUSTED_PROXY_HOPS=1` (or `x-real-ip` when the controller overwrites it).
+Keep action keys stable across replicas. The migration role uses its own secret
+when configured; runtime roles need no DDL permissions. Ingress must preserve
+Host, overwrite the trusted IP header and avoid buffering streams. Probes use
+public liveness and bearer-protected readiness. Retain a database/object/config
+backup before upgrades: Helm rollback does not reverse migrations.
 
-## 3. Values
+The chart matches the single-runtime layout. A separately deployed frontend
+uses a dedicated Deployment and Secret with the settings in
+[Netlify + VPS](DEPLOYMENT_SPLIT.md); do not share backend credentials with it.
 
-`/secure/values-production.yaml` (outside git):
+The default image tag is the rolling `0.1` series for evaluation. Pin a release
+for production. The non-root runtime needs a writable image overlay to replace
+its public-origin placeholders before serving; capabilities remain dropped and
+privilege escalation is disabled.
 
-```yaml
-existingSecret: sww-runtime
-image:
-  tag: sha-0123456789ab
-migration:
-  image:
-    tag: sha-0123456789ab
-ingress:
-  enabled: true
-  className: nginx
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt
-    nginx.ingress.kubernetes.io/proxy-buffering: "off"      # Server-Sent Events
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
-    nginx.ingress.kubernetes.io/proxy-body-size: 30m       # uploads
-  hosts:
-    - host: work.example.org
-      paths: [{ path: /, pathType: Prefix }]
-  tls:
-    - secretName: work-example-org-tls
-      hosts: [work.example.org]
-```
-
-## 4. Install and upgrade
-
-```bash
-helm lint charts/spaceworks-workspace --values /secure/values-production.yaml
-helm upgrade --install sww charts/spaceworks-workspace --namespace sww \
-  --values /secure/values-production.yaml --wait --timeout 10m
-kubectl -n sww rollout status deployment/sww-spaceworks-workspace
-```
-
-Upgrades use the same command with new tags: the migration hook runs first,
-then pods roll one at a time (`maxUnavailable: 0`). `helm rollback` restores
-the previous application, not the database schema; restore a backup if an
-older release cannot work with a newer schema.
-
-Then open `https://work.example.org/setup`.
-
-## Operating notes
-
-- Several replicas need `REDIS_URL`: rate limits and realtime events fan out
-  through Redis. Production refuses to start without it.
-- The in-process outbox worker runs in every pod; rows are claimed atomically,
-  so replicas and the CronJob never send an email twice. Set
-  `scheduler.enabled=false` only if another scheduler calls the endpoints.
-- Restrict traffic with NetworkPolicies: web pods need egress to PostgreSQL,
-  Redis, S3, SMTP and the AI provider; the scheduler only to the web Service.
-- Back up with your database provider's PITR and bucket versioning; see
-  [production operations](production-operations.md).
+The worker and beat use the runtime Secret and the same release as web. Their
+private `/health` probes on port 3460 never get a Service or Ingress. Set
+`worker.replicas` for capacity and `QUEUE_*_CONCURRENCY` in the runtime Secret.
+Termination allows 600 seconds to drain. Disable both flags only if equivalent
+processes run elsewhere; external HTTP cron replaces beat only, never worker.
+See [background jobs](areas/jobs-queue.md) for failure recovery and Redis sizing.

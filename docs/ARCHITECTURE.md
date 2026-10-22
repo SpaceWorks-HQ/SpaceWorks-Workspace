@@ -13,7 +13,9 @@ feature should build on.
    for Server Actions, `auth()` + `findWorkspaceForUser()` for route handlers.
 3. Business rules live in `lib/`; Prisma is the only data access path.
 4. `instrumentation.ts` validates the production environment at boot and
-   starts the in-process outbox worker (disable with `OUTBOX_WORKER=0`).
+   starts timers only for Redis-free local development with `JOBS_INPROCESS=true`.
+   Production worker and beat run separately through BullMQ; see
+   [background jobs](areas/jobs-queue.md).
 
 ## Data model
 
@@ -26,15 +28,15 @@ feature should build on.
 | Work | `Project`, `BoardColumn`, `Task`, `TaskAssignee`, `Label`, `TaskLabel`, `TaskComment`, `TaskActivity` |
 | Chat | `Channel`, `ChannelMember`, `Message`, `MessageReaction`, `MessageAttachment` |
 | Knowledge | `Doc`, `DocRevision`, `FileObject` |
-| Community | `Announcement`, `CommunityEvent`, `EventAttendee`, `Shoutout` |
-| Operations | `FinanceCategory`, `LedgerEntry`, `Invoice`, `BlogPost` |
+| Community | `Announcement` |
+| Operations | `FinanceCategory`, `LedgerEntry`, `Invoice` |
 | Assistant | `AssistantConversation`, `AssistantMessage`, `AssistantMemory`, `AssistantSkill`, `ScheduledJob` |
 | Integrations | `IntegrationConnection`, `OAuthState`, `GithubRepo`, `GithubEvent` |
 | SEO | `SeoSite`, `SeoMetricDaily`, `SeoAudit` |
 | Boardroom | `BoardroomSession`, `BoardroomSeat`, `BoardroomTurn` |
 | Foundations (extension) | `Team`, `TeamMember`, `ApprovalPolicy`, `ApprovalRequest`, `ApprovalDecision`, `RecordLink`, `SearchDocument`, `ActivityEvent`, `SavedView`, `Bookmark`, `LinkItem` |
 | People | `MemberProfile`, `MemberSkill`, `ChecklistTemplate`, `ChecklistRun`, `ChecklistRunItem`, `Availability`, `ShiftType`, `Shift`, `ShiftAssignment`, `ShiftSwapRequest`, `CertType`, `Certification` |
-| Operations (extension) | `ServiceCatalogItem`, `ServiceLink`, `ServiceDependency`, `Subscription`, `VaultCollection`, `VaultItem`, `VaultItemVersion`, `VaultGrant`, `VaultAccessRequest`, `VaultAccessLog`, `Asset`, `AssetCheckout`, `AssetBooking`, `AssetMaintenanceLog`, `AccessCredential` |
+| Operations (extension) | `ServiceCatalogItem`, `ServiceLink`, `ServiceDependency`, `Subscription`, `VaultCollection`, `VaultItem`, `VaultItemVersion`, `VaultGrant`, `VaultAccessRequest`, `VaultAccessLog`, `Asset`, `AssetMaintenanceLog`, `AccessCredential` |
 | Relationships | `Organisation`, `Contact`, `ContactOrgRole`, `ContactInteraction`, `Deal` |
 | Money (extension) | `Budget`, `PurchaseRequest`, `Reimbursement` |
 | Work (extension) | `TaskRecurrence`, `TaskOccurrence`, `TaskDependency`, `Cycle`, `Form`, `FormSubmission`, `Goal`, `KeyResult`, `Template` |
@@ -93,7 +95,7 @@ findWorkspaceForUser(slug, userId): Promise<{ workspace, membership } | null>   
 requireSuperAdmin() / requireSuperAdminMfa()
 // lib/roles.ts (pure, client-safe)
 hasRoleAtLeast(role, min); canContribute(m); canManageMembers(m); canManageLabels(m);
-canManageChannels(m); canManageFinance(m); canViewFinance(m, workspace); canManageBlog(m);
+canManageChannels(m); canManageFinance(m); canViewFinance(m, workspace);
 canManageApiTokens(m); canManageIntegrations(m); canViewAuditLog(m); canManageWorkspace(m);
 canDeleteWorkspace(m); canTransferOwnership(m); assignableRoles(actor); canActOnMember(actor, targetRole)
 ```
@@ -253,41 +255,32 @@ delivery or terminal failure.
 | `/api/realtime/[workspaceSlug]` | Members (SSE) |
 | `/api/account/export` | Signed in, own data only |
 
-### Placeholder routes (to be replaced)
+## Feature area index
 
-The platform extension added more placeholders (teams, polls, ideas,
-cycles, meetings, goals, forms, services, catalogue, vault, contacts,
-assets, requests, subscriptions, rota, settings/notifications,
-settings/messaging, settings/cloud-accounts, settings/onboarding,
-notifications/preferences, notifications/accounts); see
-[ROADMAP-BUILD.md](ROADMAP-BUILD.md) for their roles and owners.
+The workspace navigation in `lib/nav.ts` is role-aware; every page and action independently checks access. These area guides describe the implemented services, routes and operational limits.
 
-These pages exist so navigation works; each renders the shared
-`ComingSoon` component and already calls `requireWorkspace` with its minimum
-role. Replace the file in place:
+- [tasks](areas/tasks.md): Projects, kanban boards, recurring tasks, dependencies, cycles and personal tasks.
+- [chat](areas/chat.md): Channels, direct messages, threads, reactions, pins and live updates.
+- [docs-files](areas/docs-files.md): Nested rich-text docs, revisions, verification, private files and versions.
+- [community](areas/community.md): Announcements and private personal feeds for internal meetings, shifts and task due dates.
+- [finance](areas/finance.md): Community kitty, invoices and finance categories.
+- [assistant](areas/assistant.md): Assistant conversations, workspace tools, memory, skills, scheduled digests, boardroom, MCP and scoped machine APIs.
+- [integrations-messaging](areas/integrations-messaging.md): Google, GitHub, SEO, messaging connections, account linking, channel bridges and signed webhooks.
+- [monitor](areas/monitor.md): Service checks, incidents, maintenance, on-call, public status pages, cloud inventory and costs.
+- [people-relationships](areas/people-relationships.md): Member profiles, teams, onboarding, certifications, availability, rota, contacts, organisations and pipeline.
+- [ops-money](areas/ops-money.md): Service catalogue, subscriptions, encrypted vault, internal asset and physical access registers, budgets, purchases, reimbursements, approvals and forms.
+- [work-collaboration](areas/work-collaboration.md): Meetings, decisions, goals, key results, polls, ideas, templates, changelog and sign-offs.
+- [platform-shell](areas/platform-shell.md): My day, global search, activity, pinned links, command palette, notification centre, preferences, exports, imports, legal hold and retention.
+- [app-reviews](areas/app-reviews.md): App-store review inbox, replies, triage, insights, task links and notification routing.
 
-| Route | Min role |
-| --- | --- |
-| `app/w/[workspaceSlug]/announcements/page.tsx` | GUEST |
-| `app/w/[workspaceSlug]/members/page.tsx` | GUEST |
-| `app/w/[workspaceSlug]/shoutouts/page.tsx` | GUEST |
-| `app/w/[workspaceSlug]/calendar/page.tsx` | GUEST |
-| `app/w/[workspaceSlug]/projects/page.tsx` | GUEST |
-| `app/w/[workspaceSlug]/my-tasks/page.tsx` | MEMBER |
-| `app/w/[workspaceSlug]/docs/page.tsx` | GUEST |
-| `app/w/[workspaceSlug]/files/page.tsx` | GUEST |
-| `app/w/[workspaceSlug]/chat/page.tsx` | GUEST |
-| `app/w/[workspaceSlug]/dm/page.tsx` | MEMBER |
-| `app/w/[workspaceSlug]/finance/page.tsx` | MEMBER + `canViewFinance` |
-| `app/w/[workspaceSlug]/blog/page.tsx` | ADMIN |
-| `app/w/[workspaceSlug]/seo/page.tsx` | ADMIN |
-| `app/w/[workspaceSlug]/assistant/page.tsx` | MEMBER |
-| `app/w/[workspaceSlug]/boardroom/page.tsx` | MEMBER |
-| `app/w/[workspaceSlug]/settings/api-tokens/page.tsx` | ADMIN |
-| `app/w/[workspaceSlug]/settings/integrations/page.tsx` | ADMIN |
+- [Integration finish](areas/integration-finish.md): OIDC/MFA, navigation, cross-area panels, retention, search and verification.
 
-Not created yet (later phases add them): the public blog
-`/blog/[workspaceSlug]/[postSlug]`, `/api/mcp`, `/api/v1/*`, the public
-status page `/status/[workspaceSlug]`, heartbeats `/api/hb/[token]`, public
-forms `/f/[publicSlug]`, calendar feeds `/ics/[token]`, and the integration
-webhooks under `/api/integrations/**`.
+Public entry points include opted-in status pages, public forms, asset sign-in redirects, hashed personal feed capabilities, heartbeat capabilities and authenticated integration webhooks. Internal routes require an active session and tenant membership.
+
+## Identity and retention integration
+
+`lib/auth.ts` loads enabled instance OIDC providers from `lib/shell/oidc.ts`. The sign-in callback requires an existing enabled user with active membership, a verified provider email, an allowed domain and a stable subject. The adapter refuses account creation and does not retain provider tokens. A user with MFA receives a five-minute signed challenge with no authenticated session user until TOTP or a recovery code succeeds. Session-version changes and disabled accounts invalidate both challenges and sessions.
+
+`lib/shell/retention.ts` locks the workspace row before invoking registered writers. Legal hold stops all writers. Audit has no default purge. Inbound events default to 14 days and completed tenant outbox jobs to the instance period (30 days by default); pending work remains. Monitor raw checks retain at least `monitorRetentionDays`, and longer policies take precedence. Monitor summary and metric cleanup uses the same workspace lock. Unscoped legacy email jobs are conservatively retained while any workspace has a legal hold.
+
+Global search uses `indexSearchDocument` on mutations and `lib/search/query.ts` for live source-record permission checks. An index row alone never authorises access. Private contacts remain owner/admin searchable; private chats and vault contents are excluded. App reviews require MEMBER, and team/project/channel restrictions are evaluated again on reads.

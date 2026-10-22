@@ -56,7 +56,7 @@ integrations-messaging) · `lib/notifications.ts` · `lib/outbox.ts` ·
 `lib/env.ts` · `.env.example` · `lib/search/documents.ts` · `lib/activity.ts` ·
 `lib/teamAccess.ts` · `lib/realtime*.ts` · `lib/storage/**` · `lib/audit.ts` ·
 `lib/db.ts` · `lib/redis.ts` · `lib/rateLimit.ts` · `lib/actionRateLimit.ts` ·
-`components/ui/**` · `components/chrome/**` · `components/workspace/ComingSoon.tsx` ·
+`components/ui/**` · `components/chrome/**` ·
 `components/settings/SettingsTabs.tsx` · `app/w/[workspaceSlug]/layout.tsx` ·
 `app/w/[workspaceSlug]/settings/layout.tsx` · `app/layout.tsx` · `app/globals.css` ·
 `app/styles/**` · `proxy.ts` · `instrumentation.ts` · `next.config.ts` ·
@@ -104,7 +104,7 @@ await result.afterCommit();                 // realtime nudges after commit
 ## Area ownership
 
 Routes are below `app/w/[workspaceSlug]/` unless they start with `/api`,
-`/status`, `/blog`, `/f`, `/a` or `/ics`. "Writes" lists the models the area
+`/status`, `/f`, `/a` or `/ics`. "Writes" lists the models the area
 owns; everything else is read-only for it.
 
 ### 1. tasks
@@ -133,19 +133,19 @@ owns; everything else is read-only for it.
 
 ### 4. community
 
-- **Routes**: `announcements/**`, `shoutouts/**`, `calendar/**`; public `/ics/[token]` (calendar feeds).
+- **Routes**: `announcements/**`, `calendar/subscribe`; public `/ics/[token]` (calendar feeds).
 - **Actions / lib / components**: `app/actions/community.ts`, `lib/community/`, `components/community/`. Scheduled: `lib/scheduled/community.ts`.
-- **Writes**: `Announcement`, `CommunityEvent` (incl. `capacity`), `EventAttendee` (incl. `WAITLIST`), `Shoutout`, `CalendarFeedToken`.
-- **Emits**: `announcement.published` (with a "Send to" scoped rule, scope `announcementId`), `shoutout.received`, `event.reminder`, `event.created`, `event.changed`, `rsvp.changed`.
+- **Writes**: `Announcement`, `CalendarFeedToken`.
+- **Emits**: `announcement.published` (with a "Send to" scoped rule, scope `announcementId`).
 - **Notes**: the ICS feed includes the user's meetings, shifts and task due dates by reading those tables. Members directory is people-relationships.
 
-### 5. finance-blog
+### 5. finance
 
-- **Routes**: `finance/**`, `blog/**`; public `/blog/[workspaceSlug]/[postSlug]`.
-- **Actions / lib / components**: `app/actions/finance.ts`, `app/actions/blog.ts`, `lib/finance/`, `lib/blog/`, `components/finance/`, `components/blog/`. Scheduled: `lib/scheduled/financeBlog.ts`.
-- **Writes**: `FinanceCategory`, `LedgerEntry` (incl. `budgetId`), `Invoice`, `BlogPost`.
+- **Routes**: `finance/**`.
+- **Actions / lib / components**: `app/actions/finance.ts`, `lib/finance/`, `components/finance/`. Scheduled: `lib/scheduled/finance.ts`.
+- **Writes**: `FinanceCategory`, `LedgerEntry` (incl. `budgetId`), `Invoice`.
 - **Emits**: `invoice.overdue`.
-- **Notes**: ledger entries posted by ops-money carry `sourceType`/`sourceId` (unique); show them as linked, do not edit their source fields. Finance visibility: `canViewFinance`. Changelog entries marked PUBLIC may be cross-posted as blog drafts by work-collaboration through a `BlogPost` it creates (see cross-area writes).
+- **Notes**: ledger entries posted by ops-money carry `sourceType`/`sourceId` (unique); show them as linked, do not edit their source fields. Finance visibility: `canViewFinance`.
 
 ### 6. assistant
 
@@ -183,9 +183,9 @@ owns; everything else is read-only for it.
 
 - **Routes**: `catalogue/**`, `subscriptions/**`, `vault/**`, `assets/**`, `requests/**` (purchase requests, reimbursements, approvals inbox, budgets, approval policies), `forms/**`; public `/f/[publicSlug]` (public forms) and `/a/[tag]` (asset QR short link → sign in).
 - **Actions / lib / components**: `app/actions/catalogue.ts`, `app/actions/subscriptions.ts`, `app/actions/vault.ts`, `app/actions/assets.ts`, `app/actions/requests.ts`, `app/actions/forms.ts`, `lib/catalogue/`, `lib/subscriptions/`, `lib/vault/`, `lib/assets/`, `lib/requests/`, `lib/approvals/` (the generic engine), `lib/forms/`, `components/catalogue/`, `components/vault/`, `components/assets/`, `components/requests/`, `components/forms/`; vault reveal route `/api/w/[workspaceSlug]/vault/items/[id]/reveal`. Scheduled: `lib/scheduled/opsMoney.ts`.
-- **Writes**: `ServiceCatalogItem` (except `cachedStatus`), `ServiceLink`, `ServiceDependency`, `Subscription`, `VaultCollection`, `VaultItem`, `VaultItemVersion`, `VaultGrant`, `VaultAccessRequest`, `VaultAccessLog`, `Asset`, `AssetCheckout`, `AssetBooking`, `AssetMaintenanceLog`, `AccessCredential`, `Budget`, `PurchaseRequest`, `Reimbursement`, `ApprovalPolicy`, `ApprovalRequest`, `ApprovalDecision`, `Form`, `FormSubmission`.
+- **Writes**: `ServiceCatalogItem` (except `cachedStatus`), `ServiceLink`, `ServiceDependency`, `Subscription`, `VaultCollection`, `VaultItem`, `VaultItemVersion`, `VaultGrant`, `VaultAccessRequest`, `VaultAccessLog`, `Asset`, `AssetMaintenanceLog`, `AccessCredential`, `Budget`, `PurchaseRequest`, `Reimbursement`, `ApprovalPolicy`, `ApprovalRequest`, `ApprovalDecision`, `Form`, `FormSubmission`.
 - **Emits**: `renewal.due` (scope `subscriptionId`, "Send to" on the subscription), `asset.*`, `form.submitted` (scope `formId`), `approval.requested`, `approval.decided`, `finance.approval.requested`, `finance.approval.decided`, `finance.reimbursement.paid`, `budget.threshold` (scope `budgetId`), `vault.access.requested`, `vault.item_revealed`, `vault.rotation_due`, `catalogue.gap`.
-- **Notes**: the approvals engine (`requestApproval`, `decide`, per-subject hooks, no self-approval) is generic so other areas can use it once merged. Vault secrets never reach search, activity, notifications, logs or assistant tools; `VAULT_MASTER_KEY` is required to create items. Asset booking overlaps are prevented inside the booking transaction.
+- **Notes**: the approvals engine (`requestApproval`, `decide`, per-subject hooks, no self-approval) is generic so other areas can use it once merged. Vault secrets never reach search, activity, notifications, logs or assistant tools; `VAULT_MASTER_KEY` is required to create items. Assets are internal records with maintenance notes; physical access holders are recorded separately.
 
 ### 11. work-collaboration
 
@@ -222,7 +222,6 @@ Setup: [APP_REVIEWS.md](APP_REVIEWS.md). Area notes: [app-reviews](areas/app-rev
 | Writer | Writes | Contract |
 | --- | --- | --- |
 | work-collaboration | `Task` rows for meeting action items | `nextWorkspaceSequence(tx, ws, "task")`, `sourceMeetingId`, a `MeetingActionItem` row, then `dispatch("task.assigned")`. `projectId` may be null (shows in My tasks). |
-| work-collaboration | `BlogPost` drafts from PUBLIC changelog entries | status `DRAFT` only; finance-blog publishes. |
 | monitor | `Task` follow-ups from an incident postmortem | same as action items, with a `RecordLink` (`incident` → `task`). |
 | monitor | `ServiceCatalogItem.cachedStatus` | worst-of linked monitors/cloud resources (`ServiceLink` MONITOR / CLOUD_RESOURCE). |
 | ops-money | `LedgerEntry` from paid reimbursements and received purchases | `sourceType` `"reimbursement"` / `"purchase_request"`, `sourceId`, `budgetId`; unique per source, so retries are safe. |
@@ -254,7 +253,7 @@ Setup: [APP_REVIEWS.md](APP_REVIEWS.md). Area notes: [app-reviews](areas/app-rev
 | `notifications/preferences` | GUEST | platform-shell |
 | `notifications/accounts` | MEMBER + `canLinkExternalAccounts` | integrations-messaging |
 
-The Phase 1 placeholders (announcements, members, shoutouts, calendar,
-projects, my-tasks, docs, files, chat, dm, finance, blog, seo, assistant,
+The Phase 1 placeholders (announcements, members, personal feed settings,
+projects, my-tasks, docs, files, chat, dm, finance, seo, assistant,
 boardroom, settings/api-tokens, settings/integrations) belong to the areas
 listed above.

@@ -10,7 +10,7 @@ export function buildContentSecurityPolicy(nonce: string, isProduction = process
     "form-action 'self' https://accounts.google.com",
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
-    "connect-src 'self'",
+    `connect-src 'self'${process.env.NEXT_PUBLIC_BACKEND_ORIGIN && /^https?:\/\/[a-zA-Z0-9.-]+(?::[0-9]+)?$/.test(process.env.NEXT_PUBLIC_BACKEND_ORIGIN) ? ` ${process.env.NEXT_PUBLIC_BACKEND_ORIGIN}` : ""}`,
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isProduction ? "" : " 'unsafe-eval'"}`,
     "style-src 'self' 'unsafe-inline'",
     ...(isProduction ? ["upgrade-insecure-requests"] : []),

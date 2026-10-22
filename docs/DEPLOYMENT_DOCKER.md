@@ -1,108 +1,75 @@
-# Run the container image
+# Production Docker deployment
 
-[VPS stack](DEPLOYMENT_VPS.md) · [Configuration](CONFIGURATION.md) · [Container images](CONTAINER_IMAGES.md)
+[Documentation index](README.md) · [VPS installer](DEPLOYMENT_VPS.md) · [Images](CONTAINER_IMAGES.md)
 
-This page covers the application container on its own, with PostgreSQL,
-Redis, object storage and SMTP supplied separately (managed services or your
-own). For a complete single-server stack use the [VPS guide](DEPLOYMENT_VPS.md);
-for Kubernetes use the [Helm chart](DEPLOYMENT_KUBERNETES.md). The root
-`docker-compose.yml` starts development services only.
+For a complete server use the VPS installer. This guide runs the backend image
+with separately supplied PostgreSQL 16, Redis, S3-compatible storage and SMTP.
+Terminate HTTPS at a trusted proxy; publish only a private container port.
 
-## Images
+## Images and runtime
 
-| Target | Published as | Purpose |
-| --- | --- | --- |
-| `runner` (default) | `ghcr.io/spaceworks-hq/spaceworks-workspace` | Next.js standalone server on Node 22 Alpine, user `nextjs` (uid 1001), port 3000, `HEALTHCHECK` on `/api/health` |
-| `migrator` | `ghcr.io/spaceworks-hq/spaceworks-workspace-migrator` | `prisma migrate deploy`, then exits |
-| `ops` | never published | VPS setup, checks and backup tools |
-
-The runner is generic: it holds no hostname or secret. Build it yourself with
+Pull an immutable `ghcr.io/spaceworks-hq/spaceworks-workspace-backend:<release>`.
+It serves the whole application by default. Run `migrate` once before the web
+rollout using an administration connection. Runtime connections should have
+only data privileges. Use TLS for PostgreSQL, Redis and custom S3 endpoints.
 
 ```bash
-docker build --tag spaceworks-workspace:local .                        # or: npm run docker:build
-docker build --target migrator --tag spaceworks-workspace-migrator:local .
+export SWW_VERSION=0.1.0-main.42.a1b2c3d4e5f6
+image="ghcr.io/spaceworks-hq/spaceworks-workspace-backend:$SWW_VERSION"
+docker pull "$image"
+docker run --rm --env-file /secure/workspace-migration.env "$image" migrate
+docker run -d --name spaceworks-workspace --restart unless-stopped \
+  --env-file /secure/workspace-runtime.env -p 127.0.0.1:3000:3000 "$image"
 ```
 
-Optional build argument: `--build-arg NEXT_PUBLIC_BASE_URL=https://work.example.org`
-compiles the origin into the image (the VPS stack does this). Without it the
-value is read at runtime.
+Environment files stay outside Git, mode 600. Configure all production variables
+in [Configuration](CONFIGURATION.md), including independent vault, integration
+and MFA keys. The container runs as uid 1001; operator tools run as root only
+when needed. Only public CA certificates enter runtime mounts.
 
-## Configure
+The proxy must overwrite the configured client-IP header, preserve Host and
+forward HTTPS protocol. Disable buffering for `/api/realtime/*`, document
+presence and assistant streams. Allow upload bodies up to 30 MB and idle reads
+longer than the stream heartbeat. Keep data and storage administration ports private.
 
-Put the production variables from [Configuration](CONFIGURATION.md) in an
-owner-only file outside the repository (or your platform's secret store) and
-check it:
+## Building your own image
 
 ```bash
-umask 077 && $EDITOR /secure/sww.env
-node --env-file=/secure/sww.env scripts/check-production-env.mjs
+docker build --target runner \
+  --build-arg NEXT_PUBLIC_BASE_URL=https://spaceworks-workspace-origin.invalid \
+  --secret id=NEXT_SERVER_ACTIONS_ENCRYPTION_KEY,env=NEXT_SERVER_ACTIONS_ENCRYPTION_KEY \
+  -t spaceworks-workspace-backend:reviewed .
 ```
 
-The server refuses to start in production unless `AUTH_URL` and
-`NEXT_PUBLIC_BASE_URL` are the same HTTPS origin, the database URL requires
-TLS, Redis uses `rediss://`, a custom S3 endpoint uses HTTPS, and all required
-secrets are present.
+The frontend target additionally takes `NEXT_PUBLIC_BACKEND_ORIGIN`. CI builds
+both architectures; the Dockerfile's last target is the backend for providers
+that cannot choose a target. Release images apply public origin placeholders
+at start and require each installation's own stable action key. Builders without
+BuildKit secrets may use the identically named build argument; it remains in
+the builder metadata/cache, so prefer secret mounts.
 
-## First start
+## Migrations, health and jobs
 
-```bash
-docker run --rm --env-file /secure/sww.env ghcr.io/spaceworks-hq/spaceworks-workspace-migrator:sha-<commit>
-docker run -d --name sww --restart unless-stopped --env-file /secure/sww.env \
-  --read-only --tmpfs /tmp --tmpfs /app/.next/cache:uid=1001,gid=1001 \
-  --cap-drop ALL --security-opt no-new-privileges \
-  --publish 127.0.0.1:3000:3000 ghcr.io/spaceworks-hq/spaceworks-workspace:sha-<commit>
-curl --fail http://127.0.0.1:3000/api/health
-```
+`DIRECT_URL` defaults to `DATABASE_URL`; use a direct/session connection when
+the runtime uses a transaction pooler. `MIGRATE_ON_START=1` applies migrations
+before the server on platforms without release jobs. Use a one-shot migration
+with multiple replicas. A failed migration blocks startup.
 
-Then open `https://<host>/setup` to create the owner account and first
-workspace. Expose port 3000 only to your reverse proxy. The proxy must:
+`GET /api/health` is public liveness. `GET /api/health/db` requires
+`Authorization: Bearer $HEALTHCHECK_SECRET`. Run separate worker and beat
+containers from the same backend image: `node dist/worker.js` and
+`node dist/beat.js`, with the backend runtime environment, database and native
+persistent Redis access. Do not publish port 3460; probe `/health` privately.
+Give worker up to ten minutes to drain on SIGTERM. Beat needs one replica.
 
-- terminate TLS and overwrite the client-IP header named in
-  `TRUSTED_PROXY_IP_HEADER` (`x-real-ip`, `x-forwarded-for` with
-  `TRUSTED_PROXY_HOPS`, or `cf-connecting-ip` behind Cloudflare);
-- stream `text/event-stream` responses (`/api/realtime/...`) without buffering
-  and allow idle reads of at least 60 seconds (nginx: `proxy_buffering off;
-  proxy_read_timeout 3600s;`);
-- accept request bodies up to 30 MB (uploads).
+If an external cron replaces beat, call `POST /api/internal/outbox` and
+`POST /api/internal/jobs` every minute with `Authorization: Bearer $CRON_SECRET`.
+`node scripts/scheduler.mjs --once` provides the tick with `APP_URL` and
+`CRON_SECRET`. Endpoints enqueue; keep worker running. They return 503 if Redis
+is unavailable. See [background jobs](areas/jobs-queue.md).
 
-### Single container without a release step
-
-Where nothing can run the migrator first (one container on a PaaS), set
-`MIGRATE_ON_START=1`: the entrypoint runs `prisma migrate deploy` (through
-`DIRECT_URL`, else `DATABASE_URL`) before `node server.js` and exits if it
-fails, so a bad release never becomes healthy. Do not use it with several
-replicas.
-
-## Scheduler
-
-Every app process runs the email outbox once a minute. Add an independent
-scheduler for recovery and for periodic jobs (`/api/internal/jobs`). The image
-contains one:
-
-```bash
-docker run -d --name sww-scheduler --restart unless-stopped \
-  -e APP_URL=http://sww:3000 -e CRON_SECRET=... --network <app network> \
-  --entrypoint node ghcr.io/spaceworks-hq/spaceworks-workspace:sha-<commit> /app/scripts/scheduler.mjs
-```
-
-`--once` makes one pass for cron-style runners. Any other scheduler works too:
-`POST /api/internal/outbox` and `POST /api/internal/jobs` with
-`Authorization: Bearer $CRON_SECRET`, about once a minute (204 or 200 is success).
-
-## Upgrade
-
-1. Back up the database (`npm run db:backup` or your provider's snapshot).
-2. Pull both new images (same `sha-<commit>` tag).
-3. Run the new migrator once.
-4. Replace the app container; keep the old one stopped until the new one is healthy.
-5. Verify `/api/health`, `GET /api/health/db` with `Authorization: Bearer $HEALTHCHECK_SECRET`, sign-in and email.
-
-Reverting the image does not revert migrations. Restore a backup if an older
-release cannot work with the newer schema.
-
-## Local production-like run
-
-`npm run docker:build` builds the image; to try it against the development
-services from `docker-compose.yml`, see the "Trying the stack locally" section
-of the [VPS guide](DEPLOYMENT_VPS.md#trying-the-stack-locally), which runs the
-complete production stack with Caddy's internal CA on high ports.
+Back up the database, objects and encryption keys before changing releases.
+Retain the previous image until checks pass. Application rollback does not
+reverse migrations. The backend contains operator tools and the Prisma CLI;
+database archive tools require PostgreSQL clients in a trusted checkout or
+use the VPS's database container. Never seed demo data on production.

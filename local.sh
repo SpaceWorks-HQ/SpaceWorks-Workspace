@@ -65,7 +65,13 @@ start_services() {
   say "Services ready. Mailpit: http://127.0.0.1:8025" "$green"
 }
 
-dev_pids() { pgrep -f 'next dev' || true; }
+dev_pids() {
+  [[ -f .data/dev.pid ]] || return 0
+  local pid
+  pid=$(cat .data/dev.pid)
+  [[ "$pid" =~ ^[0-9]+$ ]] && kill -0 "$pid" 2>/dev/null && printf '%s' "$pid"
+  return 0
+}
 
 stop_all() {
   local pids
@@ -88,7 +94,14 @@ case "${1:-start}" in
   start)
     start_services
     say "Starting the dev server on http://localhost:$port (first run: open /setup)..." "$green"
-    exec npm run dev -- --port "$port"
+    npx prisma generate
+    mkdir -p .data
+    node node_modules/next/dist/bin/next dev --port "$port" &
+    child=$!
+    printf '%s' "$child" > .data/dev.pid
+    trap 'kill "$child" 2>/dev/null || true; rm -f .data/dev.pid' EXIT
+    trap 'exit 130' INT TERM
+    wait "$child"
     ;;
   services) start_services ;;
   stop) stop_all ;;

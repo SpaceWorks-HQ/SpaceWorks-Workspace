@@ -1,19 +1,31 @@
 #!/usr/bin/env bash
-# Renew the internal TLS certificates (PostgreSQL, Redis, Silo) for another
-# year with the existing private CA, then restart the services that use them.
-# Public HTTPS certificates are renewed by Caddy automatically.
-#
-#   scripts/vps-renew-certs.sh        (check expiry: openssl x509 -enddate -noout -in $SWW_CONFIG_DIR/tls/postgres/public.crt)
+# Renew the one-year private TLS certificates of PostgreSQL, Redis and Silo,
+# keeping the CA and every credential, then recreate the services and run the
+# checks. A weekly timer (sww-certificates.timer) runs it with --if-due,
+# which renews only within 60 days of expiry. Caddy renews public HTTPS
+# certificates by itself.
+#   vps-renew-certs.sh [--if-due]
 set -euo pipefail
 set +x
-repo_dir=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
+source_dir=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 # shellcheck source=scripts/vps-lib.sh
-. "$repo_dir/scripts/vps-lib.sh"
-SWW_CONFIG_DIR=${SWW_CONFIG_DIR:-$SWW_DEFAULT_CONFIG_DIR}
-require_config_dir
-confirm 'Renew internal certificates and restart the stack (about a minute of downtime)?'
-version=$(setting SWW_VERSION)
-docker run --rm --user "$(id -u):$(id -g)" --volume "$SWW_CONFIG_DIR:/config" \
-  "sww-ops:$version" node docker/vps/setup.mjs renew-certificates
-compose up -d --wait --wait-timeout 300 --force-recreate postgres redis storage app scheduler proxy
+. "$source_dir/scripts/vps-lib.sh"
+args=(renew-certificates)
+case "${1:-}" in
+  '') ;;
+  --if-due) args+=(--if-due) ;;
+  *) die 'Usage: vps-renew-certs.sh [--if-due]' ;;
+esac
+require_root
+load_config_dir
+[[ -f "$SWW_CONFIG_DIR/compose.env" ]] || die "No installation configuration in $SWW_CONFIG_DIR."
+[[ ! -d "$SWW_DIR" ]] || take_lock
+SWW_REPO_DIR=$source_dir
+status=0
+compose run --rm --no-deps --volume "$SWW_CONFIG_DIR:/config" ops node docker/vps/setup.mjs "${args[@]}" || status=$?
+[[ $status != 10 ]] || exit 0
+[[ $status = 0 ]] || die 'Certificate renewal failed; the current certificates stay in use.'
+say 'Restarting the services with the renewed certificates (a short interruption).'
+compose up -d --wait --wait-timeout 300 --force-recreate
 compose run --rm --no-deps ops node docker/vps/check.mjs
+say 'Internal certificates renewed for one year.'

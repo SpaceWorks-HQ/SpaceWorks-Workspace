@@ -13,7 +13,7 @@ export default async function AdminOutboxPage() {
   const beat = health.heartbeat;
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Email outbox" description="Queued email is delivered every minute by the in-app worker or POST /api/internal/outbox." />
+      <PageHeader title="Email outbox" description="Queued email is delivered by the background worker. POST /api/internal/outbox queues due deliveries for external cron setups." />
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatTile label="Waiting" value={health.counts.PENDING} hint={health.oldestPendingAt ? `Oldest ${formatRelativeTime(health.oldestPendingAt, tz).toLowerCase()}` : undefined} />
         <StatTile label="Sending" value={health.counts.PROCESSING} />
@@ -33,7 +33,7 @@ export default async function AdminOutboxPage() {
         )}
       </Card>
       {health.recentFailures.length === 0 ? (
-        <EmptyState title="No failed emails.">Failures show here with a short reason, never the message content.</EmptyState>
+        <EmptyState patch title="No failed emails.">Failures show here with a short reason, never the message content.</EmptyState>
       ) : (
         <Table label="Failed emails">
           <THead><tr><TH>Kind</TH><TH>Attempts</TH><TH>Reason</TH><TH>Queued</TH></tr></THead>

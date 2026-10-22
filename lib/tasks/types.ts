@@ -30,6 +30,7 @@ export type BoardTask = {
 };
 
 export type ProjectSummary = {
+  cyclesEnabled: boolean;
   id: string;
   key: string;
   name: string;
@@ -93,6 +94,9 @@ export type RecurrenceDTO = {
 };
 
 export type TaskDetailDTO = {
+  startsOn: string | null;
+  blockerReason: string | null;
+  blockerOwnerId: string | null;
   id: string;
   number: number;
   title: string;

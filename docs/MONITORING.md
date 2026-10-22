@@ -23,9 +23,19 @@ RDAP uses the [IANA bootstrap directory](https://data.iana.org/rdap/dns.json). R
 
 ## Worker deployment
 
-The existing scheduler container calls bearer-protected `POST /api/internal/jobs` using `CRON_SECRET`; this now invokes the scheduled registry including the monitor. `scripts/scheduler.mjs` supports `--once` and continuous mode. No additional deployment file is required. The existing `/api/internal/outbox` hook also invokes periodic jobs, so all monitor claims are safe across repeated invocations.
+Worker and beat replace the scheduler container. The bearer-protected
+`POST /api/internal/jobs` enqueues registry work; `/api/internal/outbox` only
+enqueues due deliveries. `scripts/scheduler.mjs` supports `--once` or continuous
+HTTP cron mode when a host runs worker separately without beat.
 
-For a persistent Next.js Node server, set `MONITOR_WORKER_INPROCESS=true` to start the five-second worker through instrumentation. This worker handles checks, overdue heartbeats and cloud sync; periodic jobs still compute rollups, retention, reminders and maintenance notifications. With that flag off, each scheduler request runs a bounded batch of due checks plus cloud sync. Minute cron cadence therefore gives minute scheduling precision; use the persistent worker for shorter intervals. These routes require the Node runtime, not an edge runtime. A checker heartbeat powers the offline banner.
+Production uses BullMQ worker + beat. The registry schedules due monitor checks
+on the `monitor` queue every five seconds; checks retain Postgres leases,
+per-host concurrency and SSRF guards. Other monitor maintenance still runs
+once a minute. External HTTP cron can replace beat at minute precision, but
+its endpoints enqueue and require a running worker. For Redis-free local dev,
+opt in with `JOBS_INPROCESS=true`; no production timer runs in Next.js.
+These handlers require Node. A checker heartbeat powers the offline banner.
+See [jobs operations](areas/jobs-queue.md).
 
 Set `MONITOR_MAX_PER_WORKSPACE` (default 100) to bound each tenant's monitors. Database row locks serialize monitor creation against this cap, including auto-created cloud monitors. Per-process concurrency is 20 checks, five per target host. Leases expire after six minutes so abandoned work can be retried. Keep PostgreSQL and Redis reachable from each replica. A configured Redis outage fails claims and rate limits closed.
 
@@ -63,6 +73,11 @@ All adapters perform read calls only. Credentials use `encryptSecret("cloud-cred
 | Railway | Dedicated account/team token. Only GraphQL queries are sent. |
 | GitHub Actions | Fine-grained token scoped to explicit repositories, Actions Read and implicit Metadata Read. |
 | Prometheus | Base URL and optional read-only bearer token; endpoint must pass strict public-network policy. Generic health URLs use HTTP monitors. |
+| Contabo | Client ID and secret from Customer Control Panel → API, plus the API user (account email) and the separate API password set there. Instances and status only. |
+| Linode (Akamai) | Personal access token with Linodes: Read Only and Account: Read Only, with an expiry. Balance and uninvoiced usage appear under costs. |
+| Vultr | API key with this server's IP in the key's access control list. Pending charges and balance appear under costs. |
+| Scaleway | Secret key of an IAM application with the InstancesReadOnly policy; list the zones you use (default fr-par-1). |
+| Supabase | Account access token. Projects appear with their health; add HTTP monitors for API URLs. |
 
 AWS IAM actions in the setup form cover EC2 DescribeInstances/DescribeInstanceStatus, CloudWatch GetMetricData/DescribeAlarms, RDS DescribeDBInstances, Lightsail GetInstances, ECS List/Describe, Route53 ListHealthChecks/GetHealthCheckStatus and Cost Explorer GetCostAndUsage/GetCostForecast. Resource is `*` where these list/describe APIs require it. Grant `sts:AssumeRole` only for the chosen role in the calling identity's separate policy. No create/update/delete actions are needed.
 
@@ -81,6 +96,11 @@ Inventory sync defaults to five minutes, costs at most daily. Each sync batch ha
 | Fly.io | 1,100 ms; [per-action limits](https://fly.io/docs/machines/api/working-with-machines-api/#rate-limits) |
 | Railway | 36 seconds; [100/hour on Free, higher on paid plans](https://docs.railway.com/integrations/api) |
 | GitHub | 750 ms plus [primary and secondary response limits](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api) |
+| Contabo | 400 ms; [token per sync, request id per call](https://api.contabo.com/) |
+| Linode | 250 ms; [800 GETs/minute for most collections](https://techdocs.akamai.com/linode-api/reference/rate-limits) |
+| Vultr | 600 ms; [30 requests/second per IP](https://www.vultr.com/api/#section/Introduction/Rate-Limit) |
+| Scaleway | 250 ms; [per-organisation quotas](https://www.scaleway.com/en/developers/api/) |
+| Supabase | 1,100 ms; [Management API limits](https://supabase.com/docs/reference/api/introduction) |
 | AWS | [SDK retries](https://docs.aws.amazon.com/sdkref/latest/guide/feature-retry-behavior.html), bounded attempts and request timeouts; service quotas vary. |
 
 Spacing is coordinated per configured connection. Accounts that share the same provider user/token also share the provider's quota; avoid duplicate account entries with the same credentials, and leave headroom for other tools. CloudWatch and Cost Explorer calls may incur provider charges. Billing refresh preserves provider currency, avoids combining overlapping MTD/daily/monthly series, and excludes balances/forecasts from actual spend. Missing billing permissions show unavailable data, not zero cost.

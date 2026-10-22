@@ -1,6 +1,7 @@
-type AppReviewPayload = { app: string; platform: "APPLE" | "GOOGLE"; rating: number; author: string; excerpt: string; link: string };
-
 import type { PersonalChannel, WorkspaceRole } from "@prisma/client";
+import type { EventType } from "./event-payloads";
+
+export type { EventPayloads, EventType } from "./event-payloads";
 
 /**
  * Event catalogue for `dispatch()` (pure and client-safe, so routing UIs can
@@ -30,7 +31,6 @@ export const NOTIFY_CATEGORIES = {
   digests: { label: "Digests", defaultChannels: ["IN_APP", "EMAIL"] },
   finance: { label: "Money and approvals", defaultChannels: ["IN_APP", "EMAIL"] },
   github: { label: "GitHub", defaultChannels: ["IN_APP"] },
-  calendar: { label: "Calendar", defaultChannels: ["IN_APP"] },
   people: { label: "People and rota", defaultChannels: ["IN_APP"] },
   operations: { label: "Operations", defaultChannels: ["IN_APP", "EMAIL"] },
   collaboration: { label: "Meetings, polls and goals", defaultChannels: ["IN_APP"] },
@@ -39,123 +39,6 @@ export const NOTIFY_CATEGORIES = {
 } as const satisfies Record<string, { label: string; defaultChannels: readonly PersonalChannel[] }>;
 
 export type NotifyCategory = keyof typeof NOTIFY_CATEGORIES;
-
-type Id = string;
-type Iso = string;
-type IncidentRef = { incidentId: Id; number: number; status: string; monitorIds: Id[] };
-type TaskRef = { taskId: Id; taskNumber: number; projectId: Id | null };
-type ApprovalRef = { approvalRequestId: Id; subjectType: string; subjectId: Id };
-type Decision = "APPROVED" | "REJECTED" | "CHANGES_REQUESTED";
-type MaintenanceRef = { maintenanceWindowId: Id; startsAt: Iso | null; endsAt: Iso | null };
-type PollRef = { pollId: Id; closesAt: Iso | null };
-type GithubRef = { repoId: Id; number: number; url: string };
-
-/** Typed `data` payload per event type. */
-export interface EventPayloads {
-  "app_review.received": AppReviewPayload;
-  "app_review.replied": AppReviewPayload;
-  "app_review.reply_failed": AppReviewPayload;
-  // Services
-  "monitor.down": { monitorId: Id; incidentId: Id | null; statusCode: number | null; error: string | null };
-  "monitor.degraded": { monitorId: Id; latencyMs: number | null };
-  "monitor.up": { monitorId: Id; incidentId: Id | null; downtimeSec: number | null };
-  "monitor.test": { monitorId: Id };
-  "heartbeat.missed": { monitorId: Id; lastPingAt: Iso | null; expectedAt: Iso };
-  "cert.expiring": { monitorId: Id; host: string; daysLeft: number; validTo: Iso };
-  "domain.expiring": { monitorId: Id; domain: string; daysLeft: number; expiresAt: Iso };
-  "cloud.resource_unhealthy": { connectionId: Id; resourceId: Id; status: string };
-  "cloud.alarm": { connectionId: Id; alarmName: string; state: string };
-  "cost.threshold_exceeded": { costBudgetId: Id; connectionId: Id | null; thresholdPct: number; spentMinor: number; limitMinor: number; currency: string };
-  "checker.offline": { lastHeartbeatAt: Iso | null };
-  // Incidents and maintenance
-  "incident.opened": IncidentRef;
-  "incident.updated": IncidentRef;
-  "incident.acknowledged": IncidentRef & { acknowledgedById: Id };
-  "incident.escalated": IncidentRef & { step: number };
-  "incident.resolved": IncidentRef & { durationSec: number | null };
-  "oncall.page": { incidentId: Id; scheduleId: Id | null };
-  "maintenance.scheduled": MaintenanceRef;
-  "maintenance.started": MaintenanceRef;
-  "maintenance.ended": MaintenanceRef;
-  // Tasks
-  "task.assigned": TaskRef;
-  "task.due": TaskRef & { dueAt: Iso };
-  "task.overdue": TaskRef & { dueAt: Iso };
-  "task.commented": TaskRef & { commentId: Id };
-  "task.status_changed": TaskRef & { fromColumnId: Id | null; toColumnId: Id | null };
-  "task.unblocked": TaskRef & { blockerTaskId: Id };
-  // Mentions and chat
-  mention: { sourceType: "message" | "task_comment" | "doc" | "meeting"; sourceId: Id; channelId: Id | null };
-  "message.dm": { channelId: Id; messageId: Id };
-  "thread.reply": { channelId: Id; messageId: Id; parentId: Id };
-  // Community
-  "announcement.published": { announcementId: Id };
-  "shoutout.received": { shoutoutId: Id; fromUserId: Id };
-  "member.joined": { userId: Id };
-  "event.reminder": { eventId: Id; startsAt: Iso };
-  "event.created": { eventId: Id; startsAt: Iso };
-  "event.changed": { eventId: Id; startsAt: Iso };
-  "rsvp.changed": { eventId: Id; userId: Id; status: string };
-  // Digests and assistant
-  "digest.ready": { frequency: "hourly" | "daily" | "weekly" | "custom"; jobId: Id | null };
-  "assistant.job.completed": { jobId: Id | null; conversationId: Id | null; status: "ok" | "failed" };
-  "boardroom.summary_ready": { sessionId: Id };
-  "seo.report_ready": { siteId: Id; auditId: Id | null };
-  // Money and approvals
-  "finance.approval.requested": ApprovalRef & { amountMinor: number | null; currency: string | null };
-  "finance.approval.decided": ApprovalRef & { decision: Decision };
-  "finance.reimbursement.paid": { reimbursementId: Id; amountMinor: number; currency: string };
-  "invoice.overdue": { invoiceId: Id; number: string; dueOn: Iso };
-  "budget.threshold": { budgetId: Id; thresholdPct: number; spentMinor: number; amountMinor: number; currency: string };
-  "approval.requested": ApprovalRef;
-  "approval.decided": ApprovalRef & { decision: Decision };
-  // GitHub
-  "github.pr.opened": GithubRef;
-  "github.review.requested": GithubRef;
-  "github.ci.failed": { repoId: Id; runId: string; branch: string | null; url: string };
-  "github.release.published": { repoId: Id; tag: string; url: string };
-  "github.issue.opened": GithubRef;
-  // People and rota
-  "team.member_added": { teamId: Id; userId: Id };
-  "onboarding.task_due": { runId: Id; itemId: Id; dueAt: Iso };
-  "offboarding.started": { runId: Id; subjectUserId: Id };
-  "availability.changed": { availabilityId: Id; userId: Id };
-  "certification.expiring": { certificationId: Id; certTypeId: Id; expiresAt: Iso };
-  "shift.reminder": { shiftId: Id; startsAt: Iso };
-  "shift.unfilled": { shiftId: Id; startsAt: Iso; openSpots: number };
-  "shift.swap_requested": { swapRequestId: Id; shiftId: Id };
-  "shift.swap_accepted": { swapRequestId: Id; shiftId: Id };
-  // Operations
-  "renewal.due": { subscriptionId: Id; renewsAt: Iso; daysLeft: number };
-  "asset.checkout_overdue": { assetId: Id; checkoutId: Id; dueAt: Iso };
-  "asset.booking_reminder": { assetId: Id; bookingId: Id; startsAt: Iso };
-  "asset.maintenance_due": { assetId: Id; dueAt: Iso };
-  "form.submitted": { formId: Id; submissionId: Id };
-  "vault.access.requested": { accessRequestId: Id; itemId: Id };
-  "vault.item_revealed": { itemId: Id; byUserId: Id };
-  "vault.rotation_due": { itemId: Id; dueAt: Iso };
-  "catalogue.gap": { serviceIds: Id[] };
-  "contact.follow_up_due": { contactId: Id; dueAt: Iso };
-  "deal.stage_changed": { dealId: Id; organisationId: Id; stage: string };
-  // Work and collaboration
-  "cycle.started": { cycleId: Id; projectId: Id | null };
-  "cycle.completed": { cycleId: Id; projectId: Id | null };
-  "meeting.agenda_reminder": { meetingId: Id; startsAt: Iso };
-  "meeting.summary_published": { meetingId: Id };
-  "poll.opened": PollRef;
-  "poll.closing_soon": PollRef;
-  "poll.closed": PollRef;
-  "signature.requested": { signatureRequestId: Id; docId: Id };
-  "goal.check_in_due": { goalId: Id };
-  // Platform and security
-  "export.ready": { exportJobId: Id };
-  "import.finished": { importJobId: Id; created: number; updated: number; skipped: number; errors: number };
-  "security.new_login": { userId: Id };
-  "destination.failing": { destinationId: Id; error: string };
-  "notification.test": { destinationId: Id };
-}
-
-export type EventType = keyof EventPayloads;
 
 export type EventSpec = {
   category: NotifyCategory;
@@ -171,6 +54,40 @@ const s = (category: NotifyCategory, label: string, audience: EventAudience, sev
   minRole ? { category, label, audience, severity, minRole } : { category, label, audience, severity };
 
 export const EVENT_CATALOG = {
+  "analytics.assumption_due": s("finance", "Forecast assumption due", "personal", "info", "ADMIN"),
+  "people.responsibility_review_due": s("people", "Responsibility review due", "personal", "info", "MEMBER"),
+  "marketing.publish_due": s("operations", "Content publish date", "personal", "info", "MEMBER"),
+  "marketing.follow_up_due": s("operations", "Outreach follow-up", "personal", "info", "ADMIN"),
+  "it.review_due": s("security", "Access review due", "personal", "warning", "ADMIN"),
+  "it.restore_due": s("security", "Restore test due", "personal", "warning", "ADMIN"),
+  "product_ops.reminder": s("operations", "Product work due", "personal", "warning", "MEMBER"),
+  "product_ops.estimate_due": s("finance", "Funding estimate due", "personal", "warning", "ADMIN"),
+  "finance.recurring.due": s("finance", "Recurring cost due", "personal", "warning", "MEMBER"),
+  "project.update_due": s("tasks", "Weekly project update due", "personal", "info", "MEMBER"),
+  "moneycontrols.reminder": s("finance", "Internal control due", "personal", "warning", "MEMBER"),
+  "ops.people_changed": s("operations", "People tool update", "personal", "info", "MEMBER"),
+  "ops.reminder": s("operations", "People and service reminder", "personal", "info", "MEMBER"),
+  "ops.ticket_changed": s("operations", "Help desk update", "personal", "info", "MEMBER"),
+  "ops.ticket_due": s("operations", "Help desk target overdue", "personal", "warning", "MEMBER"),
+  "ops.safety_changed": s("operations", "Confidential safety report update", "personal", "info", "MEMBER"),
+  "ops.hours_submitted": s("operations", "Volunteer hours to review", "personal", "info", "MEMBER"),
+  "ops.hours_reviewed": s("operations", "Volunteer hours reviewed", "personal", "info", "MEMBER"),
+
+  "social.comment.received": s("operations", "Social comment received", "broadcast", "info", "MEMBER"),
+  "social.reply.failed": s("operations", "Social reply failed", "broadcast", "warning", "MEMBER"),
+  "social.token.expiring": s("operations", "Social connection expiring", "broadcast", "warning", "ADMIN"),
+  "documents.receivable.due": s("finance", "Receivable follow-up", "personal", "warning", "ADMIN"),
+  "funding.reminder": s("finance", "Funding deadline", "personal", "warning", "ADMIN"),
+  "funding.pledge_due": s("finance", "Pledge instalment due", "personal", "warning", "ADMIN"),
+  "funding.thank_you_due": s("finance", "Donation thank-you due", "personal", "info", "ADMIN"),
+  "governance.review_due": s("operations", "Governance review", "personal", "warning", "ADMIN"),
+  "doc.review_due": s("operations", "Document review", "personal", "warning", "MEMBER"),
+  "safeguarding.review_due": s("operations", "Confidential case review", "personal", "warning", "MEMBER"),
+  "governance.reminder": s("operations", "Governance deadline", "personal", "warning", "ADMIN"),
+  "finance.bill.overdue": s("finance", "Supplier bill overdue", "personal", "warning", "ADMIN"),
+  "finance.receipt.missing": s("finance", "Receipt needed", "personal", "warning", "ADMIN"),
+  "finance.month.review_due": s("finance", "Monthly spending review due", "personal", "info", "ADMIN"),
+  "finance.disbursement.due": s("finance", "Disbursement due", "personal", "warning", "ADMIN"),
   "app_review.received": s("operations", "App review received", "broadcast", "info", "MEMBER"),
   "app_review.replied": s("operations", "App review reply published", "broadcast", "info", "MEMBER"),
   "app_review.reply_failed": s("operations", "App review reply failed", "broadcast", "warning", "MEMBER"),
@@ -208,12 +125,7 @@ export const EVENT_CATALOG = {
   "thread.reply": s("mentions", "Reply in your thread", "personal"),
 
   "announcement.published": s("announcements", "Announcement published", "both"),
-  "shoutout.received": s("people", "Shoutout for you", "personal"),
   "member.joined": s("people", "Member joined", "both"),
-  "event.reminder": s("calendar", "Event reminder", "both"),
-  "event.created": s("calendar", "Event created", "both"),
-  "event.changed": s("calendar", "Event changed", "both"),
-  "rsvp.changed": s("calendar", "RSVP changed", "personal"),
 
   "digest.ready": s("digests", "Digest ready", "both"),
   "assistant.job.completed": s("assistant", "Assistant job finished", "both", "info", "MEMBER"),
@@ -245,12 +157,11 @@ export const EVENT_CATALOG = {
   "shift.swap_accepted": s("people", "Shift swap accepted", "personal", "info", "MEMBER"),
 
   "renewal.due": s("operations", "Renewal due", "both", "warning", "MEMBER"),
-  "asset.checkout_overdue": s("operations", "Equipment overdue", "both", "warning", "MEMBER"),
-  "asset.booking_reminder": s("operations", "Booking reminder", "personal", "info", "MEMBER"),
   "asset.maintenance_due": s("operations", "Maintenance due", "both", "info", "MEMBER"),
   "form.submitted": s("operations", "Form submitted", "both", "info", "MEMBER"),
   "vault.access.requested": s("security", "Vault access requested", "personal", "info", "MEMBER"),
   "vault.item_revealed": s("security", "Vault secret revealed", "both", "warning", "ADMIN"),
+  "secrets.rotation_due": s("security", "Application secret rotation due", "personal", "warning", "MEMBER"),
   "vault.rotation_due": s("security", "Credential rotation due", "both", "warning", "MEMBER"),
   "catalogue.gap": s("operations", "Service catalogue gaps", "both", "info", "ADMIN"),
   "contact.follow_up_due": s("operations", "Contact follow-up due", "personal", "info", "MEMBER"),
@@ -258,6 +169,11 @@ export const EVENT_CATALOG = {
 
   "cycle.started": s("collaboration", "Cycle started", "both", "info", "MEMBER"),
   "cycle.completed": s("collaboration", "Cycle completed", "both", "info", "MEMBER"),
+  "meeting.scheduled": s("collaboration", "Meeting scheduled", "personal"),
+  "meeting.updated": s("collaboration", "Meeting updated", "personal"),
+  "meeting.cancelled": s("collaboration", "Meeting cancelled", "personal"),
+  "meeting.reminder": s("collaboration", "Meeting reminder", "personal"),
+  "calendar.reminder": s("collaboration", "Calendar reminder", "personal"),
   "meeting.agenda_reminder": s("collaboration", "Add agenda items", "personal"),
   "meeting.summary_published": s("collaboration", "Meeting summary", "both"),
   "poll.opened": s("collaboration", "Poll opened", "both"),

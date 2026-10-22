@@ -1,4 +1,11 @@
 import "server-only";
+import { canDownloadOrgFile } from "@/lib/orgPeople/files";
+import { canDownloadProductFile } from "@/lib/productOps/access";
+import { mayDownloadControlFile } from "@/lib/moneyControls/files";
+import { caseAccess } from "@/lib/govextras/cases";
+import { mayDownloadDocumentFile } from "@/lib/documents/files";
+import { canDownloadOpsFile } from "@/lib/opsGaps/attachments";
+import { mayDownloadFinanceFile } from "@/lib/finance/tools/files";
 
 import { prisma } from "@/lib/db";
 import { decideAccess } from "@/lib/chat/access";
@@ -21,7 +28,8 @@ export async function findDownloadableFile(fileId: string, userId: string) {
   const file = await prisma.fileObject.findUnique({
     where: { id: fileId },
     select: {
-      id: true, workspaceId: true, storageKey: true, filename: true, contentType: true, size: true, deletedAt: true,
+      id: true, workspaceId: true, storageKey: true, filename: true, contentType: true, size: true, deletedAt: true, folder: true,
+      governanceAttachments: { select: { record: { select: { archivedAt: true } } } },
       doc: { select: { visibility: true } },
       task: { select: { project: { select: { teamId: true } } } },
       _count: { select: { ledgerReceipts: true } },
@@ -32,12 +40,48 @@ export async function findDownloadableFile(fileId: string, userId: string) {
   if (!file || file.deletedAt || file.workspace.archivedAt) return null;
   const membership = await prisma.membership.findUnique({
     where: { userId_workspaceId: { userId, workspaceId: file.workspaceId } },
-    select: { role: true, status: true },
+    select: { role: true, status: true, user: { select: { disabledAt: true } } },
   });
-  if (!membership || membership.status !== "ACTIVE") return null;
+  if (!membership || membership.status !== "ACTIVE" || membership.user.disabledAt) return null;
+  const { canDownloadAnalyticsFile } = await import("@/lib/analytics/files");
+  if (!await canDownloadAnalyticsFile(file,userId,membership.role)) return null;
+  const { canDownloadMarketingItFile } = await import("@/lib/marketingIt/files");
+  if (!await canDownloadMarketingItFile(file, { user: { id: userId }, workspace: { id: file.workspaceId, slug: "", timezone: "UTC" }, membership })) return null;
+  if (file.folder === "/governance" || file.folder.startsWith("/governance/") || file.governanceAttachments.length) {
+    if (!hasRoleAtLeast(membership.role, "ADMIN")) return null;
+  }
+  if (!(await mayDownloadDocumentFile(file, userId))) return null;
+  if (file.folder === "/funding" || file.folder.startsWith("/funding/") || await prisma.fundingAttachment.count({ where: { workspaceId: file.workspaceId, fileId: file.id } })) {
+    if (!hasRoleAtLeast(membership.role, "ADMIN") || !await prisma.fundingAttachment.findFirst({ where: { workspaceId: file.workspaceId, fileId: file.id, record: { workspaceId: file.workspaceId, archivedAt: null } }, select: { id: true } })) return null;
+  }
+  const caseFiles = await prisma.safeguardingAttachment.findMany({where:{workspaceId:file.workspaceId,fileId:file.id},select:{caseId:true}});
+  if(file.folder === "/safeguarding" || file.folder.startsWith("/safeguarding/") || caseFiles.length) {
+    if(caseFiles.length !== 1) return null;
+    const workspace = await prisma.workspace.findUnique({where:{id:file.workspaceId},select:{id:true,slug:true,timezone:true}});
+    if(!workspace) return null;
+    try {await caseAccess({user:{id:userId},workspace,membership},caseFiles[0].caseId);}
+    catch {return null;}
+    const { recordAuditEvent } = await import("@/lib/audit");
+    await recordAuditEvent({workspaceId:file.workspaceId,actorId:userId,action:"safeguarding.file_viewed",targetType:"safeguarding",targetId:caseFiles[0].caseId});
+  }
+  if (!(await canDownloadOrgFile(file, userId, membership.role))) return null;
+  if (!(await canDownloadProductFile(file, userId, membership.role))) return null;
+  if (!(await canDownloadOpsFile(file,userId,membership.role))) return null;
+  if (!(await mayDownloadFinanceFile(file, userId))) return null;
+  if (!(await mayDownloadControlFile(file, userId))) return null;
   if (file.doc?.visibility === "ADMINS" && !hasRoleAtLeast(membership.role, "ADMIN")) return null;
   const taskTeamId = file.task?.project?.teamId;
   if (taskTeamId && (await hiddenTeamIds(file.workspaceId, { userId, role: membership.role })).includes(taskTeamId)) return null;
+  const calendarRecords = await prisma.calendarEntry.findMany({ where: { workspaceId: file.workspaceId, fileIds: { has: file.id } }, select: { id: true } });
+  if (file.storageKey && file.filename && calendarRecords.length > 0) {
+    const { entryWhere } = await import("@/lib/calendar/access");
+    const workspace = await prisma.workspace.findUniqueOrThrow({ where: { id: file.workspaceId } });
+    const actor = { user: { id: userId, name: null }, workspace, membership };
+    if (!(await prisma.calendarEntry.findFirst({ where: { AND: [await entryWhere(actor), { id: { in: calendarRecords.map(r => r.id) } }] } }))) return null;
+  }
+  // Unlinked calendar uploads are never downloadable through the library.
+  const calendarFile = await prisma.fileObject.findFirst({ where: { id: file.id, workspaceId: file.workspaceId, folder: "/calendar" }, select: { id: true } });
+  if (calendarFile && calendarRecords.length === 0) return null;
   if (!(await canReadRequestReceipt(file.id, file.workspaceId, userId, membership.role))) return null;
   if (file._count.ledgerReceipts > 0 && !canViewFinance(membership, file.workspace)) return null;
   if (file.messageAttachments.length > 0 && !(await canReadAnyChannel(file.workspaceId, userId, membership.role, file.messageAttachments.map((a) => a.message.channel)))) return null;

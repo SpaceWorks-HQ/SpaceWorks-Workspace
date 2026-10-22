@@ -17,13 +17,11 @@ export async function buildAccountExport(userId: string) {
     },
   });
   if (!user) return null;
-  const [tasksCreated, comments, messages, docs, shoutoutsGiven, shoutoutsReceived, notifications] = await Promise.all([
+  const [tasksCreated, comments, messages, docs, notifications] = await Promise.all([
     prisma.task.findMany({ where: { creatorId: userId }, select: { number: true, title: true, createdAt: true, completedAt: true, workspace: { select: { slug: true } } }, take: 5000 }),
     prisma.taskComment.findMany({ where: { authorId: userId, deletedAt: null }, select: { body: true, createdAt: true, task: { select: { number: true, workspace: { select: { slug: true } } } } }, take: 5000 }),
     prisma.message.findMany({ where: { authorId: userId, deletedAt: null }, select: { body: true, createdAt: true, channel: { select: { slug: true, kind: true } }, workspace: { select: { slug: true } } }, take: 10000 }),
     prisma.doc.findMany({ where: { createdById: userId }, select: { title: true, contentText: true, createdAt: true, workspace: { select: { slug: true } } }, take: 2000 }),
-    prisma.shoutout.findMany({ where: { fromId: userId }, select: { message: true, createdAt: true, to: { select: { name: true } } }, take: 2000 }),
-    prisma.shoutout.findMany({ where: { toId: userId }, select: { message: true, createdAt: true, from: { select: { name: true } } }, take: 2000 }),
     prisma.notification.findMany({ where: { userId }, select: { kind: true, title: true, createdAt: true, readAt: true }, take: 2000 }),
   ]);
   return {
@@ -35,8 +33,6 @@ export async function buildAccountExport(userId: string) {
     taskComments: comments,
     messages: messages.map((m) => ({ ...m, channel: m.channel.kind === "DIRECT" ? { kind: "DIRECT" } : m.channel })),
     docsCreated: docs,
-    shoutoutsGiven,
-    shoutoutsReceived,
     notifications,
   };
 }

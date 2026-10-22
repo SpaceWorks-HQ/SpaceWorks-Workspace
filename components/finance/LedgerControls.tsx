@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MoreHorizontal, Pencil, RotateCcw, Ban } from "lucide-react";
+import { Ellipsis as MoreHorizontal } from "lucide-react";
 import { setLedgerEntryVoidedAction } from "@/app/actions/finance";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { Button, IconButton } from "@/components/ui/button";
@@ -68,17 +68,17 @@ export function LedgerRowActions({ shared, entry, voided }: { shared: Shared; en
         <MenuContent align="end">
           {voided ? (
             entry.linkedLabel ? null : (
-              <MenuItem icon={<RotateCcw />} onSelect={() => setVoided(false)}>
+              <MenuItem icon={null} onSelect={() => setVoided(false)}>
                 Restore entry
               </MenuItem>
             )
           ) : (
             <>
-              <MenuItem icon={<Pencil />} onSelect={() => setEditing(true)}>
+              <MenuItem icon={null} onSelect={() => setEditing(true)}>
                 Edit
               </MenuItem>
               {entry.linkedLabel ? null : (
-                <MenuItem icon={<Ban />} danger onSelect={() => setConfirming(true)}>
+                <MenuItem icon={null} danger onSelect={() => setConfirming(true)}>
                   Void…
                 </MenuItem>
               )}

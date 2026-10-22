@@ -47,7 +47,7 @@ export const JOB_TEMPLATES = [
     cron: "0 8 * * *",
     prompt: [
       "Write this morning's digest for the community.",
-      "Include: tasks due today or overdue (with owners), anything that moved to done yesterday, today's and tomorrow's events or build nights, new announcements, and open incidents if there are any.",
+      "Include: tasks due today or overdue (with owners), anything that moved to done yesterday, today's and tomorrow's meetings, new announcements, and open incidents if there are any.",
       "Skip empty sections. Use short bullet lists with task references and links. End with one line of encouragement for the crew.",
     ].join(" "),
   },

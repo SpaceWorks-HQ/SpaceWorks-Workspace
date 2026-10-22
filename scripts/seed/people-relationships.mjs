@@ -3,12 +3,19 @@ export default async function seedPeopleRelationships(prisma, { workspaceId, use
   const people = Object.entries(users);
   for (const [key, user] of people) {
     const skills = (user.skills ?? []).map(skill => skill.toLowerCase());
-    await prisma.memberProfile.create({ data: {
-      workspaceId, userId: user.id, location: "Kochi", interests: key === "meera" ? ["Open hardware", "Teaching"] : ["Making together"],
+    // Other area seeds may already have created the profile (they run in name order).
+    const fields = {
+      location: "Kochi", interests: key === "meera" ? ["Open hardware", "Teaching"] : ["Making together"],
       isKeyholder: ["owner", "admin"].includes(key), membershipType: ["owner", "admin"].includes(key) ? "CORE" : "MEMBER",
       handles: { profile: { bio: user.bio ?? "", pronouns: "", timezone: "Asia/Kolkata" } },
-      skills: { create: skills.map(skill => ({ workspaceId, skill, level: key === "guest" ? 3 : 2 })) },
-    } });
+    };
+    const profile = await prisma.memberProfile.upsert({
+      where: { workspaceId_userId: { workspaceId, userId: user.id } },
+      update: fields, create: { workspaceId, userId: user.id, ...fields },
+    });
+    await prisma.memberSkill.createMany({
+      data: skills.map(skill => ({ profileId: profile.id, workspaceId, skill, level: key === "guest" ? 3 : 2 })), skipDuplicates: true,
+    });
   }
   const team = await prisma.team.create({ data: {
     workspaceId, name: "Build night crew", slug: "build-night-crew", description: "Welcoming makers and keeping the workbenches ready.", color: "teal", visibility: "PUBLIC", createdById: users.owner.id,

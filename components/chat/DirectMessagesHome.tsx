@@ -52,7 +52,7 @@ export function DirectMessagesHome({ recent, startWith = [] }: { recent: Sidebar
       <section className="px-4 py-4" aria-labelledby="dm-recent">
         <h2 id="dm-recent" className="mb-2 text-overline text-ink-muted">Recent</h2>
         {recent.length === 0 ? (
-          <EmptyState title="No direct messages yet.">Say hello to someone from the crew below.</EmptyState>
+          <EmptyState patch title="No direct messages yet.">Say hello to someone from the crew below.</EmptyState>
         ) : (
           <ul className="divide-y divide-line rounded-xl border border-line">
             {recent.map((item) => (
@@ -64,7 +64,7 @@ export function DirectMessagesHome({ recent, startWith = [] }: { recent: Sidebar
                     {item.lastMessageAt ? <span className="block text-caption text-ink-muted" suppressHydrationWarning>{formatRelativeTime(item.lastMessageAt, timeZone)}</span> : null}
                   </span>
                   {item.unread > 0 ? (
-                    <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-highlight px-1.5 text-xs font-semibold leading-5 text-on-highlight tabular-nums">
+                    <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-accent-soft px-1.5 text-xs font-semibold leading-5 text-accent-text tabular-nums">
                       <span className="sr-only">Unread: </span>
                       {formatBadge(item.unread)}
                     </span>

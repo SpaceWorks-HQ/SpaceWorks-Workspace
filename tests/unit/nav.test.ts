@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { activeNavKey, NAV_GROUPS, navForMember } from "@/lib/nav";
 
 const keys = (groups: ReturnType<typeof navForMember>) => groups.flatMap((group) => group.items.map((item) => item.key));
-const workspace = { financeVisibleToMembers: false, blogEnabled: true };
+const workspace = { financeVisibleToMembers: false };
 
 describe("navigation by role", () => {
   it("shows every area to owners", () => {
@@ -16,7 +16,6 @@ describe("navigation by role", () => {
     expect(visible).toContain("assistant");
     expect(visible).not.toContain("settings");
     expect(visible).not.toContain("integrations");
-    expect(visible).not.toContain("blog");
     expect(visible).not.toContain("finance");
   });
 

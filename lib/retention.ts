@@ -1,6 +1,5 @@
 import "server-only";
 
-import { OutboxStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -15,8 +14,8 @@ export async function purgeExpiredOperationalData(now = new Date()) {
     prisma.passwordResetToken.deleteMany({ where: { expiresAt: { lt: now } } }),
     prisma.emailVerificationToken.deleteMany({ where: { expiresAt: { lt: now } } }),
     prisma.oAuthState.deleteMany({ where: { expiresAt: { lt: now } } }),
-    prisma.outboxMessage.deleteMany({ where: { status: OutboxStatus.SENT, sentAt: { lt: before } } }),
-    prisma.outboxMessage.deleteMany({ where: { status: OutboxStatus.FAILED, createdAt: { lt: before } } }),
+    prisma.$executeRaw`DELETE FROM "OutboxMessage" WHERE status='SENT' AND "sentAt" < ${before} AND kind <> 'notify.deliver' AND payload->>'workspaceId' IS NULL AND NOT EXISTS (SELECT 1 FROM "Workspace" WHERE "legalHold")`,
+    prisma.$executeRaw`DELETE FROM "OutboxMessage" WHERE status='FAILED' AND "createdAt" < ${before} AND kind <> 'notify.deliver' AND payload->>'workspaceId' IS NULL AND NOT EXISTS (SELECT 1 FROM "Workspace" WHERE "legalHold")`,
   ]);
   return {
     verificationTokens: tokens.count,
@@ -24,7 +23,7 @@ export async function purgeExpiredOperationalData(now = new Date()) {
     passwordResetTokens: resets.count,
     emailVerificationTokens: verifications.count,
     oauthStates: oauthStates.count,
-    sentOutboxMessages: sent.count,
-    failedOutboxMessages: failed.count,
+    sentOutboxMessages: sent,
+    failedOutboxMessages: failed,
   };
 }

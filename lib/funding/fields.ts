@@ -1,0 +1,182 @@
+import type { Kind } from "./schema";
+export type FieldSpec = {
+  key: string;
+  label: string;
+  type?:
+    | "text"
+    | "textarea"
+    | "date"
+    | "money"
+    | "number"
+    | "boolean"
+    | "choice"
+    | "ref";
+  choices?: string[];
+  source?: string;
+  required?: boolean;
+  helper?: string;
+};
+const f = (
+  key: string,
+  label: string,
+  type: FieldSpec["type"] = "text",
+  extra: Partial<FieldSpec> = {},
+): FieldSpec => ({ key, label, type, ...extra });
+const link = (key: string, label: string, source: string) =>
+  f(key, label, "ref", { source });
+export const DETAIL_FIELDS: Record<Kind, FieldSpec[]> = {
+  OPPORTUNITY: [
+    f("source", "Source", "choice", {
+      choices: [
+        "GRANT",
+        "CSR",
+        "SPONSORSHIP",
+        "MAJOR_DONOR",
+        "GOVERNMENT",
+        "CROWDFUNDING",
+        "OTHER",
+      ],
+    }),
+    f("year", "Funding year", "number", { required: true }),
+    f("askedMinor", "Amount asked", "money"),
+    f("awardedMinor", "Amount awarded", "money"),
+    f("receivedMinor", "Amount received", "money"),
+    f("applicationOn", "Application deadline", "date"),
+    f("reportOn", "Report deadline", "date"),
+    f("utilisationOn", "Utilisation certificate deadline", "date"),
+    f("nextAction", "Next action", "textarea"),
+    link("grantId", "Grant", "GRANT"),
+    link("donationId", "Donation", "DONATION"),
+    link("programmeId", "Programme", "PROGRAMME"),
+  ],
+  FUNDER: [
+    f("focus", "Funding focus", "textarea"),
+    f("restrictions", "Restrictions", "textarea"),
+    f("csrRegistration", "CSR registration or reference"),
+  ],
+  GRANT: [
+    f("purpose", "Purpose", "textarea"),
+    f("restrictions", "Restrictions", "textarea"),
+    link("programmeId", "Programme", "PROGRAMME"),
+    link("opportunityId", "Funding opportunity", "OPPORTUNITY"),
+  ],
+  INSTALMENT: [
+    f("receivedOn", "Date received", "date"),
+    f("reference", "Payment reference"),
+  ],
+  REPORT: [
+    f("reportType", "Report type", "choice", {
+      choices: ["PROGRESS", "FINAL", "UTILISATION", "OTHER"],
+    }),
+    f("submittedOn", "Date submitted", "date"),
+  ],
+  DELIVERABLE: [f("completedOn", "Date completed", "date")],
+  DONATION: [
+    f("mode", "Mode", "choice", {
+      choices: ["UPI", "BANK", "CASH", "CHEQUE", "CARD", "IN_KIND", "OTHER"],
+    }),
+    f("pan", "Donor PAN"),
+    f("donorAddress", "Donor address", "textarea"),
+    f("foreignSource", "Foreign source (FCRA)", "boolean"),
+    f("receiptNumber", "Existing donation receipt number", "text", {
+      helper: "Leave blank to assign the next number when generating a PDF.",
+    }),
+    f("receiptIssued", "Receipt already issued", "boolean"),
+    f("donationType", "Donation type", "choice", {
+      choices: ["CORPUS", "SPECIFIC", "OTHER"],
+    }),
+    f("reference", "Payment reference"),
+    f("inKindItem", "In-kind item", "textarea"),
+    f("receiptNote", "Receipt note", "textarea"),
+    link("campaignId", "Campaign", "CAMPAIGN"),
+    link("pledgeId", "Recurring gift or pledge", "PLEDGE"),
+    link("grantId", "Grant", "GRANT"),
+    link("programmeId", "Programme", "PROGRAMME"),
+    link("opportunityId", "Funding opportunity", "OPPORTUNITY"),
+  ],
+  CAMPAIGN: [
+    f("purpose", "Appeal", "textarea"),
+    link("programmeId", "Programme", "PROGRAMME"),
+  ],
+  PLEDGE: [
+    f("frequency", "Frequency", "choice", {
+      choices: ["ONCE", "MONTHLY", "QUARTERLY", "YEARLY"],
+    }),
+    f("nextExpectedOn", "First expected instalment", "date", {
+      required: true,
+      helper:
+        "Linked gifts settle instalments from this date, including partial gifts.",
+    }),
+    f("endOn", "Last expected date", "date"),
+    link("campaignId", "Campaign", "CAMPAIGN"),
+  ],
+  DONOR: [f("pan", "PAN"), f("address", "Address", "textarea")],
+  PROGRAMME: [f("purpose", "Purpose", "textarea")],
+  KPI: [
+    f("target", "Target", "number", { required: true }),
+    f("unit", "Unit, for example people trained", "text", { required: true }),
+    f("aggregation", "Progress calculation", "choice", {
+      choices: ["SUM", "LATEST"],
+    }),
+  ],
+  IMPACT_ENTRY: [
+    f("value", "Value", "number", { required: true }),
+    f("period", "Reporting period", "text", { required: true }),
+  ],
+  RUNWAY: [
+    f("incomeMinor", "Expected monthly income", "money"),
+    f("expensesMinor", "Expected monthly expenses", "money"),
+  ],
+  TOOL_ACCOUNT: [
+    link("userId", "Person", "people"),
+    link("serviceId", "Catalogue item", "services"),
+    link("subscriptionId", "Subscription", "subscriptions"),
+    f("identity", "Account email or username", "text", { required: true }),
+    f("accessLevel", "Access level"),
+  ],
+  ACCESS_REVIEW: [
+    f("quarter", "Quarter, for example 2026-Q4", "text", { required: true }),
+    f("decision", "Access decision", "choice", {
+      choices: ["KEEP", "CHANGE", "REMOVE"],
+    }),
+    f("reviewNote", "Review and follow-up note", "textarea", {
+      helper:
+        "Confirm the account owner and access level. Record any removal or change before signing.",
+    }),
+  ],
+  RECEIPT_SETTINGS: [
+    f("organisationName", "Registered organisation name", "text", {
+      required: true,
+    }),
+    f("address", "Registered address", "textarea", { required: true }),
+    f("pan", "Organisation PAN", "text", { required: true }),
+    f("registration12A", "12A / 12AB registration"),
+    f("registration80G", "80G registration / approval", "text", {
+      required: true,
+    }),
+    f("registrationFCRA", "FCRA registration"),
+    f("receiptPrefix", "Receipt number prefix", "text", {
+      required: true,
+      helper:
+        "A workspace sequence follows this prefix. Existing receipt numbers stay unchanged.",
+    }),
+    f("signatory", "Authorised signatory name", "text", { required: true }),
+    f("email", "Organisation email"),
+  ],
+};
+export const PARENT_KIND: Partial<Record<Kind, Kind>> = {
+  INSTALMENT: "GRANT",
+  REPORT: "GRANT",
+  DELIVERABLE: "GRANT",
+  KPI: "PROGRAMME",
+  IMPACT_ENTRY: "KPI",
+  ACCESS_REVIEW: "TOOL_ACCOUNT",
+};
+export const MONEY_KINDS: Kind[] = [
+  "GRANT",
+  "INSTALMENT",
+  "DONATION",
+  "CAMPAIGN",
+  "PLEDGE",
+  "RUNWAY",
+];

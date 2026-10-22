@@ -1,5 +1,5 @@
-import { CommunityLoading } from "@/components/community/PageStates";
+import { BrandPageLoader } from "@/components/brand/BrandLoader";
 
 export default function Loading() {
-  return <CommunityLoading label="the calendar" />;
+  return <BrandPageLoader label="Loading team calendar" />;
 }

@@ -41,6 +41,7 @@ export default async function InvoicePage({ params }: PageProps<"/w/[workspaceSl
           listHref={listHref}
         />
       </div>
+      {manage ? <p className="print:hidden"><Link className="inline-flex min-h-11 items-center text-accent-text underline" href={`/w/${workspace.slug}/documents/new?sourceType=INVOICE&sourceId=${invoice.id}`}>Prepare a controlled document from this legacy invoice</Link></p> : null}
       {overdue ? (
         <Callout tone="warning" title="This invoice is overdue." role="status">
           It was due {formatDay(invoice.dueOn!)}. Email it again or mark it paid when the money arrives.

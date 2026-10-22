@@ -1,203 +1,130 @@
-# Deploy on a cloud platform
+# Cloud deployment
 
-[VPS](DEPLOYMENT_VPS.md) · [AWS](DEPLOYMENT_AWS.md) · [Kubernetes](DEPLOYMENT_KUBERNETES.md) · [Configuration](CONFIGURATION.md) · [Operations](production-operations.md)
+[Documentation index](README.md) · [Configuration](CONFIGURATION.md)
 
-Platform-as-a-service options, all running the same Docker image with managed
-data services. Every connection must use TLS: `sslmode=require` for
-PostgreSQL, `rediss://` for Redis, HTTPS for object storage, STARTTLS or TLS
-for SMTP. Pick one region for everything.
+The default cloud layout runs a web container, a BullMQ worker and beat with
+managed data services. Render background workers require paid compute. Free
+web plans can use an independently hosted worker and the cron trigger described
+below; review native Redis connection and command quotas before choosing them.
+A VPS can instead run the complete stack through the [installer](DEPLOYMENT_VPS.md).
 
-| Piece | Render (`render.yaml`) | DigitalOcean App Platform (`.do/app.yaml`) | Fly.io |
-| --- | --- | --- | --- |
-| App | Docker web service | Docker service + pre-deploy job | Fly Machine |
-| PostgreSQL 16 | Supabase (or Render Postgres) | Managed PostgreSQL | Fly Managed Postgres or Supabase |
-| Redis | Upstash | Managed Valkey | Upstash (Fly integration) |
-| Files | Cloudflare R2 | Spaces | Tigris or R2 |
-| Email | Brevo (port 2525 on Render free) | Any SMTP relay | Any SMTP relay |
-| Scheduler | In-process + Cloudflare Worker | In-process (+ Worker) | In-process (+ Worker) |
+| Piece | Provider | File |
+| --- | --- | --- |
+| Application | Render | `render.yaml`, root Dockerfile |
+| PostgreSQL 16 | Supabase | `DATABASE_URL`, `DIRECT_URL` |
+| Native TLS Redis | Upstash | `REDIS_URL` |
+| Private object storage | Cloudflare R2 | `S3_*` |
+| Verified transactional email | Brevo or another SMTP relay | `SMTP_*`, `EMAIL_FROM` |
+| Background processing | Render worker + beat | `render.yaml`, backend image |
+| Optional beat replacement | Cloudflare Worker | `deploy/cloudflare-cron/` |
 
-## Shared preparation
+## 1. Database and Redis
 
-### Secrets
+Create Supabase and Upstash resources near the application region. Use the
+provider's displayed connection settings. Runtime PostgreSQL through the
+transaction pooler (port 6543) needs `pgbouncer=true&connection_limit=5&sslmode=require`.
+Use a session/direct TLS URL for `DIRECT_URL` and migrations. URL-encode special
+characters in credentials. Keep the runtime identity least-privileged.
 
-```bash
-openssl rand -base64 33   # AUTH_SECRET, CRON_SECRET, HEALTHCHECK_SECRET (one each)
-openssl rand -base64 32   # NEXT_SERVER_ACTIONS_ENCRYPTION_KEY, MFA_ENCRYPTION_KEY,
-                          # INTEGRATION_ENCRYPTION_KEY, VAULT_MASTER_KEY (one each)
-```
+Upstash must provide its native `rediss://` URL, not the REST endpoint. Keep
+TLS and authentication enabled; plan capacity for rate-limit commands, jobs
+and realtime fan-out. Configure no-eviction behavior for operational keys.
 
-Save every value in a password manager. `MFA_ENCRYPTION_KEY`,
-`INTEGRATION_ENCRYPTION_KEY` and `VAULT_MASTER_KEY` encrypt data at rest:
-losing one makes that data unreadable. Check a finished configuration with
-`node --env-file=/secure/sww.env scripts/check-production-env.mjs`.
+## 2. Private storage and email
 
-### Supabase PostgreSQL
+Create a private R2 bucket. Disable public access and scope an Object Read &
+Write credential to that bucket. Use its S3 endpoint origin without a bucket
+path, `S3_REGION=auto` and `S3_FORCE_PATH_STYLE=1`. Files pass through the app's
+access checks; browsers need no public bucket or bucket CORS.
 
-Create a project, open **Connect → Connection string**:
+Authenticate your email sending domain with the relay's current DNS records.
+Set its SMTP host, login, password and verified `EMAIL_FROM`. Brevo can use
+port 2525 with `SMTP_SECURE=false` for STARTTLS. Render free blocks outbound
+ports 25, 465 and 587; see [Render's free-service limits](https://render.com/docs/free).
+Retain bootstrap SMTP settings for recovery even if `/admin` later overrides them.
 
-```text
-DATABASE_URL=postgresql://postgres.REF:PASSWORD@aws-0-REGION.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=5&sslmode=require
-DIRECT_URL=postgresql://postgres.REF:PASSWORD@aws-0-REGION.pooler.supabase.com:5432/postgres?sslmode=require
-```
+## 3. Independent secrets
 
-The transaction pooler (6543) needs `pgbouncer=true`; migrations use the
-session pooler (`DIRECT_URL`). URL-encode special characters in the password.
+The Blueprint generates session, scheduler and readiness bearers. Generate
+four independent keys with `openssl rand -base64 32`: action encryption, MFA,
+integration encryption and the vault master key. Keep encrypted off-server
+copies. Changing an action key invalidates outstanding forms; losing encryption
+keys makes stored secrets unreadable. Never share secrets with preview deploys.
 
-### Upstash Redis
+## 4. Render
 
-Create a Redis database in your region and copy the TLS URL:
-`REDIS_URL=rediss://default:PASSWORD@NAME.upstash.io:6379`. Leave eviction off.
+Connect this repository through **New → Blueprint** and select `render.yaml`.
+It builds the final backend target, serves port 3000 and probes `/api/health`.
+Set `AUTH_URL` and `NEXT_PUBLIC_BASE_URL` to the identical HTTPS service/custom
+origin. Set the super-admin email, managed service URLs, storage and mail
+settings and generated keys in the prompted secure environment fields.
 
-### Cloudflare R2
+The Blueprint uses paid compute for web, worker and beat. Web's pre-deploy
+command applies migrations once; worker and beat use that same release and
+runtime credentials. Deploy migrations before starting consumers on a first
+installation. Worker has a 300-second shutdown delay, Render's documented
+maximum. Beat remains one instance. Health servers listen privately on 3460;
+background worker services receive no public HTTP endpoint. Use `/admin/jobs`
+and Redis heartbeat expiry to monitor them.
 
-Create a bucket (public access off, no custom domain: files are served only
-through the app's authorised route) and an API token with **Object Read &
-Write** on that bucket:
+To use a free web service, remove the two paid worker services from your copy
+of the Blueprint, set web `plan: free`, remove `preDeployCommand` and set
+`MIGRATE_ON_START=1`. Run `node dist/worker.js` on an always-on host with the
+same runtime settings and native Redis access. Cloudflare cron can replace
+beat, but an HTTP enqueue endpoint cannot execute queued jobs by itself.
+There is no Redis-free production inline fallback. See Render's
+[background workers](https://render.com/docs/background-workers),
+[free limits](https://render.com/docs/free) and
+[Blueprint reference](https://render.com/docs/blueprint-spec).
 
-```text
-S3_BUCKET=spaceworks-workspace
-S3_REGION=auto
-S3_ENDPOINT=https://ACCOUNT_ID.r2.cloudflarestorage.com
-S3_ACCESS_KEY_ID=...
-S3_SECRET_ACCESS_KEY=...
-S3_FORCE_PATH_STYLE=1
-```
+Render exposes environment variables as Docker build arguments; only the
+public URL and action encryption key are declared by the builder. Prefer a
+BuildKit secret mount or a secret file with that name when available. Runtime
+credentials never belong in image layers. Redeploy a custom build when its
+public origin changes. See [Render Docker docs](https://render.com/docs/docker).
 
-### Email (Brevo)
+Keep `TRUSTED_PROXY_IP_HEADER=x-forwarded-for` and `TRUSTED_PROXY_HOPS=1` for
+Render's appending edge. Only use a different trusted header when that header
+is overwritten on every reachable ingress. Do not assume a CDN makes the
+provider's direct hostname unreachable.
 
-Authenticate your sending domain (SPF, DKIM, DMARC), then create an SMTP key:
-`EMAIL_FROM='Space Works <workspace@your-domain>'`, `SMTP_HOST=smtp-relay.brevo.com`,
-`SMTP_PORT=587` (2525 on Render free, which blocks 25/465/587), `SMTP_SECURE=false`,
-`SMTP_USER`, `SMTP_PASSWORD`. These are the bootstrap fallback; SMTP can also
-be set in `/admin → Settings`, where it is stored encrypted.
+## 5. DNS and optional external cron
 
-## Render
+Add the custom domain in Render, follow its DNS instructions, and wait for
+HTTPS issuance. Keep both canonical URLs aligned. Disable CDN HTML rewriting
+or injected scripts that conflict with the nonce CSP. Never buffer realtime
+or assistant streams. Check the provider's current connection-duration limits.
 
-[`render.yaml`](../render.yaml) defines a Docker web service on the Starter
-plan: always on (so the in-process outbox worker runs), health check
-`/api/health`, and a pre-deploy command that applies migrations once per
-deploy. Deploys wait for GitHub checks (`autoDeployTrigger: checksPass`) and
-skip documentation-only commits.
+If you replace beat, deploy `deploy/cloudflare-cron` with `APP_URL` set to the canonical HTTPS origin
+and the same `CRON_SECRET` as the backend. The Worker wakes `/api/health`, then
+calls **both** `/api/internal/outbox` and `/api/internal/jobs` every minute.
+Both endpoints enqueue into BullMQ; keep the separate worker alive. Do not
+run external cron alongside beat. Minute cron has minute monitor precision;
+beat schedules monitor checks every five seconds. Watch HTTP statuses without
+logging secrets or response bodies. A paid
+scheduler can instead run `node scripts/scheduler.mjs --once` with only
+`APP_URL` and `CRON_SECRET`.
 
-1. Render → **New → Blueprint**, connect `SpaceWorks-HQ/SpaceWorks-Workspace`,
-   choose the branch.
-2. Fill in the prompted values. `AUTH_URL` and `NEXT_PUBLIC_BASE_URL` are both
-   `https://spaceworks-workspace.onrender.com` (or your domain), no trailing slash.
-   Render generates `AUTH_SECRET`, `CRON_SECRET` and `HEALTHCHECK_SECRET`.
-3. Apply. The first build takes about 10 minutes.
-4. Custom domain: add it under **Settings → Custom Domains**, create the DNS
-   record Render shows (DNS-only if Cloudflare manages the zone), then set
-   both URL variables to the new origin and redeploy.
-5. Open `https://<host>/setup`.
+## 6. First setup and acceptance
 
-Client IPs: Render appends to `X-Forwarded-For`, so the Blueprint sets
-`TRUSTED_PROXY_IP_HEADER=x-forwarded-for` and `TRUSTED_PROXY_HOPS=1`. If your
-own Cloudflare zone proxies the domain (orange cloud), switch to
-`cf-connecting-ip`, remove the hops, and turn off Email Address Obfuscation.
+Open `/setup`, create the first account with `SUPER_ADMIN_EMAIL`, create a
+workspace, enrol MFA from Account and enter `/admin` with fresh TOTP proof.
+Invite a test member; there is no public registration. Verify real mail,
+password reset, task writes, private file upload/download, chat reconnect,
+finance restrictions and cross-tenant denial. Check authenticated readiness
+with `HEALTHCHECK_SECRET` in an Authorization header, never in the URL.
 
-**Free plan**: change `plan` to `free`, delete `preDeployCommand`, add
-`MIGRATE_ON_START=1`, and use Brevo on port 2525. Free instances sleep after
-15 idle minutes, which stops the in-process outbox, so deploy the Cloudflare
-Worker below. The 512 MB instance is tight for the assistant; use Starter for
-a real community.
+Free plans do not replace backups or point-in-time recovery. Schedule a
+verified direct-connection database archive, copy objects and encryption keys
+off-server, and test isolated restores. See [Operations](production-operations.md).
 
-### Cloudflare cron Worker
+## Other clouds
 
-[`deploy/cloudflare-cron`](../deploy/cloudflare-cron/README.md) wakes the app
-every minute and calls `/api/internal/outbox` and `/api/internal/jobs` with
-`CRON_SECRET`:
-
-```bash
-cd deploy/cloudflare-cron && npm ci && npx wrangler login
-npx wrangler secret put APP_URL       # https://work.example.org
-npx wrangler secret put CRON_SECRET   # copy from Render → Environment
-npx wrangler deploy && npx wrangler tail
-```
-
-An optional paid Render cron service (commented in `render.yaml`) does the
-same with `node /app/scripts/scheduler.mjs --once`.
-
-## DigitalOcean App Platform
-
-[`.do/app.yaml`](../.do/app.yaml) builds the Dockerfile, runs a **PRE_DEPLOY**
-migration job, binds a Managed PostgreSQL cluster as `${db.DATABASE_URL}`
-(already `sslmode=require`) and checks `/api/health`.
-
-1. Create, in one region (the spec uses `blr`, Bangalore):
-   - a **Managed PostgreSQL 16** cluster named `sww-db` with database `sww` and user `sww`;
-   - a **Managed Valkey** cluster; copy its `rediss://` connection string;
-   - a **Spaces** bucket (private, file listing off) and a Spaces key scoped to it.
-2. Edit `.do/app.yaml`: replace every `CHANGE_ME`, adjust the region slug,
-   `S3_REGION` and `S3_ENDPOINT` (`https://<region>.digitaloceanspaces.com`).
-3. `doctl apps create --spec .do/app.yaml`, then set each `SECRET` value in
-   the control panel (**Settings → App-Level Environment Variables**) and redeploy.
-4. Add your domain under **Settings → Domains**; keep `AUTH_URL` and
-   `NEXT_PUBLIC_BASE_URL` equal to it (changing the base URL needs a rebuild).
-5. Restrict the database and Valkey **trusted sources** to the app.
-6. Open `https://<host>/setup`.
-
-App Platform's edge appends to `X-Forwarded-For` (`TRUSTED_PROXY_HOPS=1`).
-The in-process worker covers the outbox; deploy the Cloudflare Worker for an
-independent scheduler. Managed PostgreSQL includes daily backups and
-point-in-time recovery; Spaces has no versioning, so also run the
-storage backup described in [operations](production-operations.md).
-
-Prefer a single server instead? A Droplet with the curl installer is the
-cheapest complete setup: see the [VPS guide](DEPLOYMENT_VPS.md#provider-notes).
-
-## Fly.io (optional)
-
-Fly runs the image as a Machine close to your members. A minimal `fly.toml`:
-
-```toml
-app = "spaceworks-workspace"
-primary_region = "sin"
-
-[build]
-  dockerfile = "Dockerfile"
-
-[deploy]
-  # The image's entrypoint migrates when MIGRATE_ON_START=1.
-  release_command = "sh -c 'MIGRATE_ON_START=1 docker-entrypoint.sh true'"
-
-[http_service]
-  internal_port = 3000
-  force_https = true
-  auto_stop_machines = "off"   # keep the in-process outbox running
-  min_machines_running = 1
-
-  [[http_service.checks]]
-    method = "GET"
-    path = "/api/health"
-    interval = "30s"
-    timeout = "5s"
-
-[[vm]]
-  memory = "1gb"
-```
-
-```bash
-fly launch --no-deploy --copy-config
-fly secrets set DATABASE_URL=... DIRECT_URL=... REDIS_URL=... AUTH_URL=https://work.example.org \
-  NEXT_PUBLIC_BASE_URL=https://work.example.org AUTH_SECRET=... CRON_SECRET=... HEALTHCHECK_SECRET=... \
-  NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=... MFA_ENCRYPTION_KEY=... INTEGRATION_ENCRYPTION_KEY=... \
-  VAULT_MASTER_KEY=... TRUSTED_PROXY_IP_HEADER=x-forwarded-for TRUSTED_PROXY_HOPS=1 \
-  S3_BUCKET=... S3_REGION=auto S3_ENDPOINT=https://fly.storage.tigris.dev S3_ACCESS_KEY_ID=... \
-  S3_SECRET_ACCESS_KEY=... SUPER_ADMIN_EMAIL=you@example.org
-fly deploy
-```
-
-Use Fly Managed Postgres (or Supabase) with `sslmode=require`, Upstash Redis
-(`fly redis create`) and Tigris (`fly storage create`) or R2. Fly's proxy sets
-`Fly-Client-IP`, which the app does not read; use `x-forwarded-for` with one hop.
-
-## After any cloud deploy
-
-```bash
-curl -fsS https://work.example.org/api/health
-curl -fsS -H "Authorization: Bearer $HEALTHCHECK_SECRET" https://work.example.org/api/health/db
-```
-
-Then create the owner account at `/setup`, enable two-step verification for
-the admin email, send a test email from `/admin`, upload a file, and check
-that live updates (notifications, chat) reach a second browser.
+[DigitalOcean App Platform](../.do/app.yaml) pulls an immutable backend release,
+runs `migrate` as PRE_DEPLOY plus Node worker and beat services. Provide managed
+PostgreSQL, TLS Redis/Valkey, private Spaces and SMTP, then replace every
+placeholder securely. The service, migration job, worker and beat use one release.
+For AWS use [AWS deployment](DEPLOYMENT_AWS.md); for Kubernetes use
+[the Helm guide](DEPLOYMENT_KUBERNETES.md). A separately hosted frontend follows
+[Split hosting](DEPLOYMENT_SPLIT.md) and Netlify's
+[monorepo settings](https://docs.netlify.com/build/configure-builds/monorepos/).

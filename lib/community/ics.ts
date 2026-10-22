@@ -1,5 +1,5 @@
 /**
- * iCalendar (RFC 5545) writer for event downloads and subscription feeds
+ * iCalendar (RFC 5545) writer for personal subscription feeds
  * (pure). Timed events are written as UTC instants (`...Z`), which every
  * calendar converts to the viewer's zone correctly; all-day entries (task
  * due dates) use the date in the workspace time zone. The workspace zone is
@@ -10,6 +10,7 @@ export type IcsStatus = "CONFIRMED" | "TENTATIVE" | "CANCELLED";
 
 export type IcsEntry = {
   uid: string;
+  sequence?: number;
   summary: string;
   description?: string | null;
   location?: string | null;
@@ -80,6 +81,7 @@ function nextDayKey(key: string): string {
 
 function entryLines(entry: IcsEntry, now: Date): string[] {
   const lines = ["BEGIN:VEVENT", `UID:${escapeText(entry.uid)}`, `DTSTAMP:${formatUtc(now)}`];
+  if (entry.sequence !== undefined) lines.push(`SEQUENCE:${entry.sequence}`);
   if (entry.allDay !== undefined) {
     lines.push(`DTSTART;VALUE=DATE:${formatDateValue(entry.allDay)}`, `DTEND;VALUE=DATE:${formatDateValue(nextDayKey(entry.allDay))}`, "TRANSP:TRANSPARENT");
   } else {
@@ -112,15 +114,4 @@ export function buildCalendar(calendar: IcsCalendar): string {
     "END:VCALENDAR",
   ];
   return lines.map(foldLine).join(CRLF) + CRLF;
-}
-
-/** A safe download name: "build-night.ics". */
-export function icsFilename(title: string): string {
-  const base = title
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60);
-  return `${base || "event"}.ics`;
 }

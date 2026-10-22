@@ -29,6 +29,10 @@ function productionEnv(): Record<string, string> {
 }
 
 const cases: Array<[string, Record<string, string | undefined>]> = [
+  ["production in-process jobs", { JOBS_INPROCESS: "true" }],
+  ["invalid worker concurrency", { QUEUE_OUTBOX_CONCURRENCY: "0" }],
+  ["invalid worker health port", { JOBS_HEALTH_PORT: "70000" }],
+  ["invalid queue prefix", { JOBS_QUEUE_PREFIX: "not a prefix" }],
   ["missing CRON_SECRET", { CRON_SECRET: undefined }],
   ["short AUTH_SECRET", { AUTH_SECRET: "short" }],
   ["bad MFA key", { MFA_ENCRYPTION_KEY: "not-a-key" }],

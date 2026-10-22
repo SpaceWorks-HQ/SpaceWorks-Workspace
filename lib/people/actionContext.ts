@@ -1,6 +1,6 @@
 import "server-only";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath } from "@/lib/frontend/cache";
 import { z } from "zod";
 import { actionError, NOT_ALLOWED, RATE_LIMITED, type ActionResult } from "@/lib/actionResult";
 import { isActionRateLimited } from "@/lib/actionRateLimit";
@@ -31,5 +31,6 @@ export function isFailure(value: WorkspaceContext | ActionResult<never>): value 
 /** Revalidate one area's pages (and the workspace home). */
 export function refreshArea(slug: string, ...areas: string[]) {
   for (const area of areas) revalidatePath(`/w/${slug}/${area}`, "layout");
+  if (areas.includes("members")) revalidatePath(`/w/${slug}/leave`, "layout");
   revalidatePath(`/w/${slug}`);
 }

@@ -30,7 +30,7 @@ type Result = ActionResult<Record<string, string>>;
 class InputError extends Error {}
 const json = (value: unknown) => value as Prisma.InputJsonValue;
 const maxMonitors = () => Math.max(1, Number.parseInt(process.env.MONITOR_MAX_PER_WORKSPACE ?? "100", 10) || 100);
-async function lockWorkspace(tx: Prisma.TransactionClient, workspaceId: string) { await tx.$queryRaw`SELECT "id" FROM "Workspace" WHERE "id" = ${workspaceId} FOR UPDATE`; }
+async function lockWorkspace(tx: Prisma.TransactionClient, workspaceId: string) { await tx.$queryRaw`SELECT "id" FROM "Workspace" WHERE "id" = ${workspaceId} FOR NO KEY UPDATE`; }
 async function audit(tx: Prisma.TransactionClient, ctx: WorkspaceContext, action: string, targetType: string, targetId: string) {
   await recordAuditEvent({ workspaceId: ctx.workspace.id, actorId: ctx.user.id, action, targetType, targetId, client: tx });
 }

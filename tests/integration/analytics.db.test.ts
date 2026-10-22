@@ -1,0 +1,30 @@
+import { describe } from "vitest";
+import { registerAnalyticsFixtures } from "./analytics/fixtures";
+import { registerMetricConsistencyTests } from "./analytics/metric-consistency.cases";
+import { registerPermissionsAndPresetsTests } from "./analytics/permissions-presets.cases";
+import { registerAdjustmentForecastTests } from "./analytics/adjustment-forecast.cases";
+import { registerTeamVisibilityTests } from "./analytics/team-visibility.cases";
+import { registerFinanceAndPeopleMetricTests } from "./analytics/finance-people-metrics.cases";
+import { registerReportDeliveryTests } from "./analytics/report-delivery.cases";
+import { registerAdjustmentProofTests } from "./analytics/adjustment-proofs.cases";
+import { registerAccessRevocationTests } from "./analytics/access-revocation.cases";
+import { registerOperationsMetricTests } from "./analytics/operations-metrics.cases";
+import { registerFundingForecastTests } from "./analytics/funding-forecast.cases";
+import { registerRecordLinkTests } from "./analytics/record-links.cases";
+import { registerCrossAreaMetricTests } from "./analytics/cross-area-metrics.cases";
+
+describe.sequential("analytics live access and source consistency", () => {
+  registerAnalyticsFixtures();
+  registerMetricConsistencyTests();
+  registerPermissionsAndPresetsTests();
+  registerAdjustmentForecastTests();
+  registerTeamVisibilityTests();
+  registerFinanceAndPeopleMetricTests();
+  registerReportDeliveryTests();
+  registerAdjustmentProofTests();
+  registerAccessRevocationTests();
+  registerOperationsMetricTests();
+  registerFundingForecastTests();
+  registerRecordLinkTests();
+  registerCrossAreaMetricTests();
+});

@@ -1,14 +1,12 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath } from "@/lib/frontend/cache";
 import { z } from "zod";
 import { actionError, NOT_ALLOWED, RATE_LIMITED, validationError, type ActionResult } from "@/lib/actionResult";
 import { isActionRateLimited } from "@/lib/actionRateLimit";
 import { getWorkspaceForAction } from "@/lib/permissions";
 import { deleteAnnouncement, saveAnnouncement, setAnnouncementPinned } from "@/lib/community/announcements";
-import { cancelEvent, respondToEvent, saveEvent, type RsvpOutcome } from "@/lib/community/events";
 import { createFeed, revokeFeed } from "@/lib/community/feeds";
-import { deleteShoutout, giveShoutout } from "@/lib/community/shoutouts";
 import { idInputSchema, pinInputSchema } from "@/lib/community/validation";
 
 /**
@@ -29,7 +27,7 @@ async function context(slug: unknown) {
   return ctx;
 }
 
-function refresh(slug: string, area: "announcements" | "shoutouts" | "calendar") {
+function refresh(slug: string, area: "announcements") {
   revalidatePath(`/w/${slug}/${area}`, "layout");
   revalidatePath(`/w/${slug}`);
 }
@@ -70,38 +68,6 @@ export async function deleteAnnouncementAction(slug: string, input: unknown): Pr
   return result;
 }
 
-/* ───────────── Events and RSVPs ───────────── */
-
-export async function saveEventAction(slug: string, eventId: string | null, input: unknown): Promise<ActionResult<{ id: string }>> {
-  const ctx = await context(slug);
-  if (!ctx) return actionError(NOT_ALLOWED);
-  if (ctx === "limited") return actionError(RATE_LIMITED);
-  if (!validId(eventId)) return actionError("That event no longer exists.");
-  const result = await saveEvent(ctx, input, eventId);
-  if (result.ok) refresh(ctx.workspace.slug, "calendar");
-  return result;
-}
-
-export async function cancelEventAction(slug: string, input: unknown): Promise<ActionResult> {
-  const ctx = await context(slug);
-  if (!ctx) return actionError(NOT_ALLOWED);
-  if (ctx === "limited") return actionError(RATE_LIMITED);
-  const parsed = idInputSchema.safeParse(input);
-  if (!parsed.success) return validationError(parsed.error);
-  const result = await cancelEvent(ctx, parsed.data.id);
-  if (result.ok) refresh(ctx.workspace.slug, "calendar");
-  return result;
-}
-
-export async function rsvpAction(slug: string, input: unknown): Promise<ActionResult<RsvpOutcome>> {
-  const ctx = await context(slug);
-  if (!ctx) return actionError(NOT_ALLOWED);
-  if (ctx === "limited") return actionError(RATE_LIMITED);
-  const result = await respondToEvent(ctx, input);
-  if (result.ok) refresh(ctx.workspace.slug, "calendar");
-  return result;
-}
-
 /* ───────────── Calendar feeds ───────────── */
 
 export async function createFeedAction(slug: string, input: unknown): Promise<ActionResult<{ url: string; webcalUrl: string }>> {
@@ -119,27 +85,5 @@ export async function revokeFeedAction(slug: string, input: unknown): Promise<Ac
   if (ctx === "limited") return actionError(RATE_LIMITED);
   const result = await revokeFeed(ctx, input);
   if (result.ok) revalidatePath(`/w/${ctx.workspace.slug}/calendar/subscribe`);
-  return result;
-}
-
-/* ───────────── Shoutouts ───────────── */
-
-export async function giveShoutoutAction(slug: string, input: unknown): Promise<ActionResult<{ id: string }>> {
-  const ctx = await context(slug);
-  if (!ctx) return actionError(NOT_ALLOWED);
-  if (ctx === "limited") return actionError(RATE_LIMITED);
-  const result = await giveShoutout(ctx, input);
-  if (result.ok) refresh(ctx.workspace.slug, "shoutouts");
-  return result;
-}
-
-export async function deleteShoutoutAction(slug: string, input: unknown): Promise<ActionResult> {
-  const ctx = await context(slug);
-  if (!ctx) return actionError(NOT_ALLOWED);
-  if (ctx === "limited") return actionError(RATE_LIMITED);
-  const parsed = idInputSchema.safeParse(input);
-  if (!parsed.success) return validationError(parsed.error);
-  const result = await deleteShoutout(ctx, parsed.data.id);
-  if (result.ok) refresh(ctx.workspace.slug, "shoutouts");
   return result;
 }

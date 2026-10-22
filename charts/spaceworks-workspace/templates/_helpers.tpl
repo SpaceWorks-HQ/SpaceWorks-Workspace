@@ -57,7 +57,7 @@ seccompProfile:
 
 {{- define "sww.containerSecurityContext" -}}
 allowPrivilegeEscalation: false
-readOnlyRootFilesystem: true
+readOnlyRootFilesystem: false
 capabilities:
   drop: ["ALL"]
 {{- end }}

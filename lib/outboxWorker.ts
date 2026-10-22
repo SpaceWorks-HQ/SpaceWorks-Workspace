@@ -31,6 +31,7 @@ export async function runOutboxScheduler() {
  * across replicas; the globalThis guard avoids duplicate timers during HMR.
  */
 export function startOutboxWorker() {
+  if (process.env.NODE_ENV === "production" || process.env.REDIS_URL || process.env.JOBS_INPROCESS !== "true") return;
   const g = globalThis as typeof globalThis & { [WORKER_KEY]?: WorkerState };
   if (g[WORKER_KEY]?.started) return;
   const state: WorkerState = { started: true, running: false };

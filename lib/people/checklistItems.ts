@@ -83,9 +83,10 @@ export type OffboardingSources = {
   /** Items they could reveal through a direct grant or did reveal: rotate these. */
   vaultItemsToRotate: Array<{ id: string; title: string }>;
   servicesOwned: Array<{ id: string; name: string; backup: boolean }>;
-  assetsCheckedOut: Array<{ id: string; name: string; tag: string }>;
   assetsOwned: Array<{ id: string; name: string; tag: string }>;
   accessCredentials: Array<{ id: string; label: string; type: string }>;
+  itAssignments?: Array<{ id: string; title: string; kind: string }>;
+  toolAccounts?: Array<{ id: string; title: string; identity: string }>;
   subscriptionsOwned: Array<{ id: string; name: string }>;
   identityLinks: Array<{ id: string; provider: string; username: string | null }>;
   teams: Array<{ id: string; name: string; lead: boolean }>;
@@ -96,7 +97,6 @@ export const emptyOffboardingSources = (): OffboardingSources => ({
   vaultItemsOwned: [],
   vaultItemsToRotate: [],
   servicesOwned: [],
-  assetsCheckedOut: [],
   assetsOwned: [],
   accessCredentials: [],
   subscriptionsOwned: [],
@@ -125,9 +125,10 @@ export function offboardingItems(sources: OffboardingSources, options: { adminId
   }
   for (const item of rotate.values()) add(`Rotate the secret in "${item.title}"`, "vault_item", item.id, true, "They could reveal this secret. Change it and save the new value in the vault.");
   for (const service of sources.servicesOwned) add(`${service.backup ? "Pick a new backup owner" : "Reassign ownership"} of the ${service.name} service`, "service", service.id, !service.backup);
-  for (const asset of sources.assetsCheckedOut) add(`Get ${asset.name} (${asset.tag}) returned`, "asset", asset.id);
   for (const asset of sources.assetsOwned) add(`Reassign ${asset.name} (${asset.tag}) to a new owner`, "asset", asset.id, false);
   for (const credential of sources.accessCredentials) add(`Collect the ${CREDENTIAL_WORDS[credential.type] ?? "credential"} "${credential.label}"`, "access_credential", credential.id);
+  for (const record of sources.itAssignments ?? []) add(`${record.kind === "DEVICE" ? "Collect and return" : "Release the licence seat for"} ${record.title}`, "marketing_it", record.id, true, "Open IT administration, record the handover or release the seat, then complete this item.");
+  for (const account of sources.toolAccounts ?? []) add(`Revoke ${account.title} (${account.identity})`, "funding", account.id, true, "Remove access in the tool, then mark the account Removed in Funding and impact.");
   for (const subscription of sources.subscriptionsOwned) add(`Reassign the ${subscription.name} subscription`, "subscription", subscription.id);
   for (const link of sources.identityLinks) add(`Unlink their ${providerLabel(link.provider)} account${link.username ? ` (${link.username})` : ""}`, "identity_link", link.id);
   for (const team of sources.teams) add(team.lead ? `Hand over leading ${team.name} and remove them from the team` : `Remove them from ${team.name}`, "team", team.id, team.lead);

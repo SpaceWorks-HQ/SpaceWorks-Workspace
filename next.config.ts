@@ -20,6 +20,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   allowedDevOrigins,
   experimental: {
+    proxyClientMaxBodySize: "40mb",
     serverActions: {
       // Same-origin by default. Configure explicitly when a trusted proxy
       // terminates requests on another hostname.

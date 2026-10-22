@@ -28,6 +28,8 @@ export type ApprovalHookContext = {
 };
 
 export type ApprovalHook = {
+  /** Optional live source gate for private subjects, used by reads, decisions and notifications. */
+  canRead?(client: Prisma.TransactionClient, workspaceId: string, subjectId: string, userId: string): Promise<boolean>;
   /** App-relative link to the subject, used in notifications and the inbox. */
   url(workspaceSlug: string, subjectId: string): string;
   /** Noun for copy ("purchase request"). */

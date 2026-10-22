@@ -48,7 +48,7 @@ export async function saveDestination(workspaceId: string, actorId: string, raw:
     return row.id;
   });
 }
-const ruleSchema = z.object({ id: id.optional(), name: z.string().trim().min(1).max(80), eventTypes: z.array(z.string()).min(1).max(100), minSeverity: z.enum(["INFO", "WARNING", "CRITICAL"]), filters: z.object({ projectIds: z.array(id).max(50).optional(), monitorIds: z.array(id).max(50).optional(), tagsAny: z.array(z.string().min(1).max(64)).max(50).optional() }).default({}), quietHours: z.unknown().optional(), criticalBypassesQuiet: z.boolean().default(true), dedupeWindowSec: z.number().int().min(0).max(86400), reminderIntervalMin: z.number().int().min(0).max(10080), enabled: z.boolean().default(true), destinationIds: z.array(id).min(1).max(50) });
+const ruleSchema = z.object({ id: id.optional(), name: z.string().trim().min(1).max(80), eventTypes: z.array(z.string()).min(1).max(100), minSeverity: z.enum(["INFO", "WARNING", "CRITICAL"]), filters: z.object({ ratings: z.array(z.number().int().min(1).max(5)).max(5).optional(), projectIds: z.array(id).max(50).optional(), monitorIds: z.array(id).max(50).optional(), tagsAny: z.array(z.string().min(1).max(64)).max(50).optional() }).default({}), quietHours: z.unknown().optional(), criticalBypassesQuiet: z.boolean().default(true), dedupeWindowSec: z.number().int().min(0).max(86400), reminderIntervalMin: z.number().int().min(0).max(10080), enabled: z.boolean().default(true), destinationIds: z.array(id).min(1).max(50) });
 export async function saveRule(workspaceId: string, actorId: string, raw: unknown) {
   const input = ruleSchema.parse(raw);
   const normalized = normalizeEventPatterns(input.eventTypes);

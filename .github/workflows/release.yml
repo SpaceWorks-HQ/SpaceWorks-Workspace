@@ -1,0 +1,395 @@
+name: Release
+run-name: Release ${{ github.event_name == 'workflow_run' && 'main' || github.ref_name }}@${{ github.event.workflow_run.head_sha || github.sha }}
+
+# Every commit on main that passes the Quality gate publishes two container
+# images to GitHub Packages, for linux/amd64 and linux/arm64, with these roles:
+#   ghcr.io/<owner>/spaceworks-workspace-backend   the application and API (runner
+#       target); the same image runs migrations (`migrate`) and the VPS tools
+#   ghcr.io/<owner>/spaceworks-workspace-frontend  the website alone (frontend/)
+# The images are the same for every installation: public origins are
+# placeholders that scripts/docker-entrypoint.sh replaces at start, and each
+# installation supplies its own NEXT_SERVER_ACTIONS_ENCRYPTION_KEY at runtime.
+#
+# Image versions look like 0.1.0-main.42.a1b2c3d4e5f6 (VERSION, run, commit).
+# A GitHub Release (tag v<version>) is published by the first main build of
+# each VERSION (or a manual run on main); the VPS installer installs the latest
+# release, so bumping VERSION is how a change reaches installations.
+# A manual run on any other branch publishes a pre-release for testing.
+on:
+  workflow_run:
+    workflows: [Quality gate]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.event.workflow_run.head_sha || github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    # Never expose publishing credentials to a pull request or fork workflow.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.release.outputs.sha }}
+      base: ${{ steps.release.outputs.base }}
+      version: ${{ steps.release.outputs.version }}
+      owner: ${{ steps.release.outputs.owner }}
+      release: ${{ steps.release.outputs.release }}
+      prerelease: ${{ steps.release.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          persist-credentials: false
+
+      - name: Work out the version
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT: ${{ github.event_name }}
+          BRANCH: ${{ github.ref_name }}
+          REF: ${{ github.ref }}
+          RUN_NUMBER: ${{ github.run_number }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+          sha=$(git rev-parse HEAD)
+          base=$(tr -d '[:space:]' < VERSION)
+          if ! [[ "$base" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error file=VERSION::VERSION must be a version like 1.2.3 (got '$base')"
+            exit 1
+          fi
+          # A full-ref test: a tag named main never counts as the main branch.
+          if [[ "$EVENT" != workflow_run && "$REF" != refs/heads/main ]]; then
+            label=$(printf '%s' "$BRANCH" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//' | cut -c1-30)
+            label=${label%-}
+            release=true prerelease=true
+          else
+            label=main prerelease=false
+            # Decided by state, not by the diff: the first main build of a VERSION
+            # releases it, whichever commit changed VERSION and however it merged.
+            # Reruns and later commits of the same VERSION only publish images.
+            existing=$(gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/v$base-main." --jq length)
+            release=false
+            if [[ "$EVENT" == workflow_dispatch || "$existing" == 0 ]]; then release=true; fi
+          fi
+          version="$base-$label.$RUN_NUMBER.${sha:0:12}"
+          {
+            echo "sha=$sha"
+            echo "base=$base"
+            echo "version=$version"
+            echo "owner=$(printf '%s' "$OWNER" | tr '[:upper:]' '[:lower:]')"
+            echo "release=$release"
+            echo "prerelease=$prerelease"
+          } >> "$GITHUB_OUTPUT"
+          echo "Version $version (GitHub Release: $release, pre-release: $prerelease)"
+
+  build:
+    needs: prepare
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-24.04
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+    env:
+      REGISTRY: ghcr.io/${{ needs.prepare.outputs.owner }}
+      LABELS: |
+        org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+        org.opencontainers.image.revision=${{ needs.prepare.outputs.sha }}
+        org.opencontainers.image.version=${{ needs.prepare.outputs.version }}
+        org.opencontainers.image.licenses=AGPL-3.0-or-later
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Next.js needs a Server Actions key to build. This one is random per build
+      # and never used: the image refuses to start without the installation's own key.
+      - name: Generate a throwaway build key
+        run: |
+          key=$(openssl rand -base64 32)
+          echo "::add-mask::$key"
+          echo "BUILD_ACTIONS_KEY=$key" >> "$GITHUB_ENV"
+
+      - name: Build backend
+        id: backend
+        uses: docker/build-push-action@v7
+        env:
+          NEXT_SERVER_ACTIONS_ENCRYPTION_KEY: ${{ env.BUILD_ACTIONS_KEY }}
+        with:
+          context: .
+          target: runner
+          platforms: ${{ matrix.platform }}
+          labels: ${{ env.LABELS }}
+          outputs: type=image,name=${{ env.REGISTRY }}/spaceworks-workspace-backend,push-by-digest=true,name-canonical=true,push=true
+          build-args: |
+            NEXT_PUBLIC_BASE_URL=https://spaceworks-workspace-origin.invalid
+          secret-envs: |
+            NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
+          cache-from: type=gha,scope=backend-${{ matrix.runner }}
+          cache-to: type=gha,mode=max,scope=backend-${{ matrix.runner }}
+          # The throwaway key changes every run; never reuse a cached build stage.
+          no-cache-filters: builder
+
+      - name: Build frontend
+        id: frontend
+        uses: docker/build-push-action@v7
+        env:
+          NEXT_SERVER_ACTIONS_ENCRYPTION_KEY: ${{ env.BUILD_ACTIONS_KEY }}
+        with:
+          context: .
+          target: frontend
+          platforms: ${{ matrix.platform }}
+          labels: ${{ env.LABELS }}
+          outputs: type=image,name=${{ env.REGISTRY }}/spaceworks-workspace-frontend,push-by-digest=true,name-canonical=true,push=true
+          build-args: |
+            NEXT_PUBLIC_BASE_URL=https://spaceworks-workspace-origin.invalid
+            NEXT_PUBLIC_BACKEND_ORIGIN=https://spaceworks-workspace-backend.invalid
+          secret-envs: |
+            NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
+          cache-from: type=gha,scope=frontend-${{ matrix.runner }}
+          cache-to: type=gha,mode=max,scope=frontend-${{ matrix.runner }}
+          no-cache-filters: frontend-builder
+
+      - name: Record digests
+        env:
+          BACKEND: ${{ steps.backend.outputs.digest }}
+          FRONTEND: ${{ steps.frontend.outputs.digest }}
+        run: |
+          mkdir -p digests/spaceworks-workspace-backend digests/spaceworks-workspace-frontend
+          touch "digests/spaceworks-workspace-backend/${BACKEND#sha256:}" \
+            "digests/spaceworks-workspace-frontend/${FRONTEND#sha256:}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ matrix.runner }}
+          path: digests/
+          retention-days: 1
+
+  publish:
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: digests-*
+          merge-multiple: true
+          path: digests
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Tag the multi-platform images
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ needs.prepare.outputs.owner }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          BASE: ${{ needs.prepare.outputs.base }}
+          SHA: ${{ needs.prepare.outputs.sha }}
+          PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
+        run: |
+          set -euo pipefail
+          # For this product, the rolling tags (main, latest and the series, e.g.
+          # 0.1) move only for main builds that are still the head of main.
+          head=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
+          for image in spaceworks-workspace-backend spaceworks-workspace-frontend; do
+            name="ghcr.io/$OWNER/$image"
+            tags=(--tag "$name:$VERSION" --tag "$name:sha-${SHA:0:12}")
+            if [[ "$PRERELEASE" == false && "$SHA" == "$head" ]]; then
+              tags+=(--tag "$name:main" --tag "$name:latest" --tag "$name:${BASE%.*}")
+            fi
+            sources=()
+            for digest in digests/"$image"/*; do sources+=("$name@sha256:$(basename "$digest")"); done
+            docker buildx imagetools create "${tags[@]}" "${sources[@]}"
+            docker buildx imagetools inspect "$name:$VERSION" --format '{{json .Manifest}}' | grep -q 'linux/arm64\|"arm64"'
+            printf -- '- `%s:%s`\n' "$name" "$VERSION" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+  github-release:
+    needs: [prepare, publish]
+    if: needs.prepare.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      created: ${{ steps.publish.outputs.created }}
+    steps:
+      - name: Publish the GitHub Release
+        id: publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ needs.prepare.outputs.owner }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          BASE: ${{ needs.prepare.outputs.base }}
+          SHA: ${{ needs.prepare.outputs.sha }}
+          PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          title="Space Works Workspace $BASE"
+          flags=(--latest)
+          if [[ "$PRERELEASE" == true ]]; then
+            title="$title (test build $VERSION)"
+            flags=(--prerelease --latest=false)
+            install="curl -fsSL https://raw.githubusercontent.com/$GITHUB_REPOSITORY/v$VERSION/install.sh | bash -s -- --release v$VERSION"
+          elif [[ "$EVENT" != workflow_dispatch && "$(gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/v$BASE-main." --jq length)" != 0 ]]; then
+            echo "A concurrent build already released $BASE; publishing images only."
+            exit 0
+          fi
+          install=${install:-"curl -fsSL https://raw.githubusercontent.com/$GITHUB_REPOSITORY/main/install.sh | bash"}
+          notes=$(cat <<EOF
+          Install or update a VPS:
+
+          \`\`\`bash
+          $install
+          \`\`\`
+
+          Container images (linux/amd64, linux/arm64):
+
+          - \`ghcr.io/$OWNER/spaceworks-workspace-backend:$VERSION\`: application and API; also runs migrations (\`migrate\`) and the VPS tools
+          - \`ghcr.io/$OWNER/spaceworks-workspace-frontend:$VERSION\`: the website, for the split layout
+
+          Secrets CLI and Node SDK (\`sww\`), same version:
+
+          \`\`\`bash
+          npm install -g @spaceworks-hq/workspace-cli@$BASE
+          \`\`\`
+
+          Built from \`$SHA\`.
+          EOF
+          )
+          gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --target "$SHA" \
+            --title "$title" --notes "$notes" --generate-notes "${flags[@]}"
+          echo "created=true" >> "$GITHUB_OUTPUT"
+
+  # The secrets CLI and SDK (packages/cli) ship with every main release, at the
+  # release's VERSION: always to GitHub Packages, and to npmjs.com when the
+  # repository has an NPM_TOKEN secret. A version that already exists is skipped.
+  cli-package:
+    needs: [prepare, github-release]
+    if: needs.prepare.outputs.release == 'true' && needs.prepare.outputs.prerelease == 'false'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with: {node-version: 22, cache: npm}
+      - name: Build the CLI at the release version
+        env:
+          BASE: ${{ needs.prepare.outputs.base }}
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npm version "$BASE" --no-git-tag-version --allow-same-version --workspace packages/cli
+          npm run build --workspace packages/cli
+          npm pack --dry-run --workspace packages/cli
+      - name: Publish to GitHub Packages
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BASE: ${{ needs.prepare.outputs.base }}
+        run: |
+          set -euo pipefail
+          printf '@spaceworks-hq:registry=https://npm.pkg.github.com\n//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}\n' > "$RUNNER_TEMP/.npmrc"
+          export NPM_CONFIG_USERCONFIG="$RUNNER_TEMP/.npmrc"
+          if npm view "@spaceworks-hq/workspace-cli@$BASE" version >/dev/null 2>&1; then echo "Already on GitHub Packages."; exit 0; fi
+          npm publish --workspace packages/cli --ignore-scripts
+      - name: Publish to npmjs.com
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          BASE: ${{ needs.prepare.outputs.base }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$NODE_AUTH_TOKEN" ]]; then echo "No NPM_TOKEN secret; skipping npmjs.com."; exit 0; fi
+          printf '//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}\n' > "$RUNNER_TEMP/.npmrc-public"
+          export NPM_CONFIG_USERCONFIG="$RUNNER_TEMP/.npmrc-public"
+          if npm view "@spaceworks-hq/workspace-cli@$BASE" version --registry https://registry.npmjs.org >/dev/null 2>&1; then echo "Already on npmjs.com."; exit 0; fi
+          npm publish --workspace packages/cli --ignore-scripts --provenance --access public --registry https://registry.npmjs.org
+
+  # Automatic deploys, for this workspace: a self-hosted runner on the VPS (see
+  # scripts/install-runner.sh) updates it to each published release. Opt-in with
+  # the repository variable SWW_DEPLOY=true, so a repository or fork without a
+  # runner never waits. Only main releases deploy; pre-releases never do.
+  # SECURITY: the runner controls Docker (root on the VPS). Never target its
+  # label from pull_request workflows; require approval for fork workflows. This
+  # job checks out no code and uses no third-party actions.
+  deploy:
+    needs: [prepare, github-release]
+    if: >-
+      needs.github-release.outputs.created == 'true' &&
+      needs.prepare.outputs.prerelease == 'false' &&
+      vars.SWW_DEPLOY == 'true'
+    runs-on: [self-hosted, spaceworks-workspace-prod]
+    environment: production
+    concurrency:
+      group: spaceworks-workspace-deploy
+      cancel-in-progress: false
+    permissions: {}
+    timeout-minutes: 60
+    steps:
+      - name: Deploy the published release
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        # The runner account may run only this wrapper as root (install-runner.sh).
+        run: sudo -n /usr/local/sbin/sww-deploy "v$VERSION"
+
+  retention:
+    needs: [prepare, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    concurrency:
+      group: spaceworks-workspace-package-retention
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with: {node-version: 22}
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - run: node scripts/ghcr-retention.mjs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ needs.prepare.outputs.owner }}
+          OWNER_TYPE: ${{ github.event.repository.owner.type }}

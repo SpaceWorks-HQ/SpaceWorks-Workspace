@@ -106,20 +106,6 @@ enum DocVisibility {
   ADMINS
 }
 
-enum CommunityEventKind {
-  BUILD_NIGHT
-  MEETUP
-  WORKSHOP
-  OTHER
-}
-
-enum AttendanceStatus {
-  GOING
-  MAYBE
-  NOT_GOING
-  WAITLIST
-}
-
 enum LedgerKind {
   INCOME
   EXPENSE
@@ -132,11 +118,6 @@ enum InvoiceStatus {
   VOID
 }
 
-enum BlogPostStatus {
-  DRAFT
-  PUBLISHED
-}
-
 enum AssistantRole {
   USER
   ASSISTANT
@@ -144,6 +125,10 @@ enum AssistantRole {
 }
 
 enum IntegrationProvider {
+  SOCIAL_YOUTUBE
+  SOCIAL_META
+  SOCIAL_LINKEDIN
+  SOCIAL_X
   GOOGLE
   GITHUB
   TELEGRAM
@@ -170,27 +155,30 @@ enum BoardroomTurnRole {
 // ──────────────────────── Auth and instance ────────────────────────
 
 model User {
-  id                 String    @id @default(cuid())
+  cliSessions        CliSession[]
+  personalNotes      PersonalNote[]
+  personalTodos      PersonalTodo[]
+  id                 String         @id @default(cuid())
   name               String?
-  email              String    @unique
+  email              String         @unique
   emailVerified      DateTime?
   /// Bcrypt hash for email + password sign-in. Null for Google-only users.
   passwordHash       String?
   image              String?
   bio                String?
   pronouns           String?
-  skills             String[]  @default([])
+  skills             String[]       @default([])
   timezone           String?
   /// AES-GCM encrypted TOTP seed (lib/mfa.ts). Never expose or log it.
   mfaSecretEncrypted String?
   mfaEnabledAt       DateTime?
   /// Incremented to invalidate every issued JWT session (password reset, sign out everywhere).
-  sessionVersion     Int       @default(0)
+  sessionVersion     Int            @default(0)
   lastSeenAt         DateTime?
   /// Set by a super-admin; disabled users cannot sign in.
   disabledAt         DateTime?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
 
   accounts                Account[]
   sessions                Session[]
@@ -220,13 +208,8 @@ model User {
   docRevisions          DocRevision[]
   filesUploaded         FileObject[]
   announcements         Announcement[]
-  communityEvents       CommunityEvent[]
-  eventAttendance       EventAttendee[]
-  shoutoutsGiven        Shoutout[]              @relation("ShoutoutFrom")
-  shoutoutsReceived     Shoutout[]              @relation("ShoutoutTo")
   ledgerEntries         LedgerEntry[]
   invoices              Invoice[]
-  blogPosts             BlogPost[]
   assistantChats        AssistantConversation[]
   assistantMemories     AssistantMemory[]
   assistantSkills       AssistantSkill[]
@@ -427,31 +410,58 @@ model Notification {
 // ──────────────────────────── Tenancy ────────────────────────────
 
 model Workspace {
-  id                      String    @id @default(cuid())
-  slug                    String    @unique
-  name                    String
-  tagline                 String?
-  description             String?
-  timezone                String    @default("Asia/Kolkata")
-  currency                String    @default("INR")
-  financeVisibleToMembers Boolean   @default(false)
-  blogEnabled             Boolean   @default(false)
-  /// Google Calendar mirrored into the community calendar (Integrations).
-  googleCalendarId        String?
+  secretIdentities             SecretIdentity[]
+  vaultKeys                    VaultKey[]
+  secretKeyRotations           SecretKeyRotation[]
+  secretProjectRows            SecretProject[]
+  secretEnvironmentRows        SecretEnvironment[]
+  secretGrantRows              SecretGrant[]
+  secretFolderRows             SecretFolder[]
+  applicationSecretRows        ApplicationSecret[]
+  applicationSecretVersionRows ApplicationSecretVersion[]
+  secretSnapshotRows           SecretSnapshot[]
+  secretChangeRows             SecretChange[]
+  secretServiceTokenRows       SecretServiceToken[]
+  secretShareRows              SecretShare[]
+  secretAuditRows              SecretAudit[]
+  businessDocuments            BusinessDocument[]
+  documentSeries               DocumentSeries[]
+  documentReferences           DocumentReference[]
+  documentFiles                DocumentFile[]
+  documentAllocations          DocumentAllocation[]
+  documentDeliveries           DocumentDelivery[]
+  socialAccounts               SocialAccount[]
+  socialMetrics                SocialMetricDaily[]
+  socialPosts                  SocialPost[]
+  socialComments               SocialComment[]
+  socialSyncLogs               SocialSyncLog[]
+  socialDrafts                 SocialConnectionDraft[]
+  analyticsPresets             AnalyticsPreset[]
+  analyticsAdjustments         AnalyticsAdjustment[]
+  id                           String                     @id @default(cuid())
+  personalNotes                PersonalNote[]
+  personalTodos                PersonalTodo[]
+  slug                         String                     @unique
+  name                         String
+  tagline                      String?
+  description                  String?
+  timezone                     String                     @default("Asia/Kolkata")
+  currency                     String                     @default("INR")
+  financeVisibleToMembers      Boolean                    @default(false)
   /// Channel (id) that receives assistant digests by default.
-  digestChannelId         String?
+  digestChannelId              String?
   /// Members may see Services costs (cloud spend, service costs).
-  costsVisibleToMembers   Boolean   @default(false)
+  costsVisibleToMembers        Boolean                    @default(false)
   /// Members (not only admins) may acknowledge Services incidents.
-  membersCanAckIncidents  Boolean   @default(false)
+  membersCanAckIncidents       Boolean                    @default(false)
   /// Pauses retention purges (legal hold).
-  legalHold               Boolean   @default(false)
-  defaultLocale           String    @default("en-IN")
+  legalHold                    Boolean                    @default(false)
+  defaultLocale                String                     @default("en-IN")
   /// Raw monitor check retention in days (7–30).
-  monitorRetentionDays    Int       @default(14)
-  archivedAt              DateTime?
-  createdAt               DateTime  @default(now())
-  updatedAt               DateTime  @updatedAt
+  monitorRetentionDays         Int                        @default(14)
+  archivedAt                   DateTime?
+  createdAt                    DateTime                   @default(now())
+  updatedAt                    DateTime                   @updatedAt
 
   memberships       Membership[]
   invitations       Invitation[]
@@ -467,12 +477,9 @@ model Workspace {
   docs              Doc[]
   files             FileObject[]
   announcements     Announcement[]
-  communityEvents   CommunityEvent[]
-  shoutouts         Shoutout[]
   financeCategories FinanceCategory[]
   ledgerEntries     LedgerEntry[]
   invoices          Invoice[]
-  blogPosts         BlogPost[]
   assistantChats    AssistantConversation[]
   assistantMemories AssistantMemory[]
   assistantSkills   AssistantSkill[]
@@ -522,6 +529,8 @@ model Workspace {
   forms                    Form[]
   goals                    Goal[]
   templates                Template[]
+  calendarEntries          CalendarEntry[]
+  calendarSyncs            CalendarMeetingSync[]
   meetings                 Meeting[]
   decisions                Decision[]
   polls                    Poll[]
@@ -563,6 +572,63 @@ model Workspace {
   appReviewSlackConfig     AppReviewSlackConfig?
   appReviewSlackEvents     AppReviewSlackEvent[]
   appReviewSlackMembers    AppReviewSlackMember[]
+  helpTickets              HelpTicket[]
+  safetyReports            SafetyReport[]
+  volunteerLogs            VolunteerLog[]
+  leaveTypes               LeaveType[]
+  leaveBalances            LeaveBalance[]
+  hiringOpenings           HiringOpening[]
+  hiringCandidates         HiringCandidate[]
+  opsAttachments           OpsAttachment[]
+  facilityLeases           FacilityLease[]
+  governanceRecords        GovernanceRecord[]
+  governanceAttachments    GovernanceAttachment[]
+  governanceBankChanges    GovernanceBankChange[]
+  fundingRecords           FundingRecord[]
+  fundingAttachments       FundingAttachment[]
+  fundingAnalytics         FundingAnalyticsSnapshot[]
+  financeFunds             FinanceFund[]
+  financeCostCentres       FinanceCostCentre[]
+  financeAccounts          FinanceAccount[]
+  financeBills             FinanceBill[]
+  financeBillPayments      FinanceBillPayment[]
+  financeMonths            FinanceMonth[]
+  financeMonthSteps        FinanceMonthStep[]
+  financeReconciliations   FinanceReconciliation[]
+  financeAttachments       FinanceAttachment[]
+  payrollGrants            FinancePayrollGrant[]
+  payProfiles              FinancePayProfile[]
+  payRuns                  FinancePayRun[]
+  disbursements            FinanceDisbursement[]
+  financeReviewRules       FinanceReviewRule[]
+  moneyControlRecords      MoneyControlRecord[]
+  moneyControlAttachments  MoneyControlAttachment[]
+  moneyControlMovements    MoneyControlMovement[]
+  moneyControlEvents       MoneyControlEvent[]
+  safeguardingHandlers     SafeguardingHandler[]
+  safeguardingCases        SafeguardingCase[]
+  safeguardingEvents       SafeguardingEvent[]
+  safeguardingAttachments  SafeguardingAttachment[]
+  departments              Department[]
+  responsibilities         Responsibility[]
+  attendanceEntries        AttendanceEntry[]
+  orgEscalations           OrgEscalationPath[]
+  orgPeopleAttachments     OrgPeopleAttachment[]
+  backupRuns               BackupRun[]
+  marketingItRecords       MarketingItRecord[]
+  marketingItAttachments   MarketingItAttachment[]
+  marketingItEvents        MarketingItEvent[]
+  marketingItReviewItems   MarketingItReviewItem[]
+  productRecords           ProductRecord[]
+  productEstimateRevisions ProductEstimateRevision[]
+  productAttachments       ProductAttachment[]
+  recurringSchedules       RecurringCostSchedule[]
+  recurringDues            RecurringCostDue[]
+  staffAdvances            StaffAdvance[]
+  advanceRecoveries        StaffAdvanceRecovery[]
+  projectMilestones        ProjectMilestone[]
+  projectMilestoneTasks    ProjectMilestoneTask[]
+  projectStatusUpdates     ProjectStatusUpdate[]
 }
 
 model Membership {
@@ -660,16 +726,19 @@ model Project {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  owner       User?         @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: SetNull)
-  team        Team?         @relation(fields: [teamId], references: [id], onDelete: SetNull)
-  columns     BoardColumn[]
-  tasks       Task[]
-  githubRepos GithubRepo[]
-  cycles      Cycle[]
-  monitors    Monitor[]
+  workspace     Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  owner         User?                 @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  team          Team?                 @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  columns       BoardColumn[]
+  tasks         Task[]
+  githubRepos   GithubRepo[]
+  cycles        Cycle[]
+  monitors      Monitor[]
+  milestones    ProjectMilestone[]
+  statusUpdates ProjectStatusUpdate[]
 
   @@unique([workspaceId, key])
+  @@unique([workspaceId, id])
   @@index([workspaceId, status])
   @@index([teamId])
 }
@@ -729,16 +798,21 @@ model Task {
   activities TaskActivity[]
   files      FileObject[]
 
-  cycle              Cycle?              @relation(fields: [cycleId], references: [id], onDelete: SetNull)
-  recurrence         TaskRecurrence?     @relation("TaskRecurrenceInstances", fields: [recurrenceId], references: [id], onDelete: SetNull)
-  sourceMeeting      Meeting?            @relation("TaskSourceMeeting", fields: [sourceMeetingId], references: [id], onDelete: SetNull)
-  recurrenceRules    TaskRecurrence[]    @relation("TaskRecurrenceTemplate")
+  cycle              Cycle?                 @relation(fields: [cycleId], references: [id], onDelete: SetNull)
+  recurrence         TaskRecurrence?        @relation("TaskRecurrenceInstances", fields: [recurrenceId], references: [id], onDelete: SetNull)
+  sourceMeeting      Meeting?               @relation("TaskSourceMeeting", fields: [sourceMeetingId], references: [id], onDelete: SetNull)
+  recurrenceRules    TaskRecurrence[]       @relation("TaskRecurrenceTemplate")
   occurrences        TaskOccurrence[]
-  blocking           TaskDependency[]    @relation("TaskBlocking")
-  blockedBy          TaskDependency[]    @relation("TaskBlocked")
+  blocking           TaskDependency[]       @relation("TaskBlocking")
+  blockedBy          TaskDependency[]       @relation("TaskBlocked")
   meetingActionLinks MeetingActionItem[]
+  startsOn           DateTime?              @db.Date
+  blockerReason      String?
+  blockerOwnerId     String?
+  milestones         ProjectMilestoneTask[]
 
   @@unique([workspaceId, number])
+  @@unique([workspaceId, projectId, id])
   @@index([projectId, columnId, position])
   @@index([workspaceId, completedAt])
   @@index([workspaceId, dueAt])
@@ -747,6 +821,7 @@ model Task {
   @@index([cycleId])
   @@index([recurrenceId])
   @@index([sourceMeetingId])
+  @@index([workspaceId, blockerOwnerId])
 }
 
 model TaskAssignee {
@@ -984,35 +1059,46 @@ model DocRevision {
 /// A private object in S3-compatible storage (lib/storage). Always served
 /// through /api/files/[id] after a membership check.
 model FileObject {
-  id             String    @id @default(cuid())
+  documentFiles  DocumentFile[]
+  id             String         @id @default(cuid())
   workspaceId    String
-  storageKey     String    @unique
+  storageKey     String         @unique
   filename       String
   contentType    String
   size           Int
   checksum       String?
   uploadedById   String?
-  folder         String    @default("/")
+  folder         String         @default("/")
   docId          String?
   taskId         String?
   /// Current version number (FileVersion keeps previous objects).
-  currentVersion Int       @default(1)
+  currentVersion Int            @default(1)
   deletedAt      DateTime?
-  createdAt      DateTime  @default(now())
+  createdAt      DateTime       @default(now())
 
-  workspace             Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  uploadedBy            User?               @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
-  doc                   Doc?                @relation(fields: [docId], references: [id], onDelete: SetNull)
-  task                  Task?               @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  workspace             Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  uploadedBy            User?                  @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  doc                   Doc?                   @relation(fields: [docId], references: [id], onDelete: SetNull)
+  task                  Task?                  @relation(fields: [taskId], references: [id], onDelete: SetNull)
   messageAttachments    MessageAttachment[]
   ledgerReceipts        LedgerEntry[]
-  blogCovers            BlogPost[]
   versions              FileVersion[]
   subscriptionContracts Subscription[]
   certificationEvidence Certification[]
   statusPageLogos       StatusPage[]
   signedPdfs            SignatureRequest[]
+  opsAttachments        OpsAttachment[]
+  governanceAttachments GovernanceAttachment[]
+  fundingAttachments    FundingAttachment[]
 
+  financeAttachments      FinanceAttachment[]
+  moneyControlAttachments MoneyControlAttachment[]
+  safeguardingAttachments SafeguardingAttachment[]
+  orgPeopleAttachments    OrgPeopleAttachment[]
+  marketingItAttachments  MarketingItAttachment[]
+  productAttachments      ProductAttachment[]
+
+  @@unique([workspaceId, id])
   @@index([workspaceId, folder])
   @@index([docId])
   @@index([taskId])
@@ -1036,60 +1122,6 @@ model Announcement {
   author    User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
 
   @@index([workspaceId, publishedAt])
-}
-
-model CommunityEvent {
-  id          String             @id @default(cuid())
-  workspaceId String
-  title       String
-  description String?
-  location    String?
-  startsAt    DateTime
-  endsAt      DateTime?
-  kind        CommunityEventKind @default(OTHER)
-  /// RSVP cap; extra "going" responses become WAITLIST.
-  capacity    Int?
-  createdById String?
-  cancelledAt DateTime?
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-
-  workspace Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  createdBy User?           @relation(fields: [createdById], references: [id], onDelete: SetNull)
-  attendees EventAttendee[]
-  meetings  Meeting[]
-  shifts    Shift[]
-
-  @@index([workspaceId, startsAt])
-}
-
-model EventAttendee {
-  eventId     String
-  userId      String
-  status      AttendanceStatus @default(GOING)
-  respondedAt DateTime         @default(now())
-
-  event CommunityEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@id([eventId, userId])
-  @@index([userId])
-}
-
-model Shoutout {
-  id          String   @id @default(cuid())
-  workspaceId String
-  fromId      String
-  toId        String
-  message     String
-  createdAt   DateTime @default(now())
-
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  from      User      @relation("ShoutoutFrom", fields: [fromId], references: [id], onDelete: Cascade)
-  to        User      @relation("ShoutoutTo", fields: [toId], references: [id], onDelete: Cascade)
-
-  @@index([workspaceId, createdAt])
-  @@index([toId])
 }
 
 // ────────────────────────── Operations ──────────────────────────
@@ -1136,7 +1168,31 @@ model LedgerEntry {
   createdBy   User?            @relation(fields: [createdById], references: [id], onDelete: SetNull)
   budget      Budget?          @relation(fields: [budgetId], references: [id], onDelete: SetNull)
 
+  // Manual finance tools. Salary postings remain private to payroll grantees.
+  fundId         String?
+  costCentreId   String?
+  accountId      String?
+  incomeSource   String             @default("OTHER")
+  purpose        String?
+  invoiceNumber  String?
+  gstin          String?
+  taxableMinor   Int                @default(0)
+  cgstMinor      Int                @default(0)
+  sgstMinor      Int                @default(0)
+  igstMinor      Int                @default(0)
+  tdsMinor       Int                @default(0)
+  extractionUsed Boolean            @default(false)
+  privatePayroll Boolean            @default(false)
+  reconciledAt   DateTime?
+  fund           FinanceFund?       @relation(fields: [workspaceId, fundId], references: [workspaceId, id], onDelete: NoAction)
+  costCentre     FinanceCostCentre? @relation(fields: [workspaceId, costCentreId], references: [workspaceId, id], onDelete: NoAction)
+  account        FinanceAccount?    @relation(fields: [workspaceId, accountId], references: [workspaceId, id], onDelete: NoAction)
+
+  @@unique([workspaceId, id])
   @@unique([sourceType, sourceId])
+  @@index([workspaceId, fundId, occurredOn])
+  @@index([workspaceId, costCentreId, occurredOn])
+  @@index([workspaceId, accountId, occurredOn])
   @@index([workspaceId, occurredOn])
   @@index([categoryId])
   @@index([budgetId])
@@ -1167,31 +1223,6 @@ model Invoice {
 
   @@unique([workspaceId, number])
   @@index([workspaceId, status])
-}
-
-model BlogPost {
-  id             String         @id @default(cuid())
-  workspaceId    String
-  slug           String
-  title          String
-  excerpt        String?
-  /// Sanitised HTML.
-  contentHtml    String         @default("")
-  status         BlogPostStatus @default(DRAFT)
-  publishedAt    DateTime?
-  authorId       String?
-  seoTitle       String?
-  seoDescription String?
-  coverFileId    String?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-
-  workspace Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  author    User?       @relation(fields: [authorId], references: [id], onDelete: SetNull)
-  coverFile FileObject? @relation(fields: [coverFileId], references: [id], onDelete: SetNull)
-
-  @@unique([workspaceId, slug])
-  @@index([workspaceId, status, publishedAt])
 }
 
 // ─────────────────────────── Assistant ───────────────────────────
@@ -1527,6 +1558,9 @@ enum ApprovalSubjectType {
   ACCESS_CREDENTIAL
   TIME_OFF
   CUSTOM
+  SECRET_CHANGE
+  PRODUCT_RELEASE
+  PRODUCT_CHANGE
 }
 
 enum ApprovalStatus {
@@ -1700,16 +1734,9 @@ enum PrincipalType {
 
 enum AssetStatus {
   AVAILABLE
-  CHECKED_OUT
   IN_MAINTENANCE
-  RESERVED
   LOST
   RETIRED
-}
-
-enum BookingStatus {
-  CONFIRMED
-  CANCELLED
 }
 
 enum MaintenanceLogType {
@@ -2002,6 +2029,11 @@ enum CloudProviderKind {
   RAILWAY
   GITHUB_ACTIONS
   PROMETHEUS
+  CONTABO
+  LINODE
+  VULTR
+  SCALEWAY
+  SUPABASE
 }
 
 enum CloudResourceStatus {
@@ -2097,7 +2129,6 @@ enum RuleScopeType {
   DIGEST
   ANNOUNCEMENT
   FORM
-  CALENDAR
   SUBSCRIPTION
   COST_BUDGET
   CLOUD_CONNECTION
@@ -2379,16 +2410,27 @@ model MemberProfile {
   /// Encrypted { name, relation, phone, notes }.
   emergencyContactEnc String?
   emergencyUpdatedAt  DateTime?
+  engagementType      String         @default("VOLUNTEER")
+  engagementStart     DateTime?      @db.Date
+  engagementEnd       DateTime?      @db.Date
   leavingAt           DateTime?
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
 
-  workspace Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  skills    MemberSkill[]
+  workspace         Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skills            MemberSkill[]
+  departmentId      String?
+  managerId         String?
+  contactPhone      String?
+  contactHandle     String?
+  contactVisibility Visibility    @default(PRIVATE)
+  department        Department?   @relation(fields: [workspaceId, departmentId], references: [workspaceId, id], onDelete: NoAction)
 
   @@unique([workspaceId, userId])
   @@index([workspaceId, membershipType])
+  @@index([workspaceId, departmentId])
+  @@index([workspaceId, managerId])
 }
 
 model MemberSkill {
@@ -2507,25 +2549,23 @@ model ShiftType {
 }
 
 model Shift {
-  id              String   @id @default(cuid())
-  workspaceId     String
-  shiftTypeId     String
-  startsAt        DateTime
-  endsAt          DateTime
-  capacity        Int
-  location        String?
-  calendarEventId String?
+  id          String   @id @default(cuid())
+  workspaceId String
+  shiftTypeId String
+  startsAt    DateTime
+  endsAt      DateTime
+  capacity    Int
+  location    String?
   /// Groups recurring instances; the series root carries `rrule`.
-  seriesId        String?
-  rrule           String?
-  notes           String?
-  createdById     String?
-  createdAt       DateTime @default(now())
+  seriesId    String?
+  rrule       String?
+  notes       String?
+  createdById String?
+  createdAt   DateTime @default(now())
 
-  workspace     Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  shiftType     ShiftType         @relation(fields: [shiftTypeId], references: [id], onDelete: Cascade)
-  calendarEvent CommunityEvent?   @relation(fields: [calendarEventId], references: [id], onDelete: SetNull)
-  assignments   ShiftAssignment[]
+  workspace   Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  shiftType   ShiftType         @relation(fields: [shiftTypeId], references: [id], onDelete: Cascade)
+  assignments ShiftAssignment[]
 
   @@unique([seriesId, startsAt])
   @@index([workspaceId, startsAt])
@@ -2563,7 +2603,7 @@ model ShiftSwapRequest {
   @@index([assignmentId, status])
 }
 
-/// Training sign-off type (laser cutter, CNC…); gates assets and shifts.
+/// Training sign-off type (laser cutter, CNC…); gates rota shifts.
 model CertType {
   id            String   @id @default(cuid())
   workspaceId   String
@@ -2576,7 +2616,6 @@ model CertType {
 
   workspace      Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   certifications Certification[]
-  gatedAssets    Asset[]
 
   @@unique([workspaceId, name])
 }
@@ -2850,7 +2889,7 @@ model Asset {
   location           String?
   status             AssetStatus @default(AVAILABLE)
   condition          String?
-  /// "ORG" or the lender's name.
+  /// Owning organisation or team.
   ownerLabel         String?
   ownerUserId        String?
   serialNumber       String?
@@ -2860,59 +2899,16 @@ model Asset {
   ledgerEntryId      String?
   photoFileIds       String[]    @default([])
   manualDocId        String?
-  requiresCertTypeId String?
-  checkoutable       Boolean     @default(true)
-  bookable           Boolean     @default(false)
-  maxCheckoutDays    Int?
   notes              String?
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt
 
-  workspace        Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  manualDoc        Doc?                  @relation(fields: [manualDocId], references: [id], onDelete: SetNull)
-  requiresCertType CertType?             @relation(fields: [requiresCertTypeId], references: [id], onDelete: SetNull)
-  checkouts        AssetCheckout[]
-  bookings         AssetBooking[]
-  maintenance      AssetMaintenanceLog[]
+  workspace   Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  manualDoc   Doc?                  @relation(fields: [manualDocId], references: [id], onDelete: SetNull)
+  maintenance AssetMaintenanceLog[]
 
   @@unique([workspaceId, tag])
   @@index([workspaceId, status])
-}
-
-model AssetCheckout {
-  id             String    @id @default(cuid())
-  assetId        String
-  userId         String
-  checkedOutAt   DateTime  @default(now())
-  dueAt          DateTime?
-  returnedAt     DateTime?
-  conditionOut   String?
-  conditionIn    String?
-  notes          String?
-  lastRemindedAt DateTime?
-
-  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
-
-  @@index([assetId, returnedAt])
-  @@index([userId, returnedAt])
-}
-
-/// Overlaps are prevented in the booking transaction (check-then-insert under
-/// a row lock on the asset).
-model AssetBooking {
-  id        String        @id @default(cuid())
-  assetId   String
-  userId    String
-  startsAt  DateTime
-  endsAt    DateTime
-  status    BookingStatus @default(CONFIRMED)
-  purpose   String?
-  createdAt DateTime      @default(now())
-
-  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
-
-  @@index([assetId, startsAt, endsAt])
-  @@index([userId, startsAt])
 }
 
 model AssetMaintenanceLog {
@@ -2982,6 +2978,7 @@ model Organisation {
   services         ServiceCatalogItem[]
   subscriptions    Subscription[]
   purchaseRequests PurchaseRequest[]
+  governanceVendor GovernanceRecord[]
 
   @@index([workspaceId, name])
   @@index([workspaceId, domain])
@@ -3084,8 +3081,6 @@ model Deal {
   probability     Int?
   expectedCloseAt DateTime?
   ownerId         String?
-  /// CommunityEvent id.
-  eventId         String?
   invoiceId       String?
   /// [{ title, done }]
   benefits        Json      @default("[]")
@@ -3107,8 +3102,6 @@ model Budget {
   name          String
   teamId        String?
   projectId     String?
-  /// CommunityEvent id.
-  eventId       String?
   periodStart   DateTime @db.Date
   periodEnd     DateTime @db.Date
   amountMinor   Int
@@ -3125,6 +3118,11 @@ model Budget {
   ledgerEntries    LedgerEntry[]
   purchaseRequests PurchaseRequest[]
   reimbursements   Reimbursement[]
+
+  // Category/centre lines share the existing budget and ledger.
+  costCentreId String?
+  varianceNote String?
+  costCentre   FinanceCostCentre? @relation(fields: [workspaceId, costCentreId], references: [workspaceId, id], onDelete: NoAction)
 
   @@index([workspaceId, periodStart])
 }
@@ -3143,7 +3141,6 @@ model PurchaseRequest {
   budgetId      String?
   teamId        String?
   projectId     String?
-  eventId       String?
   neededBy      DateTime?      @db.Date
   paymentRoute  PaymentRoute   @default(ORG_CARD)
   status        PurchaseStatus @default(DRAFT)
@@ -3383,6 +3380,7 @@ model Template {
 // ─────────────────────── Collaboration ───────────────────────
 
 model Meeting {
+  meetPending        Boolean       @default(false)
   id                 String        @id @default(cuid())
   workspaceId        String
   title              String
@@ -3393,7 +3391,6 @@ model Meeting {
   endsAt             DateTime?
   location           String?
   teamId             String?
-  calendarEventId    String?
   notesDocId         String?
   facilitatorId      String?
   noteTakerId        String?
@@ -3404,15 +3401,23 @@ model Meeting {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
-  workspace     Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  calendarEvent CommunityEvent?     @relation(fields: [calendarEventId], references: [id], onDelete: SetNull)
-  notesDoc      Doc?                @relation(fields: [notesDocId], references: [id], onDelete: SetNull)
-  attendees     MeetingAttendee[]
-  agenda        AgendaItem[]
-  decisions     Decision[]
-  actionItems   MeetingActionItem[]
-  sourcedTasks  Task[]              @relation("TaskSourceMeeting")
-  polls         Poll[]
+  workspace         Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  notesDoc          Doc?                  @relation(fields: [notesDocId], references: [id], onDelete: SetNull)
+  attendees         MeetingAttendee[]
+  agenda            AgendaItem[]
+  decisions         Decision[]
+  actionItems       MeetingActionItem[]
+  sourcedTasks      Task[]                @relation("TaskSourceMeeting")
+  polls             Poll[]
+  governanceMinutes GovernanceRecord[]
+  videoUrl          String?
+  projectId         String?
+  timezone          String                @default("Asia/Kolkata")
+  externalEmails    String[]              @default([])
+  sequence          Int                   @default(0)
+  reminderMinutes   Int                   @default(30)
+  reminderSentAt    DateTime?
+  calendarSyncs     CalendarMeetingSync[]
 
   @@index([workspaceId, startsAt])
   @@index([seriesId, startsAt])
@@ -3647,7 +3652,6 @@ model ChangelogEntry {
   audience        ChangelogAudience @default(INTERNAL)
   serviceId       String?
   githubReleaseId String?           @unique
-  blogPostId      String?
   publishedAt     DateTime?
   createdById     String?
   createdAt       DateTime          @default(now())
@@ -3721,18 +3725,21 @@ model ImportJob {
 
 /// Instance-level backup runs reported by the backup script.
 model BackupRun {
-  id         String    @id @default(cuid())
+  id          String     @id @default(cuid())
   /// DB | FILES
-  kind       String
-  status     JobStatus
-  startedAt  DateTime
-  finishedAt DateTime?
-  sizeBytes  BigInt?
-  location   String?
-  checksum   String?
-  error      String?
+  kind        String
+  status      JobStatus
+  startedAt   DateTime
+  finishedAt  DateTime?
+  sizeBytes   BigInt?
+  location    String?
+  checksum    String?
+  error       String?
+  workspaceId String?
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([kind, startedAt(sort: Desc)])
+  @@index([workspaceId, startedAt])
 }
 
 model RetentionPolicy {
@@ -4744,4 +4751,2151 @@ model AppReviewSlackMember {
 
   @@unique([workspaceId, slackUserId])
   @@index([workspaceId, userId])
+}
+
+// ---------------------------------------------------------------------------
+// Personal notepad: private notes and to-dos for one member in one workspace.
+// Nobody else can read them, admins included.
+// ---------------------------------------------------------------------------
+
+/// Brand pastel a note card is tinted with (status-free; decoration only).
+enum NoteTone {
+  PLAIN
+  CITRON
+  SKY
+  YELLOW
+  ORANGE
+  TEAL
+}
+
+model PersonalNote {
+  id          String    @id @default(cuid())
+  workspaceId String
+  userId      String
+  title       String    @default("")
+  /// Sanitised HTML from the editor (may contain checklists).
+  contentHtml String    @default("")
+  contentText String    @default("")
+  tone        NoteTone  @default(PLAIN)
+  pinned      Boolean   @default(false)
+  archivedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  workspace Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  todos     PersonalTodo[]
+
+  @@index([workspaceId, userId, archivedAt, pinned, updatedAt])
+}
+
+model PersonalTodo {
+  id          String    @id @default(cuid())
+  workspaceId String
+  userId      String
+  text        String
+  done        Boolean   @default(false)
+  doneAt      DateTime?
+  /// Calendar day in the workspace time zone.
+  dueOn       DateTime? @db.Date
+  starred     Boolean   @default(false)
+  position    Float
+  noteId      String?
+  /// Workspace task this to-do was sent to.
+  taskId      String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  workspace Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  note      PersonalNote? @relation(fields: [noteId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, userId, done, position])
+  @@index([noteId])
+}
+
+// Social: composite relations enforce the workspace boundary in the database.
+enum SocialPlatform {
+  YOUTUBE
+  FACEBOOK
+  INSTAGRAM
+  LINKEDIN
+  X
+}
+
+enum SocialAccountStatus {
+  ACTIVE
+  DEGRADED
+  RECONNECT
+  DISCONNECTED
+  DEMO
+}
+
+enum SocialCommentStatus {
+  NEW
+  SEEN
+  REPLIED
+  HIDDEN
+  DELETED
+}
+
+model SocialAccount {
+  id               String              @id @default(cuid())
+  workspaceId      String
+  platform         SocialPlatform
+  externalId       String
+  parentExternalId String?
+  displayName      String
+  handle           String?
+  avatarUrl        String?
+  accessTokenEnc   String?
+  refreshTokenEnc  String?
+  expiresAt        DateTime?
+  scopes           String[]            @default([])
+  status           SocialAccountStatus @default(ACTIVE)
+  connectedById    String?
+  lastSyncedAt     DateTime?
+  lastMetricsAt    DateTime?
+  lastError        String?
+  warnings         String[]            @default([])
+  cursor           Json                @default("{}")
+  nextSyncAt       DateTime            @default(now())
+  leaseUntil       DateTime?
+  leaseToken       String?
+  failures         Int                 @default(0)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  workspace        Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  metrics          SocialMetricDaily[]
+  posts            SocialPost[]
+  comments         SocialComment[]
+  logs             SocialSyncLog[]
+
+  @@unique([workspaceId, platform, externalId])
+  @@unique([workspaceId, id])
+  @@index([workspaceId, status, nextSyncAt])
+}
+
+model SocialMetricDaily {
+  id          String        @id @default(cuid())
+  workspaceId String
+  accountId   String
+  date        DateTime      @db.Date
+  metric      String
+  value       Float
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  account     SocialAccount @relation(fields: [workspaceId, accountId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, accountId, date, metric])
+  @@index([workspaceId, date, metric])
+}
+
+model SocialPost {
+  id            String          @id @default(cuid())
+  workspaceId   String
+  accountId     String
+  externalId    String
+  url           String?
+  text          String
+  mediaType     String
+  publishedAt   DateTime
+  latestMetrics Json            @default("{}")
+  likes         Float?
+  comments      Float?
+  shares        Float?
+  views         Float?
+  impressions   Float?
+  reach         Float?
+  updatedAt     DateTime        @updatedAt
+  workspace     Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  account       SocialAccount   @relation(fields: [workspaceId, accountId], references: [workspaceId, id], onDelete: Cascade)
+  thread        SocialComment[]
+
+  @@unique([workspaceId, accountId, externalId])
+  @@unique([workspaceId, accountId, id])
+  @@index([workspaceId, publishedAt])
+}
+
+model SocialComment {
+  id               String              @id @default(cuid())
+  workspaceId      String
+  accountId        String
+  postId           String
+  externalId       String
+  parentExternalId String?
+  authorName       String
+  authorHandle     String?
+  authorAvatarUrl  String?
+  text             String
+  publishedAt      DateTime
+  likeCount        Int                 @default(0)
+  status           SocialCommentStatus @default(NEW)
+  assigneeId       String?
+  replyText        String?
+  replyExternalId  String?
+  repliedById      String?
+  repliedAt        DateTime?
+  // SENDING/UNKNOWN prevent automatic duplicate sends after an uncertain response.
+  replyState       String              @default("NONE")
+  operationToken   String?
+  operationAt      DateTime?
+  lastReplyError   String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  workspace        Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  account          SocialAccount       @relation(fields: [workspaceId, accountId], references: [workspaceId, id], onDelete: Cascade)
+  post             SocialPost          @relation(fields: [workspaceId, accountId, postId], references: [workspaceId, accountId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, accountId, externalId])
+  @@index([workspaceId, status, publishedAt])
+  @@index([workspaceId, assigneeId, publishedAt])
+}
+
+model SocialSyncLog {
+  id          String        @id @default(cuid())
+  workspaceId String
+  accountId   String
+  startedAt   DateTime      @default(now())
+  finishedAt  DateTime?
+  status      String
+  posts       Int           @default(0)
+  comments    Int           @default(0)
+  error       String?
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  account     SocialAccount @relation(fields: [workspaceId, accountId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, accountId, startedAt])
+}
+
+// Ten-minute OAuth selection, bound to the initiating admin. Tokens stay encrypted.
+model SocialConnectionDraft {
+  id            String    @id @default(cuid())
+  workspaceId   String
+  userId        String
+  candidatesEnc String
+  expiresAt     DateTime
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, userId, expiresAt])
+}
+
+// Manual governance tools. Kind-specific fields are validated by governance/schemas.
+enum GovernanceKind {
+  LEGAL_ENTITY
+  OBLIGATION
+  COMMITTEE
+  TERM
+  MINUTES
+  RESOLUTION
+  CONFLICT
+  AGM_ITEM
+  VENDOR
+  CONTRACT
+  INSURANCE
+  LICENCE
+  REGISTRATION
+  STATUTORY_REGISTER
+  RISK
+  EMERGENCY_PLAN
+  DRILL
+  SOP_REVIEW
+  BOARD_PACK
+}
+
+model GovernanceRecord {
+  id             String                 @id @default(cuid())
+  workspaceId    String
+  kind           GovernanceKind
+  /// Optional stable key for singleton entity, checklist and recurrence retries.
+  key            String?
+  title          String
+  status         String                 @default("TODO")
+  ownerId        String?
+  parentId       String?
+  organisationId String?
+  meetingId      String?
+  number         Int?
+  dueOn          DateTime?              @db.Date
+  startsOn       DateTime?              @db.Date
+  endsOn         DateTime?              @db.Date
+  reminderDays   Int                    @default(7)
+  notes          String                 @default("")
+  /// Non-secret, kind-specific fields only. Banking is stored separately.
+  details        Json                   @default("{}")
+  approvedAt     DateTime?
+  approvedById   String?
+  createdById    String?
+  archivedAt     DateTime?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  workspace      Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parent         GovernanceRecord?      @relation("GovernanceParent", fields: [workspaceId, parentId], references: [workspaceId, id], onDelete: NoAction)
+  children       GovernanceRecord[]     @relation("GovernanceParent")
+  organisation   Organisation?          @relation(fields: [organisationId], references: [id], onDelete: Restrict)
+  meeting        Meeting?               @relation(fields: [meetingId], references: [id], onDelete: Restrict)
+  attachments    GovernanceAttachment[]
+  bankChanges    GovernanceBankChange[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, kind, key])
+  @@unique([workspaceId, kind, number])
+  @@unique([workspaceId, organisationId])
+  @@index([workspaceId, kind, archivedAt, dueOn])
+  @@index([workspaceId, parentId])
+  @@index([workspaceId, ownerId])
+}
+
+model GovernanceAttachment {
+  id          String           @id @default(cuid())
+  workspaceId String
+  recordId    String
+  fileId      String
+  createdAt   DateTime         @default(now())
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  record      GovernanceRecord @relation(fields: [workspaceId, recordId], references: [workspaceId, id], onDelete: Cascade)
+  file        FileObject       @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, fileId])
+  @@index([workspaceId, recordId])
+}
+
+/// Append-only banking revisions. Never index or export banking values.
+model GovernanceBankChange {
+  id          String           @id @default(cuid())
+  workspaceId String
+  vendorId    String
+  bankEnc     String
+  reason      String
+  actorId     String
+  createdAt   DateTime         @default(now())
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  vendor      GovernanceRecord @relation(fields: [workspaceId, vendorId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, vendorId, createdAt])
+}
+
+// Internal team calendar: finite recurring deadlines and private reminders.
+model CalendarEntry {
+  id              String     @id @default(cuid())
+  workspaceId     String
+  title           String
+  kind            String
+  startsAt        DateTime
+  endsAt          DateTime
+  timezone        String
+  seriesId        String?
+  rrule           String?
+  ownerId         String
+  teamId          String?
+  projectId       String?
+  visibility      Visibility @default(PRIVATE)
+  notes           String?
+  fileIds         String[]   @default([])
+  reminderMinutes Int        @default(30)
+  reminderSentAt  DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  workspace       Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, startsAt])
+  @@index([workspaceId, ownerId, startsAt])
+}
+
+model CalendarMeetingSync {
+  meetRequestedAt DateTime?
+  meetPending     Boolean   @default(false)
+  id              String    @id @default(cuid())
+  workspaceId     String
+  meetingId       String
+  userId          String
+  connectionId    String
+  externalId      String
+  sequence        Int       @default(-1)
+  etag            String?
+  lastSyncedAt    DateTime?
+  lastError       String?
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  meeting         Meeting   @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, meetingId, userId])
+  @@index([workspaceId, userId])
+}
+
+// Internal operations: tenant-bound roots and composite tenant child relations.
+enum HelpTicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING
+  RESOLVED
+  CLOSED
+}
+
+enum HelpTicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum SafetyReportKind {
+  INJURY
+  NEAR_MISS
+  DAMAGE
+  HAZARD
+}
+
+enum SafetyReportStatus {
+  REPORTED
+  INVESTIGATING
+  FOLLOW_UP
+  CLOSED
+}
+
+enum VolunteerLogStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+model HelpTicket {
+  id           String              @id @default(cuid())
+  workspaceId  String
+  number       Int
+  requesterId  String
+  title        String
+  description  String
+  category     String
+  priority     HelpTicketPriority  @default(NORMAL)
+  status       HelpTicketStatus    @default(OPEN)
+  assigneeId   String?
+  slaDueAt     DateTime
+  resolvedAt   DateTime?
+  confidential Boolean             @default(false)
+  handlerIds   String[]            @default([])
+  requestKey   String
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  workspace    Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  comments     HelpTicketComment[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, number])
+  @@unique([workspaceId, requesterId, requestKey])
+  @@index([workspaceId, status, slaDueAt])
+  @@index([workspaceId, requesterId, createdAt])
+}
+
+model HelpTicketComment {
+  id          String     @id @default(cuid())
+  workspaceId String
+  ticketId    String
+  authorId    String
+  body        String
+  internal    Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  ticket      HelpTicket @relation(fields: [workspaceId, ticketId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, ticketId, createdAt])
+}
+
+// Always confidential. No content is copied to search, activity or notifications.
+model SafetyReport {
+  id              String             @id @default(cuid())
+  workspaceId     String
+  reporterId      String
+  title           String
+  description     String
+  immediateAction String
+  location        String
+  kind            SafetyReportKind
+  status          SafetyReportStatus @default(REPORTED)
+  occurredAt      DateTime
+  closedAt        DateTime?
+  closureNote     String?
+  requestKey      String
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  workspace       Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  actions         SafetyFollowUp[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, reporterId, requestKey])
+  @@index([workspaceId, status, createdAt])
+  @@index([workspaceId, reporterId, createdAt])
+}
+
+model SafetyFollowUp {
+  id             String       @id @default(cuid())
+  workspaceId    String
+  reportId       String
+  title          String
+  assigneeId     String
+  dueAt          DateTime
+  completedAt    DateTime?
+  completedById  String?
+  completionNote String?
+  createdAt      DateTime     @default(now())
+  report         SafetyReport @relation(fields: [workspaceId, reportId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, reportId, dueAt])
+}
+
+model VolunteerLog {
+  id           String             @id @default(cuid())
+  workspaceId  String
+  userId       String
+  activity     String
+  startsAt     DateTime
+  endsAt       DateTime
+  breakMinutes Int                @default(0)
+  minutes      Int
+  status       VolunteerLogStatus @default(PENDING)
+  reviewedById String?
+  reviewedAt   DateTime?
+  reviewNote   String?
+  requestKey   String
+  createdAt    DateTime           @default(now())
+  workspace    Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId, requestKey])
+  @@index([workspaceId, userId, startsAt])
+  @@index([workspaceId, status, startsAt])
+}
+
+// Yearly entitlements extend existing time-off checklist requests and Availability.
+model LeaveType {
+  id          String         @id @default(cuid())
+  workspaceId String
+  name        String
+  active      Boolean        @default(true)
+  workspace   Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  balances    LeaveBalance[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, name])
+}
+
+model LeaveBalance {
+  id            String    @id @default(cuid())
+  workspaceId   String
+  typeId        String
+  userId        String
+  year          Int
+  allowanceDays Int
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  type          LeaveType @relation(fields: [workspaceId, typeId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId, year, typeId])
+  @@index([workspaceId, year])
+}
+
+model HiringOpening {
+  id             String            @id @default(cuid())
+  workspaceId    String
+  title          String
+  engagementType String
+  description    String
+  ownerId        String
+  status         String            @default("OPEN")
+  dueOn          DateTime?         @db.Date
+  requestKey     String
+  createdAt      DateTime          @default(now())
+  workspace      Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  candidates     HiringCandidate[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, requestKey])
+  @@index([workspaceId, status, dueOn])
+}
+
+model HiringCandidate {
+  id              String            @id @default(cuid())
+  workspaceId     String
+  openingId       String
+  name            String
+  email           String
+  phone           String
+  source          String
+  stage           String            @default("APPLIED")
+  notes           String
+  offer           String            @default("")
+  decision        String            @default("")
+  ownerId         String
+  dueOn           DateTime?         @db.Date
+  onboardingRunId String?
+  requestKey      String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  workspace       Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  opening         HiringOpening     @relation(fields: [workspaceId, openingId], references: [workspaceId, id], onDelete: Cascade)
+  interviews      HiringInterview[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, requestKey])
+  @@index([workspaceId, stage, dueOn])
+}
+
+model HiringInterview {
+  id            String          @id @default(cuid())
+  workspaceId   String
+  candidateId   String
+  interviewerId String
+  heldOn        DateTime        @db.Date
+  note          String
+  candidate     HiringCandidate @relation(fields: [workspaceId, candidateId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, candidateId, heldOn])
+}
+
+// Record-scoped evidence is excluded from the general file library.
+model OpsAttachment {
+  id          String     @id @default(cuid())
+  workspaceId String
+  kind        String
+  recordId    String
+  fileId      String
+  createdAt   DateTime   @default(now())
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  file        FileObject @relation(fields: [workspaceId, fileId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, fileId])
+  @@index([workspaceId, kind, recordId])
+}
+
+model FacilityLease {
+  id                String    @id @default(cuid())
+  workspaceId       String
+  title             String
+  landlordContactId String
+  ownerId           String
+  rentMinor         Int
+  currency          String    @default("INR")
+  startsOn          DateTime  @db.Date
+  renewalOn         DateTime  @db.Date
+  status            String    @default("ACTIVE")
+  notes             String
+  requestKey        String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, requestKey])
+  @@index([workspaceId, status, renewalOn])
+}
+
+// ─────────────────────── Manual finance tools ───────────────────────
+
+model FinanceFund {
+  id             String          @id @default(cuid())
+  workspaceId    String
+  name           String
+  restricted     Boolean         @default(false)
+  currency       String          @default("INR")
+  funder         String?
+  notes          String?
+  archivedAt     DateTime?
+  createdAt      DateTime        @default(now())
+  workspace      Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  entries        LedgerEntry[]
+  fundingRecords FundingRecord[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, name])
+  @@index([workspaceId, archivedAt])
+}
+
+model FinanceCostCentre {
+  id                String        @id @default(cuid())
+  workspaceId       String
+  name              String
+  kind              String        @default("PROGRAMME")
+  projectId         String?
+  externalReference String?
+  externalUrl       String?
+  notes             String?
+  archivedAt        DateTime?
+  createdAt         DateTime      @default(now())
+  workspace         Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  entries           LedgerEntry[]
+  budgets           Budget[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, name])
+  @@index([workspaceId, archivedAt])
+}
+
+model FinanceAccount {
+  id              String                  @id @default(cuid())
+  workspaceId     String
+  name            String
+  currency        String                  @default("INR")
+  openingMinor    Int                     @default(0)
+  openingOn       DateTime                @db.Date
+  reconciledUpTo  DateTime?               @db.Date
+  workspace       Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  entries         LedgerEntry[]
+  reconciliations FinanceReconciliation[]
+
+  moneyControlMovements MoneyControlMovement[] @relation("MoneyControlMovementAccount")
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, name])
+  @@index([workspaceId, reconciledUpTo])
+}
+
+model FinanceBill {
+  id             String               @id @default(cuid())
+  workspaceId    String
+  vendor         String
+  number         String
+  issuedOn       DateTime             @db.Date
+  dueOn          DateTime             @db.Date
+  amountMinor    Int
+  paidMinor      Int                  @default(0)
+  currency       String               @default("INR")
+  gstin          String?
+  taxableMinor   Int                  @default(0)
+  cgstMinor      Int                  @default(0)
+  sgstMinor      Int                  @default(0)
+  igstMinor      Int                  @default(0)
+  tdsMinor       Int                  @default(0)
+  categoryId     String?
+  fundId         String?
+  costCentreId   String?
+  accountId      String?
+  purpose        String?
+  notes          String?
+  ownerId        String?
+  createdById    String
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  workspace      Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  payments       FinanceBillPayment[]
+  privatePayroll Boolean              @default(false)
+  needsActual    Boolean              @default(false)
+  recurringDue   RecurringCostDue?
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId, dueOn])
+  @@index([workspaceId, vendor, number])
+}
+
+model FinanceBillPayment {
+  id          String      @id @default(cuid())
+  workspaceId String
+  billId      String
+  paymentKey  String
+  amountMinor Int
+  paidOn      DateTime    @db.Date
+  reference   String
+  posted      Boolean     @default(true)
+  createdById String
+  createdAt   DateTime    @default(now())
+  workspace   Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  bill        FinanceBill @relation(fields: [workspaceId, billId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, paymentKey])
+  @@index([workspaceId, billId, paidOn])
+}
+
+model FinanceMonth {
+  id               String             @id @default(cuid())
+  workspaceId      String
+  month            String
+  signedOffAt      DateTime?
+  signedOffById    String?
+  reviewSignedAt   DateTime?
+  reviewSignedById String?
+  reviewNotes      String?
+  workspace        Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  steps            FinanceMonthStep[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, month])
+}
+
+model FinanceMonthStep {
+  id          String       @id @default(cuid())
+  workspaceId String
+  monthId     String
+  title       String
+  ownerId     String?
+  done        Boolean      @default(false)
+  notes       String?
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  month       FinanceMonth @relation(fields: [workspaceId, monthId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, monthId])
+}
+
+model FinanceReconciliation {
+  id             String         @id @default(cuid())
+  workspaceId    String
+  accountId      String
+  upTo           DateTime       @db.Date
+  statementMinor Int
+  ledgerMinor    BigInt
+  notes          String?
+  signedOffAt    DateTime?
+  signedOffById  String?
+  createdAt      DateTime       @default(now())
+  workspace      Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  account        FinanceAccount @relation(fields: [workspaceId, accountId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, accountId, upTo])
+}
+
+/// Private files stay with their record; staged files belong only to their uploader.
+model FinanceAttachment {
+  id             String     @id @default(cuid())
+  workspaceId    String
+  recordType     String
+  recordId       String
+  fileId         String     @unique
+  uploadedById   String
+  extractionUsed Boolean    @default(false)
+  createdAt      DateTime   @default(now())
+  workspace      Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  file           FileObject @relation(fields: [workspaceId, fileId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, recordType, recordId])
+}
+
+/// No implicit payroll access, including for administrators and owners.
+model FinancePayrollGrant {
+  id          String    @id @default(cuid())
+  workspaceId String
+  userId      String
+  manage      Boolean   @default(false)
+  grantedById String
+  createdAt   DateTime  @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+}
+
+model FinancePayProfile {
+  id            String          @id @default(cuid())
+  workspaceId   String
+  name          String
+  userId        String?
+  kind          String
+  currency      String          @default("INR")
+  rateMinor     Int
+  rateBasis     String          @default("MONTH")
+  panEnc        String?
+  bankEnc       String?
+  pfApplicable  Boolean         @default(false)
+  esiApplicable Boolean         @default(false)
+  ptApplicable  Boolean         @default(false)
+  tdsSection    String?
+  costCentreId  String?
+  archivedAt    DateTime?
+  createdAt     DateTime        @default(now())
+  workspace     Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  runs          FinancePayRun[]
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId, archivedAt])
+}
+
+model FinancePayRun {
+  id              String            @id @default(cuid())
+  workspaceId     String
+  profileId       String
+  month           String
+  currency        String
+  grossMinor      Int
+  allowancesMinor Int               @default(0)
+  pfMinor         Int               @default(0)
+  esiMinor        Int               @default(0)
+  ptMinor         Int               @default(0)
+  tdsMinor        Int               @default(0)
+  advancesMinor   Int               @default(0)
+  otherMinor      Int               @default(0)
+  netMinor        Int
+  costCentreId    String?
+  accountId       String?
+  categoryId      String?
+  fundId          String?
+  status          String            @default("DRAFT")
+  createdById     String
+  approvedById    String?
+  approvedAt      DateTime?
+  paidOn          DateTime?         @db.Date
+  reference       String?
+  ledgerEntryId   String?
+  notes           String?
+  createdAt       DateTime          @default(now())
+  workspace       Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  profile         FinancePayProfile @relation(fields: [workspaceId, profileId], references: [workspaceId, id], onDelete: Restrict)
+
+  @@unique([workspaceId, profileId, month])
+  @@index([workspaceId, month, status])
+}
+
+model FinanceDisbursement {
+  id            String    @id @default(cuid())
+  workspaceId   String
+  payee         String
+  purpose       String
+  kind          String
+  amountMinor   Int
+  tdsMinor      Int       @default(0)
+  currency      String    @default("INR")
+  costCentreId  String?
+  fundId        String?
+  accountId     String?
+  categoryId    String?
+  ownerId       String?
+  dueOn         DateTime? @db.Date
+  status        String    @default("DRAFT")
+  approvalId    String?
+  paidOn        DateTime? @db.Date
+  reference     String?
+  ledgerEntryId String?
+  settledMinor  Int       @default(0)
+  settledOn     DateTime? @db.Date
+  notes         String?
+  createdById   String
+  createdAt     DateTime  @default(now())
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, status, dueOn])
+}
+
+model FinanceReviewRule {
+  id             String    @id @default(cuid())
+  workspaceId    String
+  categoryId     String
+  currency       String
+  thresholdMinor Int
+  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, categoryId, currency])
+}
+
+// Manual funding, impact and internal tool access. Kind-specific fields are validated in funding/schema.
+enum FundingKind {
+  OPPORTUNITY
+  FUNDER
+  GRANT
+  INSTALMENT
+  REPORT
+  DELIVERABLE
+  DONATION
+  CAMPAIGN
+  PLEDGE
+  DONOR
+  PROGRAMME
+  KPI
+  IMPACT_ENTRY
+  RUNWAY
+  TOOL_ACCOUNT
+  ACCESS_REVIEW
+  RECEIPT_SETTINGS
+}
+
+model FundingRecord {
+  id               String              @id @default(cuid())
+  workspaceId      String
+  kind             FundingKind
+  key              String?
+  title            String
+  status           String
+  ownerId          String?
+  parentId         String?
+  fundId           String?
+  fund             FinanceFund?        @relation(fields: [workspaceId, fundId], references: [workspaceId, id], onDelete: NoAction)
+  contactId        String?
+  organisationId   String?
+  dateOn           DateTime?           @db.Date
+  dueOn            DateTime?           @db.Date
+  endsOn           DateTime?           @db.Date
+  amountMinor      Int                 @default(0)
+  currency         String              @default("INR")
+  reminderDays     Int                 @default(7)
+  details          Json                @default("{}")
+  notes            String              @default("")
+  thankedAt        DateTime?
+  thankedById      String?
+  signedAt         DateTime?
+  signedById       String?
+  receiptNumber    String?
+  receiptFileId    String?
+  receiptEmailedAt DateTime?
+  createdById      String?
+  archivedAt       DateTime?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  workspace        Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parent           FundingRecord?      @relation("FundingParent", fields: [workspaceId, parentId], references: [workspaceId, id], onDelete: NoAction)
+  children         FundingRecord[]     @relation("FundingParent")
+  attachments      FundingAttachment[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, kind, key])
+  @@unique([workspaceId, receiptNumber])
+  @@index([workspaceId, kind, archivedAt, dueOn])
+  @@index([workspaceId, parentId])
+  @@index([workspaceId, ownerId])
+  @@index([workspaceId, fundId])
+  @@index([workspaceId, contactId])
+  @@index([workspaceId, organisationId])
+}
+
+model FundingAttachment {
+  id          String        @id @default(cuid())
+  workspaceId String
+  recordId    String
+  fileId      String
+  generated   Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  record      FundingRecord @relation(fields: [workspaceId, recordId], references: [workspaceId, id], onDelete: Cascade)
+  file        FileObject    @relation(fields: [workspaceId, fileId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, fileId])
+  @@index([workspaceId, recordId])
+}
+
+model FundingAnalyticsSnapshot {
+  id          String    @id @default(cuid())
+  workspaceId String
+  dateOn      DateTime  @db.Date
+  summary     Json
+  updatedAt   DateTime  @updatedAt
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, dateOn])
+}
+
+// Internal money and asset controls. Kind-specific details are validated by the service.
+enum MoneyControlKind {
+  FLOAT
+  VOUCHER
+  COUNT
+  REPLENISHMENT
+  HANDOVER
+  DEPOSIT
+  TRANSFER
+  ASSET_CATEGORY
+  SCHEDULE
+  VERIFICATION
+  DISPOSAL
+  ASSIGNMENT
+  TDS_DEDUCTION
+  CERTIFICATE
+  FILING
+  FUND_RULE
+}
+
+model MoneyControlRecord {
+  id             String                   @id @default(cuid())
+  workspaceId    String
+  kind           MoneyControlKind
+  title          String
+  status         String                   @default("DRAFT")
+  recordKey      String?
+  number         Int?
+  ownerId        String?
+  accountId      String?
+  otherAccountId String?
+  assetId        String?
+  fundId         String?
+  categoryId     String?
+  parentId       String?
+  complianceId   String?
+  checklistRunId String?
+  amountMinor    Int                      @default(0)
+  settledMinor   Int                      @default(0)
+  currency       String                   @default("INR")
+  occurredOn     DateTime                 @db.Date
+  endsOn         DateTime?                @db.Date
+  dueOn          DateTime?                @db.Date
+  reminderDays   Int                      @default(7)
+  payroll        Boolean                  @default(false)
+  notes          String                   @default("")
+  details        Json                     @default("{}")
+  createdById    String
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+  workspace      Workspace                @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parent         MoneyControlRecord?      @relation("MoneyControlParent", fields: [workspaceId, parentId], references: [workspaceId, id], onDelete: NoAction)
+  children       MoneyControlRecord[]     @relation("MoneyControlParent")
+  attachments    MoneyControlAttachment[]
+  movements      MoneyControlMovement[]
+  events         MoneyControlEvent[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, kind, recordKey])
+  @@unique([workspaceId, kind, number])
+  @@index([workspaceId, kind, occurredOn])
+  @@index([workspaceId, ownerId, status, dueOn])
+  @@index([workspaceId, assetId, kind])
+  @@index([workspaceId, fundId, kind])
+}
+
+model MoneyControlAttachment {
+  id          String             @id @default(cuid())
+  workspaceId String
+  recordId    String
+  fileId      String             @unique
+  createdAt   DateTime           @default(now())
+  workspace   Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  record      MoneyControlRecord @relation(fields: [workspaceId, recordId], references: [workspaceId, id], onDelete: Cascade)
+  file        FileObject         @relation(fields: [workspaceId, fileId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, recordId])
+}
+
+// These movements affect cash only, never income or expense reports.
+model MoneyControlMovement {
+  id           String             @id @default(cuid())
+  workspaceId  String
+  recordId     String
+  accountId    String
+  amountMinor  Int
+  currency     String
+  occurredOn   DateTime           @db.Date
+  reference    String
+  operationKey String
+  reconciledAt DateTime?
+  createdAt    DateTime           @default(now())
+  workspace    Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  account      FinanceAccount     @relation("MoneyControlMovementAccount", fields: [workspaceId, accountId], references: [workspaceId, id], onDelete: NoAction, onUpdate: Cascade, map: "MoneyControlMovement_account_tenant_fkey")
+  record       MoneyControlRecord @relation(fields: [workspaceId, recordId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, operationKey, accountId])
+  @@index([workspaceId, accountId, occurredOn])
+  @@index([workspaceId, recordId])
+}
+
+// Append-only action and filing acknowledgement history; no uploaded file bodies.
+model MoneyControlEvent {
+  id          String             @id @default(cuid())
+  workspaceId String
+  recordId    String
+  actorId     String
+  action      String
+  reference   String             @default("")
+  notes       String             @default("")
+  createdAt   DateTime           @default(now())
+  workspace   Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  record      MoneyControlRecord @relation(fields: [workspaceId, recordId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, recordId, createdAt])
+}
+
+// Governance and safety extras. Confidential case authority is explicit, never inherited from role.
+model SafeguardingHandler {
+  id            String    @id @default(cuid())
+  workspaceId   String
+  userId        String
+  committeeId   String
+  appointedById String
+  endsOn        DateTime  @db.Date
+  revokedAt     DateTime?
+  createdAt     DateTime  @default(now())
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([workspaceId, committeeId, revokedAt])
+}
+
+model SafeguardingCase {
+  id          String                   @id @default(cuid())
+  workspaceId String
+  number      Int
+  kind        String
+  status      String                   @default("OPEN")
+  handlerIds  String[]                 @default([])
+  receivedOn  DateTime                 @db.Date
+  dueOn       DateTime                 @db.Date
+  detailsEnc  String
+  createdById String
+  createdAt   DateTime                 @default(now())
+  closedAt    DateTime?
+  workspace   Workspace                @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  events      SafeguardingEvent[]
+  attachments SafeguardingAttachment[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, number])
+  @@index([workspaceId, status, dueOn])
+}
+
+model SafeguardingEvent {
+  id          String           @id @default(cuid())
+  workspaceId String
+  caseId      String
+  kind        String
+  bodyEnc     String
+  ownerId     String?
+  dueOn       DateTime?        @db.Date
+  completedAt DateTime?
+  actorId     String
+  createdAt   DateTime         @default(now())
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  case        SafeguardingCase @relation(fields: [workspaceId, caseId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, caseId, createdAt])
+}
+
+model SafeguardingAttachment {
+  id          String           @id @default(cuid())
+  workspaceId String
+  caseId      String
+  fileId      String
+  createdAt   DateTime         @default(now())
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  case        SafeguardingCase @relation(fields: [workspaceId, caseId], references: [workspaceId, id], onDelete: Cascade)
+  file        FileObject       @relation(fields: [workspaceId, fileId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, fileId])
+  @@index([workspaceId, caseId])
+}
+
+// Shared manual financial documents and people letters. Issued snapshots are immutable.
+model BusinessDocument {
+  id             String               @id @default(cuid())
+  workspaceId    String
+  type           String
+  status         String               @default("DRAFT")
+  title          String
+  issuedOn       DateTime             @db.Date
+  dueOn          DateTime?            @db.Date
+  currency       String               @default("INR")
+  financialYear  String?
+  number         String?
+  registrationId String               @default("")
+  ownerId        String
+  sourceType     String?
+  sourceId       String?
+  parentId       String?
+  /// Validated draft inputs; frozen with identity/calculations at reservation.
+  input          Json
+  snapshot       Json?
+  totalMinor     Int                  @default(0)
+  issuedAt       DateTime?
+  issuedById     String?
+  cancelledAt    DateTime?
+  cancelledById  String?
+  cancelReason   String?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  workspace      Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parent         BusinessDocument?    @relation("DocumentCorrection", fields: [workspaceId, parentId], references: [workspaceId, id], onDelete: NoAction)
+  corrections    BusinessDocument[]   @relation("DocumentCorrection")
+  files          DocumentFile[]
+  allocations    DocumentAllocation[] @relation("AllocationInvoice")
+  payments       DocumentAllocation[] @relation("AllocationReceipt")
+  deliveries     DocumentDelivery[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, financialYear, number])
+  @@index([workspaceId, sourceType, sourceId])
+  @@index([workspaceId, status, issuedOn])
+  @@index([workspaceId, ownerId])
+  @@index([workspaceId, parentId])
+}
+
+model DocumentSeries {
+  id             String    @id @default(cuid())
+  workspaceId    String
+  type           String
+  registrationId String    @default("")
+  financialYear  String
+  prefix         String
+  padding        Int       @default(5)
+  nextNumber     Int       @default(1)
+  locked         Boolean   @default(false)
+  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, type, registrationId, financialYear])
+  @@index([workspaceId, financialYear])
+}
+
+/// Editable item/rate/template records; revisions survive through document snapshots.
+model DocumentReference {
+  id          String    @id @default(cuid())
+  workspaceId String
+  kind        String
+  name        String
+  data        Json
+  archivedAt  DateTime?
+  createdById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId, kind, archivedAt])
+}
+
+model DocumentFile {
+  id          String            @id @default(cuid())
+  workspaceId String
+  documentId  String?
+  /// PROFILE, SOURCE, PDF, IRP_QR, IRP_JSON, OFFICIAL_CERTIFICATE, FILING_ACK.
+  kind        String
+  fileId      String
+  createdAt   DateTime          @default(now())
+  workspace   Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  document    BusinessDocument? @relation(fields: [workspaceId, documentId], references: [workspaceId, id], onDelete: NoAction)
+  file        FileObject        @relation(fields: [workspaceId, fileId], references: [workspaceId, id], onDelete: NoAction)
+
+  @@unique([workspaceId, fileId])
+  @@index([workspaceId, documentId, kind])
+}
+
+/// Signed allocations: invoice settlement, credits, advances and refund reversals.
+model DocumentAllocation {
+  id          String           @id @default(cuid())
+  workspaceId String
+  receiptId   String
+  invoiceId   String
+  cashMinor   Int
+  tdsMinor    Int              @default(0)
+  key         String
+  createdById String
+  createdAt   DateTime         @default(now())
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  receipt     BusinessDocument @relation("AllocationReceipt", fields: [workspaceId, receiptId], references: [workspaceId, id], onDelete: NoAction)
+  invoice     BusinessDocument @relation("AllocationInvoice", fields: [workspaceId, invoiceId], references: [workspaceId, id], onDelete: NoAction)
+
+  @@unique([workspaceId, key])
+  @@index([workspaceId, invoiceId])
+  @@index([workspaceId, receiptId])
+}
+
+model DocumentDelivery {
+  id          String           @id @default(cuid())
+  workspaceId String
+  documentId  String
+  recipient   String
+  fileId      String
+  checksum    String
+  outboxId    String
+  createdById String
+  createdAt   DateTime         @default(now())
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  document    BusinessDocument @relation(fields: [workspaceId, documentId], references: [workspaceId, id], onDelete: NoAction)
+
+  @@index([workspaceId, documentId, createdAt])
+}
+
+// Organisation structure and manual people registers. Actor/member ids are resolved in the tenant.
+model Department {
+  id          String          @id @default(cuid())
+  workspaceId String
+  name        String
+  headId      String?
+  parentId    String?
+  notes       String          @default("")
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  workspace   Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parent      Department?     @relation("DepartmentTree", fields: [workspaceId, parentId], references: [workspaceId, id], onDelete: NoAction)
+  children    Department[]    @relation("DepartmentTree")
+  members     MemberProfile[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, name])
+  @@index([workspaceId, parentId])
+}
+
+model Responsibility {
+  id             String    @id @default(cuid())
+  workspaceId    String
+  title          String
+  status         String    @default("ACTIVE")
+  responsibleIds String[]  @default([])
+  accountableId  String
+  consultedIds   String[]  @default([])
+  informedIds    String[]  @default([])
+  backupId       String?
+  reviewOn       DateTime  @db.Date
+  reminderDays   Int       @default(7)
+  notes          String    @default("")
+  createdById    String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, status, reviewOn])
+  @@index([workspaceId, accountableId])
+}
+
+model AttendanceEntry {
+  id           String    @id @default(cuid())
+  workspaceId  String
+  userId       String
+  dateOn       DateTime  @db.Date
+  status       String
+  notes        String    @default("")
+  recordedById String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId, dateOn])
+  @@index([workspaceId, dateOn])
+}
+
+model OrgEscalationPath {
+  id          String    @id @default(cuid())
+  workspaceId String
+  title       String
+  hoursNote   String    @default("")
+  notes       String    @default("")
+  steps       Json      @default("[]")
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, active])
+}
+
+model OrgPeopleAttachment {
+  id          String     @id @default(cuid())
+  workspaceId String
+  kind        String
+  recordId    String
+  fileId      String
+  createdAt   DateTime   @default(now())
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  file        FileObject @relation(fields: [workspaceId, fileId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, fileId])
+  @@index([workspaceId, kind, recordId])
+}
+
+// Manual marketing and IT administration. Linked source ids are tenant-validated by the service.
+model MarketingItRecord {
+  id             String                  @id @default(cuid())
+  workspaceId    String
+  kind           String
+  title          String
+  status         String
+  ownerId        String?
+  assetId        String?
+  subscriptionId String?
+  dateOn         DateTime?               @db.Date
+  dueOn          DateTime?               @db.Date
+  reminderDays   Int                     @default(1)
+  details        Json                    @default("{}")
+  notes          String                  @default("")
+  completedAt    DateTime?
+  completedById  String?
+  createdById    String
+  archivedAt     DateTime?
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  workspace      Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  attachments    MarketingItAttachment[]
+  events         MarketingItEvent[]
+  reviewItems    MarketingItReviewItem[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, assetId])
+  @@unique([workspaceId, subscriptionId])
+  @@index([workspaceId, kind, archivedAt, dueOn])
+  @@index([workspaceId, ownerId])
+}
+
+model MarketingItAttachment {
+  id          String            @id @default(cuid())
+  workspaceId String
+  recordId    String
+  fileId      String
+  // Existing library files remain in the library; dedicated proofs stay private.
+  fromLibrary Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+  workspace   Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  record      MarketingItRecord @relation(fields: [workspaceId, recordId], references: [workspaceId, id], onDelete: Cascade)
+  file        FileObject        @relation(fields: [workspaceId, fileId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, recordId, fileId])
+  @@index([workspaceId, fileId])
+}
+
+model MarketingItEvent {
+  id          String            @id @default(cuid())
+  workspaceId String
+  recordId    String
+  actorId     String
+  action      String
+  note        String            @default("")
+  data        Json              @default("{}")
+  createdAt   DateTime          @default(now())
+  workspace   Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  record      MarketingItRecord @relation(fields: [workspaceId, recordId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, recordId, createdAt])
+}
+
+model MarketingItReviewItem {
+  id           String            @id @default(cuid())
+  workspaceId  String
+  recordId     String
+  userId       String
+  sourceType   String
+  sourceId     String
+  label        String
+  path         String
+  decision     String            @default("PENDING")
+  note         String            @default("")
+  reviewedById String?
+  reviewedAt   DateTime?
+  workspace    Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  record       MarketingItRecord @relation(fields: [workspaceId, recordId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, recordId, userId, sourceType, sourceId])
+  @@index([workspaceId, recordId])
+  @@index([workspaceId, userId])
+}
+
+// Application secrets. All tenant references use compound tenant keys.
+model SecretProject {
+  identities     SecretIdentity[]
+  encryptionKeys VaultKey[]
+  rotations      SecretKeyRotation[]
+  id             String              @id @default(cuid())
+  workspaceId    String
+  name           String
+  slug           String
+  createdById    String
+  createdAt      DateTime            @default(now())
+  workspace      Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  environments   SecretEnvironment[]
+  grants         SecretGrant[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, slug])
+}
+
+model SecretEnvironment {
+  id                  String                     @id @default(cuid())
+  workspaceId         String
+  projectId           String
+  name                String
+  slug                String
+  position            Int                        @default(0)
+  production          Boolean                    @default(false)
+  protected           Boolean                    @default(false)
+  revision            Int                        @default(0)
+  workspace           Workspace                  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project             SecretProject              @relation(fields: [workspaceId, projectId], references: [workspaceId, id], onDelete: Cascade)
+  folders             SecretFolder[]
+  secrets             ApplicationSecret[]
+  snapshots           SecretSnapshot[]
+  changes             SecretChange[]
+  identityPermissions SecretIdentityPermission[]
+  tokens              SecretServiceToken[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, projectId, slug])
+  @@index([workspaceId, projectId, position])
+}
+
+model SecretGrant {
+  id            String        @id @default(cuid())
+  workspaceId   String
+  projectId     String
+  // Empty means project-level; an environment grant overrides it, including NONE.
+  environmentId String        @default("")
+  userId        String
+  role          String
+  workspace     Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project       SecretProject @relation(fields: [workspaceId, projectId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, projectId, environmentId, userId])
+  @@index([workspaceId, userId])
+}
+
+model SecretFolder {
+  id            String            @id @default(cuid())
+  workspaceId   String
+  environmentId String
+  path          String
+  workspace     Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  environment   SecretEnvironment @relation(fields: [workspaceId, environmentId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, environmentId, path])
+}
+
+model ApplicationSecret {
+  id              String                     @id @default(cuid())
+  workspaceId     String
+  environmentId   String
+  path            String                     @default("/")
+  key             String
+  secretEnc       String
+  dataKeyEnc      String
+  comment         String                     @default("")
+  tags            String[]                   @default([])
+  ownerId         String
+  rotateEveryDays Int?
+  rotatedAt       DateTime                   @default(now())
+  deletedAt       DateTime?
+  updatedAt       DateTime                   @updatedAt
+  workspace       Workspace                  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  environment     SecretEnvironment          @relation(fields: [workspaceId, environmentId], references: [workspaceId, id], onDelete: Cascade)
+  versions        ApplicationSecretVersion[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, environmentId, path, key])
+  @@index([workspaceId, ownerId, rotatedAt])
+}
+
+model ApplicationSecretVersion {
+  id          String            @id @default(cuid())
+  workspaceId String
+  secretId    String
+  secretEnc   String
+  dataKeyEnc  String
+  metadata    Json
+  deleted     Boolean           @default(false)
+  createdById String
+  createdAt   DateTime          @default(now())
+  workspace   Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  secret      ApplicationSecret @relation(fields: [workspaceId, secretId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, secretId, createdAt])
+}
+
+model SecretSnapshot {
+  id            String            @id @default(cuid())
+  workspaceId   String
+  environmentId String
+  revision      Int
+  label         String
+  secretEnc     String
+  dataKeyEnc    String
+  createdById   String
+  createdAt     DateTime          @default(now())
+  workspace     Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  environment   SecretEnvironment @relation(fields: [workspaceId, environmentId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, environmentId, createdAt])
+}
+
+model SecretChange {
+  id            String            @id @default(cuid())
+  workspaceId   String
+  environmentId String
+  revision      Int
+  secretEnc     String
+  dataKeyEnc    String
+  // Key names and operation only; never values or comments.
+  diff          Json
+  status        String            @default("PENDING")
+  createdById   String
+  createdAt     DateTime          @default(now())
+  workspace     Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  environment   SecretEnvironment @relation(fields: [workspaceId, environmentId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, environmentId, status])
+}
+
+model SecretServiceToken {
+  id            String            @id @default(cuid())
+  workspaceId   String
+  environmentId String
+  name          String
+  prefix        String            @unique
+  secretHash    String
+  path          String            @default("/")
+  writable      Boolean           @default(false)
+  ipAllowlist   String[]          @default([])
+  expiresAt     DateTime?
+  lastUsedAt    DateTime?
+  revokedAt     DateTime?
+  createdById   String
+  createdAt     DateTime          @default(now())
+  workspace     Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  environment   SecretEnvironment @relation(fields: [workspaceId, environmentId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, environmentId, revokedAt])
+}
+
+model SecretShare {
+  id             String    @id @default(cuid())
+  workspaceId    String
+  projectId      String
+  capabilityHash String    @unique
+  // Browser-encrypted AES-GCM ciphertext. Fragment key is never transmitted.
+  ciphertext     String
+  remainingViews Int       @default(1)
+  expiresAt      DateTime
+  createdById    String
+  createdAt      DateTime  @default(now())
+  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, projectId, expiresAt])
+}
+
+model SecretAudit {
+  secretKey     String?
+  id            String    @id @default(cuid())
+  workspaceId   String
+  projectId     String
+  environmentId String?
+  actorId       String?
+  action        String
+  targetId      String?
+  createdAt     DateTime  @default(now())
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, projectId, createdAt])
+  @@index([workspaceId, environmentId, action])
+}
+
+// Device and CLI sessions are user authentication records, independent of tenants.
+model CliDeviceCode {
+  id             String    @id @default(cuid())
+  deviceHash     String    @unique
+  userCodeHash   String    @unique
+  deviceName     String
+  scope          String    @default("secrets")
+  expiresAt      DateTime
+  lastPolledAt   DateTime?
+  status         String    @default("PENDING")
+  userId         String?
+  mfaAt          DateTime?
+  sessionVersion Int?
+  createdAt      DateTime  @default(now())
+
+  @@index([expiresAt])
+}
+
+model CliSession {
+  id               String    @id @default(cuid())
+  userId           String
+  name             String
+  accessHash       String    @unique
+  refreshHash      String    @unique
+  accessExpiresAt  DateTime
+  refreshExpiresAt DateTime
+  sessionVersion   Int
+  mfaAt            DateTime?
+  lastUsedAt       DateTime?
+  revokedAt        DateTime?
+  createdAt        DateTime  @default(now())
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+}
+
+// Universal authentication credentials and access leases are always stored hashed.
+model SecretIdentity {
+  id             String                     @id @default(cuid())
+  workspaceId    String
+  projectId      String
+  name           String
+  clientId       String                     @unique
+  createdById    String
+  accessTtl      Int                        @default(7200)
+  maxTtl         Int                        @default(2592000)
+  tokenUses      Int?
+  secretUses     Int?
+  secretTtl      Int?
+  loginIps       String[]                   @default([])
+  tokenIps       String[]                   @default([])
+  failureLimit   Int                        @default(3)
+  lockoutSeconds Int                        @default(300)
+  failures       Int                        @default(0)
+  lockedUntil    DateTime?
+  revokedAt      DateTime?
+  createdAt      DateTime                   @default(now())
+  workspace      Workspace                  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project        SecretProject              @relation(fields: [workspaceId, projectId], references: [workspaceId, id], onDelete: Cascade)
+  credentials    SecretIdentityCredential[]
+  tokens         SecretIdentityToken[]
+  permissions    SecretIdentityPermission[]
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId, projectId])
+}
+
+model SecretIdentityPermission {
+  id            String            @id @default(cuid())
+  workspaceId   String
+  identityId    String
+  environmentId String
+  path          String            @default("/")
+  role          String            @default("READ")
+  identity      SecretIdentity    @relation(fields: [workspaceId, identityId], references: [workspaceId, id], onDelete: Cascade)
+  environment   SecretEnvironment @relation(fields: [workspaceId, environmentId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, identityId, environmentId, path])
+}
+
+model SecretIdentityCredential {
+  id            String                @id @default(cuid())
+  workspaceId   String
+  identityId    String
+  secretHash    String
+  remainingUses Int?
+  expiresAt     DateTime?
+  revokedAt     DateTime?
+  createdAt     DateTime              @default(now())
+  identity      SecretIdentity        @relation(fields: [workspaceId, identityId], references: [workspaceId, id], onDelete: Cascade)
+  tokens        SecretIdentityToken[]
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId, identityId])
+}
+
+model SecretIdentityToken {
+  id            String                   @id @default(cuid())
+  workspaceId   String
+  identityId    String
+  credentialId  String
+  tokenHash     String                   @unique
+  expiresAt     DateTime
+  maxExpiresAt  DateTime
+  remainingUses Int?
+  revokedAt     DateTime?
+  createdAt     DateTime                 @default(now())
+  identity      SecretIdentity           @relation(fields: [workspaceId, identityId], references: [workspaceId, id], onDelete: Cascade)
+  credential    SecretIdentityCredential @relation(fields: [workspaceId, credentialId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, identityId, revokedAt])
+}
+
+// Wrapped internal keys. Database rows contain no unwrapped key material.
+model VaultKey {
+  id          String         @id @default(cuid())
+  workspaceId String
+  projectId   String?
+  scope       String
+  version     Int
+  wrappedKey  String
+  parentId    String?
+  rootVersion Int?
+  fingerprint String
+  active      Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  retiredAt   DateTime?
+  workspace   Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project     SecretProject? @relation(fields: [workspaceId, projectId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, scope, version])
+  @@index([workspaceId, projectId, active])
+}
+
+model SecretKeyRotation {
+  id          String        @id @default(cuid())
+  workspaceId String
+  projectId   String
+  kind        String
+  status      String        @default("PENDING")
+  processed   Int           @default(0)
+  total       Int           @default(0)
+  cursor      String?
+  createdById String
+  createdAt   DateTime      @default(now())
+  finishedAt  DateTime?
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project     SecretProject @relation(fields: [workspaceId, projectId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, projectId, createdAt])
+}
+
+// Manual product and engineering tools. Validated kind-specific facts live in productOps/schema.
+enum ProductKind {
+  ROADMAP
+  RELEASE
+  ISSUE
+  QA_RUN
+  ESTIMATE
+  PROTOTYPE
+  TEST
+  CHANGE
+}
+
+model ProductRecord {
+  id           String                    @id @default(cuid())
+  workspaceId  String
+  kind         ProductKind
+  title        String
+  status       String
+  ownerId      String?
+  projectId    String?
+  releaseId    String?
+  parentId     String?
+  fundingId    String?
+  budgetId     String?
+  fundId       String?
+  dueOn        DateTime?                 @db.Date
+  dateOn       DateTime?                 @db.Date
+  reminderDays Int                       @default(7)
+  currency     String                    @default("INR")
+  notes        String                    @default("")
+  details      Json                      @default("{}")
+  revision     Int                       @default(1)
+  approvalId   String?
+  shippedAt    DateTime?
+  changelogId  String?
+  archivedAt   DateTime?
+  createdById  String
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+  workspace    Workspace                 @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  release      ProductRecord?            @relation("ProductReleaseItems", fields: [workspaceId, releaseId], references: [workspaceId, id], onDelete: NoAction)
+  releaseItems ProductRecord[]           @relation("ProductReleaseItems")
+  parent       ProductRecord?            @relation("ProductPrototypeTests", fields: [workspaceId, parentId], references: [workspaceId, id], onDelete: NoAction)
+  children     ProductRecord[]           @relation("ProductPrototypeTests")
+  estimates    ProductEstimateRevision[]
+  attachments  ProductAttachment[]
+
+  @@unique([workspaceId, id])
+  @@index([workspaceId, kind, archivedAt, dueOn])
+  @@index([workspaceId, projectId])
+  @@index([workspaceId, releaseId])
+  @@index([workspaceId, parentId])
+  @@index([workspaceId, ownerId])
+}
+
+// Immutable estimate snapshots, including the exact quote file references used at that revision.
+model ProductEstimateRevision {
+  id          String        @id @default(cuid())
+  workspaceId String
+  recordId    String
+  version     Int
+  snapshot    Json
+  createdById String
+  createdAt   DateTime      @default(now())
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  record      ProductRecord @relation(fields: [workspaceId, recordId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, recordId, version])
+}
+
+model ProductAttachment {
+  id          String        @id @default(cuid())
+  workspaceId String
+  recordId    String
+  fileId      String
+  generated   Boolean       @default(false)
+  version     Int?
+  createdAt   DateTime      @default(now())
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  record      ProductRecord @relation(fields: [workspaceId, recordId], references: [workspaceId, id], onDelete: Cascade)
+  file        FileObject    @relation(fields: [workspaceId, fileId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, fileId])
+  @@index([workspaceId, recordId])
+}
+
+// Manual recurring obligations create ordinary supplier bills, never a second payment store.
+model RecurringCostSchedule {
+  id                  String             @id @default(cuid())
+  workspaceId         String
+  requestKey          String
+  title               String
+  kind                String
+  payee               String
+  contactId           String?
+  organisationId      String?
+  amountMinor         Int
+  currency            String             @default("INR")
+  estimated           Boolean            @default(false)
+  frequency           String             @default("MONTHLY")
+  dueDay              Int                @default(1)
+  startsOn            DateTime           @db.Date
+  endsOn              DateTime?          @db.Date
+  nextDueOn           DateTime           @db.Date
+  leadDays            Int                @default(14)
+  reminderDays        Int                @default(7)
+  categoryId          String?
+  fundId              String?
+  costCentreId        String?
+  accountId           String?
+  ownerId             String?
+  gstPercent          Float              @default(0)
+  tdsSection          String             @default("")
+  tdsPercent          Float              @default(0)
+  leaseId             String?
+  subscriptionId      String?
+  insuranceId         String?
+  depositId           String?
+  escalationPercent   Float              @default(0)
+  renewalOn           DateTime?          @db.Date
+  renewalReminderDays Int                @default(30)
+  principalMinor      Int                @default(0)
+  annualRatePercent   Float              @default(0)
+  tenure              Int                @default(0)
+  status              String             @default("ACTIVE")
+  notes               String             @default("")
+  createdById         String
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  workspace           Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  dues                RecurringCostDue[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, requestKey])
+  @@unique([workspaceId, leaseId])
+  @@unique([workspaceId, insuranceId])
+  @@index([workspaceId, status, nextDueOn])
+  @@index([workspaceId, fundId, costCentreId])
+}
+
+model RecurringCostDue {
+  id             String                 @id @default(cuid())
+  workspaceId    String
+  scheduleId     String?
+  sourceKey      String
+  kind           String
+  dueOn          DateTime               @db.Date
+  billId         String
+  payRunId       String?
+  principalMinor Int                    @default(0)
+  interestMinor  Int                    @default(0)
+  splitConfirmed Boolean                @default(false)
+  workspace      Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  schedule       RecurringCostSchedule? @relation(fields: [workspaceId, scheduleId], references: [workspaceId, id], onDelete: NoAction)
+  bill           FinanceBill            @relation(fields: [workspaceId, billId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, sourceKey])
+  @@unique([workspaceId, billId])
+  @@index([workspaceId, dueOn, kind])
+  @@index([workspaceId, scheduleId])
+}
+
+// The existing deposit movements hold advance cash; these rows only schedule recovery.
+model StaffAdvance {
+  id           String                 @id @default(cuid())
+  workspaceId  String
+  requestKey   String
+  userId       String
+  profileId    String
+  reason       String
+  amountMinor  Int
+  currency     String
+  instalments  Int
+  startsOn     DateTime               @db.Date
+  accountId    String
+  costCentreId String?
+  fundId       String?
+  approvalId   String?
+  depositId    String?
+  paidOn       DateTime?              @db.Date
+  status       String                 @default("DRAFT")
+  createdById  String
+  createdAt    DateTime               @default(now())
+  workspace    Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  recoveries   StaffAdvanceRecovery[]
+
+  @@unique([workspaceId, id])
+  @@unique([workspaceId, requestKey])
+  @@index([workspaceId, userId, status])
+}
+
+model StaffAdvanceRecovery {
+  id             String       @id @default(cuid())
+  workspaceId    String
+  advanceId      String
+  instalment     Int
+  dueOn          DateTime     @db.Date
+  amountMinor    Int
+  recoveredMinor Int          @default(0)
+  workspace      Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  advance        StaffAdvance @relation(fields: [workspaceId, advanceId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@unique([workspaceId, advanceId, instalment])
+  @@index([workspaceId, dueOn])
+}
+
+// Simple manual project planning and weekly check-ins.
+model ProjectMilestone {
+  id          String                 @id @default(cuid())
+  workspaceId String
+  projectId   String
+  name        String
+  targetOn    DateTime               @db.Date
+  status      String                 @default("PENDING")
+  notes       String                 @default("")
+  createdById String?
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  workspace   Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project     Project                @relation(fields: [workspaceId, projectId], references: [workspaceId, id], onDelete: Cascade)
+  tasks       ProjectMilestoneTask[]
+
+  @@unique([workspaceId, projectId, id])
+  @@index([workspaceId, projectId, targetOn])
+}
+
+model ProjectMilestoneTask {
+  workspaceId String
+  projectId   String
+  milestoneId String
+  taskId      String
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  milestone   ProjectMilestone @relation(fields: [workspaceId, projectId, milestoneId], references: [workspaceId, projectId, id], onDelete: Cascade)
+  task        Task             @relation(fields: [workspaceId, projectId, taskId], references: [workspaceId, projectId, id], onDelete: Cascade)
+
+  @@id([workspaceId, milestoneId, taskId])
+  @@index([workspaceId, taskId])
+}
+
+model ProjectStatusUpdate {
+  id          String    @id @default(cuid())
+  workspaceId String
+  projectId   String
+  status      String
+  note        String
+  blockers    String[]  @default([])
+  nextSteps   String[]  @default([])
+  authorId    String?
+  createdAt   DateTime  @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project     Project   @relation(fields: [workspaceId, projectId], references: [workspaceId, id], onDelete: Cascade)
+
+  @@index([workspaceId, projectId, createdAt])
+}
+
+// Reports read existing records. Only presets and one-off forecast assumptions are new.
+model AnalyticsPreset {
+  id          String    @id @default(cuid())
+  workspaceId String
+  ownerId     String
+  name        String
+  section     String
+  query       Json
+  shared      Boolean   @default(false)
+  pinned      Boolean   @default(false)
+  commentary  String    @default("")
+  fileIds     String[]  @default([])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, ownerId])
+  @@index([workspaceId, shared, pinned])
+}
+
+model AnalyticsAdjustment {
+  id           String    @id @default(cuid())
+  workspaceId  String
+  title        String
+  dueOn        DateTime  @db.Date
+  amountMinor  Int
+  currency     String
+  fundId       String?
+  costCentreId String?
+  notes        String    @default("")
+  fileIds      String[]  @default([])
+  createdById  String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, currency, dueOn])
 }

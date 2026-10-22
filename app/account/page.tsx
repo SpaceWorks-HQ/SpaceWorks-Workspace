@@ -1,3 +1,5 @@
+import { CliSessions } from "@/components/secrets/CliSessions";
+import { listCliSessions } from "@/lib/secrets/device";
 import type { Metadata } from "next";
 import { SimpleShell } from "@/components/chrome/SimpleShell";
 import { AppearanceCard } from "@/components/account/AppearanceCard";
@@ -25,6 +27,8 @@ export default async function AccountPage() {
     listUserWorkspaces(sessionUser.id),
     remainingRecoveryCodes(sessionUser.id),
   ]);
+  const cliSessions = await listCliSessions(sessionUser.id);
+  const hasPassword = Boolean(user.passwordHash);
   return (
     <SimpleShell>
       <div className="flex flex-col gap-6">
@@ -33,8 +37,8 @@ export default async function AccountPage() {
           <SettingsRow title="Profile" description="How the crew sees you across every workspace.">
             <ProfileForm initial={{ name: user.name ?? "", pronouns: user.pronouns ?? "", bio: user.bio ?? "", skills: user.skills, timezone: user.timezone ?? "" }} />
           </SettingsRow>
-          <SettingsRow title="Password" description={user.passwordHash ? "Changing it signs you out on every device." : "You sign in with Google. Add a password as a fallback."}>
-            <PasswordForm hasPassword={Boolean(user.passwordHash)} />
+          <SettingsRow title="Password" description={hasPassword ? "Changing it signs you out on every device." : "You sign in with Google. Add a password as a fallback."}>
+            <PasswordForm hasPassword={hasPassword} />
           </SettingsRow>
           <SettingsRow title="Two-step verification" description="A code from your phone at every sign-in.">
             <MfaCard enabled={Boolean(user.mfaEnabledAt)} remainingCodes={remaining} />
@@ -45,7 +49,10 @@ export default async function AccountPage() {
           <SettingsRow title="Sessions" description="Lost a device? Sign out of every session at once.">
             <SessionsCard />
           </SettingsRow>
-          <SettingsRow title="Your data" description="A JSON copy of your profile, memberships, tasks, messages, docs and shoutouts.">
+          <SettingsRow title="CLI devices" description="Devices authorised to use application Secrets. Revocation takes effect immediately.">
+            <CliSessions sessions={cliSessions} timezone={user.timezone ?? "Asia/Kolkata"} />
+          </SettingsRow>
+          <SettingsRow title="Your data" description="A JSON copy of your profile, memberships, tasks, messages, docs.">
             <Button asChild variant="secondary">
               <a href="/api/account/export" download>Download my data</a>
             </Button>

@@ -26,8 +26,8 @@ import {
  *   tracks attempts, so this row only mirrors the outcome.
  */
 
-type EmailPayload = { to: string; subject: string; html: string; text: string };
-type InvitePayload = { to: string; workspaceName: string; inviterName?: string | null; role: string; inviteUrl: string; expiresAt: string };
+type EmailPayload = { fundingReceipt?: { recordId: string; fileId: string; contactId: string }; workspaceId?: string; to: string; subject: string; html: string; text: string; calendarInvite?: { method: "REQUEST" | "CANCEL"; content: string } };
+type InvitePayload = { workspaceId?: string; to: string; workspaceName: string; inviterName?: string | null; role: string; inviteUrl: string; expiresAt: string };
 type ResetPayload = { to: string; resetUrl: string; expiresAt: string };
 type VerificationPayload = { to: string; verificationUrl: string; expiresAt: string };
 
@@ -89,6 +89,11 @@ export function renderOutboxMessage(kind: string, raw: Prisma.JsonValue, now = n
   switch (kind) {
     case "email":
       if (!isBoundedString(p.subject, 300) || !isBoundedString(p.html, 500_000) || !isBoundedString(p.text, 200_000)) throw new PermanentOutboxError();
+      if (p.calendarInvite !== undefined) {
+        const invite = p.calendarInvite as Record<string, unknown>;
+        if (!invite || !["REQUEST", "CANCEL"].includes(String(invite.method)) || !isBoundedString(invite.content, 100_000) || !invite.content.startsWith("BEGIN:VCALENDAR\r\n")) throw new PermanentOutboxError();
+        return { to: p.to, email: { subject: p.subject, html: p.html, text: p.text, calendarInvite: { method: invite.method as "REQUEST" | "CANCEL", content: invite.content } } };
+      }
       return { to: p.to, email: { subject: p.subject, html: p.html, text: p.text } };
     case "workspace-invite":
       if (!isBoundedString(p.workspaceName, 120) || !isBoundedString(p.role, 16) || !isSafeUrl(p.inviteUrl)) throw new PermanentOutboxError();
@@ -137,15 +142,16 @@ async function runNotifyJob(payload: Prisma.JsonValue): Promise<{ status: "done"
 }
 
 /** Deliver a small batch. Safe to run concurrently: each row is claimed with a conditional update. */
-export async function deliverOutboxBatch(limit = 20) {
+export async function deliverOutboxBatch(limit = 20, scope: { ids?: string[] } = {}) {
+  const scoped = scope.ids ? { id: { in: scope.ids } } : {};
   // Return stale claims (worker died mid-send) to the queue first.
   await prisma.outboxMessage.updateMany({
-    where: { status: OutboxStatus.PROCESSING, lockedAt: { lt: new Date(Date.now() - 15 * 60_000) } },
+    where: { ...scoped, status: OutboxStatus.PROCESSING, lockedAt: { lt: new Date(Date.now() - 15 * 60_000) } },
     data: { status: OutboxStatus.PENDING, lockedAt: null },
   });
 
   const messages = await prisma.outboxMessage.findMany({
-    where: { status: OutboxStatus.PENDING, availableAt: { lte: new Date() } },
+    where: { ...scoped, status: OutboxStatus.PENDING, availableAt: { lte: new Date() } },
     orderBy: { createdAt: "asc" },
     take: Math.min(Math.max(limit, 1), 100),
   });
@@ -181,13 +187,25 @@ export async function deliverOutboxBatch(limit = 20) {
     }
 
     try {
-      const rendered = renderOutboxMessage(message.kind, message.payload);
+      const rendered = message.kind === "analytics.email"
+        ? await (await import("@/lib/analytics/email")).renderAnalyticsEmail(message.payload)
+        : message.kind === "documents.email"
+        ? await (await import("@/lib/documents/email")).renderDocumentEmail(message.payload)
+        : renderOutboxMessage(message.kind, message.payload);
       if (rendered === "expired") {
         await prisma.outboxMessage.deleteMany({ where: mine });
         failed += 1;
         continue;
       }
-      await sendRenderedEmail(rendered.to, rendered.email, `<sww-${message.id}@outbox.invalid>`);
+      const receipt = record(message.payload)?.fundingReceipt;
+      let attachments: Awaited<ReturnType<typeof import("@/lib/funding/email").fundingReceiptAttachment>>[] = [];
+      if (receipt !== undefined) {
+        const workspaceId = record(message.payload)?.workspaceId;
+        if (message.kind !== "email" || typeof workspaceId !== "string") throw new PermanentOutboxError();
+        const { fundingReceiptAttachment } = await import("@/lib/funding/email");
+        attachments = [await fundingReceiptAttachment(workspaceId, receipt, rendered.to)];
+      }
+      await sendRenderedEmail(rendered.to, { ...rendered.email, attachments: [...(rendered.email.attachments ?? []), ...attachments] }, `<sww-${message.id}@outbox.invalid>`);
       if (isCapability) {
         await prisma.outboxMessage.deleteMany({ where: mine });
       } else {

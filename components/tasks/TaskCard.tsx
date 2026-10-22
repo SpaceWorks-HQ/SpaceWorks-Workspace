@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, type DragEvent } from "react";
-import { Check, Ellipsis, MessageSquare, Paperclip, Repeat } from "lucide-react";
+import { Ellipsis } from "lucide-react";
 import { IconButton } from "@/components/ui/button";
 import { Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator, MenuTrigger } from "@/components/ui/menu";
 import { cn } from "@/lib/cn";
@@ -56,7 +56,7 @@ export const TaskCard = memo(function TaskCard({
       onDragEnd={onDragEnd}
       aria-label={`${reference} ${task.title}`}
       className={cn(
-        "group relative rounded-lg border border-line bg-panel transition-[background-color,border-color,opacity] duration-[120ms] hover:border-line-strong",
+        "group relative rounded-xl border border-line bg-panel transition-[background-color,border-color,opacity] duration-[120ms] hover:border-line-strong",
         canEdit && "cursor-grab active:cursor-grabbing",
         dragging && "opacity-50",
       )}
@@ -68,9 +68,9 @@ export const TaskCard = memo(function TaskCard({
         className="flex w-full flex-col gap-2 rounded-lg p-3 pr-11 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--yy-focus)]"
       >
         <span className="flex items-center gap-1.5 text-caption font-semibold tabular-nums text-ink-muted">
-          {done ? <Check aria-hidden className="size-3.5 text-success-fg" /> : null}
+          {done ? <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">✓</span> : null}
           {reference}
-          {task.recurring ? <Repeat aria-label="Repeats" className="size-3.5 text-accent-text" /> : null}
+          {task.recurring ? <span className="inline-flex items-center justify-center text-xs font-semibold">Recurring</span> : null}
         </span>
         <span className={cn("break-words text-body-ui font-medium text-ink", done && "text-ink-secondary")}>{task.title}</span>
         {task.labelIds.length || task.priority !== "NONE" || task.blocked || task.dueAt ? (
@@ -86,16 +86,14 @@ export const TaskCard = memo(function TaskCard({
             <SubtaskProgress done={task.subtaskDone} total={task.subtaskCount} />
             {task.commentCount ? (
               <span className="inline-flex items-center gap-1 tabular-nums">
-                <MessageSquare aria-hidden className="size-3.5" />
                 {task.commentCount}
-                <span className="sr-only"> comments</span>
+                <span> comments</span>
               </span>
             ) : null}
             {task.attachmentCount ? (
               <span className="inline-flex items-center gap-1 tabular-nums">
-                <Paperclip aria-hidden className="size-3.5" />
                 {task.attachmentCount}
-                <span className="sr-only"> attachments</span>
+                <span> attachments</span>
               </span>
             ) : null}
             <AvatarStack people={assignees} className="ml-auto" />

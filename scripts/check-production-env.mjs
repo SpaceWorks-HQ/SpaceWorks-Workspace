@@ -67,7 +67,13 @@ export function productionProblems(source) {
   if (env.SUPER_ADMIN_EMAIL && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(env.SUPER_ADMIN_EMAIL)) problems.push("SUPER_ADMIN_EMAIL: must be an email address");
   if (!env.SUPER_ADMIN_EMAIL) warnings.push("SUPER_ADMIN_EMAIL is not set: nobody can open /admin");
   if (!env.INTEGRATION_ENCRYPTION_KEY) warnings.push("INTEGRATION_ENCRYPTION_KEY is not set: integration tokens use a subkey of MFA_ENCRYPTION_KEY");
-  if (env.OUTBOX_WORKER === "0") warnings.push("OUTBOX_WORKER=0: make sure an external scheduler calls /api/internal/outbox every minute");
+  for (const [key, maximum] of [["JOBS_HEALTH_PORT", 65535], ...["OUTBOX", "SCHEDULED", "SYNC", "MONITOR", "DOCUMENTS"].map(name => [`QUEUE_${name}_CONCURRENCY`, 64])]) {
+    if (env[key] && (!/^\d+$/.test(env[key]) || Number(env[key]) < 1 || Number(env[key]) > maximum)) problems.push(`${key}: must be an integer from 1 to ${maximum}`);
+  }
+  if (env.JOBS_QUEUE_PREFIX && !/^[a-zA-Z0-9:_-]{1,100}$/.test(env.JOBS_QUEUE_PREFIX)) problems.push("JOBS_QUEUE_PREFIX: invalid queue prefix");
+  if (env.JOBS_INPROCESS === "true") problems.push("JOBS_INPROCESS: local development only; run worker and beat in production");
+  if (env.DEPLOYMENT_MODE === "backend" && !/^[a-f0-9]{64}$/.test(env.FRONTEND_GATEWAY_SECRET ?? "")) problems.push("FRONTEND_GATEWAY_SECRET: split backend requires a 32-byte hex key");
+  if (env.DEPLOYMENT_MODE && env.DEPLOYMENT_MODE !== "backend") problems.push("DEPLOYMENT_MODE: use backend or leave unset");
   if (problems.length > 0) return { problems, warnings };
 
   // Transport security (the same rules the server enforces at boot).

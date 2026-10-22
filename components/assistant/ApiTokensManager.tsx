@@ -58,7 +58,7 @@ export function ApiTokensManager({ slug, origin, tokens }: { slug: string; origi
       </div>
 
       {tokens.length === 0 ? (
-        <EmptyState title="No API tokens yet.">Create one to connect Claude Desktop, Claude Code or a script.</EmptyState>
+        <EmptyState patch title="No API tokens yet.">Create one to connect Claude Desktop, Claude Code or a script.</EmptyState>
       ) : (
         <Table label="API tokens">
           <THead>
@@ -78,7 +78,7 @@ export function ApiTokensManager({ slug, origin, tokens }: { slug: string; origi
                   <span className="block font-semibold">{token.name}</span>
                   <span className="block text-caption text-ink-muted">{token.createdBy} · {token.created}{token.expires ? ` · expires ${token.expires}` : ""}</span>
                 </TD>
-                <TD className="whitespace-nowrap text-ink-secondary">{token.prefix}_…</TD>
+                <TD className="whitespace-nowrap text-ink-secondary">{token.prefix}_••••</TD>
                 <TD>
                   <span className="flex max-w-[320px] flex-wrap gap-1">
                     {token.scopes.map((scope) => <Chip key={scope} size="sm" tone="outline">{scopeLabel(scope)}</Chip>)}

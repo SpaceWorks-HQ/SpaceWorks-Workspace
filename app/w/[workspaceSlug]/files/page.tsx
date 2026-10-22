@@ -35,6 +35,7 @@ export default async function FilesPage({ params, searchParams }: PageProps<"/w/
   const admin = hasRoleAtLeast(membership.role, "ADMIN");
   const contributor = canContribute(membership);
 
+  const uploadLimit = maxUploadBytes();
   return (
     <div className="flex flex-col gap-8">
       <PageHeader title="Files" description="Shared files for the whole crew: build files, photos, manuals and paperwork." />
@@ -51,7 +52,7 @@ export default async function FilesPage({ params, searchParams }: PageProps<"/w/
         subfolders={query ? [] : childFolders(allFolders.filter((path) => isWithinFolder(path, folder)), folder)}
         allFolders={allFolders.includes("/") ? allFolders : ["/", ...allFolders]}
         canUpload={contributor}
-        maxUploadLabel={`${Math.floor(maxUploadBytes() / (1024 * 1024))} MB`}
+        maxUploadLabel={`${Math.floor(uploadLimit / (1024 * 1024))} MB`}
         files={files.map((file) => ({
           id: file.id,
           filename: file.filename,

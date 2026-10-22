@@ -5,7 +5,7 @@
  * sync service (lib/monitor/cloud/sync.ts) persists what they return.
  */
 
-export type CloudProviderKind = "DIGITALOCEAN" | "AWS" | "RENDER" | "CLOUDFLARE" | "HETZNER" | "VERCEL" | "NETLIFY" | "FLY" | "RAILWAY" | "GITHUB_ACTIONS" | "PROMETHEUS";
+export type CloudProviderKind = "DIGITALOCEAN" | "AWS" | "RENDER" | "CLOUDFLARE" | "HETZNER" | "VERCEL" | "NETLIFY" | "FLY" | "RAILWAY" | "GITHUB_ACTIONS" | "PROMETHEUS" | "CONTABO" | "LINODE" | "VULTR" | "SCALEWAY" | "SUPABASE";
 export type ResourceHealth = "HEALTHY" | "DEGRADED" | "UNHEALTHY" | "STOPPED" | "UNKNOWN";
 
 /** Decrypted credentials JSON (shape per provider, see each adapter's `credentialFields`). */

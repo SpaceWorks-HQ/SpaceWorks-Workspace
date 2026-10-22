@@ -7,7 +7,7 @@ import { htmlToText } from "@/lib/tasks/sanitize";
 
 /** Keep global search in step with tasks and projects (titles and plain text only). */
 
-type IndexableTask = { id: string; workspaceId: string; number: number; title: string; description: string | null; archivedAt: Date | null; creatorId: string | null };
+type IndexableTask = { id: string; workspaceId: string; number: number; title: string; description: string | null; archivedAt: Date | null; creatorId: string | null; blockerReason?: string | null };
 type IndexableProject = { id: string; key: string; teamId: string | null } | null;
 
 export async function indexTask(client: DbClient, workspaceSlug: string, task: IndexableTask, project: IndexableProject) {
@@ -21,7 +21,7 @@ export async function indexTask(client: DbClient, workspaceSlug: string, task: I
       entityType: "task",
       entityId: task.id,
       title: `${taskReference(project?.key, task.number)} ${task.title}`,
-      body: htmlToText(task.description),
+      body: [htmlToText(task.description), task.blockerReason].filter(Boolean).join("\n"),
       url: taskUrl(workspaceSlug, project?.key, task.number),
       projectId: project?.id ?? null,
       teamId: project?.teamId ?? null,

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { Bell, ChevronsUpDown, LogOut, Menu as MenuIcon, Moon, ShieldCheck, Sun, UserRound, X } from "lucide-react";
+import { ChevronsUpDown, LogOut, Moon, Sun } from "lucide-react";
 import { cn } from "@/lib/cn";
 import type { ShellData } from "@/lib/appShell";
 import { activeNavKey } from "@/lib/nav";
@@ -18,14 +18,19 @@ import { IconButton } from "@/components/ui/button";
 import { Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator, MenuTrigger } from "@/components/ui/menu";
 
 function NavLink({ href, active, children, onNavigate }: { href: string; active: boolean; children: string; onNavigate?: () => void }) {
+  const link = useRef<HTMLAnchorElement>(null);
+  useEffect(() => {
+    if (active) link.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [active]);
   return (
     <Link
+      ref={link}
       href={href}
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex min-h-10 items-center rounded-[10px] px-3 text-[15px] text-ink transition-colors duration-[120ms] hover:bg-sidebar-hover",
-        active && "bg-sidebar-active font-semibold text-on-sidebar-active hover:bg-sidebar-active",
+        "flex min-h-11 items-center rounded-md border border-transparent px-3 text-sm text-ink transition-colors duration-[120ms] hover:bg-sidebar-hover",
+        active && "bg-sidebar-active border-accent-text font-semibold text-on-sidebar-active hover:bg-sidebar-active",
       )}
     >
       <span className="min-w-0 flex-1 truncate">{children}</span>
@@ -36,10 +41,10 @@ function NavLink({ href, active, children, onNavigate }: { href: string; active:
 function WorkspaceSwitcher({ data, onNavigate }: { data: ShellData; onNavigate?: () => void }) {
   return (
     <Menu>
-      <MenuTrigger className="group w-full rounded-[10px] border border-line bg-panel text-left transition-colors hover:border-line-strong">
+      <MenuTrigger className="group w-full rounded-md border border-line bg-panel text-left transition-colors hover:border-line-strong">
         <span className="flex min-h-[58px] items-center gap-2.5 px-3 py-2">
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-[15px] font-semibold text-ink">{data.workspace.name}</span>
+            <span className="block truncate text-sm font-semibold text-ink">{data.workspace.name}</span>
             <span className="block text-caption text-ink-muted">{data.workspace.roleLabel}</span>
           </span>
           <ChevronsUpDown aria-hidden className="size-4 shrink-0 text-ink-muted" />
@@ -68,9 +73,9 @@ function AccountMenu({ data, onNavigate }: { data: ShellData; onNavigate?: () =>
     <Menu>
       <MenuTrigger
         ref={triggerRef}
-        className="flex min-h-12 w-full items-center gap-2.5 rounded-[10px] border border-line bg-panel p-2 text-left transition-colors hover:bg-surface data-[state=open]:bg-surface"
+        className="flex min-h-12 w-full items-center gap-2.5 rounded-md border border-line bg-panel p-2 text-left transition-colors hover:bg-surface data-[state=open]:bg-surface"
       >
-        <Avatar name={name} src={data.user.image} size="sm" className="size-8 text-[11px]" />
+        <Avatar name={name} src={data.user.image} size="sm" className="size-8 text-xs" />
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-semibold text-ink">{name}</span>
           {data.user.name ? <span className="block truncate text-caption text-ink-muted">{data.user.email}</span> : null}
@@ -79,11 +84,11 @@ function AccountMenu({ data, onNavigate }: { data: ShellData; onNavigate?: () =>
       </MenuTrigger>
       <MenuContent side="top" align="start" className="min-w-[232px]">
         <MenuLabel>{name}</MenuLabel>
-        <MenuItem asChild icon={<UserRound />}>
+        <MenuItem asChild>
           <Link href="/account" onClick={onNavigate}>Account settings</Link>
         </MenuItem>
         {data.isSuperAdmin ? (
-          <MenuItem asChild icon={<ShieldCheck />}>
+          <MenuItem asChild>
             <Link href="/admin" onClick={onNavigate}>Instance admin</Link>
           </MenuItem>
         ) : null}
@@ -113,11 +118,11 @@ function NotificationsLink({ data, onNavigate }: { data: ShellData; onNavigate?:
       href={`/w/${data.workspace.slug}/notifications`}
       onClick={onNavigate}
       aria-label={label}
-      className="relative inline-flex size-11 shrink-0 items-center justify-center rounded-[10px] text-ink transition-colors hover:bg-sidebar-hover"
+      className="relative inline-flex size-11 shrink-0 items-center justify-center rounded-md text-ink transition-colors hover:bg-sidebar-hover"
     >
-      <Bell aria-hidden className="size-[18px]" />
+      <span className="text-xs font-semibold">Inbox</span>
       {count > 0 ? (
-        <span aria-hidden className="absolute right-1 top-1 min-w-5 rounded-full bg-highlight px-1.5 text-center text-xs font-semibold leading-5 tabular-nums text-on-highlight">
+        <span aria-hidden className="absolute right-1 top-1 min-w-5 rounded-full bg-accent-soft px-1.5 text-center text-xs font-semibold leading-5 tabular-nums text-accent-text">
           {count > 99 ? "99+" : count}
         </span>
       ) : null}
@@ -129,17 +134,19 @@ function SidebarContents({ data, onNavigate, headerAction }: { data: ShellData; 
   const pathname = usePathname() ?? "";
   const active = activeNavKey(data.nav, pathname);
   return (
-    <div className="flex h-full flex-col gap-4 px-3 py-3.5">
-      <div className="flex items-center justify-between gap-2 pl-2 pt-1">
+    <div className="flex h-full min-h-0 flex-col gap-4 p-5">
+      <div className="relative flex shrink-0 items-center justify-center">
         <Link href={`/w/${data.workspace.slug}`} onClick={onNavigate} aria-label="Space Works Workspace home" className="inline-flex rounded-md">
-          <SpaceWorksLogo variant="lockup-horizontal" height={29} label={null} />
+          <SpaceWorksLogo variant="lockup-stacked" height={64} label={null} />
         </Link>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        <div className="min-w-0 flex-1"><WorkspaceSwitcher data={data} onNavigate={onNavigate} /></div>
         {headerAction ?? <NotificationsLink data={data} onNavigate={onNavigate} />}
       </div>
-      <WorkspaceSwitcher data={data} onNavigate={onNavigate} />
-      <nav aria-label="Workspace" className="flex flex-col gap-3">
+      <nav aria-label="Workspace" className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
         {data.nav.map((group) => (
-          <div key={group.key} className="flex flex-col gap-0.5">
+          <div key={group.key} className="flex flex-col gap-1">
             {group.label ? <p className="px-3 pb-0.5 text-overline text-ink-muted">{group.label}</p> : null}
             {group.items.map((item) => (
               <NavLink key={item.key} href={item.href} active={active === item.key} onNavigate={onNavigate}>
@@ -148,6 +155,10 @@ function SidebarContents({ data, onNavigate, headerAction }: { data: ShellData; 
             ))}
           </div>
         ))}
+        {data.pinned.length ? <div className="flex flex-col gap-0.5">
+          <p className="px-3 pb-0.5 text-overline text-ink-muted">Pinned</p>
+          {data.pinned.map((link) => <NavLink key={link.id} href={`/w/${data.workspace.slug}/links#${link.id}`} active={false} onNavigate={onNavigate}>{link.title}</NavLink>)}
+        </div> : null}
       </nav>
       <div className="mt-auto pt-2">
         <AccountMenu data={data} onNavigate={onNavigate} />
@@ -177,24 +188,24 @@ export function AppShell({ data, children }: { data: ShellData; children: ReactN
 
   return (
     <div className="flex min-h-dvh flex-col md:flex-row">
-      <aside className="sticky top-0 hidden h-dvh w-[256px] shrink-0 overflow-y-auto border-r border-line bg-sidebar md:block">
+      <aside className="sticky top-0 hidden h-dvh w-[256px] shrink-0 border-r border-line bg-sidebar md:block">
         <SidebarContents data={data} />
       </aside>
 
-      <div className="sticky top-0 z-40 flex h-14 items-center justify-between gap-2 border-b border-line bg-canvas px-4 md:hidden">
+      <div className="sticky top-0 z-40 flex min-h-[72px] items-center justify-between gap-2 border-b border-line bg-canvas px-4 md:hidden">
         <Link href={`/w/${data.workspace.slug}`} aria-label="Workspace home" className="inline-flex shrink-0 items-center rounded-md">
-          <SpaceWorksLogo variant="lockup-horizontal" height={29} label={null} />
+          <SpaceWorksLogo variant="symbol" height={48} label={null} />
         </Link>
         <div className="flex items-center gap-1">
           <NotificationsLink data={data} />
           <DialogPrimitive.Root open={menuOpen} onOpenChange={setMenuOpen}>
             <DialogPrimitive.Trigger asChild>
               <IconButton label="Open navigation menu">
-                <MenuIcon />
+                <span className="text-xs font-semibold">Menu</span>
               </IconButton>
             </DialogPrimitive.Trigger>
             <DialogPrimitive.Portal>
-              <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[rgb(20_44_42/0.48)]" />
+              <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[var(--yy-overlay)]" />
               <DialogPrimitive.Content className="fixed inset-y-0 left-0 z-50 w-[min(288px,86vw)] overflow-y-auto border-r border-line bg-sidebar shadow-float focus:outline-none">
                 <DialogPrimitive.Title className="sr-only">Navigation</DialogPrimitive.Title>
                 <DialogPrimitive.Description className="sr-only">Workspace navigation</DialogPrimitive.Description>
@@ -204,7 +215,7 @@ export function AppShell({ data, children }: { data: ShellData; children: ReactN
                   headerAction={
                     <DialogPrimitive.Close asChild>
                       <IconButton label="Close navigation menu" variant="quiet">
-                        <X />
+                        <span className="text-xs font-semibold">Close</span>
                       </IconButton>
                     </DialogPrimitive.Close>
                   }
@@ -215,7 +226,7 @@ export function AppShell({ data, children }: { data: ShellData; children: ReactN
         </div>
       </div>
 
-      <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 px-4 py-6 focus:outline-none sm:px-6 md:px-10 md:py-9">
+      <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 px-4 py-6 focus:outline-none sm:px-6 md:px-8 md:py-8">
         <div className="mx-auto w-full max-w-[1200px]">{children}</div>
       </main>
     </div>

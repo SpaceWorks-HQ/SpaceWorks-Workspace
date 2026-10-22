@@ -8,7 +8,7 @@ import { verifyVaultMfa } from "@/lib/vault/mfa";
 import { encryptMfaSecret } from "@/lib/mfa";
 import { createRequest, completeRequest, resubmitRequest, savePolicy, createGenericRequest } from "@/lib/requests/service";
 import { decide, commentOnApproval, getApprovalView, eligibleApproverIds } from "@/lib/approvals/engine";
-import { saveAsset, bookAsset, checkoutAsset } from "@/lib/assets/service";
+import { listAssets, saveAsset, logMaintenance, saveKey } from "@/lib/assets/service";
 import { saveForm, submitForm, convertToTask, publicForm, exportCsv } from "@/lib/forms/service";
 import { saveService, listCatalogue } from "@/lib/catalogue/service";
 import { saveSubscription, listSubscriptions } from "@/lib/subscriptions/service";
@@ -53,7 +53,8 @@ describe("ops security and atomic transitions",()=>{
  });
  it("posts one ledger entry after approval and concurrent completion; blocks self decisions",async()=>{
   for(const kind of ["purchase_request","reimbursement"] as const){
-   const id=await createRequest(member,{kind,title:"Workshop materials",totalMinor:10000,currency:"INR",vendor:"Local vendor",justification:"Build night"});
+   const receipt = kind === "reimbursement" ? await prisma.fileObject.create({ data: { workspaceId: owner.workspace.id, uploadedById: member.user.id, storageKey: `ops-proof/${suffix}`, filename: "receipt.pdf", contentType: "application/pdf", size: 100, folder: "/requests" } }) : null;
+   const id=await createRequest(member,{kind,title:"Workshop materials",totalMinor:10000,currency:"INR",vendor:"Local vendor",justification:"Build night",receiptFileIds:receipt?[receipt.id]:[]});
    const approval=await prisma.approvalRequest.findFirstOrThrow({where:{workspaceId:owner.workspace.id,subjectId:id}});
    expect((await decide(member,{requestId:approval.id,decision:"APPROVED"})).ok).toBe(false);
    await expect(completeRequest(owner,kind,id)).rejects.toThrow("Approve");
@@ -63,11 +64,17 @@ describe("ops security and atomic transitions",()=>{
    expect(await prisma.ledgerEntry.count({where:{workspaceId:owner.workspace.id,sourceType:kind,sourceId:id}})).toBe(1);
   }
  });
- it("serializes overlapping bookings and checkout attempts",async()=>{
-  const assetId=await saveAsset(owner,{name:"Drill",category:"Tools",bookable:true});const startsAt=new Date(Date.now()+86400000),endsAt=new Date(Date.now()+90000000);
-  const results=await Promise.allSettled([bookAsset(member,{assetId,startsAt,endsAt}),bookAsset(owner,{assetId,startsAt,endsAt})]);expect(results.filter(r=>r.status==="fulfilled")).toHaveLength(1);
-  await expect(bookAsset(other,{assetId,startsAt,endsAt})).rejects.toThrow("unavailable");
-  const drill2=await saveAsset(owner,{name:"Soldering iron",category:"Tools"});const checkouts=await Promise.allSettled([checkoutAsset(member,{assetId:drill2,dueAt:endsAt}),checkoutAsset(owner,{assetId:drill2,dueAt:endsAt})]);expect(checkouts.filter(r=>r.status==="fulfilled")).toHaveLength(1);
+ it("keeps asset inventory, maintenance and access holders tenant-scoped and admin-managed",async()=>{
+  const assetId=await saveAsset(owner,{name:"Internal drill",category:"Tools",location:"Workshop",condition:"Good"});
+  await expect(saveAsset(member,{name:"No access",category:"Tools"})).rejects.toThrow();
+  await expect(saveAsset(other,{id:assetId,name:"Foreign edit",category:"Tools"})).rejects.toThrow();
+  await logMaintenance(owner,{assetId,type:"NOTE",note:"Inspect the chuck"});
+  await expect(logMaintenance(other,{assetId,type:"NOTE",note:"Foreign note"})).rejects.toThrow();
+  expect((await listAssets(member)).find(a=>a.id===assetId)?.maintenance[0]?.note).toBe("Inspect the chuck");
+  expect((await listAssets(other)).some(a=>a.id===assetId)).toBe(false);
+  const keyId=await saveKey(owner,{label:"Workshop key",type:"KEY",holderUserId:member.user.id,status:"ISSUED"});
+  expect(await prisma.accessCredential.findUnique({where:{id:keyId}})).toMatchObject({holderUserId:member.user.id,workspaceId:owner.workspace.id});
+  await expect(saveKey(other,{id:keyId,label:"Foreign key",type:"KEY",status:"IN_SAFE"})).rejects.toThrow();
  });
  it("hashes public links, enforces rate limits and response caps, and converts once",async()=>{
   const result=await saveForm(owner,{title:"Intake",visibility:"PUBLIC_LINK",fields:[{key:"name",label:"Name",type:"text",required:true}]});const token=result.publicPath!.split("/").pop()!;

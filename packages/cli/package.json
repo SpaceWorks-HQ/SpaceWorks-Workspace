@@ -1,0 +1,40 @@
+{
+  "name": "@spaceworks-hq/workspace-cli",
+  "version": "0.6.5",
+  "description": "Space Works Workspace secrets CLI and Node SDK",
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "sww": "dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/sdk.d.ts",
+      "import": "./dist/sdk.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node -e \"require('node:fs').chmodSync('dist/cli.js', 0o755)\"",
+    "prepack": "npm run build",
+    "prepublishOnly": "npm run build"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SpaceWorks-HQ/SpaceWorks-Workspace.git",
+    "directory": "packages/cli"
+  },
+  "dependencies": {
+    "cross-spawn": "^7.0.6"
+  }
+}

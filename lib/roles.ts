@@ -29,14 +29,13 @@ type FinanceWorkspace = { financeVisibleToMembers: boolean };
 
 const atLeast = (m: RoleHolder, min: WorkspaceRole) => m != null && hasRoleAtLeast(m.role, min);
 
-/** Create and edit tasks, docs, files, messages, shoutouts. */
+/** Create and edit tasks, docs, files, messages. */
 export const canContribute = (m: RoleHolder) => atLeast(m, "MEMBER");
 /** Invite, change roles, suspend and remove members. */
 export const canManageMembers = (m: RoleHolder) => atLeast(m, "ADMIN");
 export const canManageLabels = (m: RoleHolder) => atLeast(m, "ADMIN");
 export const canManageChannels = (m: RoleHolder) => atLeast(m, "ADMIN");
 export const canManageFinance = (m: RoleHolder) => atLeast(m, "ADMIN");
-export const canManageBlog = (m: RoleHolder) => atLeast(m, "ADMIN");
 export const canManageApiTokens = (m: RoleHolder) => atLeast(m, "ADMIN");
 export const canManageIntegrations = (m: RoleHolder) => atLeast(m, "ADMIN");
 export const canViewAuditLog = (m: RoleHolder) => atLeast(m, "ADMIN");
@@ -155,3 +154,80 @@ export const canExportWorkspace = (m: RoleHolder) => atLeast(m, "OWNER");
 /** App reviews: members triage and reply; admins manage store credentials. */
 export const canViewAppReviews = (m: RoleHolder) => atLeast(m, "MEMBER");
 export const canManageAppReviews = (m: RoleHolder) => atLeast(m, "ADMIN");
+
+/** Internal team operations: guests excluded; admins manage queues and reviews. */
+export const canUseInternalOperations = (m: RoleHolder) => atLeast(m, "MEMBER");
+export const canManageInternalOperations = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** Social: members read and answer; admins connect official accounts. */
+export const canViewSocial = (m: RoleHolder) => atLeast(m, "MEMBER");
+export const canManageSocial = (m: RoleHolder) => atLeast(m, "MEMBER");
+export const canConnectSocial = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** Legal, board and vendor banking records are restricted to workspace admins. */
+export const canManageGovernance = (m: RoleHolder) => atLeast(m, "ADMIN");
+export const canViewGovernance = canManageGovernance;
+/** Internal calendar scheduling; guests may only respond to invitations. */
+export const canScheduleMeetings = (m: RoleHolder) => atLeast(m, "MEMBER");
+export const canManageCalendarDeadlines = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** Payroll requires an explicit tenant grant; role alone never grants it. */
+export type PayrollGrant = { manage: boolean } | null | undefined;
+export const canViewPayroll = (m: RoleHolder, grant: PayrollGrant) => atLeast(m, "MEMBER") && grant != null;
+export const canManagePayroll = (m: RoleHolder, grant: PayrollGrant) => canViewPayroll(m, grant) && grant?.manage === true;
+
+/** Issued money documents and donor tax identities stay restricted to finance administrators. */
+export const canIssueFinancialDocuments = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** HR letters use the existing internal-operations administrator role. */
+export const canIssueLetters = (m: RoleHolder) => atLeast(m, "ADMIN");
+export const canCancelDocuments = (m: RoleHolder) => atLeast(m, "ADMIN");
+export const canManageDocumentSettings = (m: RoleHolder) => atLeast(m, "ADMIN");
+export const canExportDocumentFilings = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** Funding includes donor identity and proof; only workspace admins read or edit. */
+export const canManageFunding = (m: RoleHolder) => atLeast(m, "ADMIN");
+export const canViewFunding = canManageFunding;
+/** Internal cash, asset accounting and tax registers require finance management rights. */
+export const canManageMoneyControls = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** People can acknowledge their own assignment or custodian handover. */
+export function canReadMoneyControl(m: RoleHolder, userId: string, row: { kind: string; ownerId: string | null; createdById: string; details?: unknown }) {
+ if (!atLeast(m,"MEMBER")) return false;
+ if (canManageMoneyControls(m)) return true;
+ const d = row.details && typeof row.details === "object" ? row.details as Record<string,unknown> : {};
+ return ["HANDOVER","ASSIGNMENT"].includes(row.kind) && (row.ownerId === userId || d.outgoingId === userId);
+}
+/** Appointments grant no access to case contents without explicit case assignment. */
+export const canManageSafeguardingHandlers = (m: RoleHolder) => atLeast(m, "OWNER");
+export const canHandleSafeguarding = (m: RoleHolder, appointed: boolean, assigned: boolean) => atLeast(m, "MEMBER") && appointed && assigned;
+
+/** Organisation tools are internal; structure and registers are maintained by admins. */
+export const canViewOrgPeople = (m: RoleHolder) => atLeast(m, "MEMBER");
+export const canManageOrgPeople = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** Attendance is personal, with direct-manager access. Admins cannot act on peers or owners. */
+export function canRecordAttendance(m: RoleHolder, isSelf: boolean, isDirectManager: boolean, targetRole: WorkspaceRole) {
+  return canViewOrgPeople(m) && (isSelf || (isDirectManager && targetRole === "MEMBER") || canActOnMember(m, targetRole));
+}
+/** Marketing planning is internal; approved brand assets are readable by members. */
+export const canUseMarketingOperations = (m: RoleHolder) => atLeast(m, "MEMBER");
+export const canManageMarketingOperations = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** Device assignments, incident details and access reviews are admin records. */
+export const canManageItAdministration = (m: RoleHolder) => atLeast(m, "ADMIN");
+
+/** Application secrets require active membership and explicit environment access. */
+export const canUseSecrets = (m: RoleHolder) => atLeast(m, "MEMBER");
+export const canManageSecrets = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** Internal product tools are for the operating team; funding estimates require finance management. */
+export const canManageProductOps = (m: RoleHolder) => atLeast(m, "MEMBER");
+export const canManageProductEstimates = (m: RoleHolder) => atLeast(m, "ADMIN");
+
+/** Publishing into the existing changelog retains its admin-only permission. */
+export const canPublishProductChangelog = (m: RoleHolder) => atLeast(m, "ADMIN");
+/** Fixed costs are finance-manager tools; staff recovery also permits the person. */
+export const canManageRecurringCosts = canManageFinance;
+export const canReadStaffAdvance = (m: RoleHolder, grant: PayrollGrant, userId: string, personId: string) =>
+  atLeast(m, "MEMBER") && (canManagePayroll(m, grant) || userId === personId);
+/** Project plans and check-ins: project lead or workspace admins; guests read only. */
+export function canManageProjectPlan(m: RoleHolder, userId: string, ownerId: string | null) {
+  return atLeast(m, "ADMIN") || (atLeast(m, "MEMBER") && userId === ownerId);
+}
+export const canEditTaskPlan = (m: RoleHolder) => atLeast(m, "MEMBER");
+
+/** Analytics retains each source tool’s record access checks. */
+export const canViewAnalytics = (m: RoleHolder) => atLeast(m, "MEMBER");
+export const canManageAnalytics = (m: RoleHolder) => atLeast(m, "ADMIN");

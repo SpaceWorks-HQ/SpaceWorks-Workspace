@@ -1,21 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ClipboardEvent, type DragEvent, type KeyboardEvent } from "react";
-import { FileText, Paperclip, SendHorizontal, X } from "lucide-react";
-import { sendTypingAction, uploadChatAttachmentAction } from "@/app/actions/chat";
+
+import { sendTypingAction } from "@/app/actions/chat";
 import { cn } from "@/lib/cn";
-import { MAX_ATTACHMENTS, MAX_MESSAGE_LENGTH, encodeMentions, triggerAt, type MentionCandidate } from "@/lib/chat/client";
-import type { AttachmentDTO } from "@/lib/chat/types";
-import { Avatar } from "@/components/ui/display";
-import { Spinner } from "@/components/ui/spinner";
+import { MAX_MESSAGE_LENGTH, encodeMentions, triggerAt, type MentionCandidate } from "@/lib/chat/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { useChat } from "@/components/chat/ChatProvider";
-import { fileSize } from "@/components/chat/ui";
-
-type Suggestion = { key: string; label: string; detail?: string; insert: string; mention?: MentionCandidate; image?: string | null };
-
-type PendingFile = { key: string; name: string; status: "uploading" | "done"; attachment?: AttachmentDTO };
+import { useComposerAttachments } from "./useComposerAttachments";
+import { ComposerAttachments } from "./ComposerAttachments";
+import { ComposerAutocomplete, useComposerSuggestions, type Suggestion } from "./ComposerAutocomplete";
 
 export type ComposerSubmit = { body: string; attachmentIds: string[]; raw: string };
 
@@ -56,7 +51,7 @@ export function Composer({
   const { showToast } = useToast();
   const [text, setText] = useState(initialText);
   const [mentions, setMentions] = useState<MentionCandidate[]>(initialMentions);
-  const [files, setFiles] = useState<PendingFile[]>([]);
+  const { files, setFiles, uploading, upload } = useComposerAttachments(slug, channelId, allowUpload);
   const [caret, setCaret] = useState(0);
   const [active, setActive] = useState(0);
   const [dismissed, setDismissed] = useState<number | null>(null);
@@ -88,26 +83,7 @@ export function Composer({
   }, [autoFocus]);
 
   const trigger = useMemo(() => triggerAt(text, caret), [text, caret]);
-  const suggestions = useMemo((): Suggestion[] => {
-    if (!trigger || dismissed === trigger.start) return [];
-    const q = trigger.query.toLowerCase();
-    if (trigger.trigger === "#") {
-      return channels
-        .filter((c) => c.slug.includes(q) || c.name.toLowerCase().includes(q))
-        .slice(0, 8)
-        .map((c) => ({ key: c.id, label: `#${c.name}`, insert: `#${c.slug} ` }));
-    }
-    const list: Suggestion[] = people
-      .filter((p) => p.id !== viewer.id && p.name.toLowerCase().split(/\s+/).some((part) => part.startsWith(q.split(" ")[0] ?? "")) && p.name.toLowerCase().includes(q))
-      .slice(0, 8)
-      .map((p) => ({ key: p.id, label: p.name, insert: `@${p.name} `, mention: { id: p.id, name: p.name }, image: p.image }));
-    if (allowBroadcast) {
-      for (const word of ["channel", "here"]) {
-        if (word.startsWith(q)) list.push({ key: word, label: `@${word}`, detail: word === "channel" ? "Notify everyone in this channel" : "Notify everyone here", insert: `@${word} ` });
-      }
-    }
-    return list;
-  }, [trigger, dismissed, channels, people, viewer.id, allowBroadcast]);
+  const suggestions = useComposerSuggestions({ trigger, dismissed, channels, people, viewer, allowBroadcast });
   const open = suggestions.length > 0;
   const activeIndex = Math.min(active, Math.max(0, suggestions.length - 1));
 
@@ -125,31 +101,6 @@ export function Composer({
       area.current?.focus();
       area.current?.setSelectionRange(position, position);
     });
-  };
-
-  const uploading = files.some((f) => f.status === "uploading");
-
-  const upload = async (list: File[]) => {
-    if (!allowUpload) return;
-    const room = MAX_ATTACHMENTS - files.length;
-    if (room <= 0) {
-      showToast(`Attach up to ${MAX_ATTACHMENTS} files per message.`, "warning");
-      return;
-    }
-    for (const file of list.slice(0, room)) {
-      const key = `${file.name}-${Math.random().toString(36).slice(2)}`;
-      setFiles((current) => [...current, { key, name: file.name, status: "uploading" }]);
-      const form = new FormData();
-      form.set("channelId", channelId);
-      form.set("file", file);
-      const result = await uploadChatAttachmentAction(slug, form);
-      if (!result.ok) {
-        showToast(result.error, "error");
-        setFiles((current) => current.filter((f) => f.key !== key));
-        continue;
-      }
-      setFiles((current) => current.map((f) => (f.key === key ? { ...f, status: "done", attachment: result.data!.attachment } : f)));
-    }
   };
 
   const submit = async () => {
@@ -254,52 +205,21 @@ export function Composer({
       onDrop={onDrop}
     >
       {open ? (
-        <ul
-          id={listId}
-          role="listbox"
-          aria-label={trigger?.trigger === "#" ? "Channels" : "People"}
-          className="absolute bottom-full left-0 z-20 mb-2 max-h-72 w-full max-w-[360px] overflow-y-auto rounded-lg border border-line bg-panel p-1.5 shadow-float"
-        >
-          {suggestions.map((suggestion, index) => (
-            <li
-              key={suggestion.key}
-              id={`${listId}-${index}`}
-              role="option"
-              aria-selected={index === activeIndex}
-              onMouseDown={(event) => {
-                event.preventDefault();
-                pick(suggestion);
-              }}
-              onMouseEnter={() => setActive(index)}
-              className={cn("flex min-h-10 cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-1.5 text-body-ui text-ink", index === activeIndex && "bg-muted")}
-            >
-              {suggestion.mention ? <Avatar name={suggestion.label} src={suggestion.image} size="xs" /> : null}
-              <span className="min-w-0 flex-1 truncate font-semibold">{suggestion.label}</span>
-              {suggestion.detail ? <span className="truncate text-caption text-ink-muted">{suggestion.detail}</span> : null}
-            </li>
-          ))}
-        </ul>
+        <ComposerAutocomplete
+          listId={listId}
+          trigger={trigger}
+          suggestions={suggestions}
+          activeIndex={activeIndex}
+          pick={pick}
+          setActive={setActive}
+        />
       ) : null}
 
       {files.length > 0 ? (
-        <ul className="flex flex-wrap gap-2 px-3 pt-3" aria-label="Files to send">
-          {files.map((file) => (
-            <li key={file.key} className="flex min-h-10 max-w-[260px] items-center gap-2 rounded-lg border border-line bg-surface py-1 pl-2.5 pr-1">
-              {file.status === "uploading" ? <Spinner className="size-4" label="Uploading" /> : <FileText aria-hidden className="size-4 shrink-0 text-ink-muted" />}
-              <span className="min-w-0 flex-1 truncate text-caption text-ink">{file.name}</span>
-              {file.attachment ? <span className="text-caption text-ink-muted tabular-nums">{fileSize(file.attachment.size)}</span> : null}
-              <button
-                type="button"
-                aria-label={`Remove ${file.name}`}
-                disabled={file.status === "uploading"}
-                onClick={() => setFiles((current) => current.filter((f) => f.key !== file.key))}
-                className="inline-flex size-8 items-center justify-center rounded-md text-ink-muted hover:bg-muted hover:text-ink disabled:text-ink-disabled"
-              >
-                <X aria-hidden className="size-4" />
-              </button>
-            </li>
-          ))}
-        </ul>
+        <ComposerAttachments
+          files={files}
+          onRemove={(key) => setFiles((current) => current.filter((f) => f.key !== key))}
+        />
       ) : null}
 
       <div className="flex items-end gap-1 p-1.5">
@@ -319,12 +239,11 @@ export function Composer({
             />
             <button
               type="button"
-              aria-label="Attach files"
               title="Attach files"
               onClick={() => fileInput.current?.click()}
-              className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-ink-secondary hover:bg-muted hover:text-ink [&_svg]:size-5"
+              className="inline-flex min-h-11 min-w-11 shrink-0 px-3 items-center justify-center rounded-md text-ink-secondary hover:bg-muted hover:text-ink [&_svg]:size-5"
             >
-              <Paperclip />
+              <span className="inline-flex items-center justify-center text-xs font-semibold">Attach</span>
             </button>
           </>
         ) : null}
@@ -345,7 +264,7 @@ export function Composer({
           onSelect={(event) => setCaret(event.currentTarget.selectionStart ?? 0)}
           onKeyDown={onKeyDown}
           onPaste={onPaste}
-          className="max-h-60 min-h-11 flex-1 resize-none bg-transparent px-2 py-2.5 text-base text-ink outline-none placeholder:text-ink-muted"
+          className="max-h-60 min-h-11 min-w-0 flex-1 resize-none bg-transparent px-2 py-2.5 text-base text-ink outline-none placeholder:text-ink-muted"
         />
         {mode === "post" ? (
           <button
@@ -354,9 +273,9 @@ export function Composer({
             title="Send message"
             disabled={busy || uploading || (!text.trim() && !files.some((f) => f.attachment))}
             onClick={() => void submit()}
-            className="inline-flex size-11 shrink-0 items-center justify-center rounded-md bg-primary text-on-primary transition-colors duration-[120ms] hover:bg-primary-hover disabled:bg-surface disabled:text-ink-muted [&_svg]:size-5"
+            className="inline-flex min-h-11 min-w-11 shrink-0 px-3 items-center justify-center rounded-md bg-primary text-on-primary transition-colors duration-[120ms] hover:bg-primary-hover disabled:bg-surface disabled:text-ink-muted [&_svg]:size-5"
           >
-            <SendHorizontal />
+            <span className="inline-flex items-center justify-center text-xs font-semibold">Send</span>
           </button>
         ) : null}
       </div>

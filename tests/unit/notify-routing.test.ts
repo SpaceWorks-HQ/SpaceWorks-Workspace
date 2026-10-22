@@ -38,8 +38,6 @@ describe("event catalogue", () => {
       "mention",
       "message.dm",
       "announcement.published",
-      "shoutout.received",
-      "event.reminder",
       "finance.approval.requested",
       "finance.approval.decided",
       "monitor.down",
@@ -250,13 +248,33 @@ describe("rendering", () => {
 
   it("renders a channel-neutral message with a severity word", () => {
     const message = renderMessage(
-      { type: "monitor.down", severity: "critical", title: "Laser booking app is down", body: "Timed out after 10 s.", url: "/w/kochi/services", fields: [{ label: "Status", value: "504" }] },
+      { type: "monitor.down", severity: "critical", title: "Equipment monitor is down", body: "Timed out after 10 s.", url: "/w/kochi/services", fields: [{ label: "Status", value: "504" }] },
       workspace,
       "https://work.example.org",
     );
     expect(message.severityLabel).toBe("Critical");
     expect(message.url).toBe("https://work.example.org/w/kochi/services");
     expect(message.text).toBe("Timed out after 10 s.\nStatus: 504");
-    expect(renderPlainText(message)).toBe("[Critical] Laser booking app is down\nTimed out after 10 s.\nStatus: 504\nhttps://work.example.org/w/kochi/services");
+    expect(renderPlainText(message)).toBe("[Critical] Equipment monitor is down\nTimed out after 10 s.\nStatus: 504\nhttps://work.example.org/w/kochi/services");
+  });
+});
+
+describe("reminder channels", () => {
+  it("sends reminders to email and every linked messaging account when the member has no preference", async () => {
+    const { resolvePersonalChannels, isReminderEvent } = await import("@/lib/notify/preferences");
+    expect(isReminderEvent("meeting.reminder")).toBe(true);
+    expect(isReminderEvent("finance.bill.overdue")).toBe(true);
+    expect(isReminderEvent("task.due")).toBe(true);
+    expect(isReminderEvent("meeting.scheduled")).toBe(false);
+    const resolved = resolvePersonalChannels({ category: "collaboration", eventType: "meeting.reminder", role: "MEMBER", linkedProviders: ["WHATSAPP", "TELEGRAM", "SLACK", "DISCORD", "MATTERMOST"] });
+    expect(new Set(resolved.channels)).toEqual(new Set(["IN_APP", "EMAIL", "WHATSAPP_DM", "TELEGRAM_DM", "SLACK_DM", "DISCORD_DM", "MATTERMOST_DM"]));
+    // Unlinked providers never receive messages.
+    expect(resolvePersonalChannels({ category: "collaboration", eventType: "meeting.reminder", role: "MEMBER", linkedProviders: [] }).channels.sort()).toEqual(["EMAIL", "IN_APP"]);
+  });
+
+  it("keeps the member's own choice and the category default for non-reminders", async () => {
+    const { resolvePersonalChannels } = await import("@/lib/notify/preferences");
+    expect(resolvePersonalChannels({ category: "collaboration", eventType: "meeting.reminder", role: "MEMBER", linkedProviders: ["SLACK"], userPreference: { channels: ["IN_APP"], digestFrequency: "IMMEDIATE" } }).channels).toEqual(["IN_APP"]);
+    expect(resolvePersonalChannels({ category: "collaboration", eventType: "meeting.scheduled", role: "MEMBER", linkedProviders: ["SLACK"] }).channels).toEqual(["IN_APP"]);
   });
 });

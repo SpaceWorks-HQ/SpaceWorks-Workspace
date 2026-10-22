@@ -17,6 +17,7 @@ export function ProjectSettingsForm({ slug, project, members, teams }: { slug: s
   const { showToast } = useToast();
   const archived = project.status === "ARCHIVED";
   const [form, setForm] = useState({
+    cyclesEnabled: project.cyclesEnabled,
     name: project.name,
     key: project.key,
     description: project.description ?? "",
@@ -104,6 +105,9 @@ export function ProjectSettingsForm({ slug, project, members, teams }: { slug: s
                   </Dropdown>
                 </Field>
               </div>
+            </SettingsRow>
+            <SettingsRow title="Cycles" description="Plan time-boxed batches of work for this project.">
+              <label className="flex min-h-11 items-center gap-3 text-label"><input type="checkbox" checked={form.cyclesEnabled} onChange={(event) => set("cyclesEnabled", event.target.checked)} />Enable cycles</label>
             </SettingsRow>
             <SettingsRow title="Status and dates">
               <div className="grid gap-4 xl:grid-cols-3">

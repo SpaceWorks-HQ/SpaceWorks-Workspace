@@ -1,9 +1,10 @@
 import { type HTMLAttributes, type ReactNode } from "react";
 import Link from "next/link";
-import { AlertTriangle, CheckCircle2, Info, Repeat, XCircle } from "lucide-react";
+import { TriangleAlert as AlertTriangle, CircleCheck as CheckCircle2, Info, TriangleAlert as XCircle } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { MoodTile, type Mood } from "@/components/brand/MoodTile";
-import { AvatarImage } from "./avatar-image";
+import { Patch, type PatchPose } from "@/components/brand/Patch";
+export { Avatar, OrgLogo, initials } from "./display-avatars";
 
 /* ---------- Status pills (docs/DESIGN.md §4.5) ---------- */
 
@@ -30,8 +31,8 @@ export function Chip({ tone = "neutral", icon, className, children, size = "md" 
   return (
     <span
       className={cn(
-        "inline-flex min-h-6 max-w-full items-center gap-1 whitespace-nowrap rounded-full font-semibold leading-4 [&_svg]:size-3.5 [&_svg]:shrink-0",
-        size === "sm" ? "px-2 py-0.5 text-xs" : "px-2.5 py-1 text-[13px]",
+        "inline-flex min-h-6 max-w-full items-center gap-1 whitespace-nowrap tabular-nums rounded-full font-semibold leading-4 [&_svg]:size-4 [&_svg]:shrink-0",
+        size === "sm" ? "px-2 py-0.5 text-xs" : "px-2.5 py-1 text-xs",
         chipTones[tone],
         className,
       )}
@@ -49,10 +50,10 @@ export function Card({ className, children, padding = "md", as = "div", ...props
   return (
     <Component
       className={cn(
-        "rounded-xl border border-line bg-panel",
+        "min-w-0 rounded-xl border border-line bg-panel",
         padding === "sm" && "p-4",
         padding === "md" && "p-5",
-        padding === "lg" && "p-6 sm:p-8",
+        padding === "lg" && "p-6",
         className,
       )}
       {...props}
@@ -105,11 +106,15 @@ export function Callout({ tone = "info", title, children, action, className, rol
  * Empty, success or error message in a card: a short line plus one action.
  * Optional `mood` tile (Sleepy for empty lists, Sad for errors).
  */
-export function EmptyState({ title, children, action, className, icon, mood }: { title?: ReactNode; children?: ReactNode; action?: ReactNode; className?: string; icon?: ReactNode; mood?: Mood }) {
+/**
+ * `patch` shows the mascot instead of a mood tile: use it for a page's main
+ * empty state only (Patch is the layout's one bold moment).
+ */
+export function EmptyState({ title, children, action, className, icon, mood, patch }: { title?: ReactNode; children?: ReactNode; action?: ReactNode; className?: string; icon?: ReactNode; mood?: Mood; patch?: PatchPose | true }) {
   return (
     <div className={cn("flex flex-col items-center gap-2 rounded-xl border border-line bg-panel px-6 py-7 text-center", className)}>
-      {mood ? <MoodTile mood={mood} size={48} className="yy-face mb-1" /> : null}
-      {icon ? <span aria-hidden className="text-ink-muted [&_svg]:size-7">{icon}</span> : null}
+      {patch ? <Patch pose={patch === true ? "idle" : patch} size={112} className="mb-2" /> : mood ? <MoodTile mood={mood} size={48} className="yy-face mb-1" /> : null}
+      {!patch && icon ? <span aria-hidden className="text-ink-muted [&_svg]:size-5">{icon}</span> : null}
       {title ? <p className="text-label text-ink">{title}</p> : null}
       {children ? <div className="max-w-md text-body-ui text-ink-muted">{children}</div> : null}
       {action ? <div className="mt-2 flex flex-wrap justify-center gap-2">{action}</div> : null}
@@ -134,54 +139,6 @@ export function DangerZone({ title, description, action, className, children }: 
   );
 }
 
-/* ---------- Avatar & org logo ---------- */
-
-export function initials(name: string | null | undefined, fallback = "?") {
-  const words = (name ?? "").trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return fallback;
-  return (words.length === 1 ? words[0]!.slice(0, 2) : `${words[0]![0]}${words[words.length - 1]![0]}`).toUpperCase();
-}
-
-const avatarSizes = { xs: "size-6 text-[10px]", sm: "size-8 text-xs", md: "size-10 text-sm", lg: "size-14 text-lg", xl: "size-20 text-2xl" } as const;
-type AvatarSize = keyof typeof avatarSizes;
-
-/** Photo if present, else 1–2 initials on a tint (docs/DESIGN.md §3). */
-export function Avatar({ name, src, size = "md", tone = "neutral", className }: { name?: string | null; src?: string | null; size?: AvatarSize; tone?: "neutral" | "accent" | "success" | "warning" | "ink"; className?: string }) {
-  const toneClass = {
-    neutral: "bg-emphasis text-ink-secondary",
-    accent: "bg-accent-soft text-accent-text",
-    success: "bg-success-bg text-success-fg",
-    warning: "bg-warning-bg text-warning-fg",
-    ink: "bg-primary text-on-primary",
-  }[tone];
-  return (
-    <span className={cn("relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold", avatarSizes[size], toneClass, className)}>
-      {src ? (
-        <AvatarImage src={src} fallback={<span aria-hidden>{initials(name)}</span>} />
-      ) : (
-        <span aria-hidden>{initials(name)}</span>
-      )}
-      {name ? <span className="sr-only">{name}</span> : null}
-    </span>
-  );
-}
-
-const logoSizes = { sm: "size-8 rounded-[9px] text-xs", md: "size-10 rounded-[10px] text-sm", lg: "size-14 rounded-[14px] text-lg", xl: "size-24 rounded-[24px] text-3xl" } as const;
-
-/** Square organisation logo; falls back to initials on ink. */
-export function OrgLogo({ name, src, size = "md", className }: { name: string; src?: string | null; size?: keyof typeof logoSizes; className?: string }) {
-  return (
-    <span className={cn("inline-flex shrink-0 items-center justify-center overflow-hidden border border-line font-semibold", logoSizes[size], src ? "bg-panel" : "bg-primary text-on-primary", className)}>
-      {src ? (
-        // eslint-disable-next-line @next/next/no-img-element -- organisation logos are served by the app's own upload route
-        <img src={src} alt="" className="size-full object-cover" />
-      ) : (
-        <span aria-hidden>{initials(name)}</span>
-      )}
-    </span>
-  );
-}
-
 /* ---------- Date block (docs/DESIGN.md §4.6) ---------- */
 
 export function DateBlock({ month, day, tone = "accent", size = "md", series = false, className }: { month: string; day: string; tone?: "accent" | "draft" | "ink"; size?: "sm" | "md" | "lg"; series?: boolean; className?: string }) {
@@ -197,16 +154,16 @@ export function DateBlock({ month, day, tone = "accent", size = "md", series = f
         className,
       )}
     >
-      <span className={cn("block py-0.5 text-[11px] font-semibold tracking-[0.08em]", size === "lg" && "text-xs", header)}>{month}</span>
+      <span className={cn("block py-0.5 text-xs font-semibold tracking-[0.08em]", size === "lg" && "text-xs", header)}>{month}</span>
       <span
         className={cn(
           "flex items-center justify-center font-display font-semibold tabular-nums leading-none text-ink",
           size === "sm" && "h-8 text-xl",
           size === "md" && "h-10 text-2xl",
-          size === "lg" && "h-12 text-[30px]",
+          size === "lg" && "h-12 text-h1",
         )}
       >
-        {series ? <Repeat className="size-5" /> : day}
+        {series ? <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">Series</span> : day}
       </span>
     </span>
   );
@@ -216,17 +173,17 @@ export function DateBlock({ month, day, tone = "accent", size = "md", series = f
 
 export function ProgressBar({ value, max, tone = "accent", className, label }: { value: number; max: number; tone?: "accent" | "ink" | "success" | "warning"; className?: string; label?: string }) {
   const percent = max > 0 ? Math.min(100, Math.max(0, (value / max) * 100)) : 0;
-  const fill = { accent: "bg-accent", ink: "bg-primary", success: "bg-success-solid", warning: "bg-warning-solid" }[tone];
+  const fill = { accent: "bg-accent-text", ink: "bg-accent-text", success: "bg-success-solid", warning: "bg-warning-solid" }[tone];
   return (
     <div
       role="progressbar"
-      aria-label={label}
+      aria-label={label ?? "Progress"}
       aria-valuemin={0}
-      aria-valuemax={max}
-      aria-valuenow={Math.min(value, max)}
+      aria-valuemax={Math.max(0, max)}
+      aria-valuenow={Math.max(0, Math.min(value, max))}
       className={cn("h-1.5 w-full overflow-hidden rounded-full bg-track", className)}
     >
-      <div className={cn("h-full rounded-full transition-[width] duration-[360ms] ease-yy", fill)} style={{ width: `${percent}%` }} />
+      <div className={cn("h-full rounded-full transition-[width] duration-[200ms] ease-yy", fill)} style={{ width: `${percent}%` }} />
     </div>
   );
 }
@@ -235,12 +192,12 @@ export function StatTile({ label, value, hint, progress, tone = "default", class
   const body = (
     <>
       <span className="block text-sm text-ink-muted">{label}</span>
-      <span className="mt-1 block font-display text-[32px] font-semibold leading-tight tracking-[-0.01em] tabular-nums text-ink">{value}</span>
+      <span className="mt-1 block text-stat text-ink">{value}</span>
       {hint ? <span className="mt-0.5 block text-caption text-ink-muted">{hint}</span> : null}
       {progress ? <ProgressBar className="mt-2.5" value={progress.value} max={progress.max} tone={progress.tone ?? "accent"} /> : null}
     </>
   );
-  const classes = cn("block rounded-xl border p-4", tone === "attention" ? "border-transparent bg-warning-bg [&_span]:text-warning-fg" : "border-line bg-panel", href && "transition-colors hover:bg-subtle", className);
+  const classes = cn("block rounded-xl border p-4", tone === "attention" ? "border-line bg-panel [&_span:nth-child(2)]:text-warning-solid" : "border-line bg-panel", href && "transition-colors hover:bg-subtle", className);
   return href ? <Link href={href} className={classes}>{body}</Link> : <div className={classes}>{body}</div>;
 }
 
@@ -252,15 +209,15 @@ export function Skeleton({ className }: { className?: string }) {
 
 /* ---------- Page headings ---------- */
 
-export function PageHeader({ kicker, title, description, actions, className }: { kicker?: ReactNode; title: ReactNode; description?: ReactNode; actions?: ReactNode; className?: string }) {
+export function PageHeader({ kicker, title, description, actions, className, titleAs: Title = "h1" }: { kicker?: ReactNode; title: ReactNode; description?: ReactNode; actions?: ReactNode; className?: string; titleAs?: "h1" | "h2" }) {
   return (
     <div className={cn("flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between", className)}>
       <div className="min-w-0">
         {kicker ? <p className="mb-1.5 text-body-ui text-ink-muted">{kicker}</p> : null}
-        <h1 className="break-words text-h1 text-ink">{title}</h1>
+        <Title className={cn("break-words text-ink", Title === "h1" ? "text-h1" : "text-h4")}>{title}</Title>
         {description ? <p className="mt-2 max-w-[640px] text-body-ui text-ink-secondary">{description}</p> : null}
       </div>
-      {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2.5">{actions}</div> : null}
+      {actions ? <div className="flex min-w-0 flex-wrap items-center gap-2.5 [&>a]:w-full [&>button]:w-full sm:[&>a]:w-auto sm:[&>button]:w-auto">{actions}</div> : null}
     </div>
   );
 }
@@ -280,7 +237,7 @@ export function SectionHeading({ title, description, action, className, as: Head
 /** Settings row: label column (title + helper) on the left, fields on the right. */
 export function SettingsRow({ title, description, children, className }: { title: ReactNode; description?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <div className={cn("grid gap-4 border-b border-line py-6 last:border-b-0 md:grid-cols-[minmax(0,280px)_minmax(0,1fr)] md:gap-10", className)}>
+    <div className={cn("grid gap-4 border-b border-line py-6 last:border-b-0 sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)] lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)] sm:gap-6", className)}>
       <div>
         <h3 className="font-sans text-label text-ink">{title}</h3>
         {description ? <p className="mt-1 text-caption text-ink-muted">{description}</p> : null}

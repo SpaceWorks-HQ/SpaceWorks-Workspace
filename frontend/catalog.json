@@ -1,0 +1,2806 @@
+{
+  "readers": [
+    {
+      "module": "lib/views/generated/a-tag-page-loadAssetLabel",
+      "name": "loadAssetLabel",
+      "id": "a-tag-page:loadAssetLabel"
+    },
+    {
+      "module": "lib/views/generated/account-page-loadAccountPage",
+      "name": "loadAccountPage",
+      "id": "account-page:loadAccountPage"
+    },
+    {
+      "module": "lib/views/generated/admin-mfa-page-loadAdminMfaPage",
+      "name": "loadAdminMfaPage",
+      "id": "admin-mfa-page:loadAdminMfaPage"
+    },
+    {
+      "module": "lib/views/generated/admin-backups-page-loadBackupsPage",
+      "name": "loadBackupsPage",
+      "id": "admin-backups-page:loadBackupsPage"
+    },
+    {
+      "module": "lib/views/generated/admin-jobs-page-loadAdminJobsPage",
+      "name": "loadAdminJobsPage",
+      "id": "admin-jobs-page:loadAdminJobsPage"
+    },
+    {
+      "module": "lib/views/generated/admin-layout-loadAdminLayout",
+      "name": "loadAdminLayout",
+      "id": "admin-layout:loadAdminLayout"
+    },
+    {
+      "module": "lib/views/generated/admin-outbox-page-loadAdminOutboxPage",
+      "name": "loadAdminOutboxPage",
+      "id": "admin-outbox-page:loadAdminOutboxPage"
+    },
+    {
+      "module": "lib/views/generated/admin-page-loadAdminOverviewPage",
+      "name": "loadAdminOverviewPage",
+      "id": "admin-page:loadAdminOverviewPage"
+    },
+    {
+      "module": "lib/views/generated/admin-settings-page-loadAdminSettingsPage",
+      "name": "loadAdminSettingsPage",
+      "id": "admin-settings-page:loadAdminSettingsPage"
+    },
+    {
+      "module": "lib/views/generated/admin-sso-page-loadSsoPage",
+      "name": "loadSsoPage",
+      "id": "admin-sso-page:loadSsoPage"
+    },
+    {
+      "module": "lib/views/generated/admin-users-page-loadAdminUsersPage",
+      "name": "loadAdminUsersPage",
+      "id": "admin-users-page:loadAdminUsersPage"
+    },
+    {
+      "module": "lib/views/generated/admin-workspaces-page-loadAdminWorkspacesPage",
+      "name": "loadAdminWorkspacesPage",
+      "id": "admin-workspaces-page:loadAdminWorkspacesPage"
+    },
+    {
+      "module": "lib/views/generated/device-page-loadDevicePage",
+      "name": "loadDevicePage",
+      "id": "device-page:loadDevicePage"
+    },
+    {
+      "module": "lib/views/generated/f-publicSlug-page-loadPublicFormPage",
+      "name": "loadPublicFormPage",
+      "id": "f-publicSlug-page:loadPublicFormPage"
+    },
+    {
+      "module": "lib/views/generated/invite-token-page-loadInvitePage",
+      "name": "loadInvitePage",
+      "id": "invite-token-page:loadInvitePage"
+    },
+    {
+      "module": "lib/views/generated/login-page-loadLoginPage",
+      "name": "loadLoginPage",
+      "id": "login-page:loadLoginPage"
+    },
+    {
+      "module": "lib/views/generated/page-loadHomeRedirect",
+      "name": "loadHomeRedirect",
+      "id": "page:loadHomeRedirect"
+    },
+    {
+      "module": "lib/views/generated/reset-password-token-page-loadResetPasswordPage",
+      "name": "loadResetPasswordPage",
+      "id": "reset-password-token-page:loadResetPasswordPage"
+    },
+    {
+      "module": "lib/views/generated/setup-page-loadSetupPage",
+      "name": "loadSetupPage",
+      "id": "setup-page:loadSetupPage"
+    },
+    {
+      "module": "lib/views/generated/status-workspaceSlug-page-loadgenerateMetadata",
+      "name": "loadgenerateMetadata",
+      "id": "status-workspaceSlug-page:loadgenerateMetadata"
+    },
+    {
+      "module": "lib/views/generated/status-workspaceSlug-page-loadPage",
+      "name": "loadPage",
+      "id": "status-workspaceSlug-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-activity-page-loadActivityPage",
+      "name": "loadActivityPage",
+      "id": "w-workspaceSlug-activity-page:loadActivityPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-analytics-drill-metric-page-loadAnalyticsDrillPage",
+      "name": "loadAnalyticsDrillPage",
+      "id": "w-workspaceSlug-analytics-drill-metric-page:loadAnalyticsDrillPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-analytics-page-loadAnalyticsPage",
+      "name": "loadAnalyticsPage",
+      "id": "w-workspaceSlug-analytics-page:loadAnalyticsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-analytics-print-page-loadAnalyticsPrintPage",
+      "name": "loadAnalyticsPrintPage",
+      "id": "w-workspaceSlug-analytics-print-page:loadAnalyticsPrintPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-announcements-announcementId-edit-page-loadEditAnnouncementPage",
+      "name": "loadEditAnnouncementPage",
+      "id": "w-workspaceSlug-announcements-announcementId-edit-page:loadEditAnnouncementPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-announcements-announcementId-page-loadAnnouncementPage",
+      "name": "loadAnnouncementPage",
+      "id": "w-workspaceSlug-announcements-announcementId-page:loadAnnouncementPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-announcements-new-page-loadNewAnnouncementPage",
+      "name": "loadNewAnnouncementPage",
+      "id": "w-workspaceSlug-announcements-new-page:loadNewAnnouncementPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-announcements-page-loadAnnouncementsPage",
+      "name": "loadAnnouncementsPage",
+      "id": "w-workspaceSlug-announcements-page:loadAnnouncementsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-app-reviews-reviewId-page-loadReviewDetailPage",
+      "name": "loadReviewDetailPage",
+      "id": "w-workspaceSlug-app-reviews-reviewId-page:loadReviewDetailPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-app-reviews-insights-page-loadAppReviewInsightsPage",
+      "name": "loadAppReviewInsightsPage",
+      "id": "w-workspaceSlug-app-reviews-insights-page:loadAppReviewInsightsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-app-reviews-page-loadAppReviewsPage",
+      "name": "loadAppReviewsPage",
+      "id": "w-workspaceSlug-app-reviews-page:loadAppReviewsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-app-reviews-settings-page-loadAppReviewSettingsPage",
+      "name": "loadAppReviewSettingsPage",
+      "id": "w-workspaceSlug-app-reviews-settings-page:loadAppReviewSettingsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-assets-page-loadAssetsPage",
+      "name": "loadAssetsPage",
+      "id": "w-workspaceSlug-assets-page:loadAssetsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-assistant-c-conversationId-page-loadAssistantConversationPage",
+      "name": "loadAssistantConversationPage",
+      "id": "w-workspaceSlug-assistant-c-conversationId-page:loadAssistantConversationPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-assistant-jobs-page-loadAssistantJobsPage",
+      "name": "loadAssistantJobsPage",
+      "id": "w-workspaceSlug-assistant-jobs-page:loadAssistantJobsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-assistant-layout-loadAssistantLayout",
+      "name": "loadAssistantLayout",
+      "id": "w-workspaceSlug-assistant-layout:loadAssistantLayout"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-assistant-memory-page-loadAssistantMemoryPage",
+      "name": "loadAssistantMemoryPage",
+      "id": "w-workspaceSlug-assistant-memory-page:loadAssistantMemoryPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-assistant-page-loadAssistantPage",
+      "name": "loadAssistantPage",
+      "id": "w-workspaceSlug-assistant-page:loadAssistantPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-assistant-skills-page-loadAssistantSkillsPage",
+      "name": "loadAssistantSkillsPage",
+      "id": "w-workspaceSlug-assistant-skills-page:loadAssistantSkillsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-attendance-page-loadAttendancePage",
+      "name": "loadAttendancePage",
+      "id": "w-workspaceSlug-attendance-page:loadAttendancePage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-boardroom-sessionId-page-loadBoardroomSessionPage",
+      "name": "loadBoardroomSessionPage",
+      "id": "w-workspaceSlug-boardroom-sessionId-page:loadBoardroomSessionPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-boardroom-page-loadBoardroomPage",
+      "name": "loadBoardroomPage",
+      "id": "w-workspaceSlug-boardroom-page:loadBoardroomPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-calendar-page-loadCalendarPage",
+      "name": "loadCalendarPage",
+      "id": "w-workspaceSlug-calendar-page:loadCalendarPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-calendar-subscribe-page-loadSubscribePage",
+      "name": "loadSubscribePage",
+      "id": "w-workspaceSlug-calendar-subscribe-page:loadSubscribePage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-catalogue-page-loadCataloguePage",
+      "name": "loadCataloguePage",
+      "id": "w-workspaceSlug-catalogue-page:loadCataloguePage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-changelog-page-loadChangelogPage",
+      "name": "loadChangelogPage",
+      "id": "w-workspaceSlug-changelog-page:loadChangelogPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-chat-channelSlug-page-loadgenerateMetadata",
+      "name": "loadgenerateMetadata",
+      "id": "w-workspaceSlug-chat-channelSlug-page:loadgenerateMetadata"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-chat-channelSlug-page-loadChannelPage",
+      "name": "loadChannelPage",
+      "id": "w-workspaceSlug-chat-channelSlug-page:loadChannelPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-chat-browse-page-loadBrowseChannelsPage",
+      "name": "loadBrowseChannelsPage",
+      "id": "w-workspaceSlug-chat-browse-page:loadBrowseChannelsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-chat-layout-loadChatLayout",
+      "name": "loadChatLayout",
+      "id": "w-workspaceSlug-chat-layout:loadChatLayout"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-chat-page-loadChatPage",
+      "name": "loadChatPage",
+      "id": "w-workspaceSlug-chat-page:loadChatPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-chat-search-page-loadChatSearchPage",
+      "name": "loadChatSearchPage",
+      "id": "w-workspaceSlug-chat-search-page:loadChatSearchPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-contacts-contactId-page-loadContactPage",
+      "name": "loadContactPage",
+      "id": "w-workspaceSlug-contacts-contactId-page:loadContactPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-contacts-organisations-organisationId-page-loadOrganisationPage",
+      "name": "loadOrganisationPage",
+      "id": "w-workspaceSlug-contacts-organisations-organisationId-page:loadOrganisationPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-contacts-organisations-page-loadOrganisationsPage",
+      "name": "loadOrganisationsPage",
+      "id": "w-workspaceSlug-contacts-organisations-page:loadOrganisationsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-contacts-page-loadContactsPage",
+      "name": "loadContactsPage",
+      "id": "w-workspaceSlug-contacts-page:loadContactsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-contacts-pipeline-page-loadPipelinePage",
+      "name": "loadPipelinePage",
+      "id": "w-workspaceSlug-contacts-pipeline-page:loadPipelinePage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-cycles-cycleId-page-loadCyclePage",
+      "name": "loadCyclePage",
+      "id": "w-workspaceSlug-cycles-cycleId-page:loadCyclePage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-cycles-page-loadCyclesPage",
+      "name": "loadCyclesPage",
+      "id": "w-workspaceSlug-cycles-page:loadCyclesPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-dm-channelId-page-loadDirectMessagePage",
+      "name": "loadDirectMessagePage",
+      "id": "w-workspaceSlug-dm-channelId-page:loadDirectMessagePage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-dm-layout-loadDirectMessagesLayout",
+      "name": "loadDirectMessagesLayout",
+      "id": "w-workspaceSlug-dm-layout:loadDirectMessagesLayout"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-dm-page-loadDmPage",
+      "name": "loadDmPage",
+      "id": "w-workspaceSlug-dm-page:loadDmPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-docs-docId-history-page-loadDocHistoryPage",
+      "name": "loadDocHistoryPage",
+      "id": "w-workspaceSlug-docs-docId-history-page:loadDocHistoryPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-docs-docId-page-loadgenerateMetadata",
+      "name": "loadgenerateMetadata",
+      "id": "w-workspaceSlug-docs-docId-page:loadgenerateMetadata"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-docs-docId-page-loadDocPage",
+      "name": "loadDocPage",
+      "id": "w-workspaceSlug-docs-docId-page:loadDocPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-docs-archived-page-loadArchivedDocsPage",
+      "name": "loadArchivedDocsPage",
+      "id": "w-workspaceSlug-docs-archived-page:loadArchivedDocsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-docs-layout-loadDocsLayout",
+      "name": "loadDocsLayout",
+      "id": "w-workspaceSlug-docs-layout:loadDocsLayout"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-docs-page-loadDocsPage",
+      "name": "loadDocsPage",
+      "id": "w-workspaceSlug-docs-page:loadDocsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-documents-documentId-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-documents-documentId-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-documents-new-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-documents-new-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-documents-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-documents-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-documents-settings-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-documents-settings-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-escalation-page-loadEscalationPage",
+      "name": "loadEscalationPage",
+      "id": "w-workspaceSlug-escalation-page:loadEscalationPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-files-fileId-page-loadgenerateMetadata",
+      "name": "loadgenerateMetadata",
+      "id": "w-workspaceSlug-files-fileId-page:loadgenerateMetadata"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-files-fileId-page-loadFilePage",
+      "name": "loadFilePage",
+      "id": "w-workspaceSlug-files-fileId-page:loadFilePage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-files-deleted-page-loadDeletedFilesPage",
+      "name": "loadDeletedFilesPage",
+      "id": "w-workspaceSlug-files-deleted-page:loadDeletedFilesPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-files-page-loadFilesPage",
+      "name": "loadFilesPage",
+      "id": "w-workspaceSlug-files-page:loadFilesPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-advances-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-advances-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-bills-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-bills-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-budgets-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-budgets-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-categories-page-loadFinanceCategoriesPage",
+      "name": "loadFinanceCategoriesPage",
+      "id": "w-workspaceSlug-finance-categories-page:loadFinanceCategoriesPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-close-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-close-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-disbursements-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-disbursements-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-dues-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-dues-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-funds-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-funds-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-invoices-invoiceId-edit-page-loadEditInvoicePage",
+      "name": "loadEditInvoicePage",
+      "id": "w-workspaceSlug-finance-invoices-invoiceId-edit-page:loadEditInvoicePage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-invoices-invoiceId-page-loadInvoicePage",
+      "name": "loadInvoicePage",
+      "id": "w-workspaceSlug-finance-invoices-invoiceId-page:loadInvoicePage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-invoices-invoiceId-print-page-loadPrintInvoicePage",
+      "name": "loadPrintInvoicePage",
+      "id": "w-workspaceSlug-finance-invoices-invoiceId-print-page:loadPrintInvoicePage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-invoices-new-page-loadNewInvoicePage",
+      "name": "loadNewInvoicePage",
+      "id": "w-workspaceSlug-finance-invoices-new-page:loadNewInvoicePage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-invoices-page-loadInvoicesPage",
+      "name": "loadInvoicesPage",
+      "id": "w-workspaceSlug-finance-invoices-page:loadInvoicesPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-layout-loadFinanceLayout",
+      "name": "loadFinanceLayout",
+      "id": "w-workspaceSlug-finance-layout:loadFinanceLayout"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-ledger-import-page-loadImportLedgerPage",
+      "name": "loadImportLedgerPage",
+      "id": "w-workspaceSlug-finance-ledger-import-page:loadImportLedgerPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-ledger-page-loadLedgerPage",
+      "name": "loadLedgerPage",
+      "id": "w-workspaceSlug-finance-ledger-page:loadLedgerPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-page-loadFinanceOverviewPage",
+      "name": "loadFinanceOverviewPage",
+      "id": "w-workspaceSlug-finance-page:loadFinanceOverviewPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-payroll-runId-print-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-payroll-runId-print-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-payroll-dues-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-payroll-dues-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-payroll-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-payroll-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-receipt-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-receipt-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-recurring-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-recurring-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-reports-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-reports-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-reports-print-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-reports-print-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-finance-spending-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-finance-spending-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-forms-id-page-loadFormPage",
+      "name": "loadFormPage",
+      "id": "w-workspaceSlug-forms-id-page:loadFormPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-forms-page-loadFormsPage",
+      "name": "loadFormsPage",
+      "id": "w-workspaceSlug-forms-page:loadFormsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-funding-section-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-funding-section-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-funding-impact-report-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-funding-impact-report-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-funding-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-funding-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-goals-goalId-page-loadGoalPage",
+      "name": "loadGoalPage",
+      "id": "w-workspaceSlug-goals-goalId-page:loadGoalPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-goals-page-loadGoalsPage",
+      "name": "loadGoalsPage",
+      "id": "w-workspaceSlug-goals-page:loadGoalsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-governance-board-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-governance-board-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-governance-packs-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-governance-packs-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-governance-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-governance-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-governance-registers-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-governance-registers-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-governance-reviews-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-governance-reviews-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-governance-risk-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-governance-risk-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-governance-vendors-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-governance-vendors-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-helpdesk-recordId-page-loadHelpTicketPage",
+      "name": "loadHelpTicketPage",
+      "id": "w-workspaceSlug-helpdesk-recordId-page:loadHelpTicketPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-helpdesk-new-page-loadNewHelpTicketPage",
+      "name": "loadNewHelpTicketPage",
+      "id": "w-workspaceSlug-helpdesk-new-page:loadNewHelpTicketPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-helpdesk-page-loadHelpdeskPage",
+      "name": "loadHelpdeskPage",
+      "id": "w-workspaceSlug-helpdesk-page:loadHelpdeskPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-hiring-recordId-page-loadCandidatePage",
+      "name": "loadCandidatePage",
+      "id": "w-workspaceSlug-hiring-recordId-page:loadCandidatePage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-hiring-openings-recordId-page-loadOpeningPage",
+      "name": "loadOpeningPage",
+      "id": "w-workspaceSlug-hiring-openings-recordId-page:loadOpeningPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-hiring-page-loadHiringPage",
+      "name": "loadHiringPage",
+      "id": "w-workspaceSlug-hiring-page:loadHiringPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-ideas-ideaId-page-loadIdeaPage",
+      "name": "loadIdeaPage",
+      "id": "w-workspaceSlug-ideas-ideaId-page:loadIdeaPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-ideas-page-loadIdeasPage",
+      "name": "loadIdeasPage",
+      "id": "w-workspaceSlug-ideas-page:loadIdeasPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-it-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-it-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-layout-loadgenerateMetadata",
+      "name": "loadgenerateMetadata",
+      "id": "w-workspaceSlug-layout:loadgenerateMetadata"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-layout-loadWorkspaceLayout",
+      "name": "loadWorkspaceLayout",
+      "id": "w-workspaceSlug-layout:loadWorkspaceLayout"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-leave-page-loadLeavePage",
+      "name": "loadLeavePage",
+      "id": "w-workspaceSlug-leave-page:loadLeavePage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-links-page-loadLinksPage",
+      "name": "loadLinksPage",
+      "id": "w-workspaceSlug-links-page:loadLinksPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-marketing-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-marketing-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-meetings-meetingId-page-loadMeetingPage",
+      "name": "loadMeetingPage",
+      "id": "w-workspaceSlug-meetings-meetingId-page:loadMeetingPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-meetings-decisions-page-loadDecisionsPage",
+      "name": "loadDecisionsPage",
+      "id": "w-workspaceSlug-meetings-decisions-page:loadDecisionsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-meetings-page-loadMeetingsPage",
+      "name": "loadMeetingsPage",
+      "id": "w-workspaceSlug-meetings-page:loadMeetingsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-members-userId-edit-page-loadEditProfilePage",
+      "name": "loadEditProfilePage",
+      "id": "w-workspaceSlug-members-userId-edit-page:loadEditProfilePage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-members-userId-page-loadMemberPage",
+      "name": "loadMemberPage",
+      "id": "w-workspaceSlug-members-userId-page:loadMemberPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-members-availability-page-loadAvailabilityPage",
+      "name": "loadAvailabilityPage",
+      "id": "w-workspaceSlug-members-availability-page:loadAvailabilityPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-members-page-loadMembersPage",
+      "name": "loadMembersPage",
+      "id": "w-workspaceSlug-members-page:loadMembersPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-money-controls-section-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-money-controls-section-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-money-controls-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-money-controls-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-my-tasks-page-loadMyTasksPage",
+      "name": "loadMyTasksPage",
+      "id": "w-workspaceSlug-my-tasks-page:loadMyTasksPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-notepad-page-loadNotepadPage",
+      "name": "loadNotepadPage",
+      "id": "w-workspaceSlug-notepad-page:loadNotepadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-notifications-accounts-page-loadNotificationAccountsPage",
+      "name": "loadNotificationAccountsPage",
+      "id": "w-workspaceSlug-notifications-accounts-page:loadNotificationAccountsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-notifications-page-loadNotificationsPage",
+      "name": "loadNotificationsPage",
+      "id": "w-workspaceSlug-notifications-page:loadNotificationsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-notifications-preferences-page-loadPreferencesPage",
+      "name": "loadPreferencesPage",
+      "id": "w-workspaceSlug-notifications-preferences-page:loadPreferencesPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-onboarding-page-loadOnboardingPage",
+      "name": "loadOnboardingPage",
+      "id": "w-workspaceSlug-onboarding-page:loadOnboardingPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-organisation-page-loadOrganisationPage",
+      "name": "loadOrganisationPage",
+      "id": "w-workspaceSlug-organisation-page:loadOrganisationPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-organisations-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-organisations-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-page-loadWorkspaceHome",
+      "name": "loadWorkspaceHome",
+      "id": "w-workspaceSlug-page:loadWorkspaceHome"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-pipeline-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-pipeline-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-polls-pollId-page-loadPollPage",
+      "name": "loadPollPage",
+      "id": "w-workspaceSlug-polls-pollId-page:loadPollPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-polls-page-loadPollsPage",
+      "name": "loadPollsPage",
+      "id": "w-workspaceSlug-polls-page:loadPollsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-product-ops-section-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-product-ops-section-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-product-ops-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-product-ops-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-projects-key-project-layout-loadProjectLayout",
+      "name": "loadProjectLayout",
+      "id": "w-workspaceSlug-projects-key-project-layout:loadProjectLayout"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-projects-key-project-overview-page-loadProjectOverviewPage",
+      "name": "loadProjectOverviewPage",
+      "id": "w-workspaceSlug-projects-key-project-overview-page:loadProjectOverviewPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-projects-key-project-page-loadgenerateMetadata",
+      "name": "loadgenerateMetadata",
+      "id": "w-workspaceSlug-projects-key-project-page:loadgenerateMetadata"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-projects-key-project-page-loadProjectBoardPage",
+      "name": "loadProjectBoardPage",
+      "id": "w-workspaceSlug-projects-key-project-page:loadProjectBoardPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-projects-key-project-report-page-loadProjectReportPage",
+      "name": "loadProjectReportPage",
+      "id": "w-workspaceSlug-projects-key-project-report-page:loadProjectReportPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-projects-key-project-settings-page-loadProjectSettingsPage",
+      "name": "loadProjectSettingsPage",
+      "id": "w-workspaceSlug-projects-key-project-settings-page:loadProjectSettingsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-projects-key-project-timeline-page-loadProjectTimelinePage",
+      "name": "loadProjectTimelinePage",
+      "id": "w-workspaceSlug-projects-key-project-timeline-page:loadProjectTimelinePage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-projects-key-project-updates-page-loadProjectUpdatesPage",
+      "name": "loadProjectUpdatesPage",
+      "id": "w-workspaceSlug-projects-key-project-updates-page:loadProjectUpdatesPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-projects-key-number-page-loadgenerateMetadata",
+      "name": "loadgenerateMetadata",
+      "id": "w-workspaceSlug-projects-key-number-page:loadgenerateMetadata"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-projects-key-number-page-loadTaskPage",
+      "name": "loadTaskPage",
+      "id": "w-workspaceSlug-projects-key-number-page:loadTaskPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-projects-key-tasks-number-page-loadTaskAliasPage",
+      "name": "loadTaskAliasPage",
+      "id": "w-workspaceSlug-projects-key-tasks-number-page:loadTaskAliasPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-projects-blockers-page-loadProjectBlockersPage",
+      "name": "loadProjectBlockersPage",
+      "id": "w-workspaceSlug-projects-blockers-page:loadProjectBlockersPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-projects-page-loadProjectsPage",
+      "name": "loadProjectsPage",
+      "id": "w-workspaceSlug-projects-page:loadProjectsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-requests-approvals-page-loadApprovalsPage",
+      "name": "loadApprovalsPage",
+      "id": "w-workspaceSlug-requests-approvals-page:loadApprovalsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-requests-page-loadRequestsPage",
+      "name": "loadRequestsPage",
+      "id": "w-workspaceSlug-requests-page:loadRequestsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-responsibilities-page-loadResponsibilitiesPage",
+      "name": "loadResponsibilitiesPage",
+      "id": "w-workspaceSlug-responsibilities-page:loadResponsibilitiesPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-rota-certifications-page-loadCertificationsPage",
+      "name": "loadCertificationsPage",
+      "id": "w-workspaceSlug-rota-certifications-page:loadCertificationsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-rota-page-loadRotaPage",
+      "name": "loadRotaPage",
+      "id": "w-workspaceSlug-rota-page:loadRotaPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-safeguarding-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-safeguarding-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-safety-recordId-page-loadSafetyReportPage",
+      "name": "loadSafetyReportPage",
+      "id": "w-workspaceSlug-safety-recordId-page:loadSafetyReportPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-safety-facilities-page-loadFacilitiesPage",
+      "name": "loadFacilitiesPage",
+      "id": "w-workspaceSlug-safety-facilities-page:loadFacilitiesPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-safety-inspections-page-loadInspectionsPage",
+      "name": "loadInspectionsPage",
+      "id": "w-workspaceSlug-safety-inspections-page:loadInspectionsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-safety-new-page-loadNewSafetyPage",
+      "name": "loadNewSafetyPage",
+      "id": "w-workspaceSlug-safety-new-page:loadNewSafetyPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-safety-page-loadSafetyPage",
+      "name": "loadSafetyPage",
+      "id": "w-workspaceSlug-safety-page:loadSafetyPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-search-page-loadSearchPage",
+      "name": "loadSearchPage",
+      "id": "w-workspaceSlug-search-page:loadSearchPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-secrets-page-loadSecretsPage",
+      "name": "loadSecretsPage",
+      "id": "w-workspaceSlug-secrets-page:loadSecretsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-seo-page-loadSeoPage",
+      "name": "loadSeoPage",
+      "id": "w-workspaceSlug-seo-page:loadSeoPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-services-cloud-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-services-cloud-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-services-costs-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-services-costs-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-services-incidents-number-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-services-incidents-number-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-services-incidents-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-services-incidents-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-services-maintenance-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-services-maintenance-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-services-monitors-id-edit-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-services-monitors-id-edit-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-services-monitors-id-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-services-monitors-id-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-services-monitors-new-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-services-monitors-new-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-services-on-call-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-services-on-call-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-services-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-services-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-services-settings-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-services-settings-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-services-status-page-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-services-status-page-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-settings-api-tokens-page-loadApiTokensPage",
+      "name": "loadApiTokensPage",
+      "id": "w-workspaceSlug-settings-api-tokens-page:loadApiTokensPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-settings-audit-page-loadAuditLogPage",
+      "name": "loadAuditLogPage",
+      "id": "w-workspaceSlug-settings-audit-page:loadAuditLogPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-settings-cloud-accounts-page-loadPage",
+      "name": "loadPage",
+      "id": "w-workspaceSlug-settings-cloud-accounts-page:loadPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-settings-export-page-loadExportPage",
+      "name": "loadExportPage",
+      "id": "w-workspaceSlug-settings-export-page:loadExportPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-settings-import-page-loadImportPage",
+      "name": "loadImportPage",
+      "id": "w-workspaceSlug-settings-import-page:loadImportPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-settings-integrations-page-loadIntegrationsPage",
+      "name": "loadIntegrationsPage",
+      "id": "w-workspaceSlug-settings-integrations-page:loadIntegrationsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-settings-invitations-page-loadInvitationsPage",
+      "name": "loadInvitationsPage",
+      "id": "w-workspaceSlug-settings-invitations-page:loadInvitationsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-settings-labels-page-loadLabelsPage",
+      "name": "loadLabelsPage",
+      "id": "w-workspaceSlug-settings-labels-page:loadLabelsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-settings-layout-loadSettingsLayout",
+      "name": "loadSettingsLayout",
+      "id": "w-workspaceSlug-settings-layout:loadSettingsLayout"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-settings-members-page-loadMembersSettingsPage",
+      "name": "loadMembersSettingsPage",
+      "id": "w-workspaceSlug-settings-members-page:loadMembersSettingsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-settings-messaging-page-loadMessagingSettingsPage",
+      "name": "loadMessagingSettingsPage",
+      "id": "w-workspaceSlug-settings-messaging-page:loadMessagingSettingsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-settings-notifications-page-loadNotificationsSettingsPage",
+      "name": "loadNotificationsSettingsPage",
+      "id": "w-workspaceSlug-settings-notifications-page:loadNotificationsSettingsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-settings-onboarding-page-loadTemplatesPage",
+      "name": "loadTemplatesPage",
+      "id": "w-workspaceSlug-settings-onboarding-page:loadTemplatesPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-settings-page-loadGeneralSettingsPage",
+      "name": "loadGeneralSettingsPage",
+      "id": "w-workspaceSlug-settings-page:loadGeneralSettingsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-settings-retention-page-loadRetentionPage",
+      "name": "loadRetentionPage",
+      "id": "w-workspaceSlug-settings-retention-page:loadRetentionPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-settings-social-page-loadSocialSettingsPage",
+      "name": "loadSocialSettingsPage",
+      "id": "w-workspaceSlug-settings-social-page:loadSocialSettingsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-sign-requestId-page-loadSignaturePage",
+      "name": "loadSignaturePage",
+      "id": "w-workspaceSlug-sign-requestId-page:loadSignaturePage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-sign-page-loadSignaturesPage",
+      "name": "loadSignaturesPage",
+      "id": "w-workspaceSlug-sign-page:loadSignaturesPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-social-accounts-accountId-page-loadSocialAccountPage",
+      "name": "loadSocialAccountPage",
+      "id": "w-workspaceSlug-social-accounts-accountId-page:loadSocialAccountPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-social-comments-commentId-page-loadSocialCommentPage",
+      "name": "loadSocialCommentPage",
+      "id": "w-workspaceSlug-social-comments-commentId-page:loadSocialCommentPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-social-comments-page-loadSocialCommentsPage",
+      "name": "loadSocialCommentsPage",
+      "id": "w-workspaceSlug-social-comments-page:loadSocialCommentsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-social-page-loadSocialPage",
+      "name": "loadSocialPage",
+      "id": "w-workspaceSlug-social-page:loadSocialPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-subscriptions-page-loadSubscriptionsPage",
+      "name": "loadSubscriptionsPage",
+      "id": "w-workspaceSlug-subscriptions-page:loadSubscriptionsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-t-ref-page-loadgenerateMetadata",
+      "name": "loadgenerateMetadata",
+      "id": "w-workspaceSlug-t-ref-page:loadgenerateMetadata"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-t-ref-page-loadShortTaskPage",
+      "name": "loadShortTaskPage",
+      "id": "w-workspaceSlug-t-ref-page:loadShortTaskPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-teams-teamSlug-page-loadTeamPage",
+      "name": "loadTeamPage",
+      "id": "w-workspaceSlug-teams-teamSlug-page:loadTeamPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-teams-page-loadTeamsPage",
+      "name": "loadTeamsPage",
+      "id": "w-workspaceSlug-teams-page:loadTeamsPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-templates-page-loadTemplatesPage",
+      "name": "loadTemplatesPage",
+      "id": "w-workspaceSlug-templates-page:loadTemplatesPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-vault-page-loadVaultPage",
+      "name": "loadVaultPage",
+      "id": "w-workspaceSlug-vault-page:loadVaultPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-volunteering-recordId-page-loadHoursDetailPage",
+      "name": "loadHoursDetailPage",
+      "id": "w-workspaceSlug-volunteering-recordId-page:loadHoursDetailPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-volunteering-new-page-loadNewHoursPage",
+      "name": "loadNewHoursPage",
+      "id": "w-workspaceSlug-volunteering-new-page:loadNewHoursPage"
+    },
+    {
+      "module": "lib/views/generated/w-workspaceSlug-volunteering-page-loadHoursPage",
+      "name": "loadHoursPage",
+      "id": "w-workspaceSlug-volunteering-page:loadHoursPage"
+    },
+    {
+      "module": "lib/views/components",
+      "name": "loadApprovalInbox",
+      "id": "components:loadApprovalInbox"
+    },
+    {
+      "module": "lib/views/components",
+      "name": "loadGithubPullRequests",
+      "id": "components:loadGithubPullRequests"
+    }
+  ],
+  "actions": [
+    {
+      "module": "app/actions/account",
+      "name": "updateProfile",
+      "id": "account:updateProfile"
+    },
+    {
+      "module": "app/actions/account",
+      "name": "changePassword",
+      "id": "account:changePassword"
+    },
+    {
+      "module": "app/actions/account",
+      "name": "beginMfaEnrollment",
+      "id": "account:beginMfaEnrollment"
+    },
+    {
+      "module": "app/actions/account",
+      "name": "confirmMfaEnrollment",
+      "id": "account:confirmMfaEnrollment"
+    },
+    {
+      "module": "app/actions/account",
+      "name": "disableMfa",
+      "id": "account:disableMfa"
+    },
+    {
+      "module": "app/actions/account",
+      "name": "signOutEverywhere",
+      "id": "account:signOutEverywhere"
+    },
+    {
+      "module": "app/actions/admin",
+      "name": "verifyAdminMfa",
+      "id": "admin:verifyAdminMfa"
+    },
+    {
+      "module": "app/actions/admin",
+      "name": "updateInstanceSettingsAction",
+      "id": "admin:updateInstanceSettingsAction"
+    },
+    {
+      "module": "app/actions/admin",
+      "name": "adminCreateWorkspace",
+      "id": "admin:adminCreateWorkspace"
+    },
+    {
+      "module": "app/actions/admin",
+      "name": "adminSetUserDisabled",
+      "id": "admin:adminSetUserDisabled"
+    },
+    {
+      "module": "app/actions/admin",
+      "name": "adminSetWorkspaceArchived",
+      "id": "admin:adminSetWorkspaceArchived"
+    },
+    {
+      "module": "app/actions/analytics",
+      "name": "saveAnalyticsPreset",
+      "id": "analytics:saveAnalyticsPreset"
+    },
+    {
+      "module": "app/actions/analytics",
+      "name": "removeAnalyticsPreset",
+      "id": "analytics:removeAnalyticsPreset"
+    },
+    {
+      "module": "app/actions/analytics",
+      "name": "saveAnalyticsAdjustment",
+      "id": "analytics:saveAnalyticsAdjustment"
+    },
+    {
+      "module": "app/actions/analytics",
+      "name": "removeAnalyticsAdjustment",
+      "id": "analytics:removeAnalyticsAdjustment"
+    },
+    {
+      "module": "app/actions/analytics",
+      "name": "uploadAnalyticsProof",
+      "id": "analytics:uploadAnalyticsProof"
+    },
+    {
+      "module": "app/actions/analytics",
+      "name": "generateAnalyticsPack",
+      "id": "analytics:generateAnalyticsPack"
+    },
+    {
+      "module": "app/actions/apiTokens",
+      "name": "createApiTokenAction",
+      "id": "apiTokens:createApiTokenAction"
+    },
+    {
+      "module": "app/actions/apiTokens",
+      "name": "revokeApiTokenAction",
+      "id": "apiTokens:revokeApiTokenAction"
+    },
+    {
+      "module": "app/actions/appReviews",
+      "name": "saveAppReviewAccountAction",
+      "id": "appReviews:saveAppReviewAccountAction"
+    },
+    {
+      "module": "app/actions/appReviews",
+      "name": "saveReviewedAppAction",
+      "id": "appReviews:saveReviewedAppAction"
+    },
+    {
+      "module": "app/actions/appReviews",
+      "name": "saveAppReviewSlackAction",
+      "id": "appReviews:saveAppReviewSlackAction"
+    },
+    {
+      "module": "app/actions/appReviews",
+      "name": "saveAppReviewSlackMemberAction",
+      "id": "appReviews:saveAppReviewSlackMemberAction"
+    },
+    {
+      "module": "app/actions/appReviews",
+      "name": "testAppReviewConnectionAction",
+      "id": "appReviews:testAppReviewConnectionAction"
+    },
+    {
+      "module": "app/actions/appReviews",
+      "name": "triageAppReviewAction",
+      "id": "appReviews:triageAppReviewAction"
+    },
+    {
+      "module": "app/actions/appReviews",
+      "name": "createAppReviewTaskAction",
+      "id": "appReviews:createAppReviewTaskAction"
+    },
+    {
+      "module": "app/actions/appReviews",
+      "name": "draftAppReviewReplyAction",
+      "id": "appReviews:draftAppReviewReplyAction"
+    },
+    {
+      "module": "app/actions/appReviews",
+      "name": "sendAppReviewReplyAction",
+      "id": "appReviews:sendAppReviewReplyAction"
+    },
+    {
+      "module": "app/actions/assets",
+      "name": "saveInventory",
+      "id": "assets:saveInventory"
+    },
+    {
+      "module": "app/actions/assets",
+      "name": "addMaintenance",
+      "id": "assets:addMaintenance"
+    },
+    {
+      "module": "app/actions/assets",
+      "name": "savePhysicalKey",
+      "id": "assets:savePhysicalKey"
+    },
+    {
+      "module": "app/actions/assistant",
+      "name": "createConversationAction",
+      "id": "assistant:createConversationAction"
+    },
+    {
+      "module": "app/actions/assistant",
+      "name": "renameConversationAction",
+      "id": "assistant:renameConversationAction"
+    },
+    {
+      "module": "app/actions/assistant",
+      "name": "deleteConversationAction",
+      "id": "assistant:deleteConversationAction"
+    },
+    {
+      "module": "app/actions/assistant",
+      "name": "createMemoryAction",
+      "id": "assistant:createMemoryAction"
+    },
+    {
+      "module": "app/actions/assistant",
+      "name": "updateMemoryAction",
+      "id": "assistant:updateMemoryAction"
+    },
+    {
+      "module": "app/actions/assistant",
+      "name": "deleteMemoryAction",
+      "id": "assistant:deleteMemoryAction"
+    },
+    {
+      "module": "app/actions/assistant",
+      "name": "createSkillAction",
+      "id": "assistant:createSkillAction"
+    },
+    {
+      "module": "app/actions/assistant",
+      "name": "updateSkillAction",
+      "id": "assistant:updateSkillAction"
+    },
+    {
+      "module": "app/actions/assistant",
+      "name": "deleteSkillAction",
+      "id": "assistant:deleteSkillAction"
+    },
+    {
+      "module": "app/actions/assistant",
+      "name": "installBuiltinSkillsAction",
+      "id": "assistant:installBuiltinSkillsAction"
+    },
+    {
+      "module": "app/actions/assistant",
+      "name": "createJobAction",
+      "id": "assistant:createJobAction"
+    },
+    {
+      "module": "app/actions/assistant",
+      "name": "updateJobAction",
+      "id": "assistant:updateJobAction"
+    },
+    {
+      "module": "app/actions/assistant",
+      "name": "deleteJobAction",
+      "id": "assistant:deleteJobAction"
+    },
+    {
+      "module": "app/actions/assistant",
+      "name": "runJobNowAction",
+      "id": "assistant:runJobNowAction"
+    },
+    {
+      "module": "app/actions/auth",
+      "name": "completeSetup",
+      "id": "auth:completeSetup"
+    },
+    {
+      "module": "app/actions/auth",
+      "name": "requestPasswordReset",
+      "id": "auth:requestPasswordReset"
+    },
+    {
+      "module": "app/actions/auth",
+      "name": "resetPassword",
+      "id": "auth:resetPassword"
+    },
+    {
+      "module": "app/actions/auth",
+      "name": "acceptInviteWithNewAccount",
+      "id": "auth:acceptInviteWithNewAccount"
+    },
+    {
+      "module": "app/actions/auth",
+      "name": "acceptInviteAsCurrentUser",
+      "id": "auth:acceptInviteAsCurrentUser"
+    },
+    {
+      "module": "app/actions/boardroom",
+      "name": "createBoardroomSessionAction",
+      "id": "boardroom:createBoardroomSessionAction"
+    },
+    {
+      "module": "app/actions/boardroom",
+      "name": "deleteBoardroomSessionAction",
+      "id": "boardroom:deleteBoardroomSessionAction"
+    },
+    {
+      "module": "app/actions/calendar",
+      "name": "scheduleMeetingAction",
+      "id": "calendar:scheduleMeetingAction"
+    },
+    {
+      "module": "app/actions/calendar",
+      "name": "cancelCalendarMeetingAction",
+      "id": "calendar:cancelCalendarMeetingAction"
+    },
+    {
+      "module": "app/actions/calendar",
+      "name": "calendarRsvpAction",
+      "id": "calendar:calendarRsvpAction"
+    },
+    {
+      "module": "app/actions/calendar",
+      "name": "moveCalendarTaskAction",
+      "id": "calendar:moveCalendarTaskAction"
+    },
+    {
+      "module": "app/actions/calendar",
+      "name": "saveCalendarEntryAction",
+      "id": "calendar:saveCalendarEntryAction"
+    },
+    {
+      "module": "app/actions/calendar",
+      "name": "deleteCalendarEntryAction",
+      "id": "calendar:deleteCalendarEntryAction"
+    },
+    {
+      "module": "app/actions/calendar",
+      "name": "calendarAvailabilityAction",
+      "id": "calendar:calendarAvailabilityAction"
+    },
+    {
+      "module": "app/actions/calendar",
+      "name": "syncCalendarGoogleAction",
+      "id": "calendar:syncCalendarGoogleAction"
+    },
+    {
+      "module": "app/actions/calendar",
+      "name": "connectCalendarGoogleAction",
+      "id": "calendar:connectCalendarGoogleAction"
+    },
+    {
+      "module": "app/actions/calendar",
+      "name": "attachCalendarFileAction",
+      "id": "calendar:attachCalendarFileAction"
+    },
+    {
+      "module": "app/actions/catalogue",
+      "name": "saveCatalogueService",
+      "id": "catalogue:saveCatalogueService"
+    },
+    {
+      "module": "app/actions/changelog",
+      "name": "changelogAction",
+      "id": "changelog:changelogAction"
+    },
+    {
+      "module": "app/actions/chat",
+      "name": "loadSidebarAction",
+      "id": "chat:loadSidebarAction"
+    },
+    {
+      "module": "app/actions/chat",
+      "name": "loadMessagesAction",
+      "id": "chat:loadMessagesAction"
+    },
+    {
+      "module": "app/actions/chat",
+      "name": "loadMessagesByIdsAction",
+      "id": "chat:loadMessagesByIdsAction"
+    },
+    {
+      "module": "app/actions/chat",
+      "name": "loadThreadAction",
+      "id": "chat:loadThreadAction"
+    },
+    {
+      "module": "app/actions/chat",
+      "name": "loadPinnedAction",
+      "id": "chat:loadPinnedAction"
+    },
+    {
+      "module": "app/actions/chat",
+      "name": "loadChannelMembersAction",
+      "id": "chat:loadChannelMembersAction"
+    },
+    {
+      "module": "app/actions/chat",
+      "name": "browseChannelsAction",
+      "id": "chat:browseChannelsAction"
+    },
+    {
+      "module": "app/actions/chat",
+      "name": "searchMessagesAction",
+      "id": "chat:searchMessagesAction"
+    },
+    {
+      "module": "app/actions/chat",
+      "name": "createChannelAction",
+      "id": "chat:createChannelAction"
+    },
+    {
+      "module": "app/actions/chat",
+      "name": "joinChannelAction",
+      "id": "chat:joinChannelAction"
+    },
+    {
+      "module": "app/actions/chat",
+      "name": "leaveChannelAction",
+      "id": "chat:leaveChannelAction"
+    },
+    {
+      "module": "app/actions/chat",
+      "name": "updateChannelAction",
+      "id": "chat:updateChannelAction"
+    },
+    {
+      "module": "app/actions/chat",
+      "name": "setChannelArchivedAction",
+      "id": "chat:setChannelArchivedAction"
+    },
+    {
+      "module": "app/actions/chat",
+      "name": "addChannelMembersAction",
+      "id": "chat:addChannelMembersAction"
+    },
+    {
+      "module": "app/actions/chat",
+      "name": "removeChannelMemberAction",
+      "id": "chat:removeChannelMemberAction"
+    },
+    {
+      "module": "app/actions/chat",
+      "name": "setNotifyLevelAction",
+      "id": "chat:setNotifyLevelAction"
+    },
+    {
+      "module": "app/actions/chat",
+      "name": "openDirectMessageAction",
+      "id": "chat:openDirectMessageAction"
+    },
+    {
+      "module": "app/actions/chat",
+      "name": "postMessageAction",
+      "id": "chat:postMessageAction"
+    },
+    {
+      "module": "app/actions/chat",
+      "name": "editMessageAction",
+      "id": "chat:editMessageAction"
+    },
+    {
+      "module": "app/actions/chat",
+      "name": "deleteMessageAction",
+      "id": "chat:deleteMessageAction"
+    },
+    {
+      "module": "app/actions/chat",
+      "name": "toggleReactionAction",
+      "id": "chat:toggleReactionAction"
+    },
+    {
+      "module": "app/actions/chat",
+      "name": "setPinnedAction",
+      "id": "chat:setPinnedAction"
+    },
+    {
+      "module": "app/actions/chat",
+      "name": "markReadAction",
+      "id": "chat:markReadAction"
+    },
+    {
+      "module": "app/actions/chat",
+      "name": "sendTypingAction",
+      "id": "chat:sendTypingAction"
+    },
+    {
+      "module": "app/actions/chat",
+      "name": "uploadChatAttachmentAction",
+      "id": "chat:uploadChatAttachmentAction"
+    },
+    {
+      "module": "app/actions/community",
+      "name": "saveAnnouncementAction",
+      "id": "community:saveAnnouncementAction"
+    },
+    {
+      "module": "app/actions/community",
+      "name": "pinAnnouncementAction",
+      "id": "community:pinAnnouncementAction"
+    },
+    {
+      "module": "app/actions/community",
+      "name": "deleteAnnouncementAction",
+      "id": "community:deleteAnnouncementAction"
+    },
+    {
+      "module": "app/actions/community",
+      "name": "createFeedAction",
+      "id": "community:createFeedAction"
+    },
+    {
+      "module": "app/actions/community",
+      "name": "revokeFeedAction",
+      "id": "community:revokeFeedAction"
+    },
+    {
+      "module": "app/actions/contacts",
+      "name": "mutateContacts",
+      "id": "contacts:mutateContacts"
+    },
+    {
+      "module": "app/actions/contacts",
+      "name": "exportContactsAction",
+      "id": "contacts:exportContactsAction"
+    },
+    {
+      "module": "app/actions/contacts",
+      "name": "exportOrganisationsAction",
+      "id": "contacts:exportOrganisationsAction"
+    },
+    {
+      "module": "app/actions/cycles",
+      "name": "cycleAction",
+      "id": "cycles:cycleAction"
+    },
+    {
+      "module": "app/actions/docs",
+      "name": "createDocAction",
+      "id": "docs:createDocAction"
+    },
+    {
+      "module": "app/actions/docs",
+      "name": "saveDocAction",
+      "id": "docs:saveDocAction"
+    },
+    {
+      "module": "app/actions/docs",
+      "name": "moveDocAction",
+      "id": "docs:moveDocAction"
+    },
+    {
+      "module": "app/actions/docs",
+      "name": "setDocVisibilityAction",
+      "id": "docs:setDocVisibilityAction"
+    },
+    {
+      "module": "app/actions/docs",
+      "name": "archiveDocAction",
+      "id": "docs:archiveDocAction"
+    },
+    {
+      "module": "app/actions/docs",
+      "name": "restoreDocAction",
+      "id": "docs:restoreDocAction"
+    },
+    {
+      "module": "app/actions/docs",
+      "name": "duplicateDocAction",
+      "id": "docs:duplicateDocAction"
+    },
+    {
+      "module": "app/actions/docs",
+      "name": "restoreRevisionAction",
+      "id": "docs:restoreRevisionAction"
+    },
+    {
+      "module": "app/actions/docs",
+      "name": "verifyDocAction",
+      "id": "docs:verifyDocAction"
+    },
+    {
+      "module": "app/actions/documents",
+      "name": "documentAction",
+      "id": "documents:documentAction"
+    },
+    {
+      "module": "app/actions/exports",
+      "name": "requestWorkspaceExport",
+      "id": "exports:requestWorkspaceExport"
+    },
+    {
+      "module": "app/actions/exports",
+      "name": "saveRetentionPolicy",
+      "id": "exports:saveRetentionPolicy"
+    },
+    {
+      "module": "app/actions/exports",
+      "name": "saveWorkspaceShellSettings",
+      "id": "exports:saveWorkspaceShellSettings"
+    },
+    {
+      "module": "app/actions/exports",
+      "name": "queueCsvImport",
+      "id": "exports:queueCsvImport"
+    },
+    {
+      "module": "app/actions/files",
+      "name": "renameFileAction",
+      "id": "files:renameFileAction"
+    },
+    {
+      "module": "app/actions/files",
+      "name": "moveFilesAction",
+      "id": "files:moveFilesAction"
+    },
+    {
+      "module": "app/actions/files",
+      "name": "linkFileAction",
+      "id": "files:linkFileAction"
+    },
+    {
+      "module": "app/actions/files",
+      "name": "deleteFileAction",
+      "id": "files:deleteFileAction"
+    },
+    {
+      "module": "app/actions/files",
+      "name": "restoreFileAction",
+      "id": "files:restoreFileAction"
+    },
+    {
+      "module": "app/actions/files",
+      "name": "restoreFileVersionAction",
+      "id": "files:restoreFileVersionAction"
+    },
+    {
+      "module": "app/actions/files",
+      "name": "searchLinkTargetsAction",
+      "id": "files:searchLinkTargetsAction"
+    },
+    {
+      "module": "app/actions/finance-tools",
+      "name": "financeToolAction",
+      "id": "finance-tools:financeToolAction"
+    },
+    {
+      "module": "app/actions/finance-tools",
+      "name": "uploadFinanceFilesAction",
+      "id": "finance-tools:uploadFinanceFilesAction"
+    },
+    {
+      "module": "app/actions/finance-tools",
+      "name": "removeFinanceFileAction",
+      "id": "finance-tools:removeFinanceFileAction"
+    },
+    {
+      "module": "app/actions/finance-tools",
+      "name": "extractReceiptAction",
+      "id": "finance-tools:extractReceiptAction"
+    },
+    {
+      "module": "app/actions/finance-tools",
+      "name": "generatePayslipAction",
+      "id": "finance-tools:generatePayslipAction"
+    },
+    {
+      "module": "app/actions/finance-tools",
+      "name": "revealPayDetailsAction",
+      "id": "finance-tools:revealPayDetailsAction"
+    },
+    {
+      "module": "app/actions/finance-tools",
+      "name": "generateReportPdfAction",
+      "id": "finance-tools:generateReportPdfAction"
+    },
+    {
+      "module": "app/actions/finance",
+      "name": "createLedgerEntryAction",
+      "id": "finance:createLedgerEntryAction"
+    },
+    {
+      "module": "app/actions/finance",
+      "name": "updateLedgerEntryAction",
+      "id": "finance:updateLedgerEntryAction"
+    },
+    {
+      "module": "app/actions/finance",
+      "name": "setLedgerEntryVoidedAction",
+      "id": "finance:setLedgerEntryVoidedAction"
+    },
+    {
+      "module": "app/actions/finance",
+      "name": "previewLedgerImportAction",
+      "id": "finance:previewLedgerImportAction"
+    },
+    {
+      "module": "app/actions/finance",
+      "name": "commitLedgerImportAction",
+      "id": "finance:commitLedgerImportAction"
+    },
+    {
+      "module": "app/actions/finance",
+      "name": "createCategoryAction",
+      "id": "finance:createCategoryAction"
+    },
+    {
+      "module": "app/actions/finance",
+      "name": "renameCategoryAction",
+      "id": "finance:renameCategoryAction"
+    },
+    {
+      "module": "app/actions/finance",
+      "name": "setCategoryArchivedAction",
+      "id": "finance:setCategoryArchivedAction"
+    },
+    {
+      "module": "app/actions/finance",
+      "name": "createInvoiceAction",
+      "id": "finance:createInvoiceAction"
+    },
+    {
+      "module": "app/actions/finance",
+      "name": "updateInvoiceAction",
+      "id": "finance:updateInvoiceAction"
+    },
+    {
+      "module": "app/actions/finance",
+      "name": "sendInvoiceAction",
+      "id": "finance:sendInvoiceAction"
+    },
+    {
+      "module": "app/actions/finance",
+      "name": "markInvoicePaidAction",
+      "id": "finance:markInvoicePaidAction"
+    },
+    {
+      "module": "app/actions/finance",
+      "name": "voidInvoiceAction",
+      "id": "finance:voidInvoiceAction"
+    },
+    {
+      "module": "app/actions/finance",
+      "name": "deleteInvoiceAction",
+      "id": "finance:deleteInvoiceAction"
+    },
+    {
+      "module": "app/actions/forms",
+      "name": "createIntakeForm",
+      "id": "forms:createIntakeForm"
+    },
+    {
+      "module": "app/actions/forms",
+      "name": "sendInternalResponse",
+      "id": "forms:sendInternalResponse"
+    },
+    {
+      "module": "app/actions/forms",
+      "name": "sendPublicResponse",
+      "id": "forms:sendPublicResponse"
+    },
+    {
+      "module": "app/actions/forms",
+      "name": "closeIntakeForm",
+      "id": "forms:closeIntakeForm"
+    },
+    {
+      "module": "app/actions/forms",
+      "name": "newPublicFormLink",
+      "id": "forms:newPublicFormLink"
+    },
+    {
+      "module": "app/actions/forms",
+      "name": "responseToTask",
+      "id": "forms:responseToTask"
+    },
+    {
+      "module": "app/actions/funding",
+      "name": "saveFunding",
+      "id": "funding:saveFunding"
+    },
+    {
+      "module": "app/actions/funding",
+      "name": "fundingOperation",
+      "id": "funding:fundingOperation"
+    },
+    {
+      "module": "app/actions/funding",
+      "name": "uploadFundingFile",
+      "id": "funding:uploadFundingFile"
+    },
+    {
+      "module": "app/actions/funding",
+      "name": "removeFundingFile",
+      "id": "funding:removeFundingFile"
+    },
+    {
+      "module": "app/actions/goals",
+      "name": "goalAction",
+      "id": "goals:goalAction"
+    },
+    {
+      "module": "app/actions/governance",
+      "name": "saveGovernance",
+      "id": "governance:saveGovernance"
+    },
+    {
+      "module": "app/actions/governance",
+      "name": "governanceOperation",
+      "id": "governance:governanceOperation"
+    },
+    {
+      "module": "app/actions/governance",
+      "name": "saveVendorBank",
+      "id": "governance:saveVendorBank"
+    },
+    {
+      "module": "app/actions/governance",
+      "name": "revealVendorBank",
+      "id": "governance:revealVendorBank"
+    },
+    {
+      "module": "app/actions/governance",
+      "name": "uploadGovernanceFile",
+      "id": "governance:uploadGovernanceFile"
+    },
+    {
+      "module": "app/actions/governance",
+      "name": "removeGovernanceFile",
+      "id": "governance:removeGovernanceFile"
+    },
+    {
+      "module": "app/actions/govextras",
+      "name": "saveHandlerAppointment",
+      "id": "govextras:saveHandlerAppointment"
+    },
+    {
+      "module": "app/actions/govextras",
+      "name": "saveSafeguardingCase",
+      "id": "govextras:saveSafeguardingCase"
+    },
+    {
+      "module": "app/actions/govextras",
+      "name": "saveSafeguardingEvent",
+      "id": "govextras:saveSafeguardingEvent"
+    },
+    {
+      "module": "app/actions/govextras",
+      "name": "changeSafeguardingCase",
+      "id": "govextras:changeSafeguardingCase"
+    },
+    {
+      "module": "app/actions/govextras",
+      "name": "finishSafeguardingAction",
+      "id": "govextras:finishSafeguardingAction"
+    },
+    {
+      "module": "app/actions/govextras",
+      "name": "uploadSafeguardingFile",
+      "id": "govextras:uploadSafeguardingFile"
+    },
+    {
+      "module": "app/actions/govextras",
+      "name": "saveConflictLink",
+      "id": "govextras:saveConflictLink"
+    },
+    {
+      "module": "app/actions/govextras",
+      "name": "freezeGovernancePack",
+      "id": "govextras:freezeGovernancePack"
+    },
+    {
+      "module": "app/actions/ideas",
+      "name": "ideaAction",
+      "id": "ideas:ideaAction"
+    },
+    {
+      "module": "app/actions/integrations",
+      "name": "updateIntegrations",
+      "id": "integrations:updateIntegrations"
+    },
+    {
+      "module": "app/actions/jobs",
+      "name": "manageJobsAction",
+      "id": "jobs:manageJobsAction"
+    },
+    {
+      "module": "app/actions/links",
+      "name": "saveLink",
+      "id": "links:saveLink"
+    },
+    {
+      "module": "app/actions/links",
+      "name": "linkState",
+      "id": "links:linkState"
+    },
+    {
+      "module": "app/actions/marketingIt",
+      "name": "saveMarketingIt",
+      "id": "marketingIt:saveMarketingIt"
+    },
+    {
+      "module": "app/actions/marketingIt",
+      "name": "archiveMarketingIt",
+      "id": "marketingIt:archiveMarketingIt"
+    },
+    {
+      "module": "app/actions/marketingIt",
+      "name": "decideMarketingItAccess",
+      "id": "marketingIt:decideMarketingItAccess"
+    },
+    {
+      "module": "app/actions/marketingIt",
+      "name": "completeMarketingItReview",
+      "id": "marketingIt:completeMarketingItReview"
+    },
+    {
+      "module": "app/actions/marketingIt",
+      "name": "uploadMarketingItFile",
+      "id": "marketingIt:uploadMarketingItFile"
+    },
+    {
+      "module": "app/actions/marketingIt",
+      "name": "linkMarketingItFile",
+      "id": "marketingIt:linkMarketingItFile"
+    },
+    {
+      "module": "app/actions/marketingIt",
+      "name": "removeMarketingItFile",
+      "id": "marketingIt:removeMarketingItFile"
+    },
+    {
+      "module": "app/actions/meetings",
+      "name": "meetingAction",
+      "id": "meetings:meetingAction"
+    },
+    {
+      "module": "app/actions/meetings",
+      "name": "signatureAction",
+      "id": "meetings:signatureAction"
+    },
+    {
+      "module": "app/actions/messaging",
+      "name": "updateMessaging",
+      "id": "messaging:updateMessaging"
+    },
+    {
+      "module": "app/actions/money-controls",
+      "name": "saveMoneyControlAction",
+      "id": "money-controls:saveMoneyControlAction"
+    },
+    {
+      "module": "app/actions/money-controls",
+      "name": "transitionMoneyControlAction",
+      "id": "money-controls:transitionMoneyControlAction"
+    },
+    {
+      "module": "app/actions/money-controls",
+      "name": "uploadMoneyControlFilesAction",
+      "id": "money-controls:uploadMoneyControlFilesAction"
+    },
+    {
+      "module": "app/actions/money-controls",
+      "name": "removeMoneyControlFileAction",
+      "id": "money-controls:removeMoneyControlFileAction"
+    },
+    {
+      "module": "app/actions/money-controls",
+      "name": "reconcileMoneyMovementAction",
+      "id": "money-controls:reconcileMoneyMovementAction"
+    },
+    {
+      "module": "app/actions/notepad",
+      "name": "loadNotepadAction",
+      "id": "notepad:loadNotepadAction"
+    },
+    {
+      "module": "app/actions/notepad",
+      "name": "createNoteAction",
+      "id": "notepad:createNoteAction"
+    },
+    {
+      "module": "app/actions/notepad",
+      "name": "updateNoteAction",
+      "id": "notepad:updateNoteAction"
+    },
+    {
+      "module": "app/actions/notepad",
+      "name": "setNoteArchivedAction",
+      "id": "notepad:setNoteArchivedAction"
+    },
+    {
+      "module": "app/actions/notepad",
+      "name": "deleteNoteAction",
+      "id": "notepad:deleteNoteAction"
+    },
+    {
+      "module": "app/actions/notepad",
+      "name": "createTodoAction",
+      "id": "notepad:createTodoAction"
+    },
+    {
+      "module": "app/actions/notepad",
+      "name": "updateTodoAction",
+      "id": "notepad:updateTodoAction"
+    },
+    {
+      "module": "app/actions/notepad",
+      "name": "moveTodoAction",
+      "id": "notepad:moveTodoAction"
+    },
+    {
+      "module": "app/actions/notepad",
+      "name": "deleteTodoAction",
+      "id": "notepad:deleteTodoAction"
+    },
+    {
+      "module": "app/actions/notepad",
+      "name": "clearDoneTodosAction",
+      "id": "notepad:clearDoneTodosAction"
+    },
+    {
+      "module": "app/actions/notepad",
+      "name": "sendTodoToTasksAction",
+      "id": "notepad:sendTodoToTasksAction"
+    },
+    {
+      "module": "app/actions/notificationPreferences",
+      "name": "notificationStateAction",
+      "id": "notificationPreferences:notificationStateAction"
+    },
+    {
+      "module": "app/actions/notificationPreferences",
+      "name": "notificationSummaryAction",
+      "id": "notificationPreferences:notificationSummaryAction"
+    },
+    {
+      "module": "app/actions/notificationPreferences",
+      "name": "saveNotificationPreference",
+      "id": "notificationPreferences:saveNotificationPreference"
+    },
+    {
+      "module": "app/actions/notificationPreferences",
+      "name": "saveNotificationSettings",
+      "id": "notificationPreferences:saveNotificationSettings"
+    },
+    {
+      "module": "app/actions/notificationPreferences",
+      "name": "removeNotificationMute",
+      "id": "notificationPreferences:removeNotificationMute"
+    },
+    {
+      "module": "app/actions/notificationPreferences",
+      "name": "muteNotificationResource",
+      "id": "notificationPreferences:muteNotificationResource"
+    },
+    {
+      "module": "app/actions/notificationRouting",
+      "name": "updateRouting",
+      "id": "notificationRouting:updateRouting"
+    },
+    {
+      "module": "app/actions/notifications",
+      "name": "markNotificationsReadAction",
+      "id": "notifications:markNotificationsReadAction"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "newHelpTicket",
+      "id": "opsGaps:newHelpTicket"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "saveHelpTicket",
+      "id": "opsGaps:saveHelpTicket"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "replyHelpTicket",
+      "id": "opsGaps:replyHelpTicket"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "newSafetyReport",
+      "id": "opsGaps:newSafetyReport"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "saveSafetyReport",
+      "id": "opsGaps:saveSafetyReport"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "newSafetyFollowUp",
+      "id": "opsGaps:newSafetyFollowUp"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "finishSafetyFollowUp",
+      "id": "opsGaps:finishSafetyFollowUp"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "newVolunteerHours",
+      "id": "opsGaps:newVolunteerHours"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "decideVolunteerHours",
+      "id": "opsGaps:decideVolunteerHours"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "cancelVolunteerHours",
+      "id": "opsGaps:cancelVolunteerHours"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "newHiringOpening",
+      "id": "opsGaps:newHiringOpening"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "saveHiringOpening",
+      "id": "opsGaps:saveHiringOpening"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "newHiringCandidate",
+      "id": "opsGaps:newHiringCandidate"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "saveHiringCandidate",
+      "id": "opsGaps:saveHiringCandidate"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "newHiringInterview",
+      "id": "opsGaps:newHiringInterview"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "startCandidateOnboarding",
+      "id": "opsGaps:startCandidateOnboarding"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "newLeaveType",
+      "id": "opsGaps:newLeaveType"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "saveYearlyBalance",
+      "id": "opsGaps:saveYearlyBalance"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "saveMemberEngagement",
+      "id": "opsGaps:saveMemberEngagement"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "submitLeave",
+      "id": "opsGaps:submitLeave"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "reviewLeave",
+      "id": "opsGaps:reviewLeave"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "withdrawLeave",
+      "id": "opsGaps:withdrawLeave"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "saveFacilityLease",
+      "id": "opsGaps:saveFacilityLease"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "newFacilityContact",
+      "id": "opsGaps:newFacilityContact"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "newInspectionTemplate",
+      "id": "opsGaps:newInspectionTemplate"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "newInspection",
+      "id": "opsGaps:newInspection"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "saveInspectionFinding",
+      "id": "opsGaps:saveInspectionFinding"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "newInspectionAction",
+      "id": "opsGaps:newInspectionAction"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "closeInspection",
+      "id": "opsGaps:closeInspection"
+    },
+    {
+      "module": "app/actions/opsGaps",
+      "name": "uploadPeopleServiceFiles",
+      "id": "opsGaps:uploadPeopleServiceFiles"
+    },
+    {
+      "module": "app/actions/orgPeople",
+      "name": "saveDepartmentAction",
+      "id": "orgPeople:saveDepartmentAction"
+    },
+    {
+      "module": "app/actions/orgPeople",
+      "name": "saveReportingAction",
+      "id": "orgPeople:saveReportingAction"
+    },
+    {
+      "module": "app/actions/orgPeople",
+      "name": "saveResponsibilityAction",
+      "id": "orgPeople:saveResponsibilityAction"
+    },
+    {
+      "module": "app/actions/orgPeople",
+      "name": "saveAttendanceAction",
+      "id": "orgPeople:saveAttendanceAction"
+    },
+    {
+      "module": "app/actions/orgPeople",
+      "name": "saveEscalationAction",
+      "id": "orgPeople:saveEscalationAction"
+    },
+    {
+      "module": "app/actions/orgPeople",
+      "name": "uploadOrgFiles",
+      "id": "orgPeople:uploadOrgFiles"
+    },
+    {
+      "module": "app/actions/people",
+      "name": "mutatePeople",
+      "id": "people:mutatePeople"
+    },
+    {
+      "module": "app/actions/people",
+      "name": "revealEmergencyAction",
+      "id": "people:revealEmergencyAction"
+    },
+    {
+      "module": "app/actions/platformShell",
+      "name": "saveOidcProvider",
+      "id": "platformShell:saveOidcProvider"
+    },
+    {
+      "module": "app/actions/polls",
+      "name": "pollAction",
+      "id": "polls:pollAction"
+    },
+    {
+      "module": "app/actions/productOps",
+      "name": "saveProductRecord",
+      "id": "productOps:saveProductRecord"
+    },
+    {
+      "module": "app/actions/productOps",
+      "name": "productOperation",
+      "id": "productOps:productOperation"
+    },
+    {
+      "module": "app/actions/productOps",
+      "name": "uploadProductFile",
+      "id": "productOps:uploadProductFile"
+    },
+    {
+      "module": "app/actions/productOps",
+      "name": "removeProductFile",
+      "id": "productOps:removeProductFile"
+    },
+    {
+      "module": "app/actions/productOps",
+      "name": "saveProductOwnership",
+      "id": "productOps:saveProductOwnership"
+    },
+    {
+      "module": "app/actions/projects",
+      "name": "createProjectAction",
+      "id": "projects:createProjectAction"
+    },
+    {
+      "module": "app/actions/projects",
+      "name": "updateProjectAction",
+      "id": "projects:updateProjectAction"
+    },
+    {
+      "module": "app/actions/projects",
+      "name": "archiveProjectAction",
+      "id": "projects:archiveProjectAction"
+    },
+    {
+      "module": "app/actions/projects",
+      "name": "restoreProjectAction",
+      "id": "projects:restoreProjectAction"
+    },
+    {
+      "module": "app/actions/projects",
+      "name": "addColumnAction",
+      "id": "projects:addColumnAction"
+    },
+    {
+      "module": "app/actions/projects",
+      "name": "updateColumnAction",
+      "id": "projects:updateColumnAction"
+    },
+    {
+      "module": "app/actions/projects",
+      "name": "reorderColumnsAction",
+      "id": "projects:reorderColumnsAction"
+    },
+    {
+      "module": "app/actions/projects",
+      "name": "deleteColumnAction",
+      "id": "projects:deleteColumnAction"
+    },
+    {
+      "module": "app/actions/projectsPlus",
+      "name": "saveMilestoneAction",
+      "id": "projectsPlus:saveMilestoneAction"
+    },
+    {
+      "module": "app/actions/projectsPlus",
+      "name": "removeMilestoneAction",
+      "id": "projectsPlus:removeMilestoneAction"
+    },
+    {
+      "module": "app/actions/projectsPlus",
+      "name": "postProjectUpdateAction",
+      "id": "projectsPlus:postProjectUpdateAction"
+    },
+    {
+      "module": "app/actions/projectsPlus",
+      "name": "saveTaskPlanAction",
+      "id": "projectsPlus:saveTaskPlanAction"
+    },
+    {
+      "module": "app/actions/recurring-costs",
+      "name": "recurringCostAction",
+      "id": "recurring-costs:recurringCostAction"
+    },
+    {
+      "module": "app/actions/requests",
+      "name": "submitMoneyRequest",
+      "id": "requests:submitMoneyRequest"
+    },
+    {
+      "module": "app/actions/requests",
+      "name": "decideRequest",
+      "id": "requests:decideRequest"
+    },
+    {
+      "module": "app/actions/requests",
+      "name": "finishMoneyRequest",
+      "id": "requests:finishMoneyRequest"
+    },
+    {
+      "module": "app/actions/requests",
+      "name": "saveBudget",
+      "id": "requests:saveBudget"
+    },
+    {
+      "module": "app/actions/requests",
+      "name": "saveApprovalPolicy",
+      "id": "requests:saveApprovalPolicy"
+    },
+    {
+      "module": "app/actions/requests",
+      "name": "changeMoneyRequest",
+      "id": "requests:changeMoneyRequest"
+    },
+    {
+      "module": "app/actions/requests",
+      "name": "reviseMoneyRequest",
+      "id": "requests:reviseMoneyRequest"
+    },
+    {
+      "module": "app/actions/requests",
+      "name": "submitGenericRequest",
+      "id": "requests:submitGenericRequest"
+    },
+    {
+      "module": "app/actions/requests",
+      "name": "addApprovalComment",
+      "id": "requests:addApprovalComment"
+    },
+    {
+      "module": "app/actions/rota",
+      "name": "mutateRota",
+      "id": "rota:mutateRota"
+    },
+    {
+      "module": "app/actions/search",
+      "name": "searchAction",
+      "id": "search:searchAction"
+    },
+    {
+      "module": "app/actions/search",
+      "name": "loadWorkspaceTools",
+      "id": "search:loadWorkspaceTools"
+    },
+    {
+      "module": "app/actions/secrets",
+      "name": "secretsAction",
+      "id": "secrets:secretsAction"
+    },
+    {
+      "module": "app/actions/secrets",
+      "name": "approveSecretsDevice",
+      "id": "secrets:approveSecretsDevice"
+    },
+    {
+      "module": "app/actions/secrets",
+      "name": "revokeSecretsCliSession",
+      "id": "secrets:revokeSecretsCliSession"
+    },
+    {
+      "module": "app/actions/seo",
+      "name": "updateSeo",
+      "id": "seo:updateSeo"
+    },
+    {
+      "module": "app/actions/services",
+      "name": "saveMonitorAction",
+      "id": "services:saveMonitorAction"
+    },
+    {
+      "module": "app/actions/services",
+      "name": "serviceAction",
+      "id": "services:serviceAction"
+    },
+    {
+      "module": "app/actions/social",
+      "name": "commentAction",
+      "id": "social:commentAction"
+    },
+    {
+      "module": "app/actions/social",
+      "name": "connectAction",
+      "id": "social:connectAction"
+    },
+    {
+      "module": "app/actions/social",
+      "name": "selectAccountsAction",
+      "id": "social:selectAccountsAction"
+    },
+    {
+      "module": "app/actions/social",
+      "name": "accountAction",
+      "id": "social:accountAction"
+    },
+    {
+      "module": "app/actions/social",
+      "name": "reconcileCommentAction",
+      "id": "social:reconcileCommentAction"
+    },
+    {
+      "module": "app/actions/subscriptions",
+      "name": "saveSubscriptionRecord",
+      "id": "subscriptions:saveSubscriptionRecord"
+    },
+    {
+      "module": "app/actions/tasks",
+      "name": "loadBoardAction",
+      "id": "tasks:loadBoardAction"
+    },
+    {
+      "module": "app/actions/tasks",
+      "name": "loadTaskAction",
+      "id": "tasks:loadTaskAction"
+    },
+    {
+      "module": "app/actions/tasks",
+      "name": "loadMyTasksAction",
+      "id": "tasks:loadMyTasksAction"
+    },
+    {
+      "module": "app/actions/tasks",
+      "name": "createTaskAction",
+      "id": "tasks:createTaskAction"
+    },
+    {
+      "module": "app/actions/tasks",
+      "name": "updateTaskAction",
+      "id": "tasks:updateTaskAction"
+    },
+    {
+      "module": "app/actions/tasks",
+      "name": "moveTaskAction",
+      "id": "tasks:moveTaskAction"
+    },
+    {
+      "module": "app/actions/tasks",
+      "name": "setTaskCompletedAction",
+      "id": "tasks:setTaskCompletedAction"
+    },
+    {
+      "module": "app/actions/tasks",
+      "name": "setAssigneesAction",
+      "id": "tasks:setAssigneesAction"
+    },
+    {
+      "module": "app/actions/tasks",
+      "name": "setLabelsAction",
+      "id": "tasks:setLabelsAction"
+    },
+    {
+      "module": "app/actions/tasks",
+      "name": "setTaskArchivedAction",
+      "id": "tasks:setTaskArchivedAction"
+    },
+    {
+      "module": "app/actions/tasks",
+      "name": "addCommentAction",
+      "id": "tasks:addCommentAction"
+    },
+    {
+      "module": "app/actions/tasks",
+      "name": "editCommentAction",
+      "id": "tasks:editCommentAction"
+    },
+    {
+      "module": "app/actions/tasks",
+      "name": "deleteCommentAction",
+      "id": "tasks:deleteCommentAction"
+    },
+    {
+      "module": "app/actions/tasks",
+      "name": "addDependencyAction",
+      "id": "tasks:addDependencyAction"
+    },
+    {
+      "module": "app/actions/tasks",
+      "name": "removeDependencyAction",
+      "id": "tasks:removeDependencyAction"
+    },
+    {
+      "module": "app/actions/tasks",
+      "name": "setRecurrenceAction",
+      "id": "tasks:setRecurrenceAction"
+    },
+    {
+      "module": "app/actions/tasks",
+      "name": "stopRecurrenceAction",
+      "id": "tasks:stopRecurrenceAction"
+    },
+    {
+      "module": "app/actions/tasks",
+      "name": "skipNextOccurrenceAction",
+      "id": "tasks:skipNextOccurrenceAction"
+    },
+    {
+      "module": "app/actions/tasks",
+      "name": "uploadTaskAttachmentAction",
+      "id": "tasks:uploadTaskAttachmentAction"
+    },
+    {
+      "module": "app/actions/tasks",
+      "name": "removeTaskAttachmentAction",
+      "id": "tasks:removeTaskAttachmentAction"
+    },
+    {
+      "module": "app/actions/teams",
+      "name": "saveTeamAction",
+      "id": "teams:saveTeamAction"
+    },
+    {
+      "module": "app/actions/teams",
+      "name": "archiveTeamAction",
+      "id": "teams:archiveTeamAction"
+    },
+    {
+      "module": "app/actions/teams",
+      "name": "addTeamMemberAction",
+      "id": "teams:addTeamMemberAction"
+    },
+    {
+      "module": "app/actions/teams",
+      "name": "removeTeamMemberAction",
+      "id": "teams:removeTeamMemberAction"
+    },
+    {
+      "module": "app/actions/teams",
+      "name": "setTeamMemberRoleAction",
+      "id": "teams:setTeamMemberRoleAction"
+    },
+    {
+      "module": "app/actions/teams",
+      "name": "joinTeamAction",
+      "id": "teams:joinTeamAction"
+    },
+    {
+      "module": "app/actions/templates",
+      "name": "templateAction",
+      "id": "templates:templateAction"
+    },
+    {
+      "module": "app/actions/vault",
+      "name": "saveVaultItem",
+      "id": "vault:saveVaultItem"
+    },
+    {
+      "module": "app/actions/vault",
+      "name": "saveVaultCollection",
+      "id": "vault:saveVaultCollection"
+    },
+    {
+      "module": "app/actions/vault",
+      "name": "saveVaultGrant",
+      "id": "vault:saveVaultGrant"
+    },
+    {
+      "module": "app/actions/vault",
+      "name": "removeVaultGrant",
+      "id": "vault:removeVaultGrant"
+    },
+    {
+      "module": "app/actions/vault",
+      "name": "askVaultAccess",
+      "id": "vault:askVaultAccess"
+    },
+    {
+      "module": "app/actions/vault",
+      "name": "stepUpVault",
+      "id": "vault:stepUpVault"
+    },
+    {
+      "module": "app/actions/vault",
+      "name": "archiveVaultItem",
+      "id": "vault:archiveVaultItem"
+    },
+    {
+      "module": "app/actions/views",
+      "name": "saveView",
+      "id": "views:saveView"
+    },
+    {
+      "module": "app/actions/views",
+      "name": "deleteView",
+      "id": "views:deleteView"
+    },
+    {
+      "module": "app/actions/workspace-settings",
+      "name": "updateWorkspaceSettings",
+      "id": "workspace-settings:updateWorkspaceSettings"
+    },
+    {
+      "module": "app/actions/workspace-settings",
+      "name": "createInvitationAction",
+      "id": "workspace-settings:createInvitationAction"
+    },
+    {
+      "module": "app/actions/workspace-settings",
+      "name": "resendInvitationAction",
+      "id": "workspace-settings:resendInvitationAction"
+    },
+    {
+      "module": "app/actions/workspace-settings",
+      "name": "revokeInvitationAction",
+      "id": "workspace-settings:revokeInvitationAction"
+    },
+    {
+      "module": "app/actions/workspace-settings",
+      "name": "changeMemberRoleAction",
+      "id": "workspace-settings:changeMemberRoleAction"
+    },
+    {
+      "module": "app/actions/workspace-settings",
+      "name": "setMemberStatusAction",
+      "id": "workspace-settings:setMemberStatusAction"
+    },
+    {
+      "module": "app/actions/workspace-settings",
+      "name": "removeMemberAction",
+      "id": "workspace-settings:removeMemberAction"
+    },
+    {
+      "module": "app/actions/workspace-settings",
+      "name": "leaveWorkspaceAction",
+      "id": "workspace-settings:leaveWorkspaceAction"
+    },
+    {
+      "module": "app/actions/workspace-settings",
+      "name": "createLabelAction",
+      "id": "workspace-settings:createLabelAction"
+    },
+    {
+      "module": "app/actions/workspace-settings",
+      "name": "updateLabelAction",
+      "id": "workspace-settings:updateLabelAction"
+    },
+    {
+      "module": "app/actions/workspace-settings",
+      "name": "deleteLabelAction",
+      "id": "workspace-settings:deleteLabelAction"
+    }
+  ]
+}

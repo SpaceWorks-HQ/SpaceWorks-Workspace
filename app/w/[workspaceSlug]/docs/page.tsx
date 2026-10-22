@@ -57,7 +57,7 @@ export default async function DocsPage({ params, searchParams }: PageProps<"/w/[
         <section aria-labelledby="docs-results" className="flex flex-col gap-3">
           <SectionHeading as="h2" title={<span id="docs-results">Results for “{query}”</span>} description={`${results.length} ${results.length === 1 ? "page" : "pages"}`} />
           {results.length === 0 ? (
-            <EmptyState title={`No pages match “${query}”.`}>Try fewer words, or check the archived pages.</EmptyState>
+            <EmptyState patch title={`No pages match “${query}”.`}>Try fewer words, or check the archived pages.</EmptyState>
           ) : (
             <Card padding="none">
               <ul className="divide-y divide-line">
@@ -78,7 +78,7 @@ export default async function DocsPage({ params, searchParams }: PageProps<"/w/[
           )}
         </section>
       ) : total === 0 ? (
-        <EmptyState mood="sleepy" title="No pages yet." action={canCreate ? <NewPageButton label="Write the first page" /> : undefined}>
+        <EmptyState patch title="No pages yet." action={canCreate ? <NewPageButton label="Write the first page" /> : undefined}>
           {canCreate ? "Start with a how-to for the laser cutter or the notes from the last build night." : "When members write guides and notes, they show up here."}
         </EmptyState>
       ) : (

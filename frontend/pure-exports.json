@@ -1,0 +1,40 @@
+{
+  "lib/meetings/choices": [
+    "optionalChoice",
+    "options"
+  ],
+  "lib/meetings/core": [
+    "admin",
+    "jsonObject"
+  ],
+  "lib/contacts/contacts": [
+    "STAGES",
+    "contactChannels"
+  ],
+  "lib/shell/context": [
+    "safeWorkspaceUrl"
+  ],
+  "lib/shell/retention": [
+    "RETENTION_AREAS"
+  ],
+  "lib/files/service": [
+    "FILE_TRASH_DAYS"
+  ],
+  "lib/tasks/access": [
+    "TaskActor",
+    "canEditTasks",
+    "canManageProject"
+  ],
+  "lib/storage/index": [
+    "fileUrl"
+  ],
+  "lib/tasks/queries": [
+    "permissionsFor"
+  ],
+  "lib/projects/queries": [
+    "PROJECT_STATUS_FILTERS"
+  ],
+  "lib/opsGaps/context": [
+    "admin"
+  ]
+}

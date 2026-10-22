@@ -25,7 +25,7 @@ export default async function ArchivedDocsPage({ params }: PageProps<"/w/[worksp
     <div className="flex flex-col gap-6">
       <PageHeader kicker={<Link href={`/w/${workspace.slug}/docs`} className="hover:text-ink hover:underline">Docs</Link>} title="Archived pages" description="Archived pages are hidden from the tree and search. Restoring brings back their sub-pages too." />
       {roots.length === 0 ? (
-        <EmptyState title="Nothing archived.">Pages you archive wait here until someone restores them.</EmptyState>
+        <EmptyState patch title="Nothing archived.">Pages you archive wait here until someone restores them.</EmptyState>
       ) : (
         <Card padding="none">
           <ul className="divide-y divide-line">

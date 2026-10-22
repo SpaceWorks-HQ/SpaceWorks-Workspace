@@ -4,7 +4,7 @@ import { forwardRef, useCallback, useEffect, useRef, useState, type ComponentPro
 import Link from "next/link";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 import * as AccordionPrimitive from "@radix-ui/react-accordion";
-import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+
 import { cn } from "@/lib/cn";
 
 /* ---------- Underline tabs (docs/DESIGN.md §4.4): 2px teal (or event accent) underline ---------- */
@@ -13,7 +13,7 @@ export const Tabs = TabsPrimitive.Root;
 
 const tabListClasses = "flex gap-1 overflow-x-auto border-b border-line [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
 const tabClasses =
-  "relative inline-flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap px-3 text-[15px] font-semibold text-ink-muted transition-colors duration-[120ms] ease-yy hover:text-ink after:absolute after:inset-x-3 after:-bottom-px after:h-0.5 after:rounded-full after:bg-transparent [&_svg]:size-4";
+  "relative inline-flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap px-3 text-sm font-semibold text-ink-muted transition-colors duration-[120ms] ease-yy hover:text-ink after:absolute after:inset-x-3 after:-bottom-px after:h-0.5 after:rounded-full after:bg-transparent [&_svg]:size-4";
 
 /**
  * Tab rows scroll sideways on narrow screens. These hints show a faded arrow
@@ -34,14 +34,27 @@ function useScrollHints<T extends HTMLElement>() {
   useEffect(() => {
     const el = node.current;
     if (!el) return;
-    update();
+    const keepActiveVisible = () => {
+      const active = el.querySelector<HTMLElement>('[aria-current="page"], [data-state="active"]');
+      if (active) {
+        const box = active.getBoundingClientRect();
+        const viewport = el.getBoundingClientRect();
+        if (box.left < viewport.left) el.scrollLeft -= viewport.left - box.left;
+        else if (box.right > viewport.right) el.scrollLeft += box.right - viewport.right;
+      }
+      update();
+    };
+    keepActiveVisible();
     el.addEventListener("scroll", update, { passive: true });
     const observer = new ResizeObserver(update);
     observer.observe(el);
     for (const child of Array.from(el.children)) observer.observe(child);
+    const selection = new MutationObserver(keepActiveVisible);
+    selection.observe(el, { subtree: true, attributes: true, attributeFilter: ["aria-current", "data-state"] });
     return () => {
       el.removeEventListener("scroll", update);
       observer.disconnect();
+      selection.disconnect();
     };
   }, [update]);
   const scroll = (direction: -1 | 1) => {
@@ -65,23 +78,24 @@ function setRefs<T>(...refs: Array<Ref<T> | undefined>) {
 function ScrollHint({ side, visible, onClick }: { side: "left" | "right"; visible: boolean; onClick: () => void }) {
   return (
     <span
-      aria-hidden
       className={cn(
-        "pointer-events-none absolute inset-y-0 z-[1] flex items-center transition-opacity duration-[180ms] ease-yy",
+        "pointer-events-none absolute inset-y-0 z-[1] flex items-center transition-opacity duration-[200ms] ease-yy",
         side === "left" ? "left-0 bg-gradient-to-r from-canvas from-55% to-transparent pr-6" : "right-0 justify-end bg-gradient-to-l from-canvas from-55% to-transparent pl-6",
         visible ? "opacity-100" : "opacity-0",
       )}
     >
       <button
         type="button"
-        tabIndex={-1}
+        tabIndex={visible ? 0 : -1}
+        aria-label={side === "left" ? "Show previous tabs" : "Show more tabs"}
+        aria-hidden={!visible}
         onClick={onClick}
         className={cn(
-          "inline-flex size-8 items-center justify-center rounded-md border border-line bg-panel text-ink-secondary transition-colors hover:bg-muted hover:text-ink",
+          "inline-flex size-11 items-center justify-center rounded-md border border-line bg-panel text-ink-secondary transition-colors hover:bg-muted hover:text-ink",
           visible && "pointer-events-auto",
         )}
       >
-        {side === "left" ? <ChevronLeft className="size-4" /> : <ChevronRight className="size-4" />}
+        {side === "left" ? <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">←</span> : <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">→</span>}
       </button>
     </span>
   );
@@ -108,7 +122,7 @@ export const TabsTrigger = forwardRef<
   return (
     <TabsPrimitive.Trigger
       ref={ref}
-      className={cn(tabClasses, "data-[state=active]:text-ink", accent ? "data-[state=active]:after:bg-accent" : "data-[state=active]:after:bg-primary", className)}
+      className={cn(tabClasses, "data-[state=active]:text-ink", accent ? "data-[state=active]:after:bg-accent-text" : "data-[state=active]:after:bg-[rgb(var(--sw-color-accent-ink))]", className)}
       {...props}
     />
   );
@@ -133,7 +147,7 @@ export function NavTabs({ items, label, className }: { items: Array<{ href: stri
             key={item.href}
             href={item.href}
             aria-current={item.active ? "page" : undefined}
-            className={cn(tabClasses, item.active && "text-ink after:bg-primary")}
+            className={cn(tabClasses, item.active && "text-ink after:bg-accent-text")}
           >
             {item.label}
           </Link>
@@ -152,9 +166,9 @@ export function AccordionItem({ value, title, children, className }: { value: st
   return (
     <AccordionPrimitive.Item value={value} className={cn("border-b border-line", className)}>
       <AccordionPrimitive.Header>
-        <AccordionPrimitive.Trigger className="group flex w-full items-center justify-between gap-4 py-4 text-left text-[17px] font-semibold text-ink">
+        <AccordionPrimitive.Trigger className="group flex w-full items-center justify-between gap-4 py-4 text-left text-base font-semibold text-ink">
           {title}
-          <ChevronDown aria-hidden className="size-5 shrink-0 text-ink-muted transition-transform duration-[180ms] group-data-[state=open]:rotate-180" />
+          {null}
         </AccordionPrimitive.Trigger>
       </AccordionPrimitive.Header>
       <AccordionPrimitive.Content className="pb-4 text-body text-ink-secondary">{children}</AccordionPrimitive.Content>

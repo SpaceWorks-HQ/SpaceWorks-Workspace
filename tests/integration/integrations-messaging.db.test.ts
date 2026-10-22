@@ -88,12 +88,24 @@ describe.sequential("integrations messaging", () => {
     const sent = await sendTest(workspaceId, destinationId, ownerId); const deliveryId = sent.deliveries[0]!.id!;
     const job = await prisma.outboxMessage.findFirstOrThrow({ where: { kind: "notify.deliver", payload: { path: ["deliveryId"], equals: deliveryId } } });
     fetchMock.mockReset().mockResolvedValueOnce(new Response("slow", { status: 429, headers: { "Retry-After": "45" } }));
-    await deliverOutboxBatch();
+    await deliverOutboxBatch(20, { ids: [job.id] });
     const retry = await prisma.notificationDelivery.findUniqueOrThrow({ where: { id: deliveryId } });
     expect(retry).toMatchObject({ status: "PENDING", attempts: 1 }); expect(retry.nextAttemptAt!.getTime() - retry.lastAttemptAt!.getTime()).toBe(45000);
     await prisma.outboxMessage.update({ where: { id: job.id }, data: { availableAt: new Date(0) } });
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
-    await deliverOutboxBatch(); expect(await prisma.notificationDelivery.findUniqueOrThrow({ where: { id: deliveryId } })).toMatchObject({ status: "SENT", attempts: 2 });
+    await deliverOutboxBatch(20, { ids: [job.id] }); expect(await prisma.notificationDelivery.findUniqueOrThrow({ where: { id: deliveryId } })).toMatchObject({ status: "SENT", attempts: 2 });
+  });
+  it("persists editor rating and severity filters and routes only matching review events", async () => {
+    await actAs(ownerId);
+    const result = await updateRouting(slug, { operation: "rule", data: { name: "Low ratings", eventTypes: ["app_review.*"], minSeverity: "WARNING", filters: { ratings: [1, 2] }, destinationIds: [destinationId], dedupeWindowSec: 0, reminderIntervalMin: 0 } });
+    expect(result.ok).toBe(true);
+    const saved = await prisma.notificationRule.findFirstOrThrow({ where: { workspaceId, name: "Low ratings" } });
+    expect(saved).toMatchObject({ minSeverity: "WARNING", filters: { ratings: [1, 2] } });
+    for (const [rating, severity, expected] of [[1, "warning", 1], [2, "critical", 1], [5, "warning", 0], [1, "info", 0]] as const) {
+      const sent = await dispatch(workspaceId, { type: "app_review.received", title: "Review filter fixture", severity, scope: { rating }, data: { app: "Fixture", platform: "APPLE", rating, author: "Member", excerpt: "Feedback", link: `/w/${slug}/app-reviews` } });
+      expect(sent.deliveries.filter(d => d.target === `destination:${destinationId}`)).toHaveLength(expected);
+    }
+    await expect(saveRule(workspaceId, ownerId, { name: "Invalid rating", eventTypes: ["app_review.*"], minSeverity: "INFO", filters: { ratings: [6] }, destinationIds: [destinationId], dedupeWindowSec: 0, reminderIntervalMin: 0 })).rejects.toThrow();
   });
   it("fails closed on an invalid inbound token before storing any payload", async () => {
     expect((await inboundRequest(request(1, "secret", "wrong"), "telegram", connection.id)).status).toBe(401);

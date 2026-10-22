@@ -85,12 +85,11 @@ describe("checklist generation", () => {
     const sources = emptyOffboardingSources();
     sources.vaultItemsToRotate = [{ id: "secret", title: "Shared login" }, { id: "secret", title: "Shared login" }];
     sources.servicesOwned = [{ id: "service", name: "Website", backup: false }];
-    sources.assetsCheckedOut = [{ id: "asset", name: "Laptop", tag: "A-1" }];
     sources.accessCredentials = [{ id: "key", label: "Front door", type: "KEY" }];
     sources.identityLinks = [{ id: "identity", provider: "TELEGRAM", username: null }];
     const items = offboardingItems(sources, { adminId: "admin", dueAt: null });
-    expect(items).toHaveLength(5);
-    expect(items.map(i => i.sourceType)).toEqual(["vault_item", "service", "asset", "access_credential", "identity_link"]);
+    expect(items).toHaveLength(4);
+    expect(items.map(i => i.sourceType)).toEqual(["vault_item", "service", "access_credential", "identity_link"]);
     expect(items.every(i => i.assigneeId === "admin" && i.required)).toBe(true);
   });
   it("requires only mandatory items for completion", () => {

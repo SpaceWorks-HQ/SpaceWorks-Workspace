@@ -24,6 +24,10 @@ const aes256Key = z.string().refine((value) => isBase64Key(value, [32]), {
 });
 
 export const envSchema = z.object({
+  DEPLOYMENT_MODE: optionalString(z.enum(["backend"])),
+  FRONTEND_GATEWAY_SECRET: optionalString(z.string().regex(/^[a-f0-9]{64}$/, "must contain 32 random bytes encoded as hex")),
+  BACKEND_ORIGIN: optionalString(z.string().url()),
+  NEXT_PUBLIC_BACKEND_ORIGIN: optionalString(z.string().url()),
   DATABASE_URL: z.string().url("must be a valid database connection URL"),
   DIRECT_URL: optionalString(z.string().url("must be a valid database connection URL")),
   AUTH_SECRET: secret,
@@ -46,6 +50,10 @@ export const envSchema = z.object({
   MFA_ENCRYPTION_KEY: optionalString(aes256Key),
   INTEGRATION_ENCRYPTION_KEY: optionalString(aes256Key),
   VAULT_MASTER_KEY: optionalString(aes256Key),
+  VAULT_MASTER_KEYS: optionalString(z.string().refine(value => {
+    const entries = value.split(","); const versions = new Set<string>();
+    return entries.length > 0 && entries.every(entry => { const [version, key, extra] = entry.split(":"); if (!/^[1-9]\d*$/.test(version) || !Number.isSafeInteger(Number(version)) || extra || versions.has(version) || !isBase64Key(key ?? "", [32])) return false; versions.add(version); return true; });
+  }, "must contain unique version:base64 key entries")),
   S3_BUCKET: optionalString(z.string().min(1)),
   S3_REGION: optionalString(z.string().min(1)),
   S3_ENDPOINT: optionalString(z.string().url()),
@@ -74,7 +82,14 @@ export const envSchema = z.object({
   // Messaging, notification routing and the Services monitor.
   ALLOW_PRIVATE_WEBHOOK_TARGETS: optionalString(z.enum(["true", "false"])),
   NOTIFY_WORKER_CONCURRENCY: optionalString(z.coerce.number().int().min(1).max(100)),
-  MONITOR_WORKER_INPROCESS: optionalString(z.enum(["true", "false"])),
+  JOBS_INPROCESS: optionalString(z.enum(["true", "false"])),
+  JOBS_HEALTH_PORT: optionalString(z.coerce.number().int().min(1).max(65535)),
+  JOBS_QUEUE_PREFIX: optionalString(z.string().regex(/^[a-zA-Z0-9:_-]{1,100}$/)),
+  QUEUE_OUTBOX_CONCURRENCY: optionalString(z.coerce.number().int().min(1).max(64)),
+  QUEUE_SCHEDULED_CONCURRENCY: optionalString(z.coerce.number().int().min(1).max(64)),
+  QUEUE_SYNC_CONCURRENCY: optionalString(z.coerce.number().int().min(1).max(64)),
+  QUEUE_MONITOR_CONCURRENCY: optionalString(z.coerce.number().int().min(1).max(64)),
+  QUEUE_DOCUMENTS_CONCURRENCY: optionalString(z.coerce.number().int().min(1).max(64)),
   MONITOR_ALLOW_PRIVATE_TARGETS: optionalString(z.enum(["true", "false"])),
   MONITOR_MAX_PER_WORKSPACE: optionalString(z.coerce.number().int().min(1).max(10_000)),
 });
@@ -112,6 +127,8 @@ export function productionEnvironmentProblems(source: Record<string, string | un
   for (const key of REQUIRED_IN_PRODUCTION) {
     if (!source[key]?.trim()) problems.push(`${key}: required in production`);
   }
+  if (source.JOBS_INPROCESS === "true") problems.push("JOBS_INPROCESS is local development only; run worker and beat in production.");
+  if (source.DEPLOYMENT_MODE === "backend" && !source.FRONTEND_GATEWAY_SECRET) problems.push("FRONTEND_GATEWAY_SECRET: required for the backend deployment mode");
   if (Boolean(source.S3_ACCESS_KEY_ID) !== Boolean(source.S3_SECRET_ACCESS_KEY)) {
     problems.push("S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY: set both, or neither when using an IAM role");
   }

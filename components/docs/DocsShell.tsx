@@ -3,10 +3,9 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronDown, Plus, Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { useRealtime } from "@/components/realtime/useRealtime";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/cn";
 import type { RealtimeEvent } from "@/lib/realtimeTypes";
 import { DocTree, type TreeItem } from "./DocTree";
 import { NewDocDialog, type TemplateOption } from "./NewDocDialog";
@@ -76,7 +75,7 @@ export function DocsShell({ slug, tree, canCreate, isAdmin, templates, children 
         <Link href={`/w/${slug}/docs`} className="min-h-11 flex-1 content-center rounded-md px-2 text-label text-ink hover:bg-muted">
           All docs
         </Link>
-        <Link href={`/w/${slug}/docs?focus=search`} aria-label="Search docs" title="Search docs" className="inline-flex size-11 items-center justify-center rounded-md text-ink-secondary hover:bg-muted hover:text-ink [&_svg]:size-[18px]">
+        <Link href={`/w/${slug}/docs?focus=search`} aria-label="Search docs" title="Search docs" className="inline-flex size-11 items-center justify-center rounded-md text-ink-secondary hover:bg-muted hover:text-ink [&_svg]:size-5">
           <Search aria-hidden />
         </Link>
       </div>
@@ -104,7 +103,7 @@ export function DocsShell({ slug, tree, canCreate, isAdmin, templates, children 
             className="flex min-h-11 w-full items-center justify-between rounded-md border border-line bg-panel px-4 text-label text-ink"
           >
             Pages
-            <ChevronDown aria-hidden className={cn("size-4 transition-transform duration-200 motion-reduce:transition-none", mobileOpen && "rotate-180")} />
+            {null}
           </button>
           {mobileOpen ? (
             <div id="docs-mobile-tree" className="mt-2 rounded-xl border border-line bg-panel p-3">

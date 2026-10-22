@@ -44,7 +44,7 @@ export const emailAdapter: DestinationAdapter = {
       ...(message.url ? { actionUrl: message.url, actionLabel: "Open in Space Works" } : {}),
     });
     await prisma.$transaction(async (tx) => {
-      for (const to of recipients) await enqueueEmail(tx, { to, ...email });
+      for (const to of recipients) await enqueueEmail(tx, { workspaceId: message.workspace.id, to, ...email });
     });
     return { ok: true };
   },

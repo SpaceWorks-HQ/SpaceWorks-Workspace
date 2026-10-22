@@ -2,45 +2,29 @@
 
 import { useState, type ReactNode } from "react";
 import { useEditorState, type Editor } from "@tiptap/react";
-import {
-  Bold,
-  Code,
-  CodeXml,
-  ImagePlus,
-  Italic,
-  Link,
-  List,
-  ListChecks,
-  ListOrdered,
-  Minus,
-  Quote,
-  Redo2,
-  Strikethrough,
-  Table,
-  Undo2,
-} from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader } from "@/components/ui/dialog";
 import { Dropdown, Field, Input } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 
-function ToolButton({ label, active, disabled, onClick, children }: { label: string; active?: boolean; disabled?: boolean; onClick: () => void; children: ReactNode }) {
+function ToolButton({ label, active, disabled, onClick, children }: { label: string; active?: boolean; disabled?: boolean; onClick: () => void; children?: ReactNode }) {
   return (
     <button
       type="button"
-      aria-label={label}
+      aria-label={children ? label : undefined}
       title={label}
       aria-pressed={active === undefined ? undefined : active}
       disabled={disabled}
       onMouseDown={(event) => event.preventDefault()}
       onClick={onClick}
       className={cn(
-        "inline-flex size-11 shrink-0 items-center [@media(pointer:fine)]:size-9 justify-center rounded-md transition-colors duration-[120ms] ease-yy [&_svg]:size-[18px]",
+        "inline-flex min-h-11 min-w-11 px-2 shrink-0 items-center justify-center rounded-md text-xs font-semibold transition-colors duration-[120ms] ease-yy [&_svg]:size-5",
         active ? "bg-accent-soft text-accent-text" : "text-ink-secondary hover:bg-muted hover:text-ink",
         "disabled:pointer-events-none disabled:text-ink-disabled",
       )}
     >
-      {children}
+      {children ?? label}
     </button>
   );
 }
@@ -98,7 +82,7 @@ export function EditorToolbar({ editor, onPickImage, imageBusy }: { editor: Edit
   const applyLink = () => {
     const href = normalizeLink(linkValue);
     if (!href) {
-      setLinkError("Use a web address (https://…), an email (mailto:…) or a page path (/w/…).");
+      setLinkError("Use a web address (https://example.com), an email (mailto:hello@example.com) or a page path (/w/your-workspace).");
       return;
     }
     if (editor.state.selection.empty && !state.link) chain().insertContent({ type: "text", text: linkValue.trim(), marks: [{ type: "link", attrs: { href } }] }).run();
@@ -112,7 +96,7 @@ export function EditorToolbar({ editor, onPickImage, imageBusy }: { editor: Edit
         <Dropdown
           aria-label="Text style"
           value={state.block}
-          className="w-[140px] shrink-0 [@media(pointer:fine)]:!min-h-9"
+          className="w-[140px] shrink-0"
           onChange={(event) => {
             const value = event.target.value;
             if (value === "p") chain().setParagraph().run();
@@ -125,24 +109,24 @@ export function EditorToolbar({ editor, onPickImage, imageBusy }: { editor: Edit
           <option value="h3">Heading 3</option>
         </Dropdown>
         <Divider />
-        <ToolButton label="Bold" active={state.bold} onClick={() => chain().toggleBold().run()}><Bold /></ToolButton>
-        <ToolButton label="Italic" active={state.italic} onClick={() => chain().toggleItalic().run()}><Italic /></ToolButton>
-        <ToolButton label="Strikethrough" active={state.strike} onClick={() => chain().toggleStrike().run()}><Strikethrough /></ToolButton>
-        <ToolButton label="Inline code" active={state.code} onClick={() => chain().toggleCode().run()}><Code /></ToolButton>
-        <ToolButton label={state.link ? "Edit link" : "Add link"} active={state.link} onClick={openLink}><Link /></ToolButton>
+        <ToolButton label="Bold" active={state.bold} onClick={() => chain().toggleBold().run()}><span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">B</span></ToolButton>
+        <ToolButton label="Italic" active={state.italic} onClick={() => chain().toggleItalic().run()}><span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">I</span></ToolButton>
+        <ToolButton label="Strikethrough" active={state.strike} onClick={() => chain().toggleStrike().run()}><span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">S</span></ToolButton>
+        <ToolButton label="Inline code" active={state.code} onClick={() => chain().toggleCode().run()}><span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">&lt;/&gt;</span></ToolButton>
+        <ToolButton label="Link" active={state.link} onClick={openLink} />
         <Divider />
-        <ToolButton label="Bulleted list" active={state.bullet} onClick={() => chain().toggleBulletList().run()}><List /></ToolButton>
-        <ToolButton label="Numbered list" active={state.ordered} onClick={() => chain().toggleOrderedList().run()}><ListOrdered /></ToolButton>
-        <ToolButton label="Checklist" active={state.task} onClick={() => chain().toggleTaskList().run()}><ListChecks /></ToolButton>
-        <ToolButton label="Quote" active={state.quote} onClick={() => chain().toggleBlockquote().run()}><Quote /></ToolButton>
-        <ToolButton label="Code block" active={state.codeBlock} onClick={() => chain().toggleCodeBlock().run()}><CodeXml /></ToolButton>
-        <ToolButton label="Divider" onClick={() => chain().setHorizontalRule().run()}><Minus /></ToolButton>
+        <ToolButton label="List" active={state.bullet} onClick={() => chain().toggleBulletList().run()} />
+        <ToolButton label="Numbered list" active={state.ordered} onClick={() => chain().toggleOrderedList().run()}><span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">1.</span></ToolButton>
+        <ToolButton label="Checklist" active={state.task} onClick={() => chain().toggleTaskList().run()} />
+        <ToolButton label="Quote" active={state.quote} onClick={() => chain().toggleBlockquote().run()} />
+        <ToolButton label="Code" active={state.codeBlock} onClick={() => chain().toggleCodeBlock().run()} />
+        <ToolButton label="Divider" onClick={() => chain().setHorizontalRule().run()}><span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">−</span></ToolButton>
         <Divider />
-        <ToolButton label="Insert table" active={state.table} onClick={() => chain().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}><Table /></ToolButton>
-        <ToolButton label={imageBusy ? "Uploading image" : "Insert image"} disabled={imageBusy} onClick={onPickImage}><ImagePlus /></ToolButton>
+        <ToolButton label="Table" active={state.table} onClick={() => chain().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} />
+        <ToolButton label="Image" disabled={imageBusy} onClick={onPickImage} />
         <Divider />
-        <ToolButton label="Undo" disabled={!state.canUndo} onClick={() => chain().undo().run()}><Undo2 /></ToolButton>
-        <ToolButton label="Redo" disabled={!state.canRedo} onClick={() => chain().redo().run()}><Redo2 /></ToolButton>
+        <ToolButton label="Undo" disabled={!state.canUndo} onClick={() => chain().undo().run()} />
+        <ToolButton label="Redo" disabled={!state.canRedo} onClick={() => chain().redo().run()} />
       </div>
       {state.table ? (
         <div role="toolbar" aria-label="Table" className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-line pt-2">

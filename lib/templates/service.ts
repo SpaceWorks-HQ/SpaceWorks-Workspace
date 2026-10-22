@@ -1,30 +1,25 @@
 import "server-only";
-import { z } from "zod";
-import type { Prisma } from "@prisma/client";
 import { prisma, type DbClient } from "@/lib/db";
 import { formatDate } from "@/lib/format/datetime";
 import { createDoc } from "@/lib/docs/service";
 import { createTask } from "@/lib/tasks/service";
 import { createProject } from "@/lib/projects/service";
-import { hiddenTeamIds, teamScopeFilter, userTeamIds } from "@/lib/teamAccess";
 import {
   type Actor,
   assertActor,
   ensure,
-  id,
-  optionalId,
-  title,
-  text,
   changed,
   checkTeam,
   serial,
   admin,
 } from "@/lib/meetings/core";
-import { applyTemplate } from "./application";
+import { applyTemplate } from "@/lib/templates/application";
 import { taskUrl } from "@/lib/tasks/links";
 import { removeSearchDocument } from "@/lib/search/documents";
 import { recordAuditEvent } from "@/lib/audit";
 import { recordActivity } from "@/lib/activity";
+import { templateWhere } from "./service/queries";
+import { templateCommand } from "./service/validation";
 
 async function createdUrl(
   actor: Actor,
@@ -50,61 +45,6 @@ async function createdUrl(
     ? taskUrl(actor.workspace.slug, task.project?.key, task.number)
     : undefined;
 }
-
-export async function templateWhere(
-  actor: Actor,
-  client: DbClient = prisma,
-): Promise<Prisma.TemplateWhereInput> {
-  if (admin(actor)) return { workspaceId: actor.workspace.id };
-  const hidden = await hiddenTeamIds(
-    actor.workspace.id,
-    { userId: actor.user.id, role: actor.membership.role },
-    client,
-  );
-  const teams = await userTeamIds(actor.workspace.id, actor.user.id, client);
-  return {
-    workspaceId: actor.workspace.id,
-    AND: [
-      teamScopeFilter(hidden),
-      {
-        OR: [
-          { scope: "WORKSPACE" as const },
-          { scope: "TEAM" as const, teamId: { in: teams } },
-          { createdById: actor.user.id },
-        ],
-      },
-    ],
-  };
-}
-
-export const templateCommand = z.discriminatedUnion("op", [
-  z.object({
-    op: z.literal("create"),
-    name: title,
-    description: text,
-    kind: z.enum(["DOC", "PROJECT", "TASK", "MEETING"]),
-    title,
-    text,
-    teamId: optionalId,
-    scope: z.enum(["WORKSPACE", "TEAM", "PRIVATE"]).default("WORKSPACE"),
-  }),
-  z.object({
-    op: z.literal("apply"),
-    templateId: id,
-    key: z.string().trim().max(10).optional(),
-    projectId: optionalId,
-    requestId: id,
-  }),
-  z.object({ op: z.literal("delete"), templateId: id }),
-  z.object({
-    op: z.literal("edit"),
-    templateId: id,
-    name: title,
-    description: text,
-    title,
-    text,
-  }),
-]);
 
 export async function mutateTemplate(actor: Actor, input: unknown) {
   const data = templateCommand.parse(input);
@@ -317,3 +257,6 @@ export async function mutateTemplate(actor: Actor, input: unknown) {
     return { id: template.id };
   });
 }
+
+export { templateWhere } from "./service/queries";
+export { templateCommand } from "./service/validation";

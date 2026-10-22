@@ -1,0 +1,31 @@
+import { describe } from "vitest";
+import "./documents-flow/fixtures";
+import { registerAccessValidationTests } from "./documents-flow/access-validation.cases";
+import { registerIssuanceTests } from "./documents-flow/issuance.cases";
+import { registerPaymentAllocationTests } from "./documents-flow/payment-allocation.cases";
+import { registerFileAccessTests } from "./documents-flow/file-access.cases";
+import { registerDeliveryExportTests } from "./documents-flow/delivery-export.cases";
+import { registerTaxComplianceTests } from "./documents-flow/tax-compliance.cases";
+import { registerCancellationRetentionTests } from "./documents-flow/cancellation-retention.cases";
+import { registerDocumentEvidenceTests } from "./documents-flow/document-evidence.cases";
+import { registerCashRefundsTests } from "./documents-flow/cash-refunds.cases";
+import { registerLettersFilingsTests } from "./documents-flow/letters-filings.cases";
+import { registerCreditAdvanceTests } from "./documents-flow/credit-advance.cases";
+import { registerUtilisationCertificatesTests } from "./documents-flow/utilisation-certificates.cases";
+import { registerBundlePdfTests } from "./documents-flow/bundle-pdf.cases";
+
+describe("Documents controlled issuance and privacy", () => {
+  registerAccessValidationTests();
+  registerIssuanceTests();
+  registerPaymentAllocationTests();
+  registerFileAccessTests();
+  registerDeliveryExportTests();
+  registerTaxComplianceTests();
+  registerCancellationRetentionTests();
+  registerDocumentEvidenceTests();
+  registerCashRefundsTests();
+  registerLettersFilingsTests();
+  registerCreditAdvanceTests();
+  registerUtilisationCertificatesTests();
+  registerBundlePdfTests();
+});

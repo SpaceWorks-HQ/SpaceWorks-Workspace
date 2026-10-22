@@ -10,6 +10,7 @@ import {
   TextBody,
 } from "@/components/meetings/Structure";
 import { Chip } from "@/components/ui/display";
+import { Patch } from "@/components/brand/Patch";
 export const metadata = { title: "Poll" };
 export default async function PollPage({
   params,
@@ -39,6 +40,13 @@ export default async function PollPage({
         </Chip>
       </div>
       <TextBody>{poll.description}</TextBody>
+      {poll.closed && poll.tally?.quorumMet && poll.tally.ballots > 0 ? (
+        <div className="flex flex-col items-center rounded-xl border border-line bg-panel p-5 text-center">
+          <Patch pose="sneeze" size={112} />
+          <p className="text-title">The crew has spoken.</p>
+          <p className="mt-1 text-sm text-ink-muted">Voting is closed and quorum was met. Final results are below.</p>
+        </div>
+      ) : null}
       {!poll.closed && poll.canVote && !poll.hasVoted ? (
         <Section title="Your vote">
           <p className="text-body-ui text-ink-muted">

@@ -1,5 +1,5 @@
 import "server-only";
-import { revalidatePath } from "next/cache";
+import { revalidatePath } from "@/lib/frontend/cache";
 import { getWorkspaceForAction } from "@/lib/permissions";
 import { isActionRateLimited } from "@/lib/actionRateLimit";
 import { type ActionResult, NOT_ALLOWED, RATE_LIMITED, SAVE_FAILED } from "@/lib/actionResult";

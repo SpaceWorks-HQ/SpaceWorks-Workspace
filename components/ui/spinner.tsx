@@ -1,6 +1,6 @@
 import { cn } from "@/lib/cn";
 
-/** Decorative progress indicator. Pair with visible text such as "Saving…". */
+/** Decorative progress indicator. Pair with visible text such as "Saving". */
 export function Spinner({ className, label }: { className?: string; label?: string }) {
   return (
     <svg

@@ -4,24 +4,21 @@ import { actionError, NOT_ALLOWED, validationError, type ActionResult } from "@/
 import { recordAuditEvent } from "@/lib/audit";
 import { randomToken, sha256Hex } from "@/lib/crypto";
 import { prisma } from "@/lib/db";
+import { visibleTaskWhere } from "@/lib/tasks/access";
+import { taskUrl } from "@/lib/tasks/links";
+import { hiddenTeamIds, teamScopeFilter } from "@/lib/teamAccess";
+import { meetingWhere } from "@/lib/meetings/service";
+import { entryWhere } from "@/lib/calendar/access";
+import { canContribute } from "@/lib/roles";
 import { safeTimeZone } from "@/lib/timeZone";
 import { canSubscribeToCalendar } from "@/lib/community/access";
 import type { CommunityActor } from "@/lib/community/context";
-import { eventUrl } from "@/lib/community/events";
 import { buildCalendar, type IcsEntry } from "@/lib/community/ics";
 import { dayKey, effectiveEnd } from "@/lib/community/schedule";
-import { EVENT_KIND_LABELS, feedScopeSchema, type FeedScope } from "@/lib/community/validation";
+import { feedScopeSchema, type FeedScope } from "@/lib/community/validation";
 
-/**
- * Private calendar subscriptions. Each member can hold one active token per
- * scope:
- * - CALENDAR: every community event in the workspace.
- * - PERSONAL: events they replied to, their meetings, their rota shifts and
- *   the due dates of tasks assigned to them.
- * Only a SHA-256 of the token is stored; the URL is shown once. Revoking (or
- * regenerating) breaks the old URL at once, and the feed also stops when the
- * member leaves, is suspended or the workspace is archived.
- */
+/** Personal subscriptions contain only internal meetings, shifts and task due dates.
+ * Tokens are stored as hashes and access is checked on every fetch. */
 
 const DAY = 24 * 60 * 60 * 1000;
 const PAST_WINDOW = 60 * DAY;
@@ -39,7 +36,7 @@ export function feedUrls(token: string, base = baseUrl()) {
 
 export async function listFeeds(actor: CommunityActor) {
   const rows = await prisma.calendarFeedToken.findMany({
-    where: { workspaceId: actor.workspace.id, userId: actor.user.id, revokedAt: null },
+    where: { workspaceId: actor.workspace.id, userId: actor.user.id, revokedAt: null, scope: "PERSONAL" },
     orderBy: { createdAt: "desc" },
     select: { scope: true, createdAt: true },
   });
@@ -92,7 +89,7 @@ export async function resolveFeedToken(raw: string) {
     select: { scope: true, revokedAt: true, userId: true, workspace: { select: { id: true, slug: true, name: true, timezone: true, archivedAt: true } } },
   });
   if (!token || token.revokedAt || !token.userId || token.workspace.archivedAt) return null;
-  if (token.scope !== "PERSONAL" && token.scope !== "CALENDAR") return null;
+  if (token.scope !== "PERSONAL") return null;
   const membership = await prisma.membership.findUnique({
     where: { userId_workspaceId: { userId: token.userId, workspaceId: token.workspace.id } },
     select: { status: true, role: true, user: { select: { disabledAt: true } } },
@@ -101,28 +98,6 @@ export async function resolveFeedToken(raw: string) {
   return { scope: token.scope as FeedScope, userId: token.userId, role: membership.role, workspace: token.workspace };
 }
 
-type EventRow = { id: string; title: string; description: string | null; location: string | null; kind: keyof typeof EVENT_KIND_LABELS; startsAt: Date; endsAt: Date | null; cancelledAt: Date | null; updatedAt: Date };
-
-/** The iCalendar entry for one community event (shared by the feed and the per-event download). */
-export function eventEntry(event: EventRow, workspaceSlug: string, reply: "GOING" | "MAYBE" | "WAITLIST" | null = null, base = baseUrl()): IcsEntry {
-  const url = `${base}${eventUrl(workspaceSlug, event.id)}`;
-  const status = event.cancelledAt ? "CANCELLED" : reply === "MAYBE" || reply === "WAITLIST" ? "TENTATIVE" : "CONFIRMED";
-  return {
-    uid: `community-event-${event.id}@spaceworks-workspace`,
-    summary: `${event.cancelledAt ? "Cancelled: " : ""}${event.title}${reply === "WAITLIST" ? " (waitlist)" : ""}`,
-    description: [event.description, `${EVENT_KIND_LABELS[event.kind]} · ${url}`].filter(Boolean).join("\n\n"),
-    location: event.location,
-    url,
-    status,
-    categories: [EVENT_KIND_LABELS[event.kind]],
-    lastModified: event.updatedAt,
-    start: event.startsAt,
-    end: effectiveEnd(event.startsAt, event.endsAt),
-  };
-}
-
-const eventSelect = { id: true, title: true, description: true, location: true, kind: true, startsAt: true, endsAt: true, cancelledAt: true, updatedAt: true } as const;
-
 /** Build the feed body for a resolved token. */
 export async function buildFeed(feed: NonNullable<Awaited<ReturnType<typeof resolveFeedToken>>>, now = new Date()): Promise<string> {
   const zone = safeTimeZone(feed.workspace.timezone);
@@ -130,37 +105,32 @@ export async function buildFeed(feed: NonNullable<Awaited<ReturnType<typeof reso
   const base = baseUrl();
   const entries: IcsEntry[] = [];
 
-  if (feed.scope === "CALENDAR") {
-    const events = await prisma.communityEvent.findMany({ where: { workspaceId: feed.workspace.id, startsAt: window }, orderBy: { startsAt: "asc" }, take: 1000, select: eventSelect });
-    entries.push(...events.map((event) => eventEntry(event, feed.workspace.slug, null, base)));
-  } else {
-    const [replies, meetings, shifts, tasks] = await Promise.all([
-      prisma.eventAttendee.findMany({
-        where: { userId: feed.userId, status: { in: ["GOING", "MAYBE", "WAITLIST"] }, event: { workspaceId: feed.workspace.id, startsAt: window } },
-        take: 500,
-        select: { status: true, event: { select: eventSelect } },
-      }),
+  const actor = { user: { id: feed.userId, name: null }, workspace: feed.workspace, membership: { role: feed.role } };
+  const hidden = await hiddenTeamIds(feed.workspace.id, { userId: feed.userId, role: feed.role });
+  {
+    const [meetings, shifts, tasks] = await Promise.all([
       prisma.meetingAttendee.findMany({
-        where: { userId: feed.userId, rsvp: { not: "NO" }, meeting: { workspaceId: feed.workspace.id, startsAt: window } },
+        where: { userId: feed.userId, rsvp: { not: "NO" }, meeting: { ...(await meetingWhere(actor)), startsAt: window } },
         take: 500,
-        select: { rsvp: true, meeting: { select: { id: true, title: true, startsAt: true, endsAt: true, location: true, status: true, updatedAt: true } } },
+        select: { rsvp: true, meeting: { select: { id: true, title: true, startsAt: true, endsAt: true, location: true, status: true, updatedAt: true, sequence: true } } },
       }),
-      prisma.shiftAssignment.findMany({
-        where: { userId: feed.userId, status: { in: ["CONFIRMED", "WAITLIST", "SWAP_REQUESTED"] }, shift: { workspaceId: feed.workspace.id, startsAt: window } },
+      canContribute(actor.membership) ? prisma.shiftAssignment.findMany({
+        where: { userId: feed.userId, status: { in: ["CONFIRMED", "WAITLIST", "SWAP_REQUESTED"] }, shift: { workspaceId: feed.workspace.id, startsAt: window, shiftType: { workspaceId: feed.workspace.id, ...teamScopeFilter(hidden) } } },
         take: 500,
         select: { status: true, shift: { select: { id: true, startsAt: true, endsAt: true, location: true, notes: true, shiftType: { select: { name: true } } } } },
-      }),
-      prisma.task.findMany({
-        where: { workspaceId: feed.workspace.id, archivedAt: null, completedAt: null, dueAt: window, assignees: { some: { userId: feed.userId } } },
+      }) : [],
+      canContribute(actor.membership) ? prisma.task.findMany({
+        // Current task visibility (private teams, archived projects) for the feed owner.
+        where: { AND: [await visibleTaskWhere({ user: { id: feed.userId, name: null }, workspace: feed.workspace, membership: { role: feed.role } }), { workspaceId: feed.workspace.id, archivedAt: null, completedAt: null, dueAt: window, assignees: { some: { userId: feed.userId } }, OR: [{ projectId: null }, { project: { workspaceId: feed.workspace.id, status: { not: "ARCHIVED" }, ...teamScopeFilter(hidden) } }] }] },
         take: 500,
         select: { id: true, number: true, title: true, dueAt: true, updatedAt: true, project: { select: { key: true } } },
-      }),
+      }) : [],
     ]);
-    for (const reply of replies) entries.push(eventEntry(reply.event, feed.workspace.slug, reply.status as "GOING" | "MAYBE" | "WAITLIST", base));
     for (const { meeting, rsvp } of meetings) {
       const url = `${base}/w/${feed.workspace.slug}/meetings/${meeting.id}`;
       entries.push({
         uid: `meeting-${meeting.id}@spaceworks-workspace`,
+        sequence: meeting.sequence,
         summary: `${meeting.status === "CANCELLED" ? "Cancelled: " : ""}${meeting.title}`,
         description: `Meeting · ${url}`,
         location: meeting.location,
@@ -186,7 +156,7 @@ export async function buildFeed(feed: NonNullable<Awaited<ReturnType<typeof reso
     }
     for (const task of tasks) {
       const ref = task.project ? `${task.project.key}-${task.number}` : `#${task.number}`;
-      const url = task.project ? `${base}/w/${feed.workspace.slug}/projects/${task.project.key}/tasks/${task.number}` : `${base}/w/${feed.workspace.slug}/my-tasks`;
+      const url = `${base}${taskUrl(feed.workspace.slug, task.project?.key, task.number)}`;
       entries.push({
         uid: `task-due-${task.id}@spaceworks-workspace`,
         summary: `Due: ${ref} ${task.title}`,
@@ -198,9 +168,16 @@ export async function buildFeed(feed: NonNullable<Awaited<ReturnType<typeof reso
     }
   }
 
+  const [renewals, dates] = await Promise.all([
+    canContribute(actor.membership) ? prisma.subscription.findMany({ where: { workspaceId: feed.workspace.id, status: "ACTIVE", nextRenewalAt: window, ...teamScopeFilter(hidden) }, select: { id: true, name: true, nextRenewalAt: true, updatedAt: true }, take: 500 }) : [],
+    prisma.calendarEntry.findMany({ where: { AND: [await entryWhere(actor), { startsAt: window }] }, take: 500 }),
+  ]);
+  for (const renewal of renewals) entries.push({ uid: `renewal-${renewal.id}@spaceworks-workspace`, summary: `Renewal: ${renewal.name}`, allDay: dayKey(renewal.nextRenewalAt!, zone), lastModified: renewal.updatedAt, url: `${base}/w/${feed.workspace.slug}/subscriptions` });
+  for (const date of dates) entries.push({ uid: `calendar-${date.id}@spaceworks-workspace`, summary: date.title, start: date.startsAt, end: date.endsAt, lastModified: date.updatedAt, url: `${base}/w/${feed.workspace.slug}/calendar` });
+
   return buildCalendar({
-    name: feed.scope === "CALENDAR" ? `${feed.workspace.name} community` : `${feed.workspace.name} · my calendar`,
-    description: feed.scope === "CALENDAR" ? "Build nights, meetups and workshops." : "Events you replied to, meetings, shifts and task due dates.",
+    name: `${feed.workspace.name} · my calendar`,
+    description: "Your meetings, shifts, task due dates, renewals and reminders.",
     timeZone: zone,
     entries,
     now,

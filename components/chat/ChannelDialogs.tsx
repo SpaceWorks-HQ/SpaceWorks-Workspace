@@ -107,7 +107,7 @@ export function CreateChannelDialog({ open, onOpenChange, teams }: { open: boole
             <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={pending}>
               Cancel
             </Button>
-            <Button type="submit" variant="primary" loading={pending} loadingLabel="Creating…" disabled={!preview}>
+            <Button type="submit" variant="primary" loading={pending} loadingLabel="Creating" disabled={!preview}>
               Create channel
             </Button>
           </DialogFooter>
@@ -150,7 +150,7 @@ export function NewMessageDialog({ open, onOpenChange, initial = [] }: { open: b
           <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={pending}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={open_} loading={pending} loadingLabel="Opening…" disabled={selected.length === 0}>
+          <Button variant="primary" onClick={open_} loading={pending} loadingLabel="Opening" disabled={selected.length === 0}>
             Open conversation
           </Button>
         </DialogFooter>

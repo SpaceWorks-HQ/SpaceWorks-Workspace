@@ -2,8 +2,8 @@ apiVersion: v2
 name: spaceworks-workspace
 description: Space Works Workspace, the self-hosted internal workspace of the Space Works maker community
 type: application
-version: 0.1.0
-appVersion: "0.1.0"
+version: 0.6.5
+appVersion: "0.6.5"
 kubeVersion: ">=1.25.0-0"
 home: https://github.com/SpaceWorks-HQ/SpaceWorks-Workspace
 sources:

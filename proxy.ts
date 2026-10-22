@@ -1,3 +1,6 @@
+import { resourcePaths } from "@/lib/frontend/resources";
+import { isIP } from "node:net";
+import { CLIENT_IP_HEADER, GATEWAY_HEADER, isFrontendPeer } from "@/lib/frontend/peer";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { pageSecurity } from "@/lib/pageSecurity";
@@ -17,6 +20,15 @@ function tooMany(apiV1 = false) {
  */
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  if (request.headers.has(GATEWAY_HEADER)) {
+    if (!isFrontendPeer(request.headers)) return new NextResponse("Not found", { status: 404 });
+    const ip = request.headers.get(CLIENT_IP_HEADER)?.trim();
+    const header = process.env.TRUSTED_PROXY_IP_HEADER;
+    if (header && ["x-real-ip", "x-forwarded-for", "cf-connecting-ip"].includes(header)) request.headers.set(header, ip && isIP(ip) ? ip : "unknown");
+  }
+  // Machine integrations, public capability handlers and metadata keep their routes.
+  if (process.env.DEPLOYMENT_MODE === "backend" && !resourcePaths.some(pattern => pattern.test(pathname)) && !pathname.startsWith("/api/") && !pathname.startsWith("/blog/") && !pathname.startsWith("/status/") && !/\/(opengraph-image|twitter-image)(?:\/|$)/.test(pathname)) return new NextResponse("Not found", { status: 404 });
+
 
   // Server Actions post to page URLs. One ceiling before the per-action limits.
   if (request.method === "POST" && request.headers.has("next-action")) {

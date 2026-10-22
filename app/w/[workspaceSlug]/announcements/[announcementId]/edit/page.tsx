@@ -1,3 +1,4 @@
+import { FormPageLayout } from "@/components/ui/layouts";
 import { notFound } from "next/navigation";
 import { AnnouncementForm } from "@/components/community/AnnouncementForm";
 import { PageHeader } from "@/components/ui/display";
@@ -16,7 +17,7 @@ export default async function EditAnnouncementPage({ params }: PageProps<"/w/[wo
   const { options, selected } = await announcementDestinations(ctx, announcement.id);
   const tz = ctx.workspace.timezone;
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+    <FormPageLayout className="max-w-3xl">
       <PageHeader
         title="Edit announcement"
         description={announcement.status === "published" ? "It's already out. Edits update the page; nothing is sent again." : "Change it before it goes out."}
@@ -36,6 +37,6 @@ export default async function EditAnnouncementPage({ params }: PageProps<"/w/[wo
         settingsHref={canManageNotificationRouting(ctx.membership) ? `/w/${ctx.workspace.slug}/settings/notifications` : null}
         timeZoneLabel={`${formatTimeZoneName(new Date(), tz)} (${tz})`}
       />
-    </div>
+    </FormPageLayout>
   );
 }

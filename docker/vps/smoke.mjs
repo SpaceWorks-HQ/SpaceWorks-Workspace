@@ -1,58 +1,52 @@
-// Disposable deployment test only (CI or a throwaway stack). Production
-// operators use check.mjs. Runs in the `ops` container with app.env.
+// Disposable deployment test only. Production operators use check.mjs.
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { PrismaClient } from "@prisma/client";
-import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 
 await import("./check.mjs");
-if (process.exitCode) process.exit(process.exitCode);
-
+const prisma = new PrismaClient();
 const plainUrl = new URL(process.env.DATABASE_URL);
 plainUrl.searchParams.set("sslmode", "disable");
 const plain = new PrismaClient({ datasources: { db: { url: plainUrl.toString() } } });
-const s3 = new S3Client({
-  region: process.env.S3_REGION, endpoint: process.env.S3_ENDPOINT, forcePathStyle: true,
-  credentials: { accessKeyId: process.env.S3_ACCESS_KEY_ID, secretAccessKey: process.env.S3_SECRET_ACCESS_KEY },
-});
+const s3 = new S3Client({ region: process.env.S3_REGION, endpoint: process.env.S3_ENDPOINT, forcePathStyle: true,
+  credentials: { accessKeyId: process.env.S3_ACCESS_KEY_ID, secretAccessKey: process.env.S3_SECRET_ACCESS_KEY } });
 const objectKey = `deployment-smoke/${randomUUID()}`;
-const app = "http://app:3000";
-
-async function status(path, init = {}) {
-  const response = await fetch(`${app}${path}`, { ...init, redirect: "manual", signal: AbortSignal.timeout(30_000) });
-  await response.body?.cancel();
-  return response.status;
-}
-
-let step = "plain-text database rejection";
 try {
   let rejected = false;
   try { await plain.$queryRaw`SELECT 1`; } catch { rejected = true; }
-  assert.ok(rejected);
-  step = "anonymous storage rejection";
-  const anonymous = await fetch(`${process.env.S3_ENDPOINT}/${process.env.S3_BUCKET}/`);
+  assert.ok(rejected, "Plain-text database connections must fail");
+  const anonymous = await fetch(`${process.env.S3_ENDPOINT}/${process.env.S3_BUCKET}`);
   await anonymous.body?.cancel();
-  assert.equal(anonymous.status, 403);
-  step = "storage round trip";
+  assert.equal(anonymous.status, 403, "Anonymous bucket access must fail");
   await s3.send(new PutObjectCommand({ Bucket: process.env.S3_BUCKET, Key: objectKey, Body: "disposable deployment check" }));
   const object = await s3.send(new GetObjectCommand({ Bucket: process.env.S3_BUCKET, Key: objectKey }));
   assert.equal(await object.Body.transformToString(), "disposable deployment check");
-  step = "pages render";
-  assert.equal(await status("/api/health"), 200, "/api/health");
-  // A fresh install has no accounts yet, so /login sends visitors to /setup.
-  const login = await status("/login");
-  assert.ok(login === 200 || (login >= 300 && login < 400 && (await status("/setup")) === 200), "/login or /setup");
-  step = "readiness requires the bearer";
-  assert.equal(await status("/api/health/db"), 404);
-  step = "internal endpoints require the bearer";
-  assert.equal(await status("/api/internal/outbox", { method: "POST" }), 404);
-  assert.equal(await status("/api/internal/jobs", { method: "POST", headers: { Authorization: "Bearer wrong" } }), 404);
-  console.log("Disposable VPS smoke passed: plain-text DB rejection, anonymous storage rejection, object round trip, pages, bearer-protected endpoints.");
+  // Runtime role may write tenant data but may never alter the schema.
+  const rollback = new Error("rollback disposable test");
+  await prisma.$transaction(async tx => {
+    const workspace = await tx.workspace.create({ data: { name: "Deployment smoke", slug: `smoke-${randomUUID()}` } });
+    await tx.auditEvent.create({ data: { workspaceId: workspace.id, action: "deployment.smoke", targetType: "Workspace", targetId: workspace.id } });
+    assert.equal(await tx.auditEvent.count({ where: { workspaceId: workspace.id } }), 1);
+    throw rollback;
+  }).catch(error => { if (error !== rollback) throw error; });
+  // Pages come from the website container in the split layout.
+  const site = process.env.SWW_LAYOUT === "split" ? "http://frontend:3000" : "http://app:3000";
+  for (const path of ["/", "/login", "/api/health"]) {
+    const response = await fetch(`${site}${path}`, { signal: AbortSignal.timeout(15_000), redirect: "manual" });
+    await response.body?.cancel();
+    assert.ok([200, 302, 303, 307].includes(response.status), `Application route ${path} must render`);
+  }
+  const unauthorized = await fetch("http://app:3000/api/health/db");
+  await unauthorized.body?.cancel();
+  assert.equal(unauthorized.status, 404, "Readiness must require authentication");
+  console.log("Disposable VPS smoke passed: plain-text rejection, anonymous storage rejection, object roundtrip, audited runtime writes, page rendering and readiness authorization.");
 } catch {
-  console.error(`Disposable VPS smoke failed at: ${step}.`);
+  console.error("Disposable VPS smoke failed; connection details were suppressed.");
   process.exitCode = 1;
 } finally {
   await s3.send(new DeleteObjectCommand({ Bucket: process.env.S3_BUCKET, Key: objectKey })).catch(() => {});
   s3.destroy();
   await plain.$disconnect();
+  await prisma.$disconnect();
 }

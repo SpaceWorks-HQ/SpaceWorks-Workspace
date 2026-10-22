@@ -2,7 +2,8 @@ import "server-only";
 import { z } from "zod";
 import type { VaultItem, VaultPermission } from "@prisma/client";
 import { prisma, type DbClient } from "@/lib/db";
-import { sealEnvelope, openEnvelope, vaultMasterKey } from "@/lib/crypto";
+import { randomUUID } from "node:crypto";
+import { sealStored, openStored, vaultBinding } from "./hierarchy";
 import { isAdmin, type OpsActor } from "@/lib/approvals/context";
 import { guard, parse, id, title, optionalId, webUrl, note, OpsError, memberRef, teamRef } from "@/lib/approvals/ops";
 import { hasVaultMfa } from "./mfa";
@@ -34,8 +35,9 @@ export async function saveItem(actor: OpsActor, input: unknown) {
   const collection = await prisma.vaultCollection.findFirst({ where: { id: v.collectionId, workspaceId: actor.workspace.id } });
   if (!collection || !isAdmin(actor)) throw new OpsError("Only admins can add items to shared collections.");
  }
- const sealed = sealEnvelope(vaultMasterKey(), v.secret);
+ const itemId = v.id ?? randomUUID();
  return prisma.$transaction(async tx => {
+  await tx.$queryRaw`SELECT "id" FROM "Workspace" WHERE "id"=${actor.workspace.id} FOR NO KEY UPDATE`;
   if (v.id) {
    await tx.$queryRaw`SELECT "id" FROM "VaultItem" WHERE "id"=${v.id} AND "workspaceId"=${actor.workspace.id} FOR UPDATE`;
    const old = await tx.vaultItem.findFirst({ where: { id: v.id, workspaceId: actor.workspace.id, deletedAt: null } });
@@ -44,8 +46,9 @@ export async function saveItem(actor: OpsActor, input: unknown) {
    const versions = await tx.vaultItemVersion.findMany({ where: { itemId: old.id, item: { workspaceId: actor.workspace.id } }, orderBy: [{ createdAt: "desc" }, { id: "desc" }], skip: 5, select: { id: true } });
    await tx.vaultItemVersion.deleteMany({ where: { id: { in: versions.map(v => v.id) }, item: { workspaceId: actor.workspace.id } } });
   }
+  const sealed = await sealStored(actor.workspace.id, null, vaultBinding(itemId), v.secret, tx);
   const data = { title: v.title, collectionId: v.collectionId, type: v.type, username: v.type === "LOGIN" ? v.username : null, url: v.url, sensitivity: v.sensitivity, rotateEveryDays: v.rotateEveryDays, lastRotatedAt: new Date(), ...sealed };
-  const row = v.id ? await tx.vaultItem.update({ where: { id: v.id, workspaceId: actor.workspace.id }, data }) : await tx.vaultItem.create({ data: { ...data, workspaceId: actor.workspace.id, ownerId: actor.user.id } });
+  const row = v.id ? await tx.vaultItem.update({ where: { id: v.id, workspaceId: actor.workspace.id }, data }) : await tx.vaultItem.create({ data: { ...data, id: itemId, workspaceId: actor.workspace.id, ownerId: actor.user.id } });
   await tx.vaultAccessLog.create({ data: { workspaceId: actor.workspace.id, itemId: row.id, userId: actor.user.id, action: v.id ? "ROTATE" : "EDIT" } });
   await note(actor, "vault", row.id, v.id ? "rotated" : "created", tx); return row.id;
  });
@@ -62,7 +65,7 @@ export async function revealItem(actor: OpsActor, itemId: string, proof?: string
   if (!allowed) return { error: "Request access before revealing this item." };
   if (!verified) return { error: "Verify a fresh two-step code to reveal this item." };
   // Decrypt after authorization; no plaintext goes into event or audit metadata.
-  const secret = openEnvelope(vaultMasterKey(), item);
+  const secret = await openStored(actor.workspace.id, null, vaultBinding(item.id), item, tx);
   const event = await dispatch(actor.workspace.id, { type: "vault.item_revealed", title: "A vault item was accessed", actorId: actor.user.id, resource: { type: "vault_item", id: itemId }, data: { itemId, byUserId: actor.user.id } }, { tx });
   return { secret, afterCommit: event.afterCommit };
  });

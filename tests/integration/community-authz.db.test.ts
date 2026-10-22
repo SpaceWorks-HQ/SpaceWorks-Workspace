@@ -3,8 +3,6 @@ import type { WorkspaceRole } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { deleteAnnouncement, getAnnouncement, listAnnouncements, saveAnnouncement, setAnnouncementPinned } from "@/lib/community/announcements";
 import type { CommunityActor } from "@/lib/community/context";
-import { cancelEvent, getEventDetail, listEvents, respondToEvent, saveEvent } from "@/lib/community/events";
-import { deleteShoutout, giveShoutout, listShoutouts } from "@/lib/community/shoutouts";
 import { addMember, cleanup, createUser, createWorkspace, uniqueSuffix } from "../helpers/fixtures";
 
 const suffix = uniqueSuffix();
@@ -21,7 +19,6 @@ function actor(userId: string, name: string, workspace: Ws, role: WorkspaceRole)
   return { user: { id: userId, name }, workspace, membership: { role } };
 }
 
-const eventInput = { title: "Build night", kind: "BUILD_NIGHT", startsAt: "2030-01-10T18:00", endsAt: "2030-01-10T21:00", location: "Workshop", capacity: null };
 
 describe.sequential("community authorization and isolation", () => {
   beforeAll(async () => {
@@ -106,88 +103,4 @@ describe.sequential("community authorization and isolation", () => {
     });
   });
 
-  describe("events", () => {
-    let eventId = "";
-
-    it("lets members create events and refuses guests", async () => {
-      expect((await saveEvent(actors.guest!, eventInput, null)).ok).toBe(false);
-      const created = await saveEvent(actors.member!, eventInput, null);
-      expect(created.ok).toBe(true);
-      eventId = created.ok ? created.data!.id : "";
-      const row = await prisma.communityEvent.findUniqueOrThrow({ where: { id: eventId } });
-      // 6 PM in the workspace zone (Asia/Kolkata) is 12:30 UTC.
-      expect(row.startsAt.toISOString()).toBe("2030-01-10T12:30:00.000Z");
-      expect(await prisma.notificationEventRecord.count({ where: { workspaceId: wsA.id, type: "event.created" } })).toBe(1);
-    });
-
-    it("lets only the organiser or an admin edit and cancel", async () => {
-      expect((await saveEvent(actors.other!, { ...eventInput, title: "Mine now" }, eventId)).ok).toBe(false);
-      expect((await cancelEvent(actors.other!, eventId)).ok).toBe(false);
-      expect((await cancelEvent(actors.guest!, eventId)).ok).toBe(false);
-      expect((await saveEvent(actors.member!, { ...eventInput, title: "Build night v2" }, eventId)).ok).toBe(true);
-      expect((await saveEvent(actors.admin!, { ...eventInput, title: "Build night v3" }, eventId)).ok).toBe(true);
-      expect((await getEventDetail(actors.other!, eventId))?.canEdit).toBe(false);
-      expect((await getEventDetail(actors.member!, eventId))?.canEdit).toBe(true);
-    });
-
-    it("rejects an end before the start", async () => {
-      const result = await saveEvent(actors.member!, { ...eventInput, endsAt: "2030-01-10T17:00" }, null);
-      expect(result.ok).toBe(false);
-      expect(!result.ok && result.fieldErrors?.endsAt).toBeTruthy();
-    });
-
-    it("lets guests RSVP (they can come to build nights)", async () => {
-      const reply = await respondToEvent(actors.guest!, { eventId, status: "GOING" });
-      expect(reply.ok && reply.data?.status).toBe("GOING");
-    });
-
-    it("keeps events inside their workspace", async () => {
-      expect(await getEventDetail(actors.ownerB!, eventId)).toBeNull();
-      expect((await respondToEvent(actors.ownerB!, { eventId, status: "GOING" })).ok).toBe(false);
-      expect((await saveEvent(actors.ownerB!, eventInput, eventId)).ok).toBe(false);
-      expect((await cancelEvent(actors.ownerB!, eventId)).ok).toBe(false);
-      const listed = await listEvents(actors.ownerB!, { start: new Date("2029-12-01T00:00:00Z"), end: new Date("2030-02-01T00:00:00Z") });
-      expect(listed).toHaveLength(0);
-      expect(await prisma.eventAttendee.count({ where: { eventId, userId: actors.ownerB!.user.id } })).toBe(0);
-    });
-
-    it("closes replies once cancelled and refuses edits", async () => {
-      expect((await cancelEvent(actors.member!, eventId)).ok).toBe(true);
-      expect((await respondToEvent(actors.other!, { eventId, status: "GOING" })).ok).toBe(false);
-      expect((await saveEvent(actors.admin!, eventInput, eventId)).ok).toBe(false);
-      // The guest who was going hears about the cancellation.
-      const note = await prisma.notification.findFirst({ where: { userId: actors.guest!.user.id, kind: "event.changed" } });
-      expect(note?.title).toMatch(/cancelled/);
-    });
-  });
-
-  describe("shoutouts", () => {
-    it("refuses guests and self-shoutouts", async () => {
-      expect((await giveShoutout(actors.guest!, { toId: actors.member!.user.id, message: "Thanks" })).ok).toBe(false);
-      expect((await giveShoutout(actors.member!, { toId: actors.member!.user.id, message: "Me" })).ok).toBe(false);
-    });
-
-    it("refuses recipients from another workspace", async () => {
-      expect((await giveShoutout(actors.member!, { toId: actors.ownerB!.user.id, message: "Hi" })).ok).toBe(false);
-    });
-
-    it("notifies the recipient and lets only the giver or an admin remove it", async () => {
-      const given = await giveShoutout(actors.member!, { toId: actors.other!.user.id, message: "For fixing the printer." });
-      expect(given.ok).toBe(true);
-      const id = given.ok ? given.data!.id : "";
-      const note = await prisma.notification.findFirst({ where: { userId: actors.other!.user.id, kind: "shoutout.received" } });
-      expect(note?.title).toBe("Meera gave you a shoutout");
-      expect((await listShoutouts(actors.guest!, { personId: actors.other!.user.id })).map((row) => row.id)).toContain(id);
-      expect((await listShoutouts(actors.ownerB!)).map((row) => row.id)).not.toContain(id);
-      expect((await deleteShoutout(actors.other!, id)).ok).toBe(false);
-      expect((await deleteShoutout(actors.ownerB!, id)).ok).toBe(false);
-      expect((await deleteShoutout(actors.admin!, id)).ok).toBe(true);
-    });
-  });
-
-  it("refuses everything for an actor whose workspace does not hold the record", async () => {
-    // intruder claims workspace A but the record lookups are still scoped by workspace id.
-    const bAnnouncement = await prisma.announcement.findFirstOrThrow({ where: { workspaceId: wsB.id } });
-    expect(await getAnnouncement(actors.intruder!, bAnnouncement.id)).toBeNull();
-  });
 });

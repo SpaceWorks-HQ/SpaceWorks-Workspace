@@ -16,20 +16,21 @@ Space Works Workspace is the self-hosted, **internal**, invite-only workspace
 of the Space Works maker community (it started inside TinkerSpace Kochi).
 Members coordinate projects on kanban boards, talk in channels and direct
 messages, keep shared docs and files, track the community kitty (finance),
-publish a public blog, celebrate each other with shoutouts, and ask the Space
-Works Assistant about everything. Integrations: Google (Calendar, Gmail,
+coordinate internal meetings and shifts, and ask the Space Works Assistant
+about their work. Integrations: Google (Calendar, Gmail,
 Drive, Search Console), a GitHub App and a Telegram bot. It is an original
 Space Works product, licensed AGPL-3.0-or-later.
 
 Stack: Next.js 16 App Router (`output: "standalone"`), React 19, TypeScript,
 PostgreSQL 16 with Prisma 6, Auth.js v5 (JWT sessions, credentials + optional
-Google, TOTP MFA), Tailwind CSS 4 + Radix primitives, Redis (rate limits and
+Google/instance OIDC, TOTP MFA), Tailwind CSS 4 + Radix primitives, Redis (rate limits and
 realtime fan-out), S3-compatible private storage (Silo locally, Cloudflare R2
 in the cloud), Nodemailer through an outbox, Vitest and Playwright.
 
 "Internal" means: every route needs a session except `/login`, `/setup`
 (first run only), `/forgot-password`, `/reset-password/[token]`,
-`/invite/[token]`, the public blog (`/blog/...`) and health endpoints.
+`/invite/[token]`, opted-in status pages, public forms, personal feed and
+heartbeat capabilities, integration webhooks and health endpoints.
 Tenancy is strict: `Workspace` is the tenant boundary.
 
 ## Repository map
@@ -43,8 +44,10 @@ Tenancy is strict: `Workspace` is the tenant boundary.
 | `app/api/` | Health, outbox, files, realtime SSE, auth, account export |
 | `components/ui/` | Brand primitives: button, field, select, choice, dialog, menu, tabs, table, display |
 | `components/chrome/` | App shell, auth frame, simple shell, colour-mode toggle |
-| `components/<area>/` | Feature components (settings, account, admin, auth, workspace) |
-| `lib/` | Business rules and services (see "Shared services") |
+| `components/<area>/` | Feature UI for work, chat, knowledge, people, operations, collaboration, services, reviews and integrations |
+| `lib/` | Area services; `lib/search` live access checks, `lib/notify` routing, `lib/shell` platform services and retention writers |
+| `scripts/seed/` | Automatically loaded per-area demo seed modules |
+| `docs/areas/` | Implemented area contracts, operations and known limits |
 | `prisma/` | `schema.prisma` (complete for every phase) and migrations |
 | `scripts/` | Prisma wrapper, seed, storage init, backups, production preflight, scheduler, VPS install/update/backup/restore |
 | `Dockerfile`, `compose.production.yml`, `docker/vps/`, `install.sh` | Container image and the single-VPS stack (see `docs/DEPLOYMENT_VPS.md`) |
@@ -90,6 +93,16 @@ messaging + notification routing). Read it before adding anything.
   Errors are short, UI-safe sentences: say what happened, then what to do.
 - Dates: `lib/format/datetime.ts` with the workspace time zone. Money: integer
   minor units, formatted by `lib/format/money.ts` (INR default).
+- **300-line file limit.** Every hand-written file (`.ts`, `.tsx`, `.js`,
+  `.mjs`, `.css`, including tests, scripts and seed modules) stays at or below
+  300 lines. ESLint `max-lines` and `tests/unit/file-size.test.ts` enforce it.
+  Split by responsibility: queries, mutations, validation, mappers, view
+  sections, one test file per behaviour. Turn `lib/area/service.ts` into
+  `lib/area/service/` with an `index.ts` re-export so import paths stay stable.
+  Never meet the limit by joining lines, packing statements together or
+  deleting useful comments. Exempt: generated files (`frontend/` catalog and
+  types, `lib/views/generated/`, `lib/frontend/{registry,resources}.ts`),
+  `prisma/schema.prisma`, migrations and lockfiles.
 - Write "Space Works" in copy, `SpaceWorks` only in code identifiers. No emoji
   in UI chrome. Assistant tools exposed over MCP use the `sw_` prefix
   (e.g. `sw_list_tasks`).
@@ -113,9 +126,9 @@ action, e.g. "No projects yet. Start one for the next build night."
   the same `notFound()`: a slug never reveals that a workspace exists.
 - Roles: OWNER > ADMIN > MEMBER > GUEST. GUEST reads and comments, chats only
   in channels they were added to, never sees finance or settings. MEMBER
-  creates tasks, docs, messages, files and shoutouts; sees the finance summary
+  creates tasks, docs, messages, files; sees the finance summary
   only when `financeVisibleToMembers`. ADMIN manages members, invites, labels,
-  channels, finance, blog, API tokens and integrations. OWNER can also delete
+  channels, finance, API tokens and integrations. OWNER can also delete
   the workspace and transfer ownership. Use the helpers in `lib/roles.ts`.
 - A workspace always keeps one ACTIVE owner (`lib/membership.ts` locks owner
   rows). Admins never act on other admins or owners.

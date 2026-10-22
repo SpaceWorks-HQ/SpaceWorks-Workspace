@@ -40,6 +40,7 @@ export const createProjectSchema = z.object({
 
 export const updateProjectSchema = z.object({
   projectId: id,
+  cyclesEnabled: z.boolean().optional(),
   ...projectFields,
   status: z.enum(["ACTIVE", "PAUSED", "DONE"]),
 });

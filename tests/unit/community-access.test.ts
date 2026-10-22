@@ -1,16 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { WorkspaceRole } from "@prisma/client";
 import {
-  canCreateEvents,
-  canDeleteShoutout,
-  canEditEvent,
-  canGiveShoutouts,
   canManageAnnouncements,
-  canRsvp,
   canSubscribeToCalendar,
 } from "@/lib/community/access";
 import { richTextToPlain, sanitizeRichText } from "@/lib/community/richText";
-import { announcementInputSchema, eventInputSchema, shoutoutInputSchema } from "@/lib/community/validation";
+import { announcementInputSchema, feedScopeSchema } from "@/lib/community/validation";
 
 const as = (role: WorkspaceRole) => ({ role });
 
@@ -20,29 +15,15 @@ describe("community capabilities", () => {
     expect(canManageAnnouncements(null)).toBe(false);
   });
 
-  it("lets members create events and only the organiser or an admin edit them", () => {
-    expect(canCreateEvents(as("MEMBER"))).toBe(true);
-    expect(canCreateEvents(as("GUEST"))).toBe(false);
-    const event = { createdById: "organiser" };
-    expect(canEditEvent(as("MEMBER"), event, "organiser")).toBe(true);
-    expect(canEditEvent(as("MEMBER"), event, "someone-else")).toBe(false);
-    expect(canEditEvent(as("ADMIN"), event, "someone-else")).toBe(true);
-    // A guest who once organised (before a role change) can no longer edit.
-    expect(canEditEvent(as("GUEST"), event, "organiser")).toBe(false);
-    expect(canEditEvent(as("MEMBER"), { createdById: null }, "anyone")).toBe(false);
-  });
+});
 
-  it("lets guests reply to events and subscribe, but not give shoutouts", () => {
-    expect(canRsvp(as("GUEST"))).toBe(true);
+describe("personal feed permissions", () => {
+  it("allows members and guests to manage their own personal subscription", () => {
     expect(canSubscribeToCalendar(as("GUEST"))).toBe(true);
-    expect(canGiveShoutouts(as("GUEST"))).toBe(false);
-    expect(canGiveShoutouts(as("MEMBER"))).toBe(true);
-  });
-
-  it("lets the giver or an admin remove a shoutout", () => {
-    expect(canDeleteShoutout(as("MEMBER"), { fromId: "me" }, "me")).toBe(true);
-    expect(canDeleteShoutout(as("MEMBER"), { fromId: "them" }, "me")).toBe(false);
-    expect(canDeleteShoutout(as("ADMIN"), { fromId: "them" }, "me")).toBe(true);
+    expect(canSubscribeToCalendar(as("MEMBER"))).toBe(true);
+    expect(canSubscribeToCalendar(null)).toBe(false);
+    expect(feedScopeSchema.safeParse({ scope: "PERSONAL" }).success).toBe(true);
+    expect(feedScopeSchema.safeParse({ scope: "WORKSPACE" }).success).toBe(false);
   });
 });
 
@@ -69,16 +50,4 @@ describe("community input schemas", () => {
     expect(announcementInputSchema.safeParse({ title: "Hi", body: "<p>x</p>", publish: "schedule", scheduledFor: "2026-10-20T10:00" }).success).toBe(true);
   });
 
-  it("validates event capacity and times", () => {
-    const base = { title: "Build night", kind: "BUILD_NIGHT", startsAt: "2026-10-24T18:00" };
-    expect(eventInputSchema.safeParse({ ...base, capacity: 0 }).success).toBe(false);
-    expect(eventInputSchema.safeParse({ ...base, capacity: 2.5 }).success).toBe(false);
-    expect(eventInputSchema.safeParse({ ...base, capacity: null, endsAt: "" }).success).toBe(true);
-    expect(eventInputSchema.safeParse({ ...base, startsAt: "tomorrow" }).success).toBe(false);
-  });
-
-  it("caps shoutout messages", () => {
-    expect(shoutoutInputSchema.safeParse({ toId: "u1", message: "  " }).success).toBe(false);
-    expect(shoutoutInputSchema.safeParse({ toId: "u1", message: "x".repeat(501) }).success).toBe(false);
-  });
 });

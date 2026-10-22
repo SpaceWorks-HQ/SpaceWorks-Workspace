@@ -112,7 +112,7 @@ export async function updateProject(actor: TaskActor, input: unknown): Promise<A
   const updated = await prisma.$transaction(async (tx) => {
     const updated = await tx.project.update({
       where: { id: project.id },
-      data: { name: data.name, key: data.key, description: data.description, ownerId, teamId, status: data.status, startsOn: toDbDate(data.startsOn), dueOn: toDbDate(data.dueOn) },
+      data: { cyclesEnabled: data.cyclesEnabled, name: data.name, key: data.key, description: data.description, ownerId, teamId, status: data.status, startsOn: toDbDate(data.startsOn), dueOn: toDbDate(data.dueOn) },
     });
     await recordAuditEvent({
       action: "project.updated",
@@ -120,10 +120,14 @@ export async function updateProject(actor: TaskActor, input: unknown): Promise<A
       actorId: actor.user.id,
       targetType: "Project",
       targetId: project.id,
-      metadata: { key: updated.key, status: updated.status, keyChanged: updated.key !== project.key, teamChanged: updated.teamId !== project.teamId },
+      metadata: { key: updated.key, status: updated.status, keyChanged: updated.key !== project.key, cyclesEnabled: updated.cyclesEnabled, teamChanged: updated.teamId !== project.teamId },
       client: tx,
     });
     await indexProject(tx, actor.workspace.slug, updated);
+    for (const [entityType, tab] of [["project_milestone", "overview"], ["project_update", "updates"]]) {
+      await tx.searchDocument.updateMany({ where: { workspaceId: actor.workspace.id, projectId: project.id, entityType }, data: { teamId: updated.teamId, url: `/w/${actor.workspace.slug}/projects/${updated.key}/${tab}` } });
+    }
+    await tx.activityEvent.updateMany({ where: { workspaceId: actor.workspace.id, projectId: project.id, entityType: { in: ["project_milestone", "project_update"] } }, data: { teamId: updated.teamId } });
     return updated;
   });
   if (updated.key !== project.key || updated.teamId !== project.teamId) await reindexProjectTasks(actor.workspace.slug, updated);
@@ -134,7 +138,7 @@ export async function updateProject(actor: TaskActor, input: unknown): Promise<A
 async function reindexProjectTasks(workspaceSlug: string, project: { id: string; key: string; teamId: string | null }) {
   const tasks = await prisma.task.findMany({
     where: { projectId: project.id },
-    select: { id: true, workspaceId: true, number: true, title: true, description: true, archivedAt: true, creatorId: true },
+    select: { id: true, workspaceId: true, number: true, title: true, description: true, blockerReason: true, archivedAt: true, creatorId: true },
   });
   for (const task of tasks) await indexTask(prisma, workspaceSlug, task, project);
 }

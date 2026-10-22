@@ -38,7 +38,9 @@
   ],
   "exclude": [
     "node_modules",
+    "dist",
     ".claude",
-    "deploy"
+    "deploy",
+    "frontend"
   ]
 }

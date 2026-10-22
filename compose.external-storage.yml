@@ -1,0 +1,9 @@
+# Added by scripts/vps-compose.sh when compose.env has SWW_STORAGE='external':
+# files live in an external S3-compatible bucket (S3_* in app.env), so the
+# bundled Silo services do not run and the backend no longer waits for them.
+services:
+  app:
+    depends_on: !override
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      migrator: { condition: service_completed_successfully }

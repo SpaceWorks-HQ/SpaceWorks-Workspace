@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { X } from "lucide-react";
+
 import { loadTaskAction } from "@/app/actions/tasks";
 import { IconButton } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent } from "@/components/ui/dialog";
@@ -34,6 +34,7 @@ export function TaskDrawer({ slug, number, onClose, onChanged }: { slug: string;
   return (
     <Dialog open={number !== null} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
+        presentation="drawer"
         hideClose
         aria-describedby={undefined}
         className="left-auto right-0 top-0 h-dvh max-h-dvh w-full max-w-[760px] translate-x-0 translate-y-0 rounded-none border-y-0 border-r-0 data-[state=open]:animate-[yy-fade-in_200ms_ease-out] sm:w-[92vw]"
@@ -42,7 +43,7 @@ export function TaskDrawer({ slug, number, onClose, onChanged }: { slug: string;
           <DialogPrimitive.Title className="text-label text-ink-muted">Task</DialogPrimitive.Title>
           <DialogClose asChild>
             <IconButton label="Close task">
-              <X />
+              <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">×</span>
             </IconButton>
           </DialogClose>
         </div>

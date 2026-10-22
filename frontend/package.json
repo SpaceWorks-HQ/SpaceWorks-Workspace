@@ -1,0 +1,16 @@
+{
+  "name": "spaceworks-workspace-frontend",
+  "version": "0.6.5",
+  "private": true,
+  "scripts": {
+    "build": "node ../scripts/generate-frontend-catalog.mjs --check && node ../scripts/prepare-frontend.mjs && next build && node ../scripts/check-frontend-build.mjs",
+    "dev": "node ../scripts/prepare-frontend.mjs && next dev --port 3100",
+    "start": "next start --port 3100",
+    "typecheck": "next typegen && tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "^16.3.5",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  }
+}

@@ -7,7 +7,7 @@ import { EmptyState, Skeleton } from "@/components/ui/display";
 export function CommunityLoading({ label }: { label: string }) {
   return (
     <div className="flex flex-col gap-6" aria-busy="true" aria-live="polite">
-      <span className="sr-only">Loading {label}…</span>
+      <span className="sr-only">Loading {label}</span>
       <div className="flex flex-col gap-2">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-5 w-72 max-w-full" />
@@ -22,7 +22,7 @@ export function CommunityLoading({ label }: { label: string }) {
 /** Error boundary body: says what happened and offers a retry. */
 export function CommunityError({ what, reset }: { what: string; reset: () => void }) {
   return (
-    <EmptyState mood="sad" title={`Couldn't load ${what}.`} action={<Button variant="primary" onClick={reset}>Try again</Button>}>
+    <EmptyState patch title={`Couldn't load ${what}.`} action={<Button variant="primary" onClick={reset}>Try again</Button>}>
       Check your connection and try again. If it keeps happening, tell an admin.
     </EmptyState>
   );

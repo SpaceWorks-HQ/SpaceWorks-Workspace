@@ -1,0 +1,7 @@
+import type { SocialPost } from "@prisma/client";
+import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { formatDate } from "@/lib/format/datetime";
+import { metricValue, safeSocialUrl } from "./SocialNav";
+export function PostTable({ posts, timezone, caption }: { posts: (SocialPost & { account?: { displayName: string } })[]; timezone: string; caption: string }) {
+  return <Table label={caption}><caption className="p-4 text-left text-caption text-ink-muted">{caption}. Metrics are the latest lifetime totals for each post.</caption><THead><TR>{["Post", "Published", "Likes / reactions", "Comments", "Shares", "Views", "Impressions", "Reach"].map(s => <TH scope="col" key={s}>{s}</TH>)}</TR></THead><TBody>{posts.map(post => { const url = safeSocialUrl(post.url); return <TR key={post.id}><TH scope="row" className="min-w-48 max-w-80 whitespace-normal"><p className="line-clamp-2">{url ? <a href={url} target="_blank" rel="noreferrer" className="text-accent-text underline">{post.text || "View post"}<span className="sr-only"> (opens in a new tab)</span></a> : post.text || "Post"}</p>{post.account ? <span className="text-caption font-normal text-ink-muted">{post.account.displayName}</span> : null}</TH><TD>{formatDate(post.publishedAt, timezone)}</TD>{(["likes", "comments", "shares", "views", "impressions", "reach"] as const).map(k => <TD key={k} className="tabular-nums">{metricValue(post[k])}</TD>)}</TR>; })}</TBody></Table>;
+}

@@ -1,3 +1,5 @@
-export default function LoadingFinance() {
-  return <p role="status" className="py-8 text-body-ui text-ink-muted">Loading the kitty…</p>;
+import { BrandPageLoader } from "@/components/brand/BrandLoader";
+
+export default function Loading() {
+  return <BrandPageLoader label="Loading the kitty" />;
 }

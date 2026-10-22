@@ -1,3 +1,5 @@
+import { decodeAes256Key, encryptWithKey, decryptWithKey, vaultRootKeys } from "../scripts/vault-root-crypto.mjs";
+export { decodeAes256Key, encryptWithKey, decryptWithKey, vaultRootKeys };
 import crypto from "crypto";
 
 /**
@@ -28,17 +30,17 @@ export function hmacHex(key: string | Buffer, value: string): string {
 }
 
 /** Decode a base64 env value that must be exactly 32 bytes. */
-export function decodeAes256Key(raw: string | undefined, name: string): Buffer {
-  const value = raw ?? "";
-  const key = Buffer.from(value, "base64");
-  if (key.length !== 32 || key.toString("base64").replace(/=+$/, "") !== value.replace(/=+$/, "")) {
-    throw new Error(`${name} must be valid base64 for a 32-byte key.`);
-  }
-  return key;
-}
-
 /** Purposes for derived subkeys. Never reuse one purpose for another kind of data. */
 export type SecretPurpose =
+  | "social-access"
+  | "social-refresh"
+  | "social-oauth"
+  | "social-draft"
+  | "safeguarding-details"
+  | "safeguarding-event"
+  | "governance-vendor-bank"
+  | "finance-pay-pan"
+  | "finance-pay-bank"
   | "instance-settings"
   | "integration-tokens"
   /** MessagingConnection.credentialsEnc, BridgedChannel.outboundWebhookEnc. */
@@ -63,6 +65,15 @@ export type SecretPurpose =
   | "app-review-slack-signing";
 
 const PURPOSE_INFO: Record<SecretPurpose, string> = {
+  "safeguarding-details":"sww-safeguarding-details-v1",
+  "safeguarding-event":"sww-safeguarding-event-v1",
+  "social-access": "sww-social-access-v1",
+  "social-refresh": "sww-social-refresh-v1",
+  "social-oauth": "sww-social-oauth-v1",
+  "social-draft": "sww-social-draft-v1",
+  "governance-vendor-bank": "sww-governance-vendor-bank-v1",
+  "finance-pay-pan": "sww-finance-pay-pan-v1",
+  "finance-pay-bank": "sww-finance-pay-bank-v1",
   "app-review-issuer": "sww-app-review-issuer-v1",
   "app-review-key-id": "sww-app-review-key-id-v1",
   "app-review-private-key": "sww-app-review-private-key-v1",
@@ -86,7 +97,7 @@ const PURPOSE_INFO: Record<SecretPurpose, string> = {
 const INTEGRATION_PURPOSES = new Set<SecretPurpose>(["integration-tokens", "messaging-credentials", "notification-secrets", "cloud-credentials", "monitor-secrets", "sso-secrets"]);
 
 function rootKeyFor(purpose: SecretPurpose): Buffer {
-  if ((purpose.startsWith("app-review-") || INTEGRATION_PURPOSES.has(purpose)) && process.env.INTEGRATION_ENCRYPTION_KEY) {
+  if ((purpose.startsWith("social-") || purpose.startsWith("app-review-") || INTEGRATION_PURPOSES.has(purpose)) && process.env.INTEGRATION_ENCRYPTION_KEY) {
     return decodeAes256Key(process.env.INTEGRATION_ENCRYPTION_KEY, "INTEGRATION_ENCRYPTION_KEY");
   }
   return decodeAes256Key(process.env.MFA_ENCRYPTION_KEY, "MFA_ENCRYPTION_KEY");
@@ -94,21 +105,6 @@ function rootKeyFor(purpose: SecretPurpose): Buffer {
 
 function subkey(purpose: SecretPurpose): Buffer {
   return Buffer.from(crypto.hkdfSync("sha256", rootKeyFor(purpose), Buffer.alloc(0), PURPOSE_INFO[purpose], 32));
-}
-
-export function encryptWithKey(key: Buffer, plaintext: string): string {
-  const iv = crypto.randomBytes(12);
-  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
-  const encrypted = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
-  return ["v1", iv.toString("base64url"), cipher.getAuthTag().toString("base64url"), encrypted.toString("base64url")].join(".");
-}
-
-export function decryptWithKey(key: Buffer, value: string): string {
-  const [version, iv, tag, encrypted, ...rest] = value.split(".");
-  if (version !== "v1" || !iv || !tag || !encrypted || rest.length > 0) throw new Error("Invalid encrypted value.");
-  const decipher = crypto.createDecipheriv("aes-256-gcm", key, Buffer.from(iv, "base64url"));
-  decipher.setAuthTag(Buffer.from(tag, "base64url"));
-  return Buffer.concat([decipher.update(Buffer.from(encrypted, "base64url")), decipher.final()]).toString("utf8");
 }
 
 /** Encrypt a configuration secret (SMTP password, AI key, OAuth token…). */
@@ -126,7 +122,12 @@ export function decryptSecret(purpose: SecretPurpose, value: string): string {
  * (VAULT_MASTER_KEY, separate from every other key). Store both strings and
  * the key version. Not end-to-end: the server can decrypt on reveal.
  */
-export function vaultMasterKey(raw = process.env.VAULT_MASTER_KEY): Buffer {
+export function openLegacyVaultEnvelope(sealed: { secretEnc: string; dataKeyEnc: string }): string {
+  for (const root of vaultRootKeys()) { try { return openEnvelope(root.key, sealed); } catch {} }
+  throw new Error("The legacy vault envelope cannot be opened.");
+}
+export function vaultMasterKey(raw?: string): Buffer {
+  if (raw === undefined) return vaultRootKeys()[0].key;
   if (!raw) throw new Error("VAULT_MASTER_KEY is not set.");
   return decodeAes256Key(raw, "VAULT_MASTER_KEY");
 }

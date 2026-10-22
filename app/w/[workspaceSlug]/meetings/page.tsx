@@ -22,7 +22,7 @@ export default async function MeetingsPage({
 }: PageProps<"/w/[workspaceSlug]/meetings">) {
   const { workspaceSlug } = await params;
   const actor = await requireWorkspace(workspaceSlug, "GUEST");
-  const [meetings, choices, events, templates] = await Promise.all([
+  const [meetings, choices, templates] = await Promise.all([
     prisma.meeting.findMany({
       where: await meetingWhere(actor),
       orderBy: { startsAt: "desc" },
@@ -30,15 +30,6 @@ export default async function MeetingsPage({
       include: { _count: { select: { agenda: true, decisions: true } } },
     }),
     collaborationChoices(actor),
-    prisma.communityEvent.findMany({
-      where: {
-        workspaceId: actor.workspace.id,
-        cancelledAt: null,
-        startsAt: { gte: new Date() },
-      },
-      select: { id: true, title: true },
-      take: 100,
-    }),
     prisma.template.findMany({
       where: { ...(await templateWhere(actor)), kind: "MEETING" },
       select: { id: true, name: true },
@@ -112,16 +103,6 @@ export default async function MeetingsPage({
                 options: choices.members,
               },
               {
-                name: "calendarEventId",
-                label: "Community event",
-                type: "select",
-                options: [
-                  optionalChoice(),
-                  ...events.map((e) => ({ value: e.id, label: e.title })),
-                ],
-                help: "Workspace meetings can link to a community event.",
-              },
-              {
                 name: "templateId",
                 label: "Agenda template",
                 type: "select",
@@ -151,7 +132,7 @@ export default async function MeetingsPage({
         </Disclosure>
       ) : null}
       {!meetings.length ? (
-        <EmptyState title="No meetings yet. Schedule time for the next conversation." />
+        <EmptyState patch title="No meetings yet. Schedule time for the next conversation." />
       ) : (
         <ul className="space-y-3">
           {meetings.map((m) => (

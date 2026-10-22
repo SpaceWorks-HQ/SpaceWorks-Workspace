@@ -42,6 +42,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: web
+          args: ["node", "server.js"]
           image: {{ include "sww.image" . | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
@@ -90,6 +91,7 @@ spec:
             periodSeconds: 15
             timeoutSeconds: 5
             failureThreshold: 3
+
       volumes:
         - name: tmp
           emptyDir: {}

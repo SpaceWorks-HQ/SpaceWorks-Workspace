@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCalendar, escapeText, foldLine, formatUtc, icsFilename } from "@/lib/community/ics";
+import { buildCalendar, escapeText, foldLine, formatUtc } from "@/lib/community/ics";
 
 const now = new Date("2026-10-19T08:00:00.000Z");
 
@@ -24,10 +24,6 @@ describe("ICS text helpers", () => {
     expect(parts.map((part, index) => (index === 0 ? part : part.slice(1))).join("")).toBe(line);
   });
 
-  it("makes safe download names", () => {
-    expect(icsFilename("Build night: robots & PCBs!")).toBe("build-night-robots-pcbs.ics");
-    expect(icsFilename("!!!")).toBe("event.ics");
-  });
 });
 
 describe("buildCalendar", () => {
@@ -37,11 +33,11 @@ describe("buildCalendar", () => {
     now,
     entries: [
       {
-        uid: "community-event-1@spaceworks-workspace",
+        uid: "meeting-1@spaceworks-workspace",
         summary: "Build night",
         description: "Bring a laptop, a soldering iron",
         location: "Workshop; first floor",
-        url: "https://workspace.example/w/kochi/calendar/1",
+        url: "https://workspace.example/w/kochi/meetings/1",
         status: "CONFIRMED",
         categories: ["Build night"],
         start: new Date("2026-10-24T12:30:00.000Z"), // 6 PM IST

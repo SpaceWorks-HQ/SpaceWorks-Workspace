@@ -30,7 +30,24 @@ charts/
 .do/
 render.yaml
 compose.*.yml
+docker-compose*.yml
 docker-compose.yml
 install.sh
 local.sh
 .wrangler
+
+config/
+.sww-*
+.spaceworks-workspace-*
+
+frontend-public/
+
+frontend/app
+frontend/components
+frontend/lib
+frontend/public
+frontend/.next
+frontend/node_modules
+
+# Rebuilt from source in the builder stage
+dist/

@@ -1,6 +1,7 @@
 import { EMAIL_BUTTON_STYLE, EMAIL_COLORS, emailLayout } from "./brand";
 
-export type RenderedEmail = { subject: string; html: string; text: string };
+export type RenderedEmail = {
+  attachments?: { filename: string; content: Buffer; contentType: string }[]; subject: string; html: string; text: string; calendarInvite?: { method: "REQUEST" | "CANCEL"; content: string } };
 
 export function escapeHtml(value: string) {
   return value.replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[char]!);

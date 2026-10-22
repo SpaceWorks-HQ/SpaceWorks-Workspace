@@ -6,9 +6,9 @@
 replicaCount: 2
 
 image:
-  repository: ghcr.io/spaceworks-hq/spaceworks-workspace
+  repository: ghcr.io/spaceworks-hq/spaceworks-workspace-backend
   # Use an immutable tag (sha-<commit>) or a digest; defaults to the chart appVersion.
-  tag: ""
+  tag: "0.1"
   pullPolicy: IfNotPresent
 
 imagePullSecrets: []
@@ -75,29 +75,28 @@ podDisruptionBudget:
   minAvailable: 1
 
 # Pre-install/pre-upgrade Job running `prisma migrate deploy` with the
-# migrator image of the same release. A failed migration blocks the rollout.
+# backend image of the same release. A failed migration blocks the rollout.
 migration:
   enabled: true
   image:
-    repository: ghcr.io/spaceworks-hq/spaceworks-workspace-migrator
+    repository: ghcr.io/spaceworks-hq/spaceworks-workspace-backend
     tag: ""
     pullPolicy: IfNotPresent
   backoffLimit: 1
   activeDeadlineSeconds: 600
 
-# CronJob that calls /api/internal/outbox and /api/internal/jobs with the
-# app's CRON_SECRET (scripts/scheduler.mjs --once from the app image).
-scheduler:
+# Same backend image, private health endpoints, no Service or Ingress.
+worker:
   enabled: true
-  schedule: "* * * * *"
-  # Endpoints to call: outbox, jobs.
-  endpoints: "outbox,jobs"
+  replicas: 1
   resources:
-    requests:
-      cpu: 10m
-      memory: 64Mi
-    limits:
-      memory: 128Mi
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { cpu: "2", memory: 1536Mi }
+beat:
+  enabled: true
+  resources:
+    requests: { cpu: 10m, memory: 128Mi }
+    limits: { memory: 512Mi }
 
 nodeSelector: {}
 tolerations: []

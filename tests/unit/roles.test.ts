@@ -34,7 +34,6 @@ import {
   canActOnMember,
   canContribute,
   canDeleteWorkspace,
-  canManageBlog,
   canManageChannels,
   canManageFinance,
   canManageMembers,
@@ -75,7 +74,7 @@ describe("capabilities", () => {
   });
 
   it("reserves management to admins and owners", () => {
-    for (const check of [canManageMembers, canManageFinance, canManageBlog, canManageChannels, canManageWorkspace]) {
+    for (const check of [canManageMembers, canManageFinance, canManageChannels, canManageWorkspace]) {
       expect(check(owner)).toBe(true);
       expect(check(admin)).toBe(true);
       expect(check(member)).toBe(false);

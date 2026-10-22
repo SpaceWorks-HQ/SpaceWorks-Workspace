@@ -11,7 +11,7 @@ import {
   type ReactNode,
   type TextareaHTMLAttributes,
 } from "react";
-import { AlertCircle, Eye, EyeOff, Lock, Search, X } from "lucide-react";
+import { TriangleAlert as AlertCircle, Search } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { controlClasses } from "./styles";
 
@@ -63,9 +63,12 @@ export function Field({ label, optional, helperText, error, hideLabel, className
   );
 }
 
-export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Input({ className, ...props }, ref) {
-  return <input ref={ref} className={cn(controlClasses, className)} {...props} />;
+export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Input({ className, type, ...props }, ref) {
+  const inputType = type ?? (props.name === "q" ? "search" : undefined);
+  return <input ref={ref} type={inputType} className={cn(controlClasses, inputType === "search" && searchClasses, className)} {...props} />;
 });
+
+const searchClasses = "border-transparent bg-sidebar hover:border-transparent hover:bg-sidebar-hover dark:bg-surface dark:hover:bg-muted";
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(function Textarea({ className, rows = 4, ...props }, ref) {
   return <textarea ref={ref} rows={rows} className={cn(controlClasses, "min-h-24 resize-y", className)} {...props} />;
@@ -81,7 +84,7 @@ export const PrefixInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTML
 ) {
   return (
     <div className="flex min-h-11 w-full overflow-hidden rounded-md border border-line-strong bg-panel transition-colors duration-[120ms] ease-yy hover:border-ink focus-within:border-accent focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--yy-focus)] has-[[aria-invalid=true]]:border-danger-fg">
-      <span className="flex shrink-0 items-center border-r border-line bg-surface px-3 text-[15px] text-ink-muted">{prefix}</span>
+      <span className="flex shrink-0 items-center border-r border-line bg-surface px-3 text-sm text-ink-muted">{prefix}</span>
       <input ref={ref} className={cn("min-w-0 flex-1 bg-transparent px-3.5 py-[9px] text-base text-ink placeholder:text-ink-muted outline-none", className)} {...props} />
     </div>
   );
@@ -91,7 +94,7 @@ export const PrefixInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTML
 export function ReadOnlyValue({ id, value, action }: { id?: string; value: ReactNode; action?: ReactNode }) {
   return (
     <div id={id} className="flex items-center gap-2.5 min-h-11 rounded-md border border-line bg-surface px-3.5 py-[9px] text-base text-ink-secondary">
-      <Lock aria-hidden className="size-4 shrink-0 text-ink-muted" />
+      {null}
       <span className="min-w-0 flex-1 truncate">{value}</span>
       {action}
     </div>
@@ -102,15 +105,14 @@ export const PasswordInput = forwardRef<HTMLInputElement, Omit<InputHTMLAttribut
   const [visible, setVisible] = useState(false);
   return (
     <div className="relative">
-      <input ref={ref} type={visible ? "text" : "password"} className={cn(controlClasses, "pr-12", className)} {...props} />
+      <input ref={ref} type={visible ? "text" : "password"} className={cn(controlClasses, "pr-20", className)} {...props} />
       <button
         type="button"
         onClick={() => setVisible((value) => !value)}
-        aria-label={visible ? "Hide password" : "Show password"}
         aria-pressed={visible}
-        className="absolute right-1.5 top-1/2 inline-flex size-9 -translate-y-1/2 items-center justify-center rounded-md text-ink-muted hover:bg-muted hover:text-ink"
+        className="absolute right-0 top-1/2 inline-flex min-h-11 min-w-11 px-3 -translate-y-1/2 items-center justify-center rounded-md text-ink-muted hover:bg-muted hover:text-ink"
       >
-        {visible ? <EyeOff aria-hidden className="size-[18px]" /> : <Eye aria-hidden className="size-[18px]" />}
+        {visible ? <span className="inline-flex items-center justify-center text-xs font-semibold">Hide</span> : <span className="inline-flex items-center justify-center text-xs font-semibold">Show</span>}
       </button>
     </div>
   );
@@ -124,12 +126,12 @@ export const SearchInput = forwardRef<HTMLInputElement, Omit<InputHTMLAttributes
   const hasValue = typeof value === "string" ? value.length > 0 : Boolean(value);
   return (
     <div className="relative">
-      <Search aria-hidden className="pointer-events-none absolute left-4 top-1/2 size-[18px] -translate-y-1/2 text-ink-muted" />
+      <Search aria-hidden className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-ink-muted" />
       <input
         ref={ref}
         type="search"
         value={value}
-        className={cn(controlClasses, "pl-11 pr-11 [&::-webkit-search-cancel-button]:appearance-none", className)}
+        className={cn(controlClasses, searchClasses, "pl-11 pr-11 [&::-webkit-search-cancel-button]:appearance-none", className)}
         {...props}
       />
       {onClear && hasValue ? (
@@ -137,9 +139,9 @@ export const SearchInput = forwardRef<HTMLInputElement, Omit<InputHTMLAttributes
           type="button"
           onClick={onClear}
           aria-label="Clear search"
-          className="absolute right-1.5 top-1/2 inline-flex size-9 -translate-y-1/2 items-center justify-center rounded-md text-ink-muted hover:bg-muted hover:text-ink"
+          className="absolute right-0 top-1/2 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-md text-ink-muted hover:bg-muted hover:text-ink"
         >
-          <X aria-hidden className="size-4" />
+          <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">×</span>
         </button>
       ) : null}
     </div>

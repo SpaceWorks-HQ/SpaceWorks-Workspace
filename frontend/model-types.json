@@ -1,0 +1,272 @@
+[
+  {
+    "module": "lib/queue/admin",
+    "name": "JobsHealth",
+    "id": "Shared0",
+    "value": false
+  },
+  {
+    "module": "lib/appReviews/queries",
+    "name": "reviewSettings",
+    "id": "Shared1",
+    "value": true
+  },
+  {
+    "module": "lib/assistant/chat",
+    "name": "ChatItem",
+    "id": "Shared2",
+    "value": false
+  },
+  {
+    "module": "lib/assistant/chat",
+    "name": "ChatStreamEvent",
+    "id": "Shared3",
+    "value": false
+  },
+  {
+    "module": "lib/assistant/chat",
+    "name": "PendingCall",
+    "id": "Shared4",
+    "value": false
+  },
+  {
+    "module": "lib/calendar/query",
+    "name": "loadCalendar",
+    "id": "Shared5",
+    "value": true
+  },
+  {
+    "module": "lib/calendar/query",
+    "name": "CalendarItem",
+    "id": "Shared6",
+    "value": false
+  },
+  {
+    "module": "lib/calendar/availability",
+    "name": "availabilityFor",
+    "id": "Shared7",
+    "value": true
+  },
+  {
+    "module": "lib/chat/queries",
+    "name": "ChannelMemberDTO",
+    "id": "Shared8",
+    "value": false
+  },
+  {
+    "module": "lib/appShell",
+    "name": "ShellData",
+    "id": "Shared9",
+    "value": false
+  },
+  {
+    "module": "lib/search/query",
+    "name": "SearchHit",
+    "id": "Shared10",
+    "value": false
+  },
+  {
+    "module": "lib/documents/service",
+    "name": "DocumentSnapshot",
+    "id": "Shared11",
+    "value": false
+  },
+  {
+    "module": "app/actions/files",
+    "name": "LinkTarget",
+    "id": "Shared12",
+    "value": false
+  },
+  {
+    "module": "lib/finance/tools/queries",
+    "name": "FinanceQuery",
+    "id": "Shared13",
+    "value": false
+  },
+  {
+    "module": "lib/finance/tools/views",
+    "name": "FinanceReportsView",
+    "id": "Shared14",
+    "value": false
+  },
+  {
+    "module": "lib/finance/tools/access",
+    "name": "FinanceActor",
+    "id": "Shared15",
+    "value": false
+  },
+  {
+    "module": "lib/finance/tools/views",
+    "name": "AttachedFileMap",
+    "id": "Shared16",
+    "value": false
+  },
+  {
+    "module": "lib/finance/tools/queries",
+    "name": "ToolSection",
+    "id": "Shared17",
+    "value": false
+  },
+  {
+    "module": "lib/finance/tools/views",
+    "name": "FinanceToolView",
+    "id": "Shared18",
+    "value": false
+  },
+  {
+    "module": "lib/finance/tools/views",
+    "name": "PayrollView",
+    "id": "Shared19",
+    "value": false
+  },
+  {
+    "module": "lib/finance/tools/queries",
+    "name": "FinancePickers",
+    "id": "Shared20",
+    "value": false
+  },
+  {
+    "module": "lib/finance/tools/extract",
+    "name": "ExtractedReceipt",
+    "id": "Shared21",
+    "value": false
+  },
+  {
+    "module": "lib/finance/recurring/queries",
+    "name": "AdvancesView",
+    "id": "Shared22",
+    "value": false
+  },
+  {
+    "module": "lib/finance/recurring/queries",
+    "name": "RecurringQuery",
+    "id": "Shared23",
+    "value": false
+  },
+  {
+    "module": "lib/finance/recurring/queries",
+    "name": "UpcomingView",
+    "id": "Shared24",
+    "value": false
+  },
+  {
+    "module": "lib/finance/recurring/queries",
+    "name": "LeaseFinanceView",
+    "id": "Shared25",
+    "value": false
+  },
+  {
+    "module": "lib/finance/recurring/queries",
+    "name": "ScheduleView",
+    "id": "Shared26",
+    "value": false
+  },
+  {
+    "module": "lib/funding/service",
+    "name": "FundingData",
+    "id": "Shared27",
+    "value": false
+  },
+  {
+    "module": "lib/funding/service",
+    "name": "Filters",
+    "id": "Shared28",
+    "value": false
+  },
+  {
+    "module": "lib/governance/service",
+    "name": "GovernanceData",
+    "id": "Shared29",
+    "value": false
+  },
+  {
+    "module": "lib/governance/service",
+    "name": "Actor",
+    "id": "Shared30",
+    "value": false
+  },
+  {
+    "module": "lib/governance/service",
+    "name": "Filters",
+    "id": "Shared31",
+    "value": false
+  },
+  {
+    "module": "lib/govextras/cases",
+    "name": "CaseData",
+    "id": "Shared32",
+    "value": false
+  },
+  {
+    "module": "lib/govextras/conflicts",
+    "name": "ConflictData",
+    "id": "Shared33",
+    "value": false
+  },
+  {
+    "module": "lib/marketingIt/service",
+    "name": "ToolData",
+    "id": "Shared34",
+    "value": false
+  },
+  {
+    "module": "lib/marketingIt/service",
+    "name": "Filters",
+    "id": "Shared35",
+    "value": false
+  },
+  {
+    "module": "lib/notepad/service",
+    "name": "NoteDTO",
+    "id": "Shared36",
+    "value": false
+  },
+  {
+    "module": "lib/notepad/service",
+    "name": "NotepadData",
+    "id": "Shared37",
+    "value": false
+  },
+  {
+    "module": "lib/notepad/service",
+    "name": "TodoDTO",
+    "id": "Shared38",
+    "value": false
+  },
+  {
+    "module": "lib/opsGaps/attachments",
+    "name": "AttachmentKind",
+    "id": "Shared39",
+    "value": false
+  },
+  {
+    "module": "lib/orgPeople/files",
+    "name": "OrgFileKind",
+    "id": "Shared40",
+    "value": false
+  },
+  {
+    "module": "lib/people/profiles",
+    "name": "EmergencyContact",
+    "id": "Shared41",
+    "value": false
+  },
+  {
+    "module": "lib/productOps/load",
+    "name": "ProductData",
+    "id": "Shared42",
+    "value": false
+  },
+  {
+    "module": "lib/productOps/service",
+    "name": "Filters",
+    "id": "Shared43",
+    "value": false
+  },
+  {
+    "module": "lib/auth",
+    "name": "SsoMfaChallenge",
+    "id": "Shared44",
+    "value": false
+  }
+]

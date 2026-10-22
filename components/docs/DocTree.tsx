@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition, type DragEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronRight, Ellipsis, Plus } from "lucide-react";
+import { Ellipsis, Plus } from "lucide-react";
 import { moveDocAction } from "@/app/actions/docs";
 import { useToast } from "@/components/feedback/ToastProvider";
 import { Menu, MenuContent, MenuItem, MenuTrigger } from "@/components/ui/menu";
@@ -112,12 +112,12 @@ export function DocTree({ slug, items, activeId, canEdit, onAddChild }: { slug: 
                   aria-label={`${open ? "Hide" : "Show"} sub-pages of ${node.title}`}
                   aria-expanded={open}
                   onClick={() => toggle(node.id)}
-                  className="inline-flex size-8 shrink-0 items-center justify-center rounded-md [&_svg]:size-4"
+                  className="inline-flex size-11 shrink-0 items-center justify-center rounded-md [&_svg]:size-4"
                 >
-                  <ChevronRight aria-hidden className={cn("transition-transform duration-200 motion-reduce:transition-none", open && "rotate-90")} />
+                  <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">→</span>
                 </button>
               ) : (
-                <span aria-hidden className="inline-block w-8 shrink-0" />
+                <span aria-hidden className="inline-block w-11 shrink-0" />
               )}
               <Link
                 href={`/w/${slug}/docs/${node.id}`}

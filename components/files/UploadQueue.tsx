@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+
 import { Button, IconButton } from "@/components/ui/button";
 import { ProgressBar } from "@/components/ui/display";
 import type { UploadItem } from "./useUploads";
@@ -32,7 +32,7 @@ export function UploadQueue({ items, onDismiss, onClear }: { items: UploadItem[]
               )}
             </div>
             {item.status === "done" || item.status === "error" ? (
-              <IconButton label={`Dismiss ${item.name}`} size="sm" onClick={() => onDismiss(item.key)}><X /></IconButton>
+              <IconButton label={`Dismiss ${item.name}`} size="sm" onClick={() => onDismiss(item.key)}><span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">×</span></IconButton>
             ) : null}
           </li>
         ))}

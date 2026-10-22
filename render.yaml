@@ -1,14 +1,9 @@
 # Render Blueprint for Space Works Workspace.
 # Step-by-step guide: docs/DEPLOYMENT_CLOUD.md (Render section).
 #
-# Default shape: one Docker web service on the Starter plan (always on, so
-# the in-process outbox worker runs and a pre-deploy command applies
-# migrations), Supabase PostgreSQL, Upstash Redis, Cloudflare R2 and Brevo SMTP.
-#
-# Free plan instead: set `plan: free`, delete `preDeployCommand`, set
-# MIGRATE_ON_START=1 and deploy the Cloudflare Worker in deploy/cloudflare-cron
-# (free instances sleep after 15 idle minutes and block SMTP ports 25/465/587;
-# Brevo on 2525 works).
+# Paid web, background worker and beat with external TLS PostgreSQL, persistent
+# Redis and private object storage. Free web services cannot host background
+# workers: see docs/DEPLOYMENT_CLOUD.md for the external-worker cron fallback.
 #
 # `sync: false` values are asked for once, when the Blueprint is created;
 # edit them later in the Render Dashboard (Environment tab).
@@ -16,15 +11,17 @@ services:
   - type: web
     name: spaceworks-workspace
     runtime: docker
-    plan: starter
+    plan: 0.5c-512mb
     # Closest to your Supabase/Upstash region; cannot change after creation
     # (oregon, ohio, virginia, frankfurt, singapore).
     region: singapore
     dockerfilePath: ./Dockerfile
     dockerContext: .
+    dockerCommand: node server.js
+    preDeployCommand: docker-entrypoint.sh migrate
     healthCheckPath: /api/health
     # Applies migrations once per deploy through DIRECT_URL (falls back to DATABASE_URL).
-    preDeployCommand: sh -c "MIGRATE_ON_START=1 docker-entrypoint.sh true"
+    # Migrations run on start on the free plan.
     autoDeployTrigger: checksPass
     buildFilter:
       ignoredPaths:
@@ -121,23 +118,305 @@ services:
       - key: ANTHROPIC_API_KEY
         sync: false
 
-  # Optional paid cron service: a second scheduler next to the in-process
-  # worker (or the only one when OUTBOX_WORKER=0). The Cloudflare Worker in
-  # deploy/cloudflare-cron does the same for free.
-  # - type: cron
-  #   name: spaceworks-workspace-scheduler
-  #   runtime: docker
-  #   plan: starter
-  #   region: singapore
-  #   schedule: "*/5 * * * *"
-  #   dockerfilePath: ./Dockerfile
-  #   dockerContext: .
-  #   dockerCommand: node /app/scripts/scheduler.mjs --once
-  #   envVars:
-  #     - key: APP_URL
-  #       sync: false # https://work.example.org
-  #     - key: CRON_SECRET
-  #       fromService:
-  #         type: web
-  #         name: spaceworks-workspace
-  #         envVarKey: CRON_SECRET
+  - type: worker
+    name: spaceworks-workspace-worker
+    runtime: docker
+    plan: 0.5c-512mb
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: node dist/worker.js
+    autoDeployTrigger: checksPass
+    maxShutdownDelaySeconds: 300
+    envVars:
+      - key: CRON_SECRET
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: CRON_SECRET
+      - key: HEALTHCHECK_SECRET
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: HEALTHCHECK_SECRET
+      - key: NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
+      - key: TRUSTED_PROXY_IP_HEADER
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: TRUSTED_PROXY_IP_HEADER
+      - key: TRUSTED_PROXY_HOPS
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: TRUSTED_PROXY_HOPS
+      - key: DATABASE_URL
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: DATABASE_URL
+      - key: DIRECT_URL
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: DIRECT_URL
+      - key: REDIS_URL
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: REDIS_URL
+      - key: NEXT_PUBLIC_BASE_URL
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: NEXT_PUBLIC_BASE_URL
+      - key: AUTH_URL
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: AUTH_URL
+      - key: AUTH_SECRET
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: AUTH_SECRET
+      - key: MFA_ENCRYPTION_KEY
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: MFA_ENCRYPTION_KEY
+      - key: INTEGRATION_ENCRYPTION_KEY
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: INTEGRATION_ENCRYPTION_KEY
+      - key: VAULT_MASTER_KEY
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: VAULT_MASTER_KEY
+      - key: S3_BUCKET
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: S3_BUCKET
+      - key: S3_REGION
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: S3_REGION
+      - key: S3_ENDPOINT
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: S3_ENDPOINT
+      - key: S3_ACCESS_KEY_ID
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: S3_ACCESS_KEY_ID
+      - key: S3_SECRET_ACCESS_KEY
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: S3_SECRET_ACCESS_KEY
+      - key: S3_FORCE_PATH_STYLE
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: S3_FORCE_PATH_STYLE
+      - key: EMAIL_FROM
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: EMAIL_FROM
+      - key: SMTP_HOST
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: SMTP_HOST
+      - key: SMTP_PORT
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: SMTP_PORT
+      - key: SMTP_SECURE
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: SMTP_SECURE
+      - key: SMTP_USER
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: SMTP_USER
+      - key: SMTP_PASSWORD
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: SMTP_PASSWORD
+      - key: ANTHROPIC_API_KEY
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: ANTHROPIC_API_KEY
+      - key: SUPER_ADMIN_EMAIL
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: SUPER_ADMIN_EMAIL
+  - type: worker
+    name: spaceworks-workspace-beat
+    runtime: docker
+    plan: 0.5c-512mb
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: node dist/beat.js
+    autoDeployTrigger: checksPass
+    maxShutdownDelaySeconds: 300
+    envVars:
+      - key: CRON_SECRET
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: CRON_SECRET
+      - key: HEALTHCHECK_SECRET
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: HEALTHCHECK_SECRET
+      - key: NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
+      - key: TRUSTED_PROXY_IP_HEADER
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: TRUSTED_PROXY_IP_HEADER
+      - key: TRUSTED_PROXY_HOPS
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: TRUSTED_PROXY_HOPS
+      - key: DATABASE_URL
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: DATABASE_URL
+      - key: DIRECT_URL
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: DIRECT_URL
+      - key: REDIS_URL
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: REDIS_URL
+      - key: NEXT_PUBLIC_BASE_URL
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: NEXT_PUBLIC_BASE_URL
+      - key: AUTH_URL
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: AUTH_URL
+      - key: AUTH_SECRET
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: AUTH_SECRET
+      - key: MFA_ENCRYPTION_KEY
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: MFA_ENCRYPTION_KEY
+      - key: INTEGRATION_ENCRYPTION_KEY
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: INTEGRATION_ENCRYPTION_KEY
+      - key: VAULT_MASTER_KEY
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: VAULT_MASTER_KEY
+      - key: S3_BUCKET
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: S3_BUCKET
+      - key: S3_REGION
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: S3_REGION
+      - key: S3_ENDPOINT
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: S3_ENDPOINT
+      - key: S3_ACCESS_KEY_ID
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: S3_ACCESS_KEY_ID
+      - key: S3_SECRET_ACCESS_KEY
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: S3_SECRET_ACCESS_KEY
+      - key: S3_FORCE_PATH_STYLE
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: S3_FORCE_PATH_STYLE
+      - key: EMAIL_FROM
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: EMAIL_FROM
+      - key: SMTP_HOST
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: SMTP_HOST
+      - key: SMTP_PORT
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: SMTP_PORT
+      - key: SMTP_SECURE
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: SMTP_SECURE
+      - key: SMTP_USER
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: SMTP_USER
+      - key: SMTP_PASSWORD
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: SMTP_PASSWORD
+      - key: ANTHROPIC_API_KEY
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: ANTHROPIC_API_KEY
+      - key: SUPER_ADMIN_EMAIL
+        fromService:
+          type: web
+          name: spaceworks-workspace
+          envVarKey: SUPER_ADMIN_EMAIL

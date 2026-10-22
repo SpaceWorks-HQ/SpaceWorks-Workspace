@@ -1,52 +1,188 @@
 import "server-only";
-
-import type { Workspace } from "@prisma/client";
+import type { Prisma, Workspace } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { canViewFinance, type RoleHolder } from "@/lib/roles";
-import { hiddenTeamIds } from "@/lib/teamAccess";
+import {
+  canViewFinance,
+  canViewAppReviews,
+  canViewServices,
+  canContribute,
+  type RoleHolder,
+} from "@/lib/roles";
+import { hiddenTeamIds, teamScopeFilter, userTeamIds } from "@/lib/teamAccess";
 import { latestAnnouncements } from "@/lib/community/summary";
-
-/** Everything the workspace home needs, in one round of parallel queries. Tolerates empty tables. */
-export async function getDashboardData(workspace: Workspace, userId: string, membership: RoleHolder) {
+import { listActivity } from "@/lib/search/query";
+export async function getDashboardData(
+  workspace: Workspace,
+  userId: string,
+  membership: RoleHolder,
+) {
   const now = new Date();
-  const showFinance = canViewFinance(membership, workspace);
-  // Recent activity spans everyone's tasks, so private teams' projects stay out.
-  const hidden = membership ? await hiddenTeamIds(workspace.id, { userId, role: membership.role }) : [];
-  const visibleProject = hidden.length > 0 ? { OR: [{ projectId: null }, { project: { teamId: null } }, { project: { teamId: { notIn: hidden } } }] } : {};
-  const [myOpenTasks, myTasks, memberCount, upcomingEvents, announcements, recentTasks, recentShoutouts, ledger] = await Promise.all([
-    prisma.task.count({ where: { workspaceId: workspace.id, completedAt: null, archivedAt: null, assignees: { some: { userId } } } }),
-    prisma.task.findMany({
-      where: { workspaceId: workspace.id, completedAt: null, archivedAt: null, assignees: { some: { userId } } },
-      orderBy: [{ dueAt: { sort: "asc", nulls: "last" } }, { updatedAt: "desc" }],
-      take: 6,
-      select: { id: true, number: true, title: true, priority: true, dueAt: true, project: { select: { key: true, name: true } } },
-    }),
-    prisma.membership.count({ where: { workspaceId: workspace.id, status: "ACTIVE" } }),
-    prisma.communityEvent.findMany({
-      where: { workspaceId: workspace.id, cancelledAt: null, startsAt: { gte: now } },
-      orderBy: { startsAt: "asc" },
-      take: 4,
-      select: { id: true, title: true, startsAt: true, kind: true, location: true },
+  const actor = { workspaceId: workspace.id, userId, role: membership!.role };
+  const [hidden, teams] = await Promise.all([
+    hiddenTeamIds(workspace.id, actor),
+    userTeamIds(workspace.id, userId),
+  ]);
+  const project: Prisma.TaskWhereInput = {
+    OR: [
+      { projectId: null },
+      {
+        project: {
+          workspaceId: workspace.id,
+          ...teamScopeFilter(hidden),
+          status: { not: "ARCHIVED" },
+        },
+      },
+    ],
+  };
+  const mine: Prisma.TaskWhereInput = {
+    workspaceId: workspace.id,
+    completedAt: null,
+    archivedAt: null,
+    assignees: { some: { userId } },
+    ...project,
+  };
+  const [
+    myOpenTasks,
+    myTasks,
+    memberCount,
+    announcements,
+    activity,
+    ledger,
+    shifts,
+    meetings,
+    mentions,
+    services,
+    unrepliedLowRatings,
+  ] = await Promise.all([
+    canContribute(membership) ? prisma.task.count({ where: mine }) : 0,
+    canContribute(membership)
+      ? prisma.task.findMany({
+          where: mine,
+          orderBy: [
+            { dueAt: { sort: "asc", nulls: "last" } },
+            { updatedAt: "desc" },
+          ],
+          take: 6,
+          select: {
+            id: true,
+            number: true,
+            title: true,
+            dueAt: true,
+            project: { select: { key: true } },
+          },
+        })
+      : [],
+    prisma.membership.count({
+      where: { workspaceId: workspace.id, status: "ACTIVE" },
     }),
     latestAnnouncements(workspace.id, { take: 3, now }),
-    prisma.task.findMany({
-      where: { workspaceId: workspace.id, archivedAt: null, ...visibleProject },
-      orderBy: { updatedAt: "desc" },
-      take: 5,
-      select: { id: true, number: true, title: true, updatedAt: true, completedAt: true, project: { select: { key: true } } },
+    listActivity(actor),
+    canViewFinance(membership, workspace)
+      ? prisma.ledgerEntry.groupBy({
+          by: ["kind"],
+          where: {
+            workspaceId: workspace.id,
+            voidedAt: null,
+            currency: workspace.currency,
+          },
+          _sum: { amountMinor: true },
+        })
+      : null,
+    canContribute(membership)
+      ? prisma.shift.findMany({
+          where: {
+            workspaceId: workspace.id,
+            endsAt: { gte: now },
+            shiftType: {
+              workspaceId: workspace.id,
+              ...teamScopeFilter(hidden),
+            },
+            assignments: {
+              some: { userId, status: { in: ["CONFIRMED", "SWAP_REQUESTED"] } },
+            },
+          },
+          orderBy: { startsAt: "asc" },
+          take: 4,
+          select: {
+            id: true,
+            startsAt: true,
+            shiftType: { select: { name: true } },
+          },
+        })
+      : [],
+    prisma.meeting.findMany({
+      where: {
+        workspaceId: workspace.id,
+        status: { in: ["SCHEDULED", "IN_PROGRESS"] },
+        startsAt: { gte: now },
+        AND: [
+          teamScopeFilter(hidden),
+          {
+            OR: [
+              { visibility: "WORKSPACE" },
+              { createdById: userId },
+              { attendees: { some: { userId, rsvp: { not: "NO" } } } },
+              { visibility: "TEAM", teamId: { in: teams } },
+            ],
+          },
+        ],
+      },
+      orderBy: { startsAt: "asc" },
+      take: 4,
+      select: { id: true, title: true, startsAt: true },
     }),
-    prisma.shoutout.findMany({
-      where: { workspaceId: workspace.id },
+    prisma.notification.findMany({
+      where: {
+        workspaceId: workspace.id,
+        userId,
+        kind: "mention",
+        archivedAt: null,
+        readAt: null,
+      },
       orderBy: { createdAt: "desc" },
-      take: 3,
-      select: { id: true, message: true, createdAt: true, from: { select: { name: true } }, to: { select: { name: true } } },
+      take: 4,
+      select: { id: true, title: true, url: true },
     }),
-    showFinance
-      ? prisma.ledgerEntry.groupBy({ by: ["kind"], where: { workspaceId: workspace.id, voidedAt: null, currency: workspace.currency }, _sum: { amountMinor: true } })
-      : Promise.resolve(null),
+    canViewServices(membership)
+      ? prisma.monitor.groupBy({
+          by: ["lastStatus"],
+          where: {
+            workspaceId: workspace.id,
+            OR: [
+              { projectId: null },
+              {
+                project: {
+                  workspaceId: workspace.id,
+                  ...teamScopeFilter(hidden),
+                },
+              },
+            ],
+          },
+          _count: true,
+        })
+      : [],
+    canViewAppReviews(membership) ? prisma.appReview.count({ where: { workspaceId: workspace.id, rating: { lte: 2 }, replyStatus: { not: "SENT" } } }) : null,
   ]);
   const kittyMinor = ledger
-    ? ledger.reduce((total, row) => total + (row.kind === "INCOME" ? 1 : -1) * (row._sum.amountMinor ?? 0), 0)
+    ? ledger.reduce(
+        (total, row) =>
+          total +
+          (row.kind === "INCOME" ? 1 : -1) * (row._sum.amountMinor ?? 0),
+        0,
+      )
     : null;
-  return { myOpenTasks, myTasks, memberCount, upcomingEvents, announcements, recentTasks, recentShoutouts, kittyMinor };
+  return {
+    myOpenTasks,
+    myTasks,
+    memberCount,
+    announcements,
+    activity: activity.slice(0, 8),
+    kittyMinor,
+    shifts,
+    meetings,
+    mentions,
+    services,
+    unrepliedLowRatings,
+    now,
+  };
 }

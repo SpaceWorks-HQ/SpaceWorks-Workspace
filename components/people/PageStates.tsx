@@ -8,7 +8,7 @@ import { EmptyState, Skeleton } from "@/components/ui/display";
 export function PeopleLoading({ label }: { label: string }) {
   return (
     <div className="flex flex-col gap-6" aria-busy="true" aria-live="polite">
-      <span className="sr-only">Loading {label}…</span>
+      <span className="sr-only">Loading {label}</span>
       <div className="flex flex-col gap-2">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-5 w-72 max-w-full" />
@@ -29,7 +29,7 @@ export function PeopleError({ what, error, reset }: { what: string; error: unkno
     else console.error(`[people] ${what} failed to load`);
   }, [error, what]);
   return (
-    <EmptyState mood="sad" title={`Couldn't load ${what}.`} action={reset ? <Button variant="primary" onClick={reset}>Try again</Button> : undefined}>
+    <EmptyState patch title={`Couldn't load ${what}.`} action={reset ? <Button variant="primary" onClick={reset}>Try again</Button> : undefined}>
       Check your connection and try again. If it keeps happening, tell an admin.
     </EmptyState>
   );

@@ -16,7 +16,26 @@ export function useRealtime(workspaceSlug: string, onEvent: (event: RealtimeEven
 
   useEffect(() => {
     if (typeof EventSource === "undefined") return;
-    const source = new EventSource(`/api/realtime/${encodeURIComponent(workspaceSlug)}`);
+    let source: EventSource | undefined;
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const connect = async () => {
+      try {
+        const path = `/api/realtime/${encodeURIComponent(workspaceSlug)}`;
+        const backend = process.env.NEXT_PUBLIC_BACKEND_ORIGIN;
+        let url = path;
+        if (backend) {
+          const response = await fetch(`${path}/ticket`, { method: "POST", cache: "no-store" });
+          if (!response.ok) throw new Error("Stream ticket unavailable");
+          const { token } = await response.json();
+          url = `${backend}${path}?ticket=${encodeURIComponent(token)}`;
+        }
+        if (stopped) return;
+        source = new EventSource(url);
+        source.addEventListener("message", listener);
+        if (backend) source.onerror = () => { source?.close(); if (!stopped) timer = setTimeout(connect, 5_000); };
+      } catch { if (!stopped) timer = setTimeout(connect, 10_000); }
+    };
     const listener = (message: MessageEvent<string>) => {
       try {
         handler.current(JSON.parse(message.data) as RealtimeEvent);
@@ -24,10 +43,12 @@ export function useRealtime(workspaceSlug: string, onEvent: (event: RealtimeEven
         // Ignore malformed events.
       }
     };
-    source.addEventListener("message", listener);
+    void connect();
     return () => {
-      source.removeEventListener("message", listener);
-      source.close();
+      stopped = true;
+      clearTimeout(timer);
+      source?.removeEventListener("message", listener);
+      source?.close();
     };
   }, [workspaceSlug]);
 }

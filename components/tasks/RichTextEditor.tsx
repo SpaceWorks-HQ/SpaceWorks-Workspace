@@ -2,7 +2,7 @@
 
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import { Bold, Code, Heading2, Heading3, Italic, List, ListOrdered, Quote, Strikethrough } from "lucide-react";
+
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
@@ -19,7 +19,7 @@ export function RichTextEditor({ initialHtml, onChange, label = "Description", a
     autofocus: autoFocus ? "end" : false,
     editorProps: {
       attributes: {
-        class: "yy-prose min-h-36 px-3.5 py-3 text-[15px] focus:outline-none",
+        class: "yy-prose min-h-36 px-3.5 py-3 text-sm focus:outline-none",
         "aria-label": label,
         "aria-multiline": "true",
         role: "textbox",
@@ -49,33 +49,33 @@ export function RichTextEditor({ initialHtml, onChange, label = "Description", a
     <button
       type="button"
       key={name}
-      aria-label={name}
+      aria-label={icon ? name : undefined}
       title={name}
       aria-pressed={Boolean(active)}
       disabled={!editor}
       onMouseDown={(event) => event.preventDefault()}
       onClick={run}
       className={cn(
-        "inline-flex size-9 items-center justify-center rounded-md text-ink-secondary transition-colors duration-[120ms] hover:bg-muted hover:text-ink [&_svg]:size-4",
+        "inline-flex min-h-11 min-w-11 px-2 items-center justify-center rounded-md text-xs font-semibold text-ink-secondary transition-colors duration-[120ms] hover:bg-muted hover:text-ink [&_svg]:size-4",
         active && "bg-accent-soft text-accent-text",
       )}
     >
-      {icon}
+      {icon ?? name}
     </button>
   );
 
   return (
     <div className="overflow-hidden rounded-md border border-line-strong bg-panel focus-within:border-accent focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--yy-focus)]">
       <div role="toolbar" aria-label="Formatting" className="flex flex-wrap gap-0.5 border-b border-line bg-surface px-1.5 py-1">
-        {tool("Bold", <Bold />, state?.bold, () => editor?.chain().focus().toggleBold().run())}
-        {tool("Italic", <Italic />, state?.italic, () => editor?.chain().focus().toggleItalic().run())}
-        {tool("Strikethrough", <Strikethrough />, state?.strike, () => editor?.chain().focus().toggleStrike().run())}
-        {tool("Inline code", <Code />, state?.code, () => editor?.chain().focus().toggleCode().run())}
-        {tool("Heading", <Heading2 />, state?.h2, () => editor?.chain().focus().toggleHeading({ level: 2 }).run())}
-        {tool("Subheading", <Heading3 />, state?.h3, () => editor?.chain().focus().toggleHeading({ level: 3 }).run())}
-        {tool("Bulleted list", <List />, state?.bullet, () => editor?.chain().focus().toggleBulletList().run())}
-        {tool("Numbered list", <ListOrdered />, state?.ordered, () => editor?.chain().focus().toggleOrderedList().run())}
-        {tool("Quote", <Quote />, state?.quote, () => editor?.chain().focus().toggleBlockquote().run())}
+        {tool("Bold", <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">B</span>, state?.bold, () => editor?.chain().focus().toggleBold().run())}
+        {tool("Italic", <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">I</span>, state?.italic, () => editor?.chain().focus().toggleItalic().run())}
+        {tool("Strikethrough", <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">S</span>, state?.strike, () => editor?.chain().focus().toggleStrike().run())}
+        {tool("Inline code", <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">&lt;/&gt;</span>, state?.code, () => editor?.chain().focus().toggleCode().run())}
+        {tool("Heading", <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">H2</span>, state?.h2, () => editor?.chain().focus().toggleHeading({ level: 2 }).run())}
+        {tool("Subheading", <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">H3</span>, state?.h3, () => editor?.chain().focus().toggleHeading({ level: 3 }).run())}
+        {tool("List", undefined, state?.bullet, () => editor?.chain().focus().toggleBulletList().run())}
+        {tool("Numbered list", <span aria-hidden="true" className="inline-flex items-center justify-center text-xs font-semibold">1.</span>, state?.ordered, () => editor?.chain().focus().toggleOrderedList().run())}
+        {tool("Quote", undefined, state?.quote, () => editor?.chain().focus().toggleBlockquote().run())}
       </div>
       <EditorContent editor={editor} />
     </div>
@@ -85,5 +85,5 @@ export function RichTextEditor({ initialHtml, onChange, label = "Description", a
 /** Stored (sanitised) HTML. */
 export function RichTextView({ html, className }: { html: string; className?: string }) {
   // The HTML was sanitised on the server with an allow-list before it was stored.
-  return <div className={cn("yy-prose text-[15px]", className)} dangerouslySetInnerHTML={{ __html: html }} />;
+  return <div className={cn("yy-prose text-sm", className)} dangerouslySetInnerHTML={{ __html: html }} />;
 }

@@ -8,6 +8,7 @@ import { useToast } from "@/components/feedback/ToastProvider";
 import { Button } from "@/components/ui/button";
 import { Avatar, Callout, Chip } from "@/components/ui/display";
 import { cn } from "@/lib/cn";
+import { DocMentionMenu } from "./DocMentionMenu";
 import { DocActions } from "./DocActions";
 import { useDocs } from "./DocsShell";
 import { EditorToolbar } from "./EditorToolbar";
@@ -29,8 +30,8 @@ export type DocView = {
 const STATUS_LABEL: Record<SaveStatus, string> = {
   saved: "Saved",
   dirty: "Unsaved changes",
-  saving: "Saving…",
-  error: "Couldn't save. Retrying…",
+  saving: "Saving",
+  error: "Couldn't save. Retrying",
   conflict: "Not saved",
 };
 
@@ -265,7 +266,7 @@ export function DocEditor({
         <div className="sticky top-0 z-10 -mx-2 rounded-lg border border-line bg-panel px-2 py-1.5">
           <EditorToolbar editor={editor} imageBusy={imageProgress !== null} onPickImage={() => fileInput.current?.click()} />
           {imageProgress !== null ? (
-            <p className="px-1 pt-1 text-caption text-ink-muted" aria-live="polite">Uploading image… {Math.round(imageProgress * 100)}%</p>
+            <p className="px-1 pt-1 text-caption text-ink-muted" aria-live="polite">Uploading image {Math.round(imageProgress * 100)}%</p>
           ) : null}
           <input
             ref={fileInput}
@@ -287,33 +288,7 @@ export function DocEditor({
         {editor ? <EditorContent editor={editor} /> : <div className={cn(styles.prose, "min-h-[50vh]")} dangerouslySetInnerHTML={{ __html: doc.html }} />}
       </div>
 
-      {mention && mention.rect ? (
-        <div
-          role="listbox"
-          aria-label="Mention a member"
-          className="fixed z-50 w-64 overflow-hidden rounded-lg border border-line bg-panel p-1.5 shadow-float"
-          style={{ left: Math.min(mention.rect.left, window.innerWidth - 272), top: mention.rect.bottom + 6 }}
-        >
-          {mention.items.length === 0 ? (
-            <p className="px-3 py-2 text-caption text-ink-muted">No members match.</p>
-          ) : (
-            mention.items.map((member, index) => (
-              <button
-                key={member.id}
-                type="button"
-                role="option"
-                aria-selected={index === mention.index}
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={() => mention.command({ id: member.id, label: member.name })}
-                className={cn("flex min-h-10 w-full items-center gap-2 rounded-md px-2.5 text-left text-body-ui text-ink", index === mention.index ? "bg-muted" : "hover:bg-subtle")}
-              >
-                <Avatar name={member.name} size="xs" />
-                <span className="truncate">{member.name}</span>
-              </button>
-            ))
-          )}
-        </div>
-      ) : null}
+      <DocMentionMenu mention={mention} />
     </article>
   );
 }

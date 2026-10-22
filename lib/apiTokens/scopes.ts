@@ -4,6 +4,7 @@
  * membership allows (see lib/assistant/principal.ts).
  */
 export const API_SCOPES = [
+  { value: "read:social", label: "Read social", description: "Cached social analytics and comments. Never account tokens or replies." },
   { value: "read:app-reviews", label: "Read app reviews", description: "App review inbox and reply states. Never store credentials." },
   { value: "read:tasks", label: "Read tasks", description: "Projects, tasks and their comments." },
   { value: "write:tasks", label: "Write tasks", description: "Create tasks and update their title, status, priority and due date." },
@@ -11,7 +12,7 @@ export const API_SCOPES = [
   { value: "write:chat", label: "Post in chat", description: "Post messages in channels." },
   { value: "read:docs", label: "Read docs", description: "Docs, workspace memory and assistant skills." },
   { value: "write:docs", label: "Write docs", description: "Create docs and save workspace memory." },
-  { value: "read:members", label: "Read members", description: "Member directory, community events and announcements." },
+  { value: "read:members", label: "Read members", description: "Member directory and announcements." },
   { value: "read:finance", label: "Read finance", description: "The kitty summary: income, expenses and balance." },
   { value: "mcp", label: "MCP", description: "Connect an AI client to /api/mcp. Tools follow the other scopes." },
 ] as const;

@@ -2,9 +2,8 @@ Space Works Workspace is installed.
 
 Runtime configuration comes from the Secret: {{ include "sww.secretName" . }}
 Migrations ran in the pre-install/pre-upgrade Job {{ include "sww.fullname" . }}-migrate.
-{{- if .Values.scheduler.enabled }}
-The CronJob {{ include "sww.fullname" . }}-scheduler calls the outbox and jobs endpoints on "{{ .Values.scheduler.schedule }}".
-{{- end }}
+Worker and beat Deployments use this release's backend image. Inspect /admin/jobs for queue health.
+
 
 Check the rollout:
   kubectl rollout status deployment/{{ include "sww.fullname" . }} --namespace {{ .Release.Namespace }}

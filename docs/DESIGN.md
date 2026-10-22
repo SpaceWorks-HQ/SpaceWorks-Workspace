@@ -16,13 +16,13 @@
 ## 1. What the design must do
 
 Space Works Workspace is the private operating tool of a maker community: projects, chat, docs, the
-kitty, the blog and an assistant. People open it many times a day, on laptops at the workbench and on
+kitty, meetings and an assistant. People open it many times a day, on laptops at the workbench and on
 phones on the bus.
 
 1. **Calm and useful.** It is an internal tool, not a marketing site. Quiet cream canvas, white panels,
    hairlines, one obvious primary action per view.
-2. **Community flavour in words, not decoration.** Members, crew, build nights, shoutouts, the kitty.
-   Warm, specific copy; no mascots, no emoji in chrome.
+2. **Community flavour in words, not decoration.** Members, crew, projects, shifts, the kitty.
+   Warm, specific copy; Patch for page states, no emoji in chrome.
 3. **Dense where work happens.** Boards, tables and chat use the 4px grid tightly; forms and settings
    breathe.
 4. **Safe by default.** Destructive actions look different and confirm before acting.
@@ -63,14 +63,14 @@ Light mode is a Warm Cream page with white panels. Dark mode is the brand's teal
 | `bg-canvas` | `bg-canvas` | `#FFF4E8` | `#142C2A` | Page background |
 | `bg-panel` | `bg-panel` | `#FFFFFF` | `#1F433F` | Cards, panels, inputs, dialogs, menus |
 | `bg-surface` | `bg-surface` | `#F6ECE0` | `#193935` | Recessed areas, table headers, disabled fills |
-| `bg-subtle` | `bg-subtle` | `#F6ECE0` | `#193935` | Hover on cards and rows |
+| `bg-subtle` | `bg-subtle` | `#EFE6DB` | `#254D48` | Hover on cards and rows |
 | `bg-muted` | `bg-muted` | `#EFE6DB` | `#254D48` | Hover on controls, neutral fills |
-| `bg-emphasis` | `bg-emphasis` | `#EAE2D7` | `#2B5751` | Pressed controls, selected neutral fills |
-| `bg-track` | `bg-track` | `#EAE2D7` | `#2B5751` | Progress-bar tracks |
+| `bg-emphasis` | `bg-emphasis` | `#D5D0C6` | `#4D6D67` | Pressed controls, selected neutral fills |
+| `bg-track` | `bg-track` | `#D5D0C6` | `#4D6D67` | Progress-bar tracks |
 | `border` | `border-line` | `#D5D0C6` | `#4D6D67` | Hairlines on cards and dividers |
 | `border-strong` | `border-line-strong` | `#828A83` | `#93A198` | Form-control outline (≥3:1) |
 | `text` | `text-ink` | `#142C2A` | `#FFF4E8` | Primary text |
-| `text-secondary` | `text-ink-secondary` | `#374A47` | `#E3DCD1` | Body copy under headings |
+| `text-secondary` | `text-ink-secondary` | `#142C2A` | `#FFF4E8` | Body copy under headings |
 | `text-muted` | `text-ink-muted` | `#5B6863` | `#C7C4BA` | Meta, captions, helper text, placeholders |
 | `text-disabled` | `text-ink-disabled` | `#828A83` | `#93A198` | Disabled labels only (WCAG-exempt) |
 
@@ -82,7 +82,7 @@ Light mode is a Warm Cream page with white panels. Dark mode is the brand's teal
 | `on-primary` | `text-on-primary` | `#FFF4E8` | `#FFF4E8` | Label on teal (5.68) |
 | `inverse-surface` | `bg-inverse` | `#142C2A` | `#254D48` | Toasts, tooltips, code blocks, sticky bars |
 | `on-inverse` | `text-on-inverse` | `#FFF4E8` | `#FFF4E8` | |
-| `highlight` / `-hover` | `bg-highlight` | `#FF7447` / `#FF8157` | same | Counters and the one bold public moment (never an app button) |
+| `highlight` / `-hover` | `bg-highlight` | `#FF7447` / `#FF8157` | same | The one bold public moment (never an app button) |
 | `on-highlight` | `text-on-highlight` | `#142C2A` | `#142C2A` | Ink on orange (5.51) |
 | `highlight-soft` | `bg-highlight-soft` | `#FFEEE9` | `#2F4640` | Warm tinted panels |
 | `sidebar` | `bg-sidebar` | `#DFFF8F` | `#113532` | Workspace sidebar field |
@@ -102,10 +102,10 @@ brand's solid pastels with ink words; dark mode uses soft fills with the brand c
 
 | Status | `*-bg` (L / D) | `*-fg` (L / D) | `*-solid` (L / D) | Used for |
 |---|---|---|---|---|
-| Success (Citron) | `#DFFF8F` / `#2C5045` | `#536D49` / `#DFFF8F` | `#536D49` / `#DFFF8F` | Going, Published, Checked in |
+| Success (Citron) | `#DFFF8F` / `#2C5045` | `#142C2A` / `#DFFF8F` | `#536D49` / `#DFFF8F` | Going, Published, Checked in |
 | Warning (Warm Yellow) | `#FFD447` / `#2F4D40` | `#142C2A` / `#FFD447` | `#696834` / `#FFD447` | Waitlist, Pending approval, Draft reminders |
 | Info (Sky Blue) | `#B5CDFF` / `#2A4D4C` | `#142C2A` / `#B5CDFF` | `#51697B` / `#B5CDFF` | Completed, waitlisted, neutral notices |
-| Danger (reds) | `#F7E4E4` / `#3A4F4B` | `#B91C1C` / `#FCA5A5` | `#B91C1C` / `#FCA5A5` | Delete, errors, overdue |
+| Danger (reds) | `#FFFFFF` / `#1F433F` | `#B91C1C` / `#FCA5A5` | `#B91C1C` / `#FCA5A5` | Delete, errors, overdue |
 | Danger border | `#FCA5A5` / `#7C6261` | | | Danger-zone card outline |
 | Danger hover / on-danger | `#991B1B` / `#FDB9B6` · `#FFF4E8` / `#142C2A` | | | Solid danger button |
 
@@ -113,7 +113,7 @@ brand's solid pastels with ink words; dark mode uses soft fills with the brand c
 brand-mix in light mode and the brand fill in dark mode, so put text on a solid fill only with the
 matching label: `text-on-success`, `text-on-warning`, `text-on-info`, `text-on-danger` (cream in light,
 Deep Ink in dark). Never `text-white` on a status solid.
-Attention counters use `bg-highlight text-on-highlight`, not danger.
+Internal attention counters use `bg-accent-soft text-accent-text`. Orange emphasis is reserved for public surfaces.
 
 ### 2.6 Typography
 
@@ -122,15 +122,15 @@ Attention counters use `bg-highlight text-on-highlight`, not danger.
 | Headings, titles, numbers | **Gilroy** | 600 (700 for inline strong) | `public/brand/fonts/Gilroy-SemiBold.woff`, `Gilroy-Bold.woff` |
 | Body, labels, controls, IDs | **Gilroy** | 400, 500, 600, 700 | `Gilroy-Regular.woff`, `Gilroy-Medium.woff` + above |
 | One short expressive accent | **Unbounded** | 500 (600 allowed) | `Unbounded-Variable.woff2` |
-| Code, secrets, JSON | system monospace | — | none (`--font-mono`) |
+| Code, secrets, JSON | Gilroy | 500 | `.code-text`, tabular figures and slashed zero |
 
 Fonts are self-hosted with `@font-face` in `app/globals.css` (privacy invariant: no font CDNs).
 Licences are in `public/brand/fonts/LICENSES/`. `font-synthesis: none` is set on `body`: there is no
-faux bold or italic. Gilroy Bold also answers legacy 800/900 requests.
+faux bold or italic. Only the supplied 400/500/600/700 weights are registered.
 
 - `font-sans` and `font-display` are Gilroy. Headings are **600, never 800**.
 - `font-accent` is Unbounded 500 with −0.01em tracking: **one short phrase per layout** (auth brand panel,
-  an empty-state hero, the public blog header). Never in app chrome.
+  an empty-state hero). Never in app chrome, or alongside Patch.
 - IDs, codes and counts use Gilroy 500 with `tabular-nums`, not a monospace face.
 
 Type scale (mobile → desktop from 640px):
@@ -138,18 +138,18 @@ Type scale (mobile → desktop from 640px):
 | Class | Weight | Size / line | Tracking | Use |
 |---|---|---|---|---|
 | `text-display-xl` | 600 | 44/48 → 72/76 | −0.02em | Landing hero |
-| `text-display-l` | 600 | 40/43 → 64/68 | −0.02em | Auth and setup headings |
-| `text-display-m` | 600 | 34/38 → 48/52 | −0.015em | Public blog titles |
+| `text-display-l` | 600 | 34/40 → 48/52 | −0.02em | Auth and setup headings |
+| `text-display-m` | 600 | 34/40 → 48/52 | −0.015em | Large content titles |
 | `text-h1` | 600 | 26/32 → 32/38 | −0.01em | One page title per screen |
-| `text-h2` | 600 | 22/28 → 28/34 | −0.01em | Section headings |
-| `text-h3` | 600 | 20/26 → 24/30 | −0.005em | Card and dialog titles |
-| `text-h4` | 600 | 18/24 → 20/28 | −0.005em | Card and panel titles |
+| `text-h2` | 600 | 20/28 | −0.01em | Section headings |
+| `text-h3` | 600 | 20/28 | −0.005em | Card and dialog titles |
+| `text-h4` | 600 | 20/28 | −0.005em | Card and panel titles |
 | `text-title` | 600 | 16/24 | 0 | Card and list-row titles |
-| `text-body-l` | 400 | 17 → 19 | 0 | Lead paragraphs |
+| `text-body-l` | 400 | 16/24 | 0 | Lead paragraphs |
 | `text-body` | 400 | 16/24 | 0 | Default copy, inputs |
-| `text-body-ui` | 400 | 15/22 | 0 | Dense app copy (lists, tables, chat) |
+| `text-body-ui` | 400 | 14/20 | 0 | Dense app copy (lists, tables, chat) |
 | `text-label` | 500 | 14/20 | 0 | Form labels, nav, meta |
-| `text-caption` | 500 | 13/18 | 0.01em | Helper text, timestamps |
+| `text-caption` | 500 | 12/16 | 0.01em | Helper text, timestamps |
 | `text-overline` | 600 | 12/16 UPPERCASE | 0.08em | Eyebrows ("VENUE") |
 | `font-accent` | Unbounded 500 | inherit | −0.01em | One accent phrase |
 
@@ -220,23 +220,22 @@ rotation, effects or re-typed wordmarks). Brand components live in `components/b
 - Clear space: ¼ of the symbol height on every side.
 - Minimum sizes: symbol ≥ 48px; primary lockup ≥ 180px wide. Favicon and app icon are the only
   exceptions (they use `app-icon.svg`, rasterised).
-- Placements: workspace sidebar "Space Works | Workspace" lockup; mobile top bar the same at 26px; public blog header
-  horizontal lockup ≥ 768px, symbol below; auth brand panel stacked lockup 240–320px; social card cream
+- Placements: workspace sidebar stacked lockup at 180px; mobile top bar symbol at 48px with 12px clear space; auth brand panel stacked lockup 240–320px; social card cream
   1200×630 with the stacked lockup 600px wide.
 - Copy: the product is **"Space Works Workspace"**, the community **"Space Works"**. "SpaceWorks"
   (no space) is for code identifiers, URLs and repo names only.
 
 ### 3.2 Icons
 
-`lucide-react` (24px grid, 2px stroke, round caps), rendered at 16/18/20px. Decorative icons get
-`aria-hidden`; icon-only buttons need `IconButton` with a required `label`. **The workspace sidebar is
+`lucide-react` (24px grid, 2px stroke, round caps), rendered at 16/20px. Decorative icons get
+`aria-hidden`; icon-only buttons need `IconButton` with a required `label`. The approved icons are Search, Archive, Cpu, MapPin, Plus, ArrowLeft, ArrowUpRight, ChevronsUpDown, Info, TriangleAlert, CircleCheck, Ellipsis, Sun, Moon and LogOut. Formatting, close and visibility controls use short text labels. **The workspace sidebar is
 text-only.** Use icons only where they help: search, add, back, external link, switchers, callouts,
 overflow, theme toggle, sign out.
 
 ### 3.3 Imagery
 
 - No emoji in UI.
-- Covers (blog posts, projects): 2:1, private files served through `/api/files/[id]`. With none, show
+- Project covers: 2:1, private files served through `/api/files/[id]`. With none, show
   a flat token fill. Never a broken image.
 - Avatars: photo, else 1–2 initials (Gilroy 600) on a tint. `AvatarImage` swaps to initials on error.
 - Workspace mark: square; fallback is initials on teal.
@@ -260,7 +259,7 @@ shadow; colour changes only. Focus uses the global 2px ring with a 2px offset.
 | `secondary` / `neutral` | `bg-panel border-line text-ink` | `bg-muted` | Second action: Cancel, Share |
 | `ghost` | `text-accent-text` | `bg-accent-soft` | Low-emphasis action in teal |
 | `quiet` | `text-ink-secondary`, underline on hover | | Tertiary: Back, Undo |
-| `highlight` | `bg-highlight text-on-highlight` | `bg-highlight-hover` | Public blog only. **Never in the app** |
+| `highlight` | `bg-highlight text-on-highlight` | `bg-highlight-hover` | Reserved for external public surfaces. **Never in app chrome** |
 | `danger` / `dangerOutline` | `bg-panel border-danger-fg text-danger-fg` | `bg-muted`, darker red | Opens a confirmation: Remove member… |
 | `dangerSolid` | `bg-danger-solid text-on-danger` | `bg-danger-hover` | The final destructive confirm (used by `ConfirmDialog`) |
 | `dangerQuiet` | `text-danger-fg` | underline | Revoke, Turn off station |
@@ -293,7 +292,7 @@ a dialog.
 ### 4.4 Tabs & navigation
 
 - Underline tabs: rest `text-ink-muted`, hover `text-ink`, active `text-ink` + **2px underline** (teal). Rows scroll sideways with faded arrow hints.
-- Workspace sidebar: Citron field (256px) (`bg-sidebar`), text-only items 40px tall in labelled groups (Community, Work, Chat, Operations, Assistant, Settings), hover `bg-sidebar-hover`,
+- Workspace sidebar: Citron field (256px) (`bg-sidebar`), text-only items 44px tall in labelled groups (People, Work, Chat, Operations, Assistant, Settings), hover `bg-sidebar-hover`,
   current item `bg-sidebar-active text-on-sidebar-active font-semibold` with `aria-current="page"`.
   Dark mode uses the Deep Ink sidebar.
 - Back link: `← Back to workspace`, quiet, 14px 600.
@@ -319,17 +318,17 @@ teal or `bg-emphasis` (draft). Bottom: day in Gilroy 600 `tabular-nums`, 20–30
 - **Base card** (`Card`): `bg-panel`, 1px `border-line`, `rounded-xl` (16px), padding 16–24, **no shadow**.
   Clickable cards are one `<a>` with hover `bg-subtle`.
 - **Stat tile:** label (14px muted) over a Gilroy 600 `tabular-nums` number (32px); optional progress
-  bar; "attention" variant on `bg-warning-bg`.
+  bar; the "attention" variant colours the number and keeps the card flat.
 - **Callout:** tinted status fill (`warning`, `info`, `success`, `danger`), icon, bold first sentence,
   one action. One per page. No translucent text.
 - **Empty state:** panel card, centred, says what to do next ("No projects yet. Start one for the next
-  build night."). One short line plus one action; an optional `mood` tile, never an illustration.
+  build night."). One short line plus one action; Patch through `patch` on the main page empty state. Embedded panels stay quiet. Patch is still by default; its sneeze animation is reserved for collective success.
 - **Danger zone:** `bg-panel` card with a 1px `border-danger-border`, title in `text-danger-fg`, a
   `danger` (outline) trigger that opens a `dangerSolid` confirmation.
 
 ### 4.8 Lists & tables
 
-- `Table`: `rounded-xl` panel with a 1px line; header row on `bg-surface`, 14px Gilroy 600 sentence case
+- `Table`: `rounded-lg` (12px) panel with a 1px line; header row on `bg-surface`, 14px Gilroy 600 sentence case
   in `text-accent-text`; **rows 48px** with 1px `border-line` separators; hover `bg-subtle`; scrolls
   inside its own box on small screens.
 - Person cell = avatar + name + email (never repeat the email).
@@ -355,7 +354,7 @@ Instance admin pages (`SimpleShell` + underline tabs) stay restrained: panel car
 ## 5. Page patterns
 
 - **Workspace home:** greeting (`Hello, Meera.`) with the tagline, a 4-up stat row (my open tasks,
-  members, upcoming events, the kitty when visible), then two columns of panels: My tasks,
+  members, upcoming meetings and shifts, the kitty when visible), then two columns of panels: My tasks,
   Announcements, Upcoming, Recent activity. Each panel tolerates empty data with a one-line empty state.
 - **List → board → detail (projects):** list of cards, kanban board with columns from the project's
   `BoardColumn`s, task detail in a side panel or page with comments and activity.
@@ -366,9 +365,7 @@ Instance admin pages (`SimpleShell` + underline tabs) stay restrained: panel car
   cards.
 - **Account:** `SimpleShell`, one card of settings rows: Profile, Password, Two-step verification,
   Appearance, Sessions, Your data, Workspaces.
-- **Auth pages:** `AuthFrame` split layout: form left, calm brand panel right with the single Unbounded
-  phrase.
-- **Not built yet:** `ComingSoon` (`components/workspace/ComingSoon.tsx`): "Coming in the next build."
+- **Auth pages:** `AuthFrame` split layout: form left, calm brand panel right with Patch as the single bold moment.
 
 ---
 
@@ -378,7 +375,7 @@ Instance admin pages (`SimpleShell` + underline tabs) stay restrained: panel car
 - Name the action: "Send invitation", "Save changes", "Start a project" — not "Submit" or "OK".
 - Empty states name the next step. Errors say what happened and how to fix it, without blame:
   "Couldn't save. Try again." **Banned:** "Oops", "Something went wrong".
-- Community words: members, the crew, build nights, shoutouts, the kitty (shared funds). Keep it
+- Community words: members, the crew, projects, shifts, the kitty (shared funds). Keep it
   calm: this is a tool people use daily.
 - Never show raw internals: no cron strings without a plain-language reading, no secret URLs, no
   seconds, no `10/14/2026`.
@@ -425,7 +422,7 @@ security invariants (CSP nonce, tenant isolation). Don't add external scripts, f
 
 ### 9.1 One source of truth for tokens
 
-1. `app/styles/tokens.css` declares every token as `--yy-*` (plus raw `--sw-*` brand colours). Light
+1. `app/styles/palette.css` pins every canonical sRGB triplet from Space Works Design (with a `--sw-color-*` prefix to avoid Tailwind collisions). `app/styles/tokens.css` adapts them to the stable `--yy-*` names. It declares every token as `--yy-*` (plus raw `--sw-*` brand colours). Light
    values go under `:root`. Dark values go under `:root[data-color-mode="dark"], .yy-dark-band` **and**
    the `@media (prefers-color-scheme: dark) { :root:not([data-color-mode]) }` mirror. Keep all three in
    sync.
@@ -440,7 +437,7 @@ security invariants (CSP nonce, tenant isolation). Don't add external scripts, f
    on-accent accent-text
    sw-ink sw-teal sw-orange sw-citron sw-sky sw-yellow sw-cream`, shadows `shadow-raised shadow-float
    shadow-segment`, radius `rounded-control`, fonts `font-sans font-display font-accent
-   font-mono`.
+   code-text`.
 4. UI primitives live in `components/ui/*`; brand components in `components/brand/*`.
 
 ### 9.3 Do / Don't
@@ -455,3 +452,16 @@ emoji in chrome; the orange button in the app; colour-only status.
 ---
 
 *Version 1.0 · 19 Oct 2026 · Space Works Workspace. Brand values from SpaceWorks-HQ/SpaceWorks-Design.*
+
+
+## 10. Fidelity checks and source priority
+
+The refreshed `tokens/tokens.css` and `tokens.json` values win over the older A.1 table in the UI brand spec. The pinned values live in `tests/fixtures/design-tokens.json`; `tests/unit/design-fidelity.test.ts` checks both modes, the OS fallback, contrast, master logo sizing, the approved icon set and source restrictions across every area. No component has literal paint colours.
+
+Dark selected teal fills retain the canonical colour and add a readable boundary where needed. Status chart solids use `*-ink` values in light mode; their matching labels are cream. This is distinct from the pastel status pills, which carry Deep Ink words.
+
+Shared page geometry is in `components/ui/layouts.tsx`: dashboard (260px activity rail), list, detail (280px aside), settings and form (300px preview). AuthFrame also provides the centred task card. These components accept already-authorised content; loaders and tenant checks remain in pages.
+
+Patch is the main page state's one bold moment. Keep nested empty panels plain. Use the original adaptive assets, a quarter-height clear space, and the reduced-motion still. Closed polls with quorum use `pose="sneeze"`; other idle states stay still.
+
+See [design-audit.md](design-audit.md) for rule and area coverage, verification results and open owner items. Browser verification is intentionally excluded from this pass.

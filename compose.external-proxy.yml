@@ -1,0 +1,13 @@
+# Added by scripts/vps-compose.sh when compose.env has SWW_CADDY_TLS='proxy': an
+# existing reverse proxy on this server terminates HTTPS instead of Caddy. It
+# must forward the API hostname to 127.0.0.1:8080 and, in the split layout, the
+# website hostname to 127.0.0.1:8081; preserve Host, overwrite X-Real-IP with
+# the client address, send X-Forwarded-Proto: https and not buffer responses.
+services:
+  app:
+    ports: ["127.0.0.1:8080:3000"]
+  frontend:
+    ports: ["127.0.0.1:8081:3000"]
+    # The website calls the API by its HTTPS name: reach it through this
+    # server's own proxy rather than out to the internet and back.
+    extra_hosts: ["${PUBLIC_HOST}:host-gateway"]
