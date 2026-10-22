@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.5] - 2026-10-22
+
+### Added
+
+- Projects: milestones, a timeline with blockers, weekly status updates and printable project reports.
+- People and organisation: departments, reporting lines and an org chart, a responsibilities register, attendance, escalation paths, leave balances, hiring, volunteer hours, a confidential help desk and a safety log.
+- Money: funds and cost centres, supplier bills, month-end close, payroll records and disbursements, spend review, petty cash, deposits, depreciation and TDS registers.
+- Recurring costs: rent ledgers and deposits, utilities and maintenance contracts, PF, ESI, PT and TDS remittances, staff advances, loan EMIs, insurance premiums and one upcoming-dues list.
+- Funding: grants, CSR, donations, campaigns, pledges, donor receipts and impact reports.
+- Documents: GST invoices and notes, receipts, 80G and utilisation certificates, and letters.
+- Governance: compliance calendar, board meetings and resolutions, vendors and contracts, insurance and registers, risks and drills, safeguarding cases and board packs.
+- Product, marketing and IT: roadmap, releases with approvals, issues and QA, BOM cost estimates for funding proposals, prototype tests, change log, content calendar, brand assets, proposals, device and licence registers, security incidents and access reviews.
+- Secrets: application secrets by project and environment with envelope encryption, rotation, snapshots, masked reveal, approvals, machine identities, one-time share links, and the `sww` CLI and Node SDK published with each release.
+- Reports and analytics across every area, with drill-down, a cash-flow forecast and management and board packs.
+- A team calendar with recurring meetings, invitations, Google Calendar sync and Google Meet links.
+- Background jobs on a BullMQ worker and beat; reminders reach email and every linked messaging account by default.
+
+### Fixed
+
+- Workspace row locks no longer block foreign-key inserts in other connections.
+- The demo seed runs on a fresh database and can be re-run.
+- `sanitize-html` updated to clear a moderate advisory.
+
+## [0.1.0] - 2026-10-20
+
 ### Removed
 
 - Equipment lending and reservations, community events and responses, shoutouts,
