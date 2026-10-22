@@ -197,6 +197,7 @@ export async function changed(
   );
 }
 
+/** Serializable write with retries; jittered backoff stops colliding writers retrying in lockstep. */
 export async function serial<T>(fn: (tx: Tx) => Promise<T>): Promise<T> {
   for (let attempt = 0; ; attempt++) {
     try {
@@ -205,8 +206,11 @@ export async function serial<T>(fn: (tx: Tx) => Promise<T>): Promise<T> {
         timeout: 15_000,
       });
     } catch (error) {
-      if ((error as { code?: string }).code !== "P2034" || attempt >= 3)
+      if ((error as { code?: string }).code !== "P2034" || attempt >= 5)
         throw error;
+      await new Promise((resolve) =>
+        setTimeout(resolve, 10 * 2 ** attempt + Math.random() * 25 * (attempt + 1)),
+      );
     }
   }
 }
