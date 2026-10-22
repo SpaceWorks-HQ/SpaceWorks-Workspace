@@ -37,7 +37,7 @@ export async function saveItem(actor: OpsActor, input: unknown) {
  }
  const itemId = v.id ?? randomUUID();
  return prisma.$transaction(async tx => {
-  await tx.$queryRaw`SELECT "id" FROM "Workspace" WHERE "id"=${actor.workspace.id} FOR UPDATE`;
+  await tx.$queryRaw`SELECT "id" FROM "Workspace" WHERE "id"=${actor.workspace.id} FOR NO KEY UPDATE`;
   if (v.id) {
    await tx.$queryRaw`SELECT "id" FROM "VaultItem" WHERE "id"=${v.id} AND "workspaceId"=${actor.workspace.id} FOR UPDATE`;
    const old = await tx.vaultItem.findFirst({ where: { id: v.id, workspaceId: actor.workspace.id, deletedAt: null } });

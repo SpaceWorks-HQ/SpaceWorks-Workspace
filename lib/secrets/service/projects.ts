@@ -98,7 +98,7 @@ export async function saveEnvironment(actor: SecretsActor, input: unknown) {
   }
   return prisma.$transaction(async (tx) => {
     if (v.id) {
-      await tx.$queryRaw`SELECT "id" FROM "SecretEnvironment" WHERE "workspaceId"=${actor.workspace.id} AND "id"=${v.id} FOR UPDATE`;
+      await tx.$queryRaw`SELECT "id" FROM "SecretEnvironment" WHERE "workspaceId"=${actor.workspace.id} AND "id"=${v.id} FOR NO KEY UPDATE`;
       const current = await environmentAccess(actor, v.id, "ADMIN", tx);
       if (current.projectId !== v.projectId)
         throw new SecretsError("That project is unavailable.");

@@ -14,7 +14,7 @@ export async function requestKeyRotation(actor: SecretsActor, projectId: string,
   if (!canManageSecrets(actor.membership) || actor.machine || !["project", "workspace"].includes(kind)) throw new SecretsError("Ask a workspace admin to rotate keys.");
   await requireSecretsMfa(actor, true);
   const row = await prisma.$transaction(async tx => {
-    await tx.$queryRaw`SELECT "id" FROM "Workspace" WHERE "id"=${actor.workspace.id} FOR UPDATE`;
+    await tx.$queryRaw`SELECT "id" FROM "Workspace" WHERE "id"=${actor.workspace.id} FOR NO KEY UPDATE`;
     const project = await tx.secretProject.findFirst({ where: { workspaceId: actor.workspace.id, id: projectId } });
     if (!project) throw new SecretsError("That project is unavailable.");
     const pending = await tx.secretKeyRotation.findFirst({ where: { workspaceId: actor.workspace.id, status: { in: ["PENDING", "RUNNING"] } } });
@@ -38,7 +38,7 @@ export async function runKeyRotation(id: string, batchSize = 20, maxBatches = In
       const job = await tx.secretKeyRotation.findUnique({ where: { id } });
       if (!job || job.status === "COMPLETE") return true;
       if (!Number.isInteger(batchSize) || batchSize < 1 || batchSize > 100) throw new Error("Invalid rotation batch size.");
-      await tx.$queryRaw`SELECT "id" FROM "Workspace" WHERE "id"=${job.workspaceId} FOR UPDATE`;
+      await tx.$queryRaw`SELECT "id" FROM "Workspace" WHERE "id"=${job.workspaceId} FOR NO KEY UPDATE`;
       const workspaceId = job.workspaceId, projectId = job.projectId;
       if (job.status === "PENDING") {
         await rotateHierarchyKey(workspaceId, projectId, job.kind, tx);

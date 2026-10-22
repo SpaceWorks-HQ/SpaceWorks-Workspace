@@ -81,8 +81,8 @@ export async function applyChanges(
   actorId: string,
   expectedRevision?: number,
 ) {
-  await tx.$queryRaw`SELECT "id" FROM "Workspace" WHERE "id"=${workspaceId} FOR UPDATE`;
-  await tx.$queryRaw`SELECT "id" FROM "SecretEnvironment" WHERE "workspaceId"=${workspaceId} AND "id"=${environmentId} FOR UPDATE`;
+  await tx.$queryRaw`SELECT "id" FROM "Workspace" WHERE "id"=${workspaceId} FOR NO KEY UPDATE`;
+  await tx.$queryRaw`SELECT "id" FROM "SecretEnvironment" WHERE "workspaceId"=${workspaceId} AND "id"=${environmentId} FOR NO KEY UPDATE`;
   const env = await tx.secretEnvironment.findFirstOrThrow({
     where: { workspaceId, id: environmentId },
   });

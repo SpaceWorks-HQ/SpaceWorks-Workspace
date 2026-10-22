@@ -30,8 +30,8 @@ export async function submitChanges(
   const result = await prisma.$transaction(
     async (tx) => {
       await environmentAccess(actor, environmentId, "WRITE", tx);
-      await tx.$queryRaw`SELECT "id" FROM "Workspace" WHERE "id"=${actor.workspace.id} FOR UPDATE`;
-      await tx.$queryRaw`SELECT "id" FROM "SecretEnvironment" WHERE "workspaceId"=${actor.workspace.id} AND "id"=${environmentId} FOR UPDATE`;
+      await tx.$queryRaw`SELECT "id" FROM "Workspace" WHERE "id"=${actor.workspace.id} FOR NO KEY UPDATE`;
+      await tx.$queryRaw`SELECT "id" FROM "SecretEnvironment" WHERE "workspaceId"=${actor.workspace.id} AND "id"=${environmentId} FOR NO KEY UPDATE`;
       const current = await tx.secretEnvironment.findFirstOrThrow({
         where: { workspaceId: actor.workspace.id, id: environmentId },
       });

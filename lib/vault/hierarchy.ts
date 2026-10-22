@@ -20,7 +20,9 @@ function context(client: DbClient) {
 }
 async function lockWorkspace(workspaceId: string, client: DbClient) {
   const cache = context(client)?.locked; if (cache?.has(workspaceId)) return;
-  await client.$queryRaw`SELECT "id" FROM "Workspace" WHERE "id"=${workspaceId} FOR UPDATE`;
+  // Serialise key writes without blocking foreign-key inserts in other connections.
+  // Never upgrade this to FOR UPDATE: every tenant row references Workspace.
+  await client.$queryRaw`SELECT "id" FROM "Workspace" WHERE "id"=${workspaceId} FOR NO KEY UPDATE`;
   cache?.add(workspaceId);
 }
 async function keyRecord(workspaceId: string, id: string, client: DbClient) {

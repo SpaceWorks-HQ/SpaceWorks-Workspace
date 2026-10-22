@@ -24,7 +24,7 @@ describe("Secrets locked state", () => {
     const update = vi.fn(async ({ data }) => ({ ...input, ...data }));
     const tx = {
       $queryRaw: vi.fn(async (sql: TemplateStringsArray, ...params: string[]) => {
-        expect(sql.join("?")).toContain("FOR UPDATE");
+        expect(sql.join("?")).toContain("FOR NO KEY UPDATE");
         expect(params).toEqual([actor.workspace.id, input.id]);
         locked = true;
         return [{ id: input.id }];

@@ -16,8 +16,8 @@ export async function takeSnapshot(
   if (actor.machine)
     throw new SecretsError("Use your member account to take snapshots.");
   return prisma.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT "id" FROM "Workspace" WHERE "id"=${actor.workspace.id} FOR UPDATE`;
-      await tx.$queryRaw`SELECT "id" FROM "SecretEnvironment" WHERE "workspaceId"=${actor.workspace.id} AND "id"=${environmentId} FOR UPDATE`;
+    await tx.$queryRaw`SELECT "id" FROM "Workspace" WHERE "id"=${actor.workspace.id} FOR NO KEY UPDATE`;
+    await tx.$queryRaw`SELECT "id" FROM "SecretEnvironment" WHERE "workspaceId"=${actor.workspace.id} AND "id"=${environmentId} FOR NO KEY UPDATE`;
     const row = await snapshot(
       tx,
       actor.workspace.id,
