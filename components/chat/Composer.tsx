@@ -269,6 +269,7 @@ export function Composer({
         {mode === "post" ? (
           <button
             type="button"
+            aria-label="Send message"
             title="Send message"
             disabled={busy || uploading || (!text.trim() && !files.some((f) => f.attachment))}
             onClick={() => void submit()}

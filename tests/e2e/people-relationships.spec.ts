@@ -46,7 +46,7 @@ test.describe("people and relationships browser flows", () => {
       await page.context().addCookies([{ name: "sww.color-mode", value: mode, url: testInfo.project.use.baseURL! }]);
       for (const [route, heading] of pages) {
         await page.goto(`/w/${slug}/${route}`);
-        await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
+        await expect(page.locator("#main-content").getByRole("heading", { name: heading, exact: true })).toBeVisible({ timeout: 15_000 });
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
         await page.screenshot({ path: testInfo.outputPath(`${mode}-${route.replaceAll("/", "-")}.png`), fullPage: true });
       }
@@ -62,7 +62,8 @@ test.describe("people and relationships browser flows", () => {
     await page.getByRole("button", { name: "Save changes", exact: true }).click();
     await expect(page.getByText("Changes saved", { exact: true })).toBeVisible();
     await page.goto(`/w/${slug}/members/${memberId}`);
-    await expect(page.getByText("Teaching soldering at build night.", { exact: true })).toBeVisible();
+    // Streamed content briefly exists in a hidden node outside <main>; assert the rendered copy.
+    await expect(page.locator("#main-content").getByText("Teaching soldering at build night.", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "View emergency contact" })).toBeVisible();
     await page.getByRole("button", { name: "View emergency contact" }).focus();
     await page.keyboard.press("Enter");
